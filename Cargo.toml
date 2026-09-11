@@ -1,0 +1,6 @@
+[workspace]
+resolver = "3"
+members = [
+    "crates/wilds-battle-engine",
+    "crates/wilds-battle-engine-ffi",
+]
