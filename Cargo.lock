@@ -303,6 +303,9 @@ dependencies = [
 [[package]]
 name = "wilds-battle-engine-ffi"
 version = "0.1.0"
+dependencies = [
+ "wilds-battle-engine",
+]
 
 [[package]]
 name = "windows-link"
