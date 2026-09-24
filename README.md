@@ -23,6 +23,10 @@ use Lua callbacks: Dream Eater, False Swipe, Triple Kick, Explosion, and Hyper B
 Solar Beam now uses a Lua callback too, while retaining its current C# values.
 Thrash is included as a sixth additional move, using its Generation V onward
 duration, interruption, and confusion rules.
+Charge and Thunder Shock come from the sheet as a next-move effect and a simple
+Electric attack. Charge's Lua script raises Special Defense and asks Rust to
+double the power of the next Electric attack; any other next move consumes the
+boost without applying it.
 Each callback receives read-only `user` and `target` snapshots (`hp`, plus the
 user's name and target's status) and a battle API. Calls such as `ctx:damage` yield to Rust;
 Rust applies the operation and resumes Lua with its result. Damage accepts
@@ -47,10 +51,15 @@ chooses random targets, and spends PP only when the move is first selected.
 script runs; the move can call `ctx:break_sequence()` and
 `ctx:confuse_self()`. Scripts also have `ctx:random_int`, `ctx:message`, and
 `ctx:announce` for move flow and messages.
+`ctx:change_self_stat(ctx.Stat.SpDefense, 1)` and
+`ctx:boost_next_move(ctx.Type.Electric, 2)` expose typed stat changes and a
+one-use power modifier. Rust stores and consumes the modifier on the next move.
 Struggle is a catalog-provided system move. When all learned moves have 0 PP,
 Rust selects it automatically. Its metadata is Normal type, while its scripted
 damage is typeless; it always passes accuracy checks, targets a random opponent,
 spends no PP, and recoils for one quarter of the user's maximum HP after a hit.
+`advance()` collects events in order across automatic turns and stops at the
+next host prompt or battle outcome.
 
 ```rust
 use wilds_battle_engine::{ActionSelection, AdvanceStatus, Battle, MoveCatalog, Pokemon};

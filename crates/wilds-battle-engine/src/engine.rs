@@ -1,7 +1,7 @@
 use crate::model::{
     ActionSelection, AdvanceResult, AdvanceStatus, AppliedStatus, BattleError, BattleEvent, Bound,
-    Choice, CombatStat, ContinuationTarget, LockedMove, ParticipantId, Pokemon, PokemonType,
-    Prompt, ScriptContinuation, Side, Status, Weather, WeatherKind,
+    Choice, CombatStat, ContinuationTarget, LockedMove, NextMovePowerBoost, ParticipantId, Pokemon,
+    PokemonType, Prompt, ScriptContinuation, Side, Stat, Status, Weather, WeatherKind,
 };
 use crate::moves::{
     Accuracy, Category, Effect, MoveCatalog, MoveSpec, ScriptContext, ScriptOperation, Target,
@@ -49,6 +49,7 @@ pub struct Battle {
     next_prompt_id: u64,
     winner: Option<Option<Side>>,
     turn: u64,
+    active_power_multiplier: f32,
 }
 
 #[derive(Clone)]
@@ -109,6 +110,7 @@ impl Battle {
             next_prompt_id: 1,
             winner: None,
             turn: 0,
+            active_power_multiplier: 1.0,
         })
     }
     pub fn participants(&self, side: Side) -> &[Pokemon] {
@@ -396,6 +398,12 @@ impl Battle {
             .get(&choice.move_id)
             .expect("validated choice")
             .clone();
+        self.active_power_multiplier = self
+            .get_mut(actor)
+            .next_move_power_boost
+            .take()
+            .filter(|boost| boost.move_type == spec.move_type && spec.category != Category::Status)
+            .map_or(1.0, |boost| boost.multiplier);
         let user_name = self.get(actor).name.clone();
         let forced_script = self
             .get(actor)
@@ -737,6 +745,20 @@ impl Battle {
                     )));
                     Value::Nil
                 }
+                ScriptOperation::ChangeSelfStat { stat, stages } => {
+                    self.change_stat(actor, stat, stages, events);
+                    Value::Nil
+                }
+                ScriptOperation::BoostNextMove {
+                    move_type,
+                    multiplier,
+                } => {
+                    self.get_mut(actor).next_move_power_boost = Some(NextMovePowerBoost {
+                        move_type,
+                        multiplier,
+                    });
+                    Value::Nil
+                }
                 ScriptOperation::Fail => {
                     events.push(BattleEvent::Message("But it failed!".into()));
                     break;
@@ -863,6 +885,37 @@ impl Battle {
         p.last_move = None;
         if p.locked_move.as_ref().is_some_and(|l| !l.charging) {
             p.locked_move = None;
+        }
+    }
+    fn change_stat(
+        &mut self,
+        recipient: ParticipantId,
+        stat: Stat,
+        delta: i8,
+        events: &mut Vec<BattleEvent>,
+    ) {
+        let change = self.get_mut(recipient).change_stage(stat, delta);
+        let tail = match change {
+            3.. => "rose drastically!",
+            2 => "rose sharply!",
+            1 => "rose!",
+            -1 => "fell!",
+            -2 => "harshly fell!",
+            ..=-3 => "severely fell!",
+            _ if delta > 0 => "won't go any higher!",
+            _ => "won't go any lower!",
+        };
+        events.push(BattleEvent::Message(format!(
+            "{}'s {} {tail}",
+            self.get(recipient).name,
+            stat.description()
+        )));
+        if change != 0 {
+            events.push(BattleEvent::StatChange {
+                target: recipient,
+                stat,
+                stages: change,
+            });
         }
     }
     fn hit_check(&mut self, actor: ParticipantId, target: ParticipantId, spec: &MoveSpec) -> bool {
@@ -1012,30 +1065,7 @@ impl Battle {
                     return;
                 }
                 for (stat, delta) in stages {
-                    let change = self.get_mut(recipient).change_stage(*stat, *delta);
-                    let description = stat.description();
-                    let tail = match change {
-                        3.. => "rose drastically!",
-                        2 => "rose sharply!",
-                        1 => "rose!",
-                        -1 => "fell!",
-                        -2 => "harshly fell!",
-                        ..=-3 => "severely fell!",
-                        _ if *delta > 0 => "won't go any higher!",
-                        _ => "won't go any lower!",
-                    };
-                    events.push(BattleEvent::Message(format!(
-                        "{}'s {description} {tail}",
-                        self.get(recipient).name
-                    )));
-                    if change == 0 {
-                        continue;
-                    }
-                    events.push(BattleEvent::StatChange {
-                        target: recipient,
-                        stat: *stat,
-                        stages: change,
-                    });
+                    self.change_stat(recipient, *stat, *delta, events);
                 }
             }
             Effect::Status {
@@ -1367,7 +1397,8 @@ impl Battle {
             defense *= 1.5;
         }
         defense = defense.max(1.0);
-        let adjusted_power = f32::from(power) * 2f32.powi(consecutive_boost as i32);
+        let adjusted_power =
+            f32::from(power) * 2f32.powi(consecutive_boost as i32) * self.active_power_multiplier;
         let mut damage = (2.0 * f32::from(attacker.level) * 0.2 + 2.0) * adjusted_power * attack
             / defense
             / 50.0

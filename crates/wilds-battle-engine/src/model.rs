@@ -169,6 +169,12 @@ pub struct ScriptContinuation {
     pub target_policy: ContinuationTarget,
 }
 
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct NextMovePowerBoost {
+    pub move_type: PokemonType,
+    pub multiplier: f32,
+}
+
 #[derive(Clone, Debug)]
 pub struct Pokemon {
     pub species_id: u32,
@@ -193,6 +199,7 @@ pub struct Pokemon {
     pub flinched: bool,
     pub locked_move: Option<LockedMove>,
     pub script_continuation: Option<ScriptContinuation>,
+    pub next_move_power_boost: Option<NextMovePowerBoost>,
     pub last_move: Option<String>,
     pub consecutive_count: u8,
     pub crit_stage: u8,
@@ -225,6 +232,7 @@ impl Pokemon {
             flinched: false,
             locked_move: None,
             script_continuation: None,
+            next_move_power_boost: None,
             last_move: None,
             consecutive_count: 0,
             crit_stage: 0,

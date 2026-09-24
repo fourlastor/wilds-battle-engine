@@ -7,8 +7,8 @@ mod type_chart;
 pub use engine::Battle;
 pub use model::{
     ActionSelection, AdvanceResult, AdvanceStatus, AppliedStatus, BattleError, BattleEvent, Bound,
-    Choice, CombatStat, ContinuationTarget, LockedMove, ParticipantId, Pokemon, PokemonType,
-    Prompt, ScriptContinuation, Side, Stat, Status, Weather, WeatherKind,
+    Choice, CombatStat, ContinuationTarget, LockedMove, NextMovePowerBoost, ParticipantId, Pokemon,
+    PokemonType, Prompt, ScriptContinuation, Side, Stat, Status, Weather, WeatherKind,
 };
 pub use moves::{Accuracy, Category, Effect, MoveCatalog, MoveSpec, Target};
 
@@ -50,7 +50,7 @@ mod tests {
     #[test]
     fn loads_original_and_scripted_moves() {
         let catalog = MoveCatalog::builtin().unwrap();
-        assert_eq!(catalog.len(), 36);
+        assert_eq!(catalog.len(), 38);
         assert_eq!(
             catalog.get("struggle").unwrap().move_type,
             PokemonType::Normal
@@ -66,6 +66,7 @@ mod tests {
             "hyper_beam",
             "solar_beam",
             "thrash",
+            "charge",
         ] {
             assert!(catalog.get(id).unwrap().script.is_some());
         }
@@ -511,6 +512,162 @@ mod tests {
         let result = battle.advance().unwrap();
         assert!(matches!(result.status, AdvanceStatus::End { .. }));
         assert!(result.events.iter().filter(|event| matches!(event, BattleEvent::Message(message) if message.contains("used Struggle"))).count() >= 2);
+    }
+
+    #[test]
+    fn advance_preserves_events_through_automatic_turns_until_prompt() {
+        let mut found_three_turns = false;
+        for seed in 1..=64 {
+            let mut ally = Pokemon::new("Ally", vec!["thrash".into(), "splash".into()]);
+            ally.max_hp = 1000;
+            ally.hp = 1000;
+            let mut foe = Pokemon::new("Foe", vec!["splash".into()]);
+            foe.max_hp = 1000;
+            foe.hp = 1000;
+            foe.move_pp.insert("splash".into(), 1);
+            let mut battle = Battle::new(
+                seed,
+                [vec![ally], vec![foe]],
+                MoveCatalog::builtin().unwrap(),
+            )
+            .unwrap();
+            pick(&mut battle, "thrash");
+            pick(&mut battle, "splash");
+            let result = battle.advance().unwrap();
+            if battle.turn() != 3 {
+                continue;
+            }
+            found_three_turns = true;
+            let AdvanceStatus::Awaiting(prompt) = result.status else {
+                panic!("expected ally prompt after Thrash")
+            };
+            assert_eq!(prompt.actor, id(Side::Allies));
+            let messages: Vec<&str> = result
+                .events
+                .iter()
+                .filter_map(|event| match event {
+                    BattleEvent::Message(message) => Some(message.as_str()),
+                    _ => None,
+                })
+                .collect();
+            let thrash_positions: Vec<_> = messages
+                .iter()
+                .enumerate()
+                .filter_map(|(i, message)| (*message == "Ally used Thrash!").then_some(i))
+                .collect();
+            let struggle_positions: Vec<_> = messages
+                .iter()
+                .enumerate()
+                .filter_map(|(i, message)| (*message == "Foe used Struggle!").then_some(i))
+                .collect();
+            let recoil_positions: Vec<_> = messages
+                .iter()
+                .enumerate()
+                .filter_map(|(i, message)| {
+                    (*message == "Foe was damaged by the recoil!").then_some(i)
+                })
+                .collect();
+            assert_eq!(thrash_positions.len(), 3);
+            assert_eq!(struggle_positions.len(), 2);
+            assert_eq!(recoil_positions.len(), 2);
+            assert!(thrash_positions[0] < struggle_positions[0]);
+            assert!(struggle_positions[0] < recoil_positions[0]);
+            assert!(recoil_positions[0] < struggle_positions[1]);
+            assert!(struggle_positions[1] < recoil_positions[1]);
+            break;
+        }
+        assert!(found_three_turns, "expected a seeded three-turn Thrash");
+    }
+
+    #[test]
+    fn charge_raises_special_defense_and_sets_a_typed_next_move_boost() {
+        let mut battle = one_on_one(7, "charge", "splash");
+        pick(&mut battle, "charge");
+        pick(&mut battle, "splash");
+        let result = battle.advance().unwrap();
+        let ally = &battle.participants(Side::Allies)[0];
+        assert_eq!(ally.stage(Stat::SpDefense), 1);
+        assert_eq!(
+            ally.next_move_power_boost,
+            Some(NextMovePowerBoost {
+                move_type: PokemonType::Electric,
+                multiplier: 2.0,
+            })
+        );
+        assert!(
+            result
+                .events
+                .iter()
+                .any(|event| matches!(event, BattleEvent::StatChange {
+            target, stat: Stat::SpDefense, stages: 1,
+        } if *target == id(Side::Allies)))
+        );
+    }
+
+    fn electric_attack_damage(seed: u64, boosted: bool) -> (u16, Option<NextMovePowerBoost>) {
+        let mut ally = Pokemon::new("Ally", vec!["thunder_shock".into()]);
+        if boosted {
+            ally.next_move_power_boost = Some(NextMovePowerBoost {
+                move_type: PokemonType::Electric,
+                multiplier: 2.0,
+            });
+        }
+        let mut foe = Pokemon::new("Foe", vec!["splash".into()]);
+        foe.hp = 1000;
+        foe.max_hp = 1000;
+        let mut battle = Battle::new(
+            seed,
+            [vec![ally], vec![foe]],
+            MoveCatalog::builtin().unwrap(),
+        )
+        .unwrap();
+        pick(&mut battle, "thunder_shock");
+        pick(&mut battle, "splash");
+        battle.advance().unwrap();
+        (
+            1000 - battle.participants(Side::Foes)[0].hp,
+            battle.participants(Side::Allies)[0].next_move_power_boost,
+        )
+    }
+
+    #[test]
+    fn charge_boosts_electric_power_once() {
+        let (normal, _) = electric_attack_damage(14, false);
+        let (charged, remaining) = electric_attack_damage(14, true);
+        assert!(
+            charged > normal + normal / 2,
+            "expected roughly double power: {normal} -> {charged}"
+        );
+        assert_eq!(remaining, None);
+    }
+
+    #[test]
+    fn charge_expires_after_a_non_electric_move() {
+        let ally = Pokemon::new(
+            "Ally",
+            vec!["charge".into(), "tackle".into(), "thunder_shock".into()],
+        );
+        let mut foe = Pokemon::new("Foe", vec!["splash".into()]);
+        foe.hp = 1000;
+        foe.max_hp = 1000;
+        let mut battle =
+            Battle::new(17, [vec![ally], vec![foe]], MoveCatalog::builtin().unwrap()).unwrap();
+        pick(&mut battle, "charge");
+        pick(&mut battle, "splash");
+        battle.advance().unwrap();
+        assert!(
+            battle.participants(Side::Allies)[0]
+                .next_move_power_boost
+                .is_some()
+        );
+        pick(&mut battle, "tackle");
+        pick(&mut battle, "splash");
+        battle.advance().unwrap();
+        assert!(
+            battle.participants(Side::Allies)[0]
+                .next_move_power_boost
+                .is_none()
+        );
     }
 
     #[test]

@@ -128,6 +128,14 @@ pub(crate) enum ScriptOperation {
     Announce,
     ConfuseSelf,
     RecoilMaxHp(f32),
+    ChangeSelfStat {
+        stat: Stat,
+        stages: i8,
+    },
+    BoostNextMove {
+        move_type: PokemonType,
+        multiplier: f32,
+    },
 }
 impl UserData for ScriptOperation {}
 
@@ -336,6 +344,42 @@ impl MoveCatalog {
                 lua.create_userdata(ScriptOperation::RecoilMaxHp(fraction))
             })?,
         )?;
+        api.set(
+            "change_self_stat",
+            self.lua
+                .create_function(|lua, (stat, stages): (mlua::AnyUserData, i8)| {
+                    let stat = match lua_symbols::from_userdata(stat, "stat") {
+                        Ok(LuaSymbol::Stat(value)) => value,
+                        _ => return Err(mlua::Error::external("stat requires Stat value")),
+                    };
+                    if !(-6..=6).contains(&stages) || stages == 0 {
+                        return Err(mlua::Error::external(
+                            "stat change must be nonzero and within -6..=6",
+                        ));
+                    }
+                    lua.create_userdata(ScriptOperation::ChangeSelfStat { stat, stages })
+                })?,
+        )?;
+        api.set(
+            "boost_next_move",
+            self.lua.create_function(
+                |lua, (move_type, multiplier): (mlua::AnyUserData, f32)| {
+                    let move_type = match lua_symbols::from_userdata(move_type, "type") {
+                        Ok(LuaSymbol::Type(value)) => value,
+                        _ => return Err(mlua::Error::external("move type requires Type value")),
+                    };
+                    if !multiplier.is_finite() || multiplier <= 0.0 || multiplier > 8.0 {
+                        return Err(mlua::Error::external(
+                            "power multiplier must be greater than 0 and at most 8",
+                        ));
+                    }
+                    lua.create_userdata(ScriptOperation::BoostNextMove {
+                        move_type,
+                        multiplier,
+                    })
+                },
+            )?,
+        )?;
         let user = self.lua.create_table()?;
         user.set("hp", context.user_hp)?;
         user.set("name", context.user_name)?;
@@ -349,6 +393,8 @@ impl MoveCatalog {
             )?;
         }
         let statuses: Table = self.lua.globals().get("Status")?;
+        let stats: Table = self.lua.globals().get("Stat")?;
+        let types: Table = self.lua.globals().get("Type")?;
         let target_policy: Table = self.lua.globals().get("TargetPolicy")?;
         let weather = context
             .weather
@@ -363,6 +409,8 @@ impl MoveCatalog {
             context.turn,
             context.total_turns,
             target_policy,
+            stats,
+            types,
         ))?;
         let thread = self.lua.create_thread(function.clone())?;
         let instructions = Arc::new(AtomicU32::new(0));

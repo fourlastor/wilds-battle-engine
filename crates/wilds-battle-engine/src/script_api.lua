@@ -1,7 +1,7 @@
 -- A yielded operation is applied by Rust before its result is returned to Lua.
-return function(api, user, target, statuses, weather, turn, total_turns, target_policy)
+return function(api, user, target, statuses, weather, turn, total_turns, target_policy, stats, types)
   local ctx = {user=user, target=target, Status=statuses, weather=weather,
-    turn=turn, total_turns=total_turns, TargetPolicy=target_policy}
+    turn=turn, total_turns=total_turns, TargetPolicy=target_policy, Stat=stats, Type=types}
 
   function ctx:damage(power, options)
     return coroutine.yield(api.damage(power, options))
@@ -45,6 +45,14 @@ return function(api, user, target, statuses, weather, turn, total_turns, target_
 
   function ctx:recoil_max_hp(fraction)
     return coroutine.yield(api.recoil_max_hp(fraction))
+  end
+
+  function ctx:change_self_stat(stat, stages)
+    return coroutine.yield(api.change_self_stat(stat, stages))
+  end
+
+  function ctx:boost_next_move(move_type, multiplier)
+    return coroutine.yield(api.boost_next_move(move_type, multiplier))
   end
 
   return ctx

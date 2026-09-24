@@ -13,6 +13,12 @@ return {
     effects={{kind=Effect.Damage, power=15}, {kind=Effect.Bind}} },
   { id="calm_mind", name="Calm Mind", type=Type.Psychic, category=Category.Status, pp=20,
     target=Target.User, accuracy=Accuracy.Always, effects={{kind=Effect.Stats, stages={[Stat.SpAttack]=1, [Stat.SpDefense]=1}}} },
+  { id="charge", name="Charge", type=Type.Electric, category=Category.Status, pp=20,
+    target=Target.User, accuracy=Accuracy.Always,
+    script=function(ctx)
+      ctx:change_self_stat(ctx.Stat.SpDefense, 1)
+      ctx:boost_next_move(ctx.Type.Electric, 2)
+    end },
   { id="confuse_ray", name="Confuse Ray", type=Type.Ghost, category=Category.Status, pp=10,
     effects={{kind=Effect.Confuse}} },
   { id="dive", name="Dive", type=Type.Water, category=Category.Physical, pp=10,
@@ -73,6 +79,8 @@ return {
     effects={{kind=Effect.Stats, stages={[Stat.Attack]=2}}} },
   { id="tackle", name="Tackle", type=Type.Normal, category=Category.Physical, pp=35, accuracy=0.95,
     effects={{kind=Effect.Damage, power=40}} },
+  { id="thunder_shock", name="Thunder Shock", type=Type.Electric, category=Category.Special, pp=30,
+    effects={{kind=Effect.Damage, power=40}, {kind=Effect.Status, status=Status.Paralyzed, chance=0.1}} },
   { id="toxic", name="Toxic", type=Type.Poison, category=Category.Status, pp=10, accuracy=0.9,
     effects={{kind=Effect.Status, status=Status.BadlyPoisoned}} },
   -- Scripted moves call the Rust battle API and resume with each operation's result.
