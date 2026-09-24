@@ -1,4 +1,5 @@
 mod engine;
+mod lua_symbols;
 mod model;
 mod moves;
 mod type_chart;
@@ -64,30 +65,27 @@ mod tests {
         }
     }
     #[test]
-    fn rejects_unknown_typed_names_in_lua() {
-        let base = r#"return {{ id = 'test', name = 'Test', type = 'normal', category = 'status', pp = 1, effects = {{ kind = 'status', status = 'poisoned' }} }}"#;
+    fn rejects_wrong_lua_enum_families() {
+        let base = r#"return {{ id = 'test', name = 'Test', type = Type.Normal, category = Category.Status, pp = 1, effects = {{ kind = Effect.Status, status = Status.Poisoned }} }}"#;
         for (source, expected) in [
             (
-                base.replace("type = 'normal'", "type = 'typo'"),
-                "unknown Pokemon type typo",
+                base.replace("type = Type.Normal", "type = Stat.Attack"),
+                "type requires Type value",
             ),
             (
-                base.replace("status = 'poisoned'", "status = 'typo'"),
-                "unknown status typo",
+                base.replace("status = Status.Poisoned", "status = Weather.Sun"),
+                "status requires Status value",
             ),
             (
-                base.replace(
-                    "kind = 'status', status = 'poisoned'",
-                    "kind = 'weather', weather = 'typo', turns = 5",
-                ),
-                "unknown weather typo",
+                base.replace("kind = Effect.Status", "kind = Category.Status"),
+                "kind requires Effect value",
             ),
             (
                 base.replace(
-                    "kind = 'status', status = 'poisoned'",
-                    "kind = 'stats', stages = { typo = 1 }",
+                    "kind = Effect.Status, status = Status.Poisoned",
+                    "kind = Effect.Stats, stages = {[Type.Normal] = 1}",
                 ),
-                "unknown stat typo",
+                "stage requires Stat value",
             ),
         ] {
             let error = MoveCatalog::from_lua(&source).unwrap_err();
@@ -631,5 +629,63 @@ mod tests {
             }
         }
         assert!(missed);
+    }
+
+    #[test]
+    fn scripted_moves_only_accept_api_operations() {
+        let source = r#"return {{id='test', name='Test', type=Type.Normal, category=Category.Physical, pp=1,
+            script=function(_) coroutine.yield({kind='damage', power=40}) end}}"#;
+        let mut battle = Battle::new(
+            1,
+            [
+                vec![Pokemon::new("Ally", vec!["test".into()])],
+                vec![Pokemon::new("Foe", vec!["test".into()])],
+            ],
+            MoveCatalog::from_lua(source).unwrap(),
+        )
+        .unwrap();
+        pick(&mut battle, "test");
+        pick(&mut battle, "test");
+        assert!(
+            matches!(battle.advance(), Err(BattleError::InvalidSetup(message)) if message.contains("outside the battle API"))
+        );
+    }
+
+    #[test]
+    fn scripted_damage_rejects_unknown_options() {
+        let source = r#"return {{id='test', name='Test', type=Type.Normal, category=Category.Physical, pp=1,
+            script=function(ctx) ctx:damage(40, {min_target_hpp=1}) end}}"#;
+        let mut battle = Battle::new(
+            1,
+            [
+                vec![Pokemon::new("Ally", vec!["test".into()])],
+                vec![Pokemon::new("Foe", vec!["test".into()])],
+            ],
+            MoveCatalog::from_lua(source).unwrap(),
+        )
+        .unwrap();
+        pick(&mut battle, "test");
+        pick(&mut battle, "test");
+        assert!(
+            matches!(battle.advance(), Err(BattleError::Script(error)) if error.to_string().contains("unknown damage option min_target_hpp"))
+        );
+    }
+
+    #[test]
+    fn scripted_moves_have_an_instruction_limit() {
+        let source = r#"return {{id='test', name='Test', type=Type.Normal, category=Category.Physical, pp=1,
+            script=function(_) while true do end end}}"#;
+        let mut battle = Battle::new(
+            1,
+            [
+                vec![Pokemon::new("Ally", vec!["test".into()])],
+                vec![Pokemon::new("Foe", vec!["test".into()])],
+            ],
+            MoveCatalog::from_lua(source).unwrap(),
+        )
+        .unwrap();
+        pick(&mut battle, "test");
+        pick(&mut battle, "test");
+        assert!(matches!(battle.advance(), Err(BattleError::Script(_))));
     }
 }

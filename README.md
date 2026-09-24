@@ -4,22 +4,31 @@
 from Lua; `MoveCatalog::builtin()` loads the 29 moves currently defined under
 `pokewilds-next/battle/moves`. The host supplies choices for both sides.
 The Rust API uses enums for sides, Pokémon types, stats, statuses, and weather.
-Lua uses names for these values; unknown names are rejected when the catalog loads.
+Rust exposes typed Lua constants for Pokémon types, stats, statuses, weather,
+categories, targets, effects, and special accuracy modes. Move IDs and display
+text remain strings. `MoveCatalog::from_lua` installs these constants before
+evaluating move definitions; values from the wrong enum family are rejected.
+
+```lua
+{ id="toxic", name="Toxic", type=Type.Poison,
+  category=Category.Status, pp=10, accuracy=0.9,
+  effects={{kind=Effect.Status, status=Status.BadlyPoisoned}} }
+```
 
 Five additional moves from the [Saved moves sheet](https://docs.google.com/spreadsheets/d/1e9lPFCqyuwpX6R6s69HXoFUXedoIAD8SdtSbswY48Q8/edit?gid=1664051581)
 use Lua callbacks: Dream Eater, False Swipe, Triple Kick, Explosion, and Hyper Beam.
 Each callback receives read-only `user` and `target` snapshots (`hp`, plus the
-target's status) and returns an ordered list of actions. Rust validates and
-executes those actions, including damage, drain, self fainting, and recharge.
-Damage actions may set `accuracy` for an individual hit, `stop_on_miss` for
-sequences, and `min_target_hp` for moves that cannot KO. Scripts run before
-state changes for that move; their returned actions execute in order.
+target's status) and a battle API. Calls such as `ctx:damage` yield to Rust;
+Rust applies the operation and resumes Lua with its result. Damage accepts
+`accuracy` for an individual hit, `drain`, and `min_target_hp` for moves that
+cannot KO. A hit result has `hit` and `damage` fields.
 For example:
 
 ```lua
 script=function(ctx)
-  if ctx.target.status ~= "asleep" then return {{kind="fail"}} end
-  return {{kind="damage", power=100, drain=0.5}}
+  if ctx.target.status ~= ctx.Status.Asleep then return ctx:fail() end
+  local result = ctx:damage(100, {drain=0.5})
+  if not result.hit then return end
 end
 ```
 

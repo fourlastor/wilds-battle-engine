@@ -1,7 +1,9 @@
+use crate::lua_symbols::{self, AccuracyKind, EffectKind, LuaSymbol};
 use crate::model::{AppliedStatus, BattleError, PokemonType, Stat, WeatherKind};
-use mlua::{Function, Lua, Table, Value};
+use mlua::{Function, HookTriggers, Lua, Table, Thread, UserData, Value, VmState};
 use std::collections::{BTreeMap, HashMap};
-use std::str::FromStr;
+use std::sync::Arc;
+use std::sync::atomic::{AtomicU32, Ordering};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Category {
@@ -96,18 +98,18 @@ pub struct MoveSpec {
 }
 
 #[derive(Clone, Debug, PartialEq)]
-pub(crate) enum ScriptAction {
+pub(crate) enum ScriptOperation {
     Damage {
         power: u16,
         accuracy: Option<f32>,
         drain: Option<f32>,
         min_target_hp: u16,
-        stop_on_miss: bool,
     },
     FaintUser,
-    RechargeIfHit,
+    Recharge,
     Fail,
 }
+impl UserData for ScriptOperation {}
 
 #[derive(Clone, Copy, Debug)]
 pub(crate) struct ScriptContext {
@@ -120,6 +122,7 @@ pub(crate) struct ScriptContext {
 pub struct MoveCatalog {
     moves: HashMap<String, MoveSpec>,
     lua: Lua,
+    script_factory: Function,
 }
 
 impl MoveCatalog {
@@ -128,6 +131,7 @@ impl MoveCatalog {
     }
     pub fn from_lua(source: &str) -> Result<Self, BattleError> {
         let lua = Lua::new();
+        lua_symbols::install(&lua)?;
         let table: Table = lua.load(source).eval()?;
         let mut moves = HashMap::new();
         for value in table.sequence_values::<Table>() {
@@ -140,7 +144,12 @@ impl MoveCatalog {
         if moves.is_empty() {
             return Err(BattleError::InvalidSetup("empty move catalog".into()));
         }
-        Ok(Self { moves, lua })
+        let script_factory = lua.load(include_str!("script_api.lua")).eval()?;
+        Ok(Self {
+            moves,
+            lua,
+            script_factory,
+        })
     }
     pub fn get(&self, id: &str) -> Option<&MoveSpec> {
         self.moves.get(id)
@@ -154,81 +163,145 @@ impl MoveCatalog {
     pub fn ids(&self) -> impl Iterator<Item = &str> {
         self.moves.keys().map(String::as_str)
     }
-    pub(crate) fn script_actions(
+    pub(crate) fn start_script(
         &self,
         spec: &MoveSpec,
         context: ScriptContext,
-    ) -> Result<Vec<ScriptAction>, BattleError> {
+    ) -> Result<(Thread, Table), BattleError> {
         let function = spec.script.as_ref().expect("scripted move");
-        let input = self.lua.create_table()?;
+        let api = self.lua.create_table()?;
+        api.set(
+            "damage",
+            self.lua
+                .create_function(|lua, (power, options): (u16, Option<Table>)| {
+                    if let Some(options) = &options {
+                        for entry in options.clone().pairs::<String, Value>() {
+                            let (key, _) = entry?;
+                            if !matches!(key.as_str(), "accuracy" | "drain" | "min_target_hp") {
+                                return Err(mlua::Error::external(format!(
+                                    "unknown damage option {key}"
+                                )));
+                            }
+                        }
+                    }
+                    let accuracy = options
+                        .as_ref()
+                        .map(|table| table.get::<Option<f32>>("accuracy"))
+                        .transpose()?
+                        .flatten();
+                    let drain = options
+                        .as_ref()
+                        .map(|table| table.get::<Option<f32>>("drain"))
+                        .transpose()?
+                        .flatten();
+                    for fraction in [accuracy, drain].into_iter().flatten() {
+                        if !fraction.is_finite() || !(0.0..=1.0).contains(&fraction) {
+                            return Err(mlua::Error::external(
+                                "damage fractions must be between 0 and 1",
+                            ));
+                        }
+                    }
+                    let min_target_hp = options
+                        .as_ref()
+                        .map(|table| table.get::<Option<u16>>("min_target_hp"))
+                        .transpose()?
+                        .flatten()
+                        .unwrap_or(0);
+                    lua.create_userdata(ScriptOperation::Damage {
+                        power,
+                        accuracy,
+                        drain,
+                        min_target_hp,
+                    })
+                })?,
+        )?;
+        api.set(
+            "faint_user",
+            self.lua
+                .create_function(|lua, ()| lua.create_userdata(ScriptOperation::FaintUser))?,
+        )?;
+        api.set(
+            "recharge",
+            self.lua
+                .create_function(|lua, ()| lua.create_userdata(ScriptOperation::Recharge))?,
+        )?;
+        api.set(
+            "fail",
+            self.lua
+                .create_function(|lua, ()| lua.create_userdata(ScriptOperation::Fail))?,
+        )?;
         let user = self.lua.create_table()?;
         user.set("hp", context.user_hp)?;
-        input.set("user", user)?;
         let target = self.lua.create_table()?;
         target.set("hp", context.target_hp)?;
-        target.set(
-            "status",
-            context.target_status.map(|status| status.lua_name()),
-        )?;
-        input.set("target", target)?;
-        let output: Table = function.call(input)?;
-        output
-            .sequence_values::<Table>()
-            .map(|value| parse_script_action(&value?))
-            .collect()
-    }
-}
-
-fn parse_script_action(t: &Table) -> Result<ScriptAction, BattleError> {
-    let kind: String = t.get("kind")?;
-    Ok(match kind.as_str() {
-        "damage" => ScriptAction::Damage {
-            power: t.get("power")?,
-            accuracy: t.get("accuracy")?,
-            drain: t.get("drain")?,
-            min_target_hp: t.get::<Option<u16>>("min_target_hp")?.unwrap_or(0),
-            stop_on_miss: t.get::<Option<bool>>("stop_on_miss")?.unwrap_or(false),
-        },
-        "faint_user" => ScriptAction::FaintUser,
-        "recharge_if_hit" => ScriptAction::RechargeIfHit,
-        "fail" => ScriptAction::Fail,
-        other => {
-            return Err(BattleError::InvalidSetup(format!(
-                "unknown script action {other}"
-            )));
+        if let Some(status) = context.target_status {
+            target.set(
+                "status",
+                self.lua
+                    .create_userdata(LuaSymbol::Status(lua_symbols::applied(status)))?,
+            )?;
         }
-    })
+        let statuses: Table = self.lua.globals().get("Status")?;
+        let input: Table = self.script_factory.call((api, user, target, statuses))?;
+        let thread = self.lua.create_thread(function.clone())?;
+        let instructions = Arc::new(AtomicU32::new(0));
+        thread.set_hook(
+            HookTriggers::new().every_nth_instruction(1000),
+            move |_, _| {
+                if instructions.fetch_add(1000, Ordering::Relaxed) >= 100_000 {
+                    Err(mlua::Error::external(
+                        "move script exceeded 100000 instructions",
+                    ))
+                } else {
+                    Ok(VmState::Continue)
+                }
+            },
+        )?;
+        Ok((thread, input))
+    }
+    pub(crate) fn damage_result(&self, hit: bool, damage: u16) -> Result<Table, BattleError> {
+        let result = self.lua.create_table()?;
+        result.set("hit", hit)?;
+        result.set("damage", damage)?;
+        Ok(result)
+    }
 }
 
 fn parse_move(t: &Table) -> Result<MoveSpec, BattleError> {
     let id: String = t.get("id")?;
     let name: String = t.get("name")?;
-    let move_type = parse_name::<PokemonType>(t.get("type")?)?;
-    let category = match t.get::<String>("category")?.as_str() {
-        "physical" => Category::Physical,
-        "special" => Category::Special,
-        "status" => Category::Status,
-        other => {
-            return Err(BattleError::InvalidSetup(format!(
-                "unknown category {other}"
-            )));
+    let move_type = match lua_symbols::required(t, "type")? {
+        LuaSymbol::Type(value) => value,
+        _ => return Err(BattleError::InvalidSetup("type requires Type value".into())),
+    };
+    let category = match lua_symbols::required(t, "category")? {
+        LuaSymbol::Category(value) => value,
+        _ => {
+            return Err(BattleError::InvalidSetup(
+                "category requires Category value".into(),
+            ));
         }
     };
-    let target = match t
-        .get::<Option<String>>("target")?
-        .as_deref()
-        .unwrap_or("selected")
-    {
-        "selected" => Target::Selected,
-        "user" => Target::User,
-        "field" => Target::Field,
-        "all_others" => Target::AllOthers,
-        other => return Err(BattleError::InvalidSetup(format!("unknown target {other}"))),
+    let target = match lua_symbols::optional(t, "target")? {
+        None => Target::Selected,
+        Some(LuaSymbol::Target(value)) => value,
+        _ => {
+            return Err(BattleError::InvalidSetup(
+                "target requires Target value".into(),
+            ));
+        }
     };
     let accuracy = match t.get::<Value>("accuracy")? {
         Value::Nil => Accuracy::Chance(1.0),
-        Value::String(s) if s.to_str()? == "always" => Accuracy::Always,
-        Value::String(s) if s.to_str()? == "ohko" => Accuracy::OneHitKnockout,
+        Value::UserData(value) => match lua_symbols::from_userdata(value, "accuracy")? {
+            LuaSymbol::Accuracy(AccuracyKind::Always) => Accuracy::Always,
+            LuaSymbol::Accuracy(AccuracyKind::Ohko) => Accuracy::OneHitKnockout,
+            _ => {
+                return Err(BattleError::InvalidSetup(
+                    "accuracy requires Accuracy value".into(),
+                ));
+            }
+        },
         Value::Number(n) => Accuracy::Chance(n as f32),
         Value::Integer(n) => Accuracy::Chance(n as f32),
         _ => {
@@ -270,32 +343,47 @@ fn parse_move(t: &Table) -> Result<MoveSpec, BattleError> {
 }
 
 fn parse_effect(t: &Table) -> Result<Effect, BattleError> {
-    let kind: String = t.get("kind")?;
+    let kind = match lua_symbols::required(t, "kind")? {
+        LuaSymbol::Effect(value) => value,
+        _ => {
+            return Err(BattleError::InvalidSetup(
+                "kind requires Effect value".into(),
+            ));
+        }
+    };
     let chance =
         || -> Result<f32, mlua::Error> { Ok(t.get::<Option<f32>>("chance")?.unwrap_or(1.0)) };
     let opt_bool =
         |key| -> Result<bool, mlua::Error> { Ok(t.get::<Option<bool>>(key)?.unwrap_or(false)) };
-    Ok(match kind.as_str() {
-        "damage" => Effect::Damage {
+    Ok(match kind {
+        EffectKind::Damage => Effect::Damage {
             power: t.get("power")?,
             recoil: t.get("recoil")?,
             drain: t.get("drain")?,
             high_crit: opt_bool("high_crit")?,
             always_crit: opt_bool("always_crit")?,
         },
-        "multi_hit" => Effect::MultiHit {
+        EffectKind::MultiHit => Effect::MultiHit {
             power: t.get("power")?,
             min: t.get("min_hits")?,
             max: t.get("max_hits")?,
         },
-        "fixed_damage" => Effect::FixedDamage(t.get("amount")?),
-        "level_damage" => Effect::LevelDamage,
-        "ohko" => Effect::OneHitKnockout,
-        "stats" => {
+        EffectKind::FixedDamage => Effect::FixedDamage(t.get("amount")?),
+        EffectKind::LevelDamage => Effect::LevelDamage,
+        EffectKind::Ohko => Effect::OneHitKnockout,
+        EffectKind::Stats => {
             let mut stages = BTreeMap::new();
-            for pair in t.get::<Table>("stages")?.pairs::<String, i8>() {
+            for pair in t.get::<Table>("stages")?.pairs::<mlua::AnyUserData, i8>() {
                 let (stat, delta) = pair?;
-                stages.insert(parse_name::<Stat>(stat)?, delta);
+                let stat = match lua_symbols::from_userdata(stat, "stage")? {
+                    LuaSymbol::Stat(value) => value,
+                    _ => {
+                        return Err(BattleError::InvalidSetup(
+                            "stage requires Stat value".into(),
+                        ));
+                    }
+                };
+                stages.insert(stat, delta);
             }
             Effect::Stats {
                 stages,
@@ -303,45 +391,50 @@ fn parse_effect(t: &Table) -> Result<Effect, BattleError> {
                 self_target: opt_bool("self")?,
             }
         }
-        "status" => Effect::Status {
-            status: parse_name::<AppliedStatus>(t.get("status")?)?,
+        EffectKind::Status => Effect::Status {
+            status: match lua_symbols::required(t, "status")? {
+                LuaSymbol::Status(value) => value,
+                _ => {
+                    return Err(BattleError::InvalidSetup(
+                        "status requires Status value".into(),
+                    ));
+                }
+            },
             chance: chance()?,
             replace: opt_bool("replace")?,
         },
-        "confuse" => Effect::Confuse,
-        "flinch" => Effect::Flinch(chance()?),
-        "bind" => Effect::Bind,
-        "protect" => Effect::Protect,
-        "heal" => Effect::Heal {
+        EffectKind::Confuse => Effect::Confuse,
+        EffectKind::Flinch => Effect::Flinch(chance()?),
+        EffectKind::Bind => Effect::Bind,
+        EffectKind::Protect => Effect::Protect,
+        EffectKind::Heal => Effect::Heal {
             fraction: t.get("fraction")?,
             hide_message: opt_bool("hide_message")?,
         },
-        "weather" => Effect::Weather {
-            kind: parse_name::<WeatherKind>(t.get("weather")?)?,
+        EffectKind::Weather => Effect::Weather {
+            kind: match lua_symbols::required(t, "weather")? {
+                LuaSymbol::Weather(value) => value,
+                _ => {
+                    return Err(BattleError::InvalidSetup(
+                        "weather requires Weather value".into(),
+                    ));
+                }
+            },
             turns: t.get("turns")?,
         },
-        "two_turn" => Effect::TwoTurn {
+        EffectKind::TwoTurn => Effect::TwoTurn {
             power: t.get("power")?,
             charge_message: t.get("charge_message")?,
             semi_invulnerable: opt_bool("semi_invulnerable")?,
             skip_in_sun: opt_bool("skip_in_sun")?,
         },
-        "consecutive" => Effect::Consecutive {
+        EffectKind::Consecutive => Effect::Consecutive {
             power: t.get("power")?,
             min: t.get("min_turns")?,
             max: t.get("max_turns")?,
             confuse_after: opt_bool("confuse_after")?,
             double_power: opt_bool("double_power")?,
         },
-        "splash" => Effect::Splash,
-        other => {
-            return Err(BattleError::InvalidSetup(format!(
-                "unknown effect kind {other}"
-            )));
-        }
+        EffectKind::Splash => Effect::Splash,
     })
-}
-
-fn parse_name<T: FromStr<Err = String>>(name: String) -> Result<T, BattleError> {
-    name.parse().map_err(BattleError::InvalidSetup)
 }

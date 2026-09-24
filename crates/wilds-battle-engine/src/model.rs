@@ -1,5 +1,4 @@
 use std::collections::BTreeMap;
-use std::str::FromStr;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub enum Side {
@@ -44,34 +43,6 @@ pub enum PokemonType {
     Fairy,
     None,
 }
-impl FromStr for PokemonType {
-    type Err = String;
-    fn from_str(value: &str) -> Result<Self, Self::Err> {
-        Ok(match value {
-            "normal" => Self::Normal,
-            "fighting" => Self::Fighting,
-            "flying" => Self::Flying,
-            "poison" => Self::Poison,
-            "ground" => Self::Ground,
-            "rock" => Self::Rock,
-            "bug" => Self::Bug,
-            "ghost" => Self::Ghost,
-            "steel" => Self::Steel,
-            "fire" => Self::Fire,
-            "water" => Self::Water,
-            "grass" => Self::Grass,
-            "electric" => Self::Electric,
-            "psychic" => Self::Psychic,
-            "ice" => Self::Ice,
-            "dragon" => Self::Dragon,
-            "dark" => Self::Dark,
-            "fairy" => Self::Fairy,
-            "none" => Self::None,
-            _ => return Err(format!("unknown Pokemon type {value}")),
-        })
-    }
-}
-
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub enum Stat {
     Attack,
@@ -95,22 +66,6 @@ impl Stat {
         }
     }
 }
-impl FromStr for Stat {
-    type Err = String;
-    fn from_str(value: &str) -> Result<Self, Self::Err> {
-        Ok(match value {
-            "attack" => Self::Attack,
-            "defense" => Self::Defense,
-            "sp_attack" => Self::SpAttack,
-            "sp_defense" => Self::SpDefense,
-            "speed" => Self::Speed,
-            "accuracy" => Self::Accuracy,
-            "evasion" => Self::Evasion,
-            _ => return Err(format!("unknown stat {value}")),
-        })
-    }
-}
-
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum CombatStat {
     Attack,
@@ -136,17 +91,6 @@ pub enum WeatherKind {
     Sun,
     Sandstorm,
 }
-impl FromStr for WeatherKind {
-    type Err = String;
-    fn from_str(value: &str) -> Result<Self, Self::Err> {
-        match value {
-            "sun" => Ok(Self::Sun),
-            "sandstorm" => Ok(Self::Sandstorm),
-            _ => Err(format!("unknown weather {value}")),
-        }
-    }
-}
-
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct ParticipantId {
     pub side: Side,
@@ -161,18 +105,6 @@ pub enum Status {
     Paralyzed,
     Asleep,
     Frozen,
-}
-impl Status {
-    pub const fn lua_name(self) -> &'static str {
-        match self {
-            Self::Poisoned => "poisoned",
-            Self::BadlyPoisoned => "badly_poisoned",
-            Self::Burned => "burned",
-            Self::Paralyzed => "paralyzed",
-            Self::Asleep => "asleep",
-            Self::Frozen => "frozen",
-        }
-    }
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -207,22 +139,6 @@ impl AppliedStatus {
         }
     }
 }
-impl FromStr for AppliedStatus {
-    type Err = String;
-    fn from_str(value: &str) -> Result<Self, Self::Err> {
-        Ok(match value {
-            "poisoned" => Self::Poisoned,
-            "badly_poisoned" => Self::BadlyPoisoned,
-            "burned" => Self::Burned,
-            "paralyzed" => Self::Paralyzed,
-            "asleep" => Self::Asleep,
-            "asleep_rest" => Self::RestSleep,
-            "frozen" => Self::Frozen,
-            _ => return Err(format!("unknown status {value}")),
-        })
-    }
-}
-
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Bound {
     pub turns_left: u8,

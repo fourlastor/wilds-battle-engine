@@ -4,9 +4,11 @@ use crate::model::{
     Weather, WeatherKind,
 };
 use crate::moves::{
-    Accuracy, Category, Effect, MoveCatalog, MoveSpec, ScriptAction, ScriptContext, Target,
+    Accuracy, Category, Effect, MoveCatalog, MoveSpec, ScriptContext, ScriptOperation, Target,
 };
 use crate::type_chart;
+use mlua::Value;
+use mlua::thread::ThreadStatus;
 
 #[derive(Clone, Copy, Debug)]
 struct Rng(u64);
@@ -545,7 +547,7 @@ impl Battle {
         spec: &MoveSpec,
         events: &mut Vec<BattleEvent>,
     ) -> Result<bool, BattleError> {
-        let actions = self.catalog.script_actions(
+        let (thread, input) = self.catalog.start_script(
             spec,
             ScriptContext {
                 user_hp: self.get(actor).hp,
@@ -553,32 +555,47 @@ impl Battle {
                 target_status: self.get(target).status,
             },
         )?;
-        let mut last_hit = false;
-        'actions: for action in actions {
-            match action {
-                ScriptAction::Fail => {
+        let mut yielded = thread.resume::<Value>(input)?;
+        let mut any_hit = false;
+        let mut operations = 0;
+        while thread.status() == ThreadStatus::Resumable {
+            operations += 1;
+            if operations > 64 {
+                return Err(BattleError::InvalidSetup(format!(
+                    "script for {} exceeded 64 operations",
+                    spec.id
+                )));
+            }
+            let operation = match yielded {
+                Value::UserData(ref userdata) => userdata.borrow::<ScriptOperation>()?.clone(),
+                _ => {
+                    return Err(BattleError::InvalidSetup(format!(
+                        "script for {} yielded a value outside the battle API",
+                        spec.id
+                    )));
+                }
+            };
+            let response = match operation {
+                ScriptOperation::Fail => {
                     events.push(BattleEvent::Message("But it failed!".into()));
                     break;
                 }
-                ScriptAction::FaintUser => {
+                ScriptOperation::FaintUser => {
                     let remaining = self.get(actor).hp;
                     self.damage(actor, remaining, events);
+                    Value::Nil
                 }
-                ScriptAction::RechargeIfHit => {
-                    if last_hit && self.get(actor).hp > 0 {
+                ScriptOperation::Recharge => {
+                    if self.get(actor).hp > 0 {
                         self.get_mut(actor).recharging = true;
-                        events.push(BattleEvent::Message(format!(
-                            "{} must recharge!",
-                            self.get(actor).name
-                        )));
                     }
+                    Value::Nil
                 }
-                ScriptAction::Damage {
+                ScriptOperation::Damage {
                     power,
                     accuracy,
                     drain,
                     min_target_hp,
-                    stop_on_miss,
                 } => {
                     let targets = if spec.target == Target::AllOthers {
                         self.actors()
@@ -588,6 +605,8 @@ impl Battle {
                     } else {
                         vec![target]
                     };
+                    let mut operation_hit = false;
+                    let mut total_damage = 0u16;
                     for recipient in targets {
                         if self.get(recipient).hp == 0 {
                             continue;
@@ -616,9 +635,6 @@ impl Battle {
                                 "{}'s attack missed!",
                                 self.get(actor).name
                             )));
-                            if stop_on_miss {
-                                break 'actions;
-                            }
                             continue;
                         }
                         let mut details = Vec::new();
@@ -638,7 +654,9 @@ impl Battle {
                                 self.damage(recipient, actual, events);
                             }
                             events.extend(details);
-                            last_hit = true;
+                            operation_hit = true;
+                            any_hit = true;
+                            total_damage = total_damage.saturating_add(actual);
                             if let Some(fraction) = drain {
                                 if actual > 0 && self.get(actor).hp < self.get(actor).max_hp {
                                     self.heal(
@@ -652,14 +670,14 @@ impl Battle {
                                     self.get(recipient).name
                                 )));
                             }
-                        } else if stop_on_miss {
-                            break 'actions;
                         }
                     }
+                    Value::Table(self.catalog.damage_result(operation_hit, total_damage)?)
                 }
-            }
+            };
+            yielded = thread.resume::<Value>(response)?;
         }
-        Ok(last_hit)
+        Ok(any_hit)
     }
     fn clear_consecutive(&mut self, actor: ParticipantId) {
         let p = self.get_mut(actor);
