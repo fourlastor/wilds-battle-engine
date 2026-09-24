@@ -7,8 +7,8 @@ mod type_chart;
 pub use engine::Battle;
 pub use model::{
     ActionSelection, AdvanceResult, AdvanceStatus, AppliedStatus, BattleError, BattleEvent, Bound,
-    Choice, CombatStat, LockedMove, ParticipantId, Pokemon, PokemonType, Prompt, Side, Stat,
-    Status, Weather, WeatherKind,
+    Choice, CombatStat, ContinuationTarget, LockedMove, ParticipantId, Pokemon, PokemonType,
+    Prompt, ScriptContinuation, Side, Stat, Status, Weather, WeatherKind,
 };
 pub use moves::{Accuracy, Category, Effect, MoveCatalog, MoveSpec, Target};
 
@@ -38,19 +38,23 @@ mod tests {
         let choice = prompt
             .choices
             .iter()
-            .find(|c| c.move_id == move_id)
+            .find(|c| matches!(c, Choice::UseMove { move_id: id, .. } if id == move_id))
             .unwrap();
         battle
             .set_response(ActionSelection {
                 prompt_id: prompt.id,
-                choice_id: choice.id,
+                choice_id: choice.id(),
             })
             .unwrap();
     }
     #[test]
     fn loads_original_and_scripted_moves() {
         let catalog = MoveCatalog::builtin().unwrap();
-        assert_eq!(catalog.len(), 34);
+        assert_eq!(catalog.len(), 36);
+        assert_eq!(
+            catalog.get("struggle").unwrap().move_type,
+            PokemonType::Normal
+        );
         let kiss = catalog.get("draining_kiss").unwrap();
         assert_eq!(kiss.category, Category::Physical);
         assert_eq!(catalog.get("protect").unwrap().priority, 4);
@@ -60,6 +64,8 @@ mod tests {
             "triple_kick",
             "explosion",
             "hyper_beam",
+            "solar_beam",
+            "thrash",
         ] {
             assert!(catalog.get(id).unwrap().script.is_some());
         }
@@ -144,7 +150,7 @@ mod tests {
             .ids()
             .map(str::to_owned)
             .collect();
-        for move_id in ids {
+        for move_id in ids.into_iter().filter(|id| id != "struggle") {
             let mut battle = one_on_one(31, &move_id, "splash");
             pick(&mut battle, &move_id);
             pick(&mut battle, "splash");
@@ -232,7 +238,15 @@ mod tests {
                 .any(|event| matches!(event, BattleEvent::Message(message)
             if message.contains("took in sunlight")))
         );
-        assert!(battle.participants(Side::Allies)[0].locked_move.is_some());
+        assert!(
+            battle.participants(Side::Allies)[0]
+                .script_continuation
+                .is_some()
+        );
+        assert_eq!(
+            battle.participants(Side::Allies)[0].move_pp["solar_beam"],
+            9
+        );
         let AdvanceStatus::Awaiting(prompt) = first.status else {
             panic!("foe should choose")
         };
@@ -246,6 +260,282 @@ mod tests {
         let second = battle.advance().unwrap();
         assert!(second.events.iter().any(|event| matches!(event,
             BattleEvent::Damage { target, .. } if *target == id(Side::Foes))));
+        assert_eq!(
+            battle.participants(Side::Allies)[0].move_pp["solar_beam"],
+            9
+        );
+        assert!(
+            battle.participants(Side::Allies)[0]
+                .script_continuation
+                .is_none()
+        );
+    }
+
+    fn thrash_battle(seed: u64) -> Battle {
+        let ally = Pokemon::new("Ally", vec!["thrash".into(), "splash".into()]);
+        let mut foe = Pokemon::new("Foe", vec!["splash".into(), "protect".into()]);
+        foe.hp = 1000;
+        foe.max_hp = 1000;
+        Battle::new(
+            seed,
+            [vec![ally], vec![foe]],
+            MoveCatalog::builtin().unwrap(),
+        )
+        .unwrap()
+    }
+
+    #[test]
+    fn thrash_forces_two_or_three_turns_and_spends_one_pp() {
+        let mut battle = thrash_battle(12);
+        pick(&mut battle, "thrash");
+        pick(&mut battle, "splash");
+        battle.advance().unwrap();
+        let lock = battle.participants(Side::Allies)[0]
+            .script_continuation
+            .as_ref()
+            .unwrap();
+        let duration = lock.total_turns;
+        assert!((2..=3).contains(&duration));
+        assert_eq!(lock.turn, 2);
+        assert_eq!(battle.participants(Side::Allies)[0].move_pp["thrash"], 9);
+        for turn in 2..=duration {
+            pick(&mut battle, "splash");
+            battle.advance().unwrap();
+            let ally = &battle.participants(Side::Allies)[0];
+            assert_eq!(ally.move_pp["thrash"], 9);
+            if turn < duration {
+                assert_eq!(ally.script_continuation.as_ref().unwrap().turn, turn + 1);
+                assert!(ally.confused_turns.is_none());
+            } else {
+                assert!(ally.script_continuation.is_none());
+                assert!(ally.confused_turns.is_some());
+            }
+        }
+    }
+
+    #[test]
+    fn thrash_protect_disrupts_early_but_confuses_on_final_turn() {
+        let mut early = thrash_battle(12);
+        pick(&mut early, "thrash");
+        pick(&mut early, "protect");
+        early.advance().unwrap();
+        let ally = &early.participants(Side::Allies)[0];
+        assert!(ally.script_continuation.is_none());
+        assert!(ally.confused_turns.is_none());
+        assert_eq!(ally.move_pp["thrash"], 9);
+
+        let mut final_turn = thrash_battle(12);
+        pick(&mut final_turn, "thrash");
+        pick(&mut final_turn, "splash");
+        final_turn.advance().unwrap();
+        let duration = final_turn.participants(Side::Allies)[0]
+            .script_continuation
+            .as_ref()
+            .unwrap()
+            .total_turns;
+        for turn in 2..=duration {
+            pick(
+                &mut final_turn,
+                if turn == duration {
+                    "protect"
+                } else {
+                    "splash"
+                },
+            );
+            final_turn.advance().unwrap();
+        }
+        let ally = &final_turn.participants(Side::Allies)[0];
+        assert!(ally.script_continuation.is_none());
+        assert!(ally.confused_turns.is_some());
+        assert_eq!(ally.move_pp["thrash"], 9);
+    }
+
+    #[test]
+    fn thrash_stops_on_ghost_immunity() {
+        let ally = Pokemon::new("Ally", vec!["thrash".into()]);
+        let mut foe = Pokemon::new("Ghost", vec!["splash".into()]);
+        foe.types = vec![PokemonType::Ghost];
+        let mut battle =
+            Battle::new(9, [vec![ally], vec![foe]], MoveCatalog::builtin().unwrap()).unwrap();
+        pick(&mut battle, "thrash");
+        pick(&mut battle, "splash");
+        battle.advance().unwrap();
+        let ally = &battle.participants(Side::Allies)[0];
+        assert!(ally.script_continuation.is_none());
+        assert!(ally.confused_turns.is_none());
+        assert_eq!(ally.move_pp["thrash"], 9);
+        assert_eq!(battle.participants(Side::Foes)[0].hp, 100);
+    }
+
+    #[test]
+    fn final_turn_paralysis_still_confuses_after_interruption() {
+        let mut found = false;
+        for seed in 1..=32 {
+            let mut ally = Pokemon::new("Ally", vec!["thrash".into()]);
+            ally.status = Some(Status::Paralyzed);
+            ally.move_pp.insert("thrash".into(), 9);
+            ally.script_continuation = Some(ScriptContinuation {
+                move_id: "thrash".into(),
+                target: id(Side::Foes),
+                turn: 2,
+                total_turns: 2,
+                target_policy: ContinuationTarget::RandomOpponent,
+            });
+            let foe = Pokemon::new("Foe", vec!["splash".into()]);
+            let mut battle = Battle::new(
+                seed,
+                [vec![ally], vec![foe]],
+                MoveCatalog::builtin().unwrap(),
+            )
+            .unwrap();
+            pick(&mut battle, "splash");
+            let result = battle.advance().unwrap();
+            if result.events.iter().any(|event| matches!(event, BattleEvent::Message(message) if message.contains("can't move"))) {
+                let ally = &battle.participants(Side::Allies)[0];
+                assert!(ally.script_continuation.is_none());
+                assert!(ally.confused_turns.is_some());
+                assert_eq!(ally.move_pp["thrash"], 9);
+                found = true;
+                break;
+            }
+        }
+        assert!(found);
+    }
+
+    #[test]
+    fn thrash_can_choose_each_opponent_on_forced_turns() {
+        let mut targets = std::collections::BTreeSet::new();
+        for seed in 1..=32 {
+            let ally = Pokemon::new("Ally", vec!["thrash".into()]);
+            let mut first = Pokemon::new("First", vec!["splash".into()]);
+            first.hp = 1000;
+            first.max_hp = 1000;
+            let mut second = Pokemon::new("Second", vec!["splash".into()]);
+            second.hp = 1000;
+            second.max_hp = 1000;
+            let mut battle = Battle::new(
+                seed,
+                [vec![ally], vec![first, second]],
+                MoveCatalog::builtin().unwrap(),
+            )
+            .unwrap();
+            pick(&mut battle, "thrash");
+            pick(&mut battle, "splash");
+            pick(&mut battle, "splash");
+            battle.advance().unwrap();
+            pick(&mut battle, "splash");
+            pick(&mut battle, "splash");
+            for event in battle.advance().unwrap().events {
+                if let BattleEvent::Damage { target, .. } = event
+                    && target.side == Side::Foes
+                {
+                    targets.insert(target.index);
+                }
+            }
+        }
+        assert_eq!(targets, [0, 1].into());
+    }
+
+    fn exhausted_battle(seed: u64, ally_type: PokemonType, foe_move: &str) -> Battle {
+        let mut ally = Pokemon::new("Ally", vec!["splash".into()]);
+        ally.max_hp = 202;
+        ally.hp = 202;
+        ally.types = vec![ally_type];
+        ally.move_pp.insert("splash".into(), 0);
+        let mut foe = Pokemon::new("Foe", vec![foe_move.into()]);
+        foe.max_hp = 1000;
+        foe.hp = 1000;
+        foe.types = vec![PokemonType::Ghost];
+        Battle::new(
+            seed,
+            [vec![ally], vec![foe]],
+            MoveCatalog::builtin().unwrap(),
+        )
+        .unwrap()
+    }
+
+    #[test]
+    fn exhausted_pokemon_uses_typeless_struggle_with_max_hp_recoil() {
+        let mut normal = exhausted_battle(5, PokemonType::Normal, "splash");
+        pick(&mut normal, "splash");
+        let result = normal.advance().unwrap();
+        assert!(result.events.iter().any(|event| matches!(event,
+            BattleEvent::Message(message) if message == "Ally used Struggle!")));
+        assert_eq!(normal.participants(Side::Allies)[0].hp, 151);
+        assert_eq!(normal.participants(Side::Allies)[0].move_pp["splash"], 0);
+        let damage = 1000 - normal.participants(Side::Foes)[0].hp;
+        assert!(damage > 0, "Struggle should hit Ghost types");
+
+        let mut fire = exhausted_battle(5, PokemonType::Fire, "splash");
+        pick(&mut fire, "splash");
+        fire.advance().unwrap();
+        assert_eq!(fire.participants(Side::Foes)[0].hp, 1000 - damage);
+    }
+
+    #[test]
+    fn protected_target_prevents_struggle_recoil() {
+        let mut battle = exhausted_battle(8, PokemonType::Normal, "protect");
+        pick(&mut battle, "protect");
+        battle.advance().unwrap();
+        assert_eq!(battle.participants(Side::Allies)[0].hp, 202);
+        assert_eq!(battle.participants(Side::Foes)[0].hp, 1000);
+    }
+
+    #[test]
+    fn struggle_is_not_learnable() {
+        let result = Battle::new(
+            1,
+            [
+                vec![Pokemon::new("Ally", vec!["struggle".into()])],
+                vec![Pokemon::new("Foe", vec!["splash".into()])],
+            ],
+            MoveCatalog::builtin().unwrap(),
+        );
+        assert!(
+            matches!(result, Err(BattleError::InvalidSetup(message)) if message.contains("cannot be learned"))
+        );
+    }
+
+    #[test]
+    fn both_exhausted_pokemon_finish_with_all_turn_events() {
+        let mut first = Pokemon::new("First", vec!["splash".into()]);
+        first.move_pp.insert("splash".into(), 0);
+        let mut second = Pokemon::new("Second", vec!["splash".into()]);
+        second.move_pp.insert("splash".into(), 0);
+        let mut battle = Battle::new(
+            2,
+            [vec![first], vec![second]],
+            MoveCatalog::builtin().unwrap(),
+        )
+        .unwrap();
+        let result = battle.advance().unwrap();
+        assert!(matches!(result.status, AdvanceStatus::End { .. }));
+        assert!(result.events.iter().filter(|event| matches!(event, BattleEvent::Message(message) if message.contains("used Struggle"))).count() >= 2);
+    }
+
+    #[test]
+    fn thrash_continues_after_spending_its_last_pp() {
+        let mut ally = Pokemon::new("Ally", vec!["thrash".into()]);
+        ally.move_pp.insert("thrash".into(), 1);
+        let mut foe = Pokemon::new("Foe", vec!["splash".into()]);
+        foe.max_hp = 1000;
+        foe.hp = 1000;
+        let mut battle =
+            Battle::new(12, [vec![ally], vec![foe]], MoveCatalog::builtin().unwrap()).unwrap();
+        pick(&mut battle, "thrash");
+        pick(&mut battle, "splash");
+        battle.advance().unwrap();
+        assert_eq!(battle.participants(Side::Allies)[0].move_pp["thrash"], 0);
+        assert!(
+            battle.participants(Side::Allies)[0]
+                .script_continuation
+                .is_some()
+        );
+        pick(&mut battle, "splash");
+        let result = battle.advance().unwrap();
+        assert!(result.events.iter().any(
+            |event| matches!(event, BattleEvent::Message(message) if message == "Ally used Thrash!")
+        ));
     }
 
     #[test]

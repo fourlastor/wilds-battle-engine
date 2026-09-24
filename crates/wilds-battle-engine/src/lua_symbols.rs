@@ -1,4 +1,6 @@
-use crate::model::{AppliedStatus, BattleError, PokemonType, Stat, Status, WeatherKind};
+use crate::model::{
+    AppliedStatus, BattleError, ContinuationTarget, PokemonType, Stat, Status, WeatherKind,
+};
 use crate::moves::{Category, Target};
 use mlua::{AnyUserData, Lua, MetaMethod, Table, UserData, UserDataMethods, Value};
 
@@ -38,6 +40,7 @@ pub(crate) enum LuaSymbol {
     Target(Target),
     Effect(EffectKind),
     Accuracy(AccuracyKind),
+    ContinuationTarget(ContinuationTarget),
 }
 
 impl UserData for LuaSymbol {
@@ -139,10 +142,26 @@ pub(crate) fn install(lua: &Lua) -> Result<(), BattleError> {
         ("User", Target::User),
         ("Field", Target::Field),
         ("AllOthers", Target::AllOthers),
+        ("RandomOpponent", Target::RandomOpponent),
     ] {
         add(lua, &targets, name, LuaSymbol::Target(value))?;
     }
     globals.set("Target", targets)?;
+
+    let target_policies = lua.create_table()?;
+    add(
+        lua,
+        &target_policies,
+        "SameTarget",
+        LuaSymbol::ContinuationTarget(ContinuationTarget::SameTarget),
+    )?;
+    add(
+        lua,
+        &target_policies,
+        "RandomOpponent",
+        LuaSymbol::ContinuationTarget(ContinuationTarget::RandomOpponent),
+    )?;
+    globals.set("TargetPolicy", target_policies)?;
 
     let effects = lua.create_table()?;
     for (name, value) in [

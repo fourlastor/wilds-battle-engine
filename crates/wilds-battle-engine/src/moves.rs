@@ -1,5 +1,7 @@
 use crate::lua_symbols::{self, AccuracyKind, EffectKind, LuaSymbol};
-use crate::model::{AppliedStatus, BattleError, PokemonType, Stat, WeatherKind};
+use crate::model::{
+    AppliedStatus, BattleError, ContinuationTarget, PokemonType, Stat, WeatherKind,
+};
 use mlua::{Function, HookTriggers, Lua, Table, Thread, UserData, Value, VmState};
 use std::collections::{BTreeMap, HashMap};
 use std::sync::Arc;
@@ -18,6 +20,7 @@ pub enum Target {
     User,
     Field,
     AllOthers,
+    RandomOpponent,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -95,6 +98,9 @@ pub struct MoveSpec {
     pub fail_on_full_hp: bool,
     pub effects: Vec<Effect>,
     pub(crate) script: Option<Function>,
+    pub(crate) on_interrupt: Option<Function>,
+    pub(crate) manual_announce: bool,
+    pub(crate) auto_only: bool,
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -104,18 +110,36 @@ pub(crate) enum ScriptOperation {
         accuracy: Option<f32>,
         drain: Option<f32>,
         min_target_hp: u16,
+        typeless: bool,
     },
     FaintUser,
     Recharge,
     Fail,
+    ForceMove {
+        total_turns: u8,
+        target_policy: ContinuationTarget,
+    },
+    BreakSequence,
+    RandomInt {
+        min: u8,
+        max: u8,
+    },
+    Message(String),
+    Announce,
+    ConfuseSelf,
+    RecoilMaxHp(f32),
 }
 impl UserData for ScriptOperation {}
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Debug)]
 pub(crate) struct ScriptContext {
     pub user_hp: u16,
+    pub user_name: String,
     pub target_hp: u16,
     pub target_status: Option<crate::model::Status>,
+    pub weather: Option<WeatherKind>,
+    pub turn: u8,
+    pub total_turns: Option<u8>,
 }
 
 #[derive(Clone, Debug)]
@@ -140,6 +164,11 @@ impl MoveCatalog {
             if moves.insert(spec.id.clone(), spec).is_some() {
                 return Err(BattleError::InvalidSetup("duplicate move id".into()));
             }
+        }
+        let system: Table = lua.load(include_str!("system_moves.lua")).eval()?;
+        let spec = parse_move(&system)?;
+        if moves.insert(spec.id.clone(), spec).is_some() {
+            return Err(BattleError::InvalidSetup("reserved system move id".into()));
         }
         if moves.is_empty() {
             return Err(BattleError::InvalidSetup("empty move catalog".into()));
@@ -167,8 +196,13 @@ impl MoveCatalog {
         &self,
         spec: &MoveSpec,
         context: ScriptContext,
+        interrupted: bool,
     ) -> Result<(Thread, Table), BattleError> {
-        let function = spec.script.as_ref().expect("scripted move");
+        let function = if interrupted {
+            spec.on_interrupt.as_ref().expect("interrupt hook")
+        } else {
+            spec.script.as_ref().expect("scripted move")
+        };
         let api = self.lua.create_table()?;
         api.set(
             "damage",
@@ -177,7 +211,10 @@ impl MoveCatalog {
                     if let Some(options) = &options {
                         for entry in options.clone().pairs::<String, Value>() {
                             let (key, _) = entry?;
-                            if !matches!(key.as_str(), "accuracy" | "drain" | "min_target_hp") {
+                            if !matches!(
+                                key.as_str(),
+                                "accuracy" | "drain" | "min_target_hp" | "typeless"
+                            ) {
                                 return Err(mlua::Error::external(format!(
                                     "unknown damage option {key}"
                                 )));
@@ -207,11 +244,18 @@ impl MoveCatalog {
                         .transpose()?
                         .flatten()
                         .unwrap_or(0);
+                    let typeless = options
+                        .as_ref()
+                        .map(|table| table.get::<Option<bool>>("typeless"))
+                        .transpose()?
+                        .flatten()
+                        .unwrap_or(false);
                     lua.create_userdata(ScriptOperation::Damage {
                         power,
                         accuracy,
                         drain,
                         min_target_hp,
+                        typeless,
                     })
                 })?,
         )?;
@@ -230,8 +274,71 @@ impl MoveCatalog {
             self.lua
                 .create_function(|lua, ()| lua.create_userdata(ScriptOperation::Fail))?,
         )?;
+        api.set(
+            "force_move",
+            self.lua
+                .create_function(|lua, (total_turns, target): (u8, mlua::AnyUserData)| {
+                    if !(2..=8).contains(&total_turns) {
+                        return Err(mlua::Error::external("forced move duration must be 2..=8"));
+                    }
+                    let target_policy = match lua_symbols::from_userdata(target, "target policy") {
+                        Ok(LuaSymbol::ContinuationTarget(value)) => value,
+                        _ => {
+                            return Err(mlua::Error::external(
+                                "target policy requires TargetPolicy value",
+                            ));
+                        }
+                    };
+                    lua.create_userdata(ScriptOperation::ForceMove {
+                        total_turns,
+                        target_policy,
+                    })
+                })?,
+        )?;
+        api.set(
+            "break_sequence",
+            self.lua
+                .create_function(|lua, ()| lua.create_userdata(ScriptOperation::BreakSequence))?,
+        )?;
+        api.set(
+            "random_int",
+            self.lua.create_function(|lua, (min, max): (u8, u8)| {
+                if min > max {
+                    return Err(mlua::Error::external("random_int minimum exceeds maximum"));
+                }
+                lua.create_userdata(ScriptOperation::RandomInt { min, max })
+            })?,
+        )?;
+        api.set(
+            "message",
+            self.lua.create_function(|lua, message: String| {
+                lua.create_userdata(ScriptOperation::Message(message))
+            })?,
+        )?;
+        api.set(
+            "announce",
+            self.lua
+                .create_function(|lua, ()| lua.create_userdata(ScriptOperation::Announce))?,
+        )?;
+        api.set(
+            "confuse_self",
+            self.lua
+                .create_function(|lua, ()| lua.create_userdata(ScriptOperation::ConfuseSelf))?,
+        )?;
+        api.set(
+            "recoil_max_hp",
+            self.lua.create_function(|lua, fraction: f32| {
+                if !fraction.is_finite() || !(0.0..=1.0).contains(&fraction) {
+                    return Err(mlua::Error::external(
+                        "recoil fraction must be between 0 and 1",
+                    ));
+                }
+                lua.create_userdata(ScriptOperation::RecoilMaxHp(fraction))
+            })?,
+        )?;
         let user = self.lua.create_table()?;
         user.set("hp", context.user_hp)?;
+        user.set("name", context.user_name)?;
         let target = self.lua.create_table()?;
         target.set("hp", context.target_hp)?;
         if let Some(status) = context.target_status {
@@ -242,7 +349,21 @@ impl MoveCatalog {
             )?;
         }
         let statuses: Table = self.lua.globals().get("Status")?;
-        let input: Table = self.script_factory.call((api, user, target, statuses))?;
+        let target_policy: Table = self.lua.globals().get("TargetPolicy")?;
+        let weather = context
+            .weather
+            .map(|kind| self.lua.create_userdata(LuaSymbol::Weather(kind)))
+            .transpose()?;
+        let input: Table = self.script_factory.call((
+            api,
+            user,
+            target,
+            statuses,
+            weather,
+            context.turn,
+            context.total_turns,
+            target_policy,
+        ))?;
         let thread = self.lua.create_thread(function.clone())?;
         let instructions = Arc::new(AtomicU32::new(0));
         thread.set_hook(
@@ -311,6 +432,12 @@ fn parse_move(t: &Table) -> Result<MoveSpec, BattleError> {
         }
     };
     let script: Option<Function> = t.get("script")?;
+    let on_interrupt: Option<Function> = t.get("on_interrupt")?;
+    if on_interrupt.is_some() && script.is_none() {
+        return Err(BattleError::InvalidSetup(format!(
+            "interrupt hook without script for {id}"
+        )));
+    }
     let effects = if let Some(table) = t.get::<Option<Table>>("effects")? {
         table
             .sequence_values::<Table>()
@@ -339,6 +466,9 @@ fn parse_move(t: &Table) -> Result<MoveSpec, BattleError> {
         fail_on_full_hp: t.get::<Option<bool>>("fail_on_full_hp")?.unwrap_or(false),
         effects,
         script,
+        on_interrupt,
+        manual_announce: t.get::<Option<bool>>("manual_announce")?.unwrap_or(false),
+        auto_only: t.get::<Option<bool>>("auto_only")?.unwrap_or(false),
     })
 }
 

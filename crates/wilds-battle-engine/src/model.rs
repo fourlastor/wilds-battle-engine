@@ -154,6 +154,21 @@ pub struct LockedMove {
     pub charging: bool,
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum ContinuationTarget {
+    SameTarget,
+    RandomOpponent,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ScriptContinuation {
+    pub move_id: String,
+    pub target: ParticipantId,
+    pub turn: u8,
+    pub total_turns: u8,
+    pub target_policy: ContinuationTarget,
+}
+
 #[derive(Clone, Debug)]
 pub struct Pokemon {
     pub species_id: u32,
@@ -168,6 +183,7 @@ pub struct Pokemon {
     pub speed: u16,
     pub types: Vec<PokemonType>,
     pub moves: Vec<String>,
+    pub move_pp: BTreeMap<String, u8>,
     pub status: Option<Status>,
     pub status_turns: u8,
     pub stages: BTreeMap<Stat, i8>,
@@ -176,6 +192,7 @@ pub struct Pokemon {
     pub protected: bool,
     pub flinched: bool,
     pub locked_move: Option<LockedMove>,
+    pub script_continuation: Option<ScriptContinuation>,
     pub last_move: Option<String>,
     pub consecutive_count: u8,
     pub crit_stage: u8,
@@ -198,6 +215,7 @@ impl Pokemon {
             speed: 100,
             types: vec![PokemonType::Normal],
             moves,
+            move_pp: BTreeMap::new(),
             status: None,
             status_turns: 0,
             stages: BTreeMap::new(),
@@ -206,6 +224,7 @@ impl Pokemon {
             protected: false,
             flinched: false,
             locked_move: None,
+            script_continuation: None,
             last_move: None,
             consecutive_count: 0,
             crit_stage: 0,
@@ -298,10 +317,20 @@ pub enum BattleEvent {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct Choice {
-    pub id: u32,
-    pub move_id: String,
-    pub target: ParticipantId,
+pub enum Choice {
+    UseMove {
+        id: u32,
+        move_id: String,
+        target: ParticipantId,
+    },
+}
+
+impl Choice {
+    pub const fn id(&self) -> u32 {
+        match self {
+            Self::UseMove { id, .. } => *id,
+        }
+    }
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
