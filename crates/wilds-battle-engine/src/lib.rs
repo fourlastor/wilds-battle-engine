@@ -47,12 +47,21 @@ mod tests {
             .unwrap();
     }
     #[test]
-    fn loads_all_csharp_move_definitions() {
+    fn loads_original_and_scripted_moves() {
         let catalog = MoveCatalog::builtin().unwrap();
-        assert_eq!(catalog.len(), 29);
+        assert_eq!(catalog.len(), 34);
         let kiss = catalog.get("draining_kiss").unwrap();
         assert_eq!(kiss.category, Category::Physical);
         assert_eq!(catalog.get("protect").unwrap().priority, 4);
+        for id in [
+            "dream_eater",
+            "false_swipe",
+            "triple_kick",
+            "explosion",
+            "hyper_beam",
+        ] {
+            assert!(catalog.get(id).unwrap().script.is_some());
+        }
     }
     #[test]
     fn rejects_unknown_typed_names_in_lua() {
@@ -409,5 +418,218 @@ mod tests {
         );
         assert_eq!(battle.participants(Side::Allies)[0].hp, 0);
         assert_eq!(battle.participants(Side::Foes)[0].hp, 0);
+    }
+
+    #[test]
+    fn dream_eater_checks_sleep_and_drains_damage() {
+        let mut awake = one_on_one(7, "dream_eater", "splash");
+        pick(&mut awake, "dream_eater");
+        pick(&mut awake, "splash");
+        let result = awake.advance().unwrap();
+        assert!(
+            result
+                .events
+                .iter()
+                .any(|e| matches!(e, BattleEvent::Message(m) if m == "But it failed!"))
+        );
+        assert_eq!(awake.participants(Side::Foes)[0].hp, 100);
+
+        let mut user = Pokemon::new("Ally", vec!["dream_eater".into()]);
+        user.hp = 50;
+        user.speed = 200;
+        let mut target = Pokemon::new("Foe", vec!["splash".into()]);
+        target.status = Some(Status::Asleep);
+        target.status_turns = 2;
+        let mut battle = Battle::new(
+            7,
+            [vec![user], vec![target]],
+            MoveCatalog::builtin().unwrap(),
+        )
+        .unwrap();
+        pick(&mut battle, "dream_eater");
+        pick(&mut battle, "splash");
+        battle.advance().unwrap();
+        assert!(battle.participants(Side::Foes)[0].hp < 100);
+        assert!(battle.participants(Side::Allies)[0].hp > 50);
+    }
+
+    #[test]
+    fn false_swipe_leaves_one_hp() {
+        let mut battle = one_on_one(3, "false_swipe", "splash");
+        pick(&mut battle, "false_swipe");
+        pick(&mut battle, "splash");
+        battle.advance().unwrap();
+        let remaining = battle.participants(Side::Foes)[0].hp;
+        assert!(remaining > 0 && remaining < 100);
+        // Subsequent uses can bring the target to one HP but cannot faint it.
+        for _ in 0..10 {
+            pick(&mut battle, "false_swipe");
+            pick(&mut battle, "splash");
+            battle.advance().unwrap();
+        }
+        assert_eq!(battle.participants(Side::Foes)[0].hp, 1);
+    }
+
+    #[test]
+    fn explosion_faints_user_even_when_protected() {
+        let mut battle = one_on_one(5, "explosion", "protect");
+        pick(&mut battle, "explosion");
+        pick(&mut battle, "protect");
+        let result = battle.advance().unwrap();
+        assert_eq!(battle.participants(Side::Allies)[0].hp, 0);
+        assert_eq!(battle.participants(Side::Foes)[0].hp, 100);
+        assert!(
+            result
+                .events
+                .iter()
+                .any(|e| matches!(e, BattleEvent::Fainted(target) if *target == id(Side::Allies)))
+        );
+    }
+
+    #[test]
+    fn explosion_hits_every_other_participant() {
+        let mut user = Pokemon::new("User", vec!["explosion".into()]);
+        user.speed = 200;
+        let mut ally = Pokemon::new("Ally", vec!["splash".into()]);
+        ally.max_hp = 1000;
+        ally.hp = 1000;
+        let mut foe = Pokemon::new("Foe", vec!["splash".into()]);
+        foe.max_hp = 1000;
+        foe.hp = 1000;
+        let mut battle = Battle::new(
+            1,
+            [vec![user, ally], vec![foe]],
+            MoveCatalog::builtin().unwrap(),
+        )
+        .unwrap();
+        let first = battle.advance().unwrap();
+        let AdvanceStatus::Awaiting(prompt) = first.status else {
+            panic!("expected prompt")
+        };
+        battle
+            .set_response(ActionSelection {
+                prompt_id: prompt.id,
+                choice_id: 0,
+            })
+            .unwrap();
+        pick(&mut battle, "splash");
+        pick(&mut battle, "splash");
+        let result = battle.advance().unwrap();
+        for target in [
+            ParticipantId {
+                side: Side::Allies,
+                index: 1,
+            },
+            id(Side::Foes),
+        ] {
+            assert!(
+                result.events.iter().any(
+                    |e| matches!(e, BattleEvent::Damage { target: got, .. } if *got == target)
+                )
+            );
+        }
+        assert_eq!(battle.participants(Side::Allies)[0].hp, 0);
+    }
+
+    #[test]
+    fn triple_kick_checks_each_hit_and_increases_power() {
+        let mut complete = false;
+        let mut stopped = false;
+        for seed in 1..100 {
+            let mut ally = Pokemon::new("Ally", vec!["triple_kick".into()]);
+            ally.speed = 200;
+            let mut foe = Pokemon::new("Foe", vec!["splash".into()]);
+            foe.hp = 1000;
+            foe.max_hp = 1000;
+            let mut battle = Battle::new(
+                seed,
+                [vec![ally], vec![foe]],
+                MoveCatalog::builtin().unwrap(),
+            )
+            .unwrap();
+            pick(&mut battle, "triple_kick");
+            pick(&mut battle, "splash");
+            let result = battle.advance().unwrap();
+            let amounts: Vec<_> = result
+                .events
+                .iter()
+                .filter_map(|e| match e {
+                    BattleEvent::Damage { target, amount, .. } if *target == id(Side::Foes) => {
+                        Some(*amount)
+                    }
+                    _ => None,
+                })
+                .collect();
+            if amounts.len() == 3 {
+                assert!(amounts[0] < amounts[1] && amounts[1] < amounts[2]);
+                complete = true;
+            }
+            if amounts.len() < 3 {
+                stopped = true;
+            }
+            if complete && stopped {
+                break;
+            }
+        }
+        assert!(complete && stopped);
+    }
+
+    #[test]
+    fn hyper_beam_recharges_after_a_hit_without_a_prompt() {
+        let mut ally = Pokemon::new("Ally", vec!["hyper_beam".into()]);
+        ally.speed = 200;
+        let mut foe = Pokemon::new("Foe", vec!["splash".into()]);
+        foe.hp = 1000;
+        foe.max_hp = 1000;
+        let mut battle =
+            Battle::new(2, [vec![ally], vec![foe]], MoveCatalog::builtin().unwrap()).unwrap();
+        pick(&mut battle, "hyper_beam");
+        pick(&mut battle, "splash");
+        let first = battle.advance().unwrap();
+        assert!(
+            first.events.iter().any(
+                |e| matches!(e, BattleEvent::Damage { target, .. } if *target == id(Side::Foes))
+            )
+        );
+        assert!(battle.participants(Side::Allies)[0].recharging);
+        let AdvanceStatus::Awaiting(prompt) = first.status else {
+            panic!("expected next turn prompt")
+        };
+        assert_eq!(prompt.actor, id(Side::Foes));
+        battle
+            .set_response(ActionSelection {
+                prompt_id: prompt.id,
+                choice_id: 0,
+            })
+            .unwrap();
+        let second = battle.advance().unwrap();
+        assert!(
+            second
+                .events
+                .iter()
+                .any(|e| matches!(e, BattleEvent::Message(m) if m == "Ally must recharge!"))
+        );
+        assert!(!battle.participants(Side::Allies)[0].recharging);
+    }
+
+    #[test]
+    fn missed_hyper_beam_does_not_recharge() {
+        let mut missed = false;
+        for seed in 1..100 {
+            let mut battle = one_on_one(seed, "hyper_beam", "splash");
+            pick(&mut battle, "hyper_beam");
+            pick(&mut battle, "splash");
+            let result = battle.advance().unwrap();
+            if result
+                .events
+                .iter()
+                .any(|e| matches!(e, BattleEvent::Message(m) if m == "Ally's attack missed!"))
+            {
+                assert!(!battle.participants(Side::Allies)[0].recharging);
+                missed = true;
+                break;
+            }
+        }
+        assert!(missed);
     }
 }

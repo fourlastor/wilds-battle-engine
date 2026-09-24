@@ -3,7 +3,9 @@ use crate::model::{
     Choice, CombatStat, LockedMove, ParticipantId, Pokemon, PokemonType, Prompt, Side, Status,
     Weather, WeatherKind,
 };
-use crate::moves::{Accuracy, Category, Effect, MoveCatalog, MoveSpec, Target};
+use crate::moves::{
+    Accuracy, Category, Effect, MoveCatalog, MoveSpec, ScriptAction, ScriptContext, Target,
+};
 use crate::type_chart;
 
 #[derive(Clone, Copy, Debug)]
@@ -41,10 +43,16 @@ pub struct Battle {
     weather: Option<Weather>,
     rng: Rng,
     pending: Option<Prompt>,
-    selections: Vec<(ParticipantId, Choice)>,
+    selections: Vec<(ParticipantId, SelectedAction)>,
     next_prompt_id: u64,
     winner: Option<Option<Side>>,
     turn: u64,
+}
+
+#[derive(Clone)]
+enum SelectedAction {
+    Move(Choice),
+    Recharge,
 }
 
 impl Battle {
@@ -130,7 +138,7 @@ impl Battle {
             } else {
                 match spec.target {
                     Target::User => vec![actor],
-                    Target::Field => self.sides[actor.side.opposite().index()]
+                    Target::Field | Target::AllOthers => self.sides[actor.side.opposite().index()]
                         .iter()
                         .position(|p| p.hp > 0)
                         .map(|index| ParticipantId {
@@ -177,6 +185,10 @@ impl Battle {
             if selected.contains(&actor) {
                 continue;
             }
+            if self.get(actor).recharging {
+                self.selections.push((actor, SelectedAction::Recharge));
+                continue;
+            }
             let choices = self.legal_choices(actor);
             if choices.is_empty() {
                 return Err(BattleError::InvalidSetup(format!(
@@ -190,7 +202,8 @@ impl Battle {
                 .as_ref()
                 .is_some_and(|lock| lock.charging)
             {
-                self.selections.push((actor, choices[0].clone()));
+                self.selections
+                    .push((actor, SelectedAction::Move(choices[0].clone())));
                 continue;
             }
             let prompt = Prompt {
@@ -205,7 +218,7 @@ impl Battle {
                 status: AdvanceStatus::Awaiting(prompt),
             });
         }
-        let events = self.resolve_turn();
+        let events = self.resolve_turn()?;
         let status = if let Some(winner) = self.winner {
             AdvanceStatus::End { winner }
         } else {
@@ -232,18 +245,27 @@ impl Battle {
             .find(|choice| choice.id == selection.choice_id)
             .ok_or_else(|| BattleError::InvalidResponse("choice is not legal".into()))?
             .clone();
-        self.selections.push((prompt.actor, choice));
+        self.selections
+            .push((prompt.actor, SelectedAction::Move(choice)));
         self.pending = None;
         Ok(())
     }
-    fn resolve_turn(&mut self) -> Vec<BattleEvent> {
+    fn resolve_turn(&mut self) -> Result<Vec<BattleEvent>, BattleError> {
         self.turn += 1;
         let mut ordered: Vec<_> = std::mem::take(&mut self.selections)
             .into_iter()
             .map(|(actor, choice)| {
-                let spec = self.catalog.get(&choice.move_id).expect("validated choice");
+                let priority = match &choice {
+                    SelectedAction::Move(choice) => {
+                        self.catalog
+                            .get(&choice.move_id)
+                            .expect("validated choice")
+                            .priority
+                    }
+                    SelectedAction::Recharge => 0,
+                };
                 let speed = self.get(actor).effective_stat(CombatStat::Speed) as i32;
-                (actor, choice, spec.priority, speed, self.rng.next())
+                (actor, choice, priority, speed, self.rng.next())
             })
             .collect();
         ordered.sort_by(|a, b| b.2.cmp(&a.2).then(b.3.cmp(&a.3)).then(b.4.cmp(&a.4)));
@@ -253,7 +275,18 @@ impl Battle {
                 break;
             }
             self.check_sleep(*actor, &mut events);
-            self.execute_move(*actor, choice, &mut events);
+            match choice {
+                SelectedAction::Move(choice) => self.execute_move(*actor, choice, &mut events)?,
+                SelectedAction::Recharge => {
+                    self.get_mut(*actor).recharging = false;
+                    if self.get(*actor).hp > 0 {
+                        events.push(BattleEvent::Message(format!(
+                            "{} must recharge!",
+                            self.get(*actor).name
+                        )));
+                    }
+                }
+            }
             self.resolve_outcome(&mut events);
         }
         if self.winner.is_none() {
@@ -273,7 +306,7 @@ impl Battle {
             pokemon.protected = false;
             pokemon.flinched = false;
         }
-        events
+        Ok(events)
     }
     fn check_sleep(&mut self, id: ParticipantId, events: &mut Vec<BattleEvent>) {
         if self.get(id).hp == 0 || self.get(id).status != Some(Status::Asleep) {
@@ -296,9 +329,9 @@ impl Battle {
         actor: ParticipantId,
         choice: &Choice,
         events: &mut Vec<BattleEvent>,
-    ) {
+    ) -> Result<(), BattleError> {
         if self.get(actor).hp == 0 {
-            return;
+            return Ok(());
         }
         let spec = self
             .catalog
@@ -320,19 +353,19 @@ impl Battle {
                 events.push(BattleEvent::Message(format!(
                     "{user_name} is frozen solid!"
                 )));
-                return;
+                return Ok(());
             }
             Some(Status::Paralyzed) if self.rng.chance(0.25) => {
                 events.push(BattleEvent::Message(format!(
                     "{user_name} is paralyzed! It can't move!"
                 )));
                 self.clear_consecutive(actor);
-                return;
+                return Ok(());
             }
             Some(Status::Asleep) => {
                 events.push(BattleEvent::Message(format!("{user_name} is fast asleep.")));
                 self.clear_consecutive(actor);
-                return;
+                return Ok(());
             }
             _ => {}
         }
@@ -340,7 +373,7 @@ impl Battle {
             events.push(BattleEvent::Message(format!("{user_name} flinched!")));
             self.get_mut(actor).flinched = false;
             self.clear_consecutive(actor);
-            return;
+            return Ok(());
         }
         if let Some(turns) = self.get(actor).confused_turns {
             if turns == 0 {
@@ -366,7 +399,7 @@ impl Battle {
                         .max(1);
                     self.damage(actor, amount, events);
                     self.clear_consecutive(actor);
-                    return;
+                    return Ok(());
                 }
             }
         }
@@ -384,7 +417,7 @@ impl Battle {
             )));
             events.push(BattleEvent::Message("But it failed!".into()));
             self.clear_consecutive(actor);
-            return;
+            return Ok(());
         }
         let mut target = choice.target;
         if self.get(target).hp == 0 && spec.target == Target::Selected {
@@ -394,7 +427,7 @@ impl Battle {
             {
                 target.index = index;
             } else {
-                return;
+                return Ok(());
             }
         }
         if spec.fail_on_full_hp && self.get(target).hp == self.get(target).max_hp {
@@ -403,7 +436,25 @@ impl Battle {
                 spec.name
             )));
             events.push(BattleEvent::Message("But it failed!".into()));
-            return;
+            return Ok(());
+        }
+        if spec.script.is_some() {
+            events.push(BattleEvent::Message(format!(
+                "{user_name} used {}!",
+                spec.name
+            )));
+            if !self.execute_script(actor, target, &spec, events)? {
+                self.clear_consecutive(actor);
+                return Ok(());
+            }
+            let pokemon = self.get_mut(actor);
+            pokemon.consecutive_count = if pokemon.last_move.as_deref() == Some(&spec.id) {
+                pokemon.consecutive_count.saturating_add(1)
+            } else {
+                1
+            };
+            pokemon.last_move = Some(spec.id);
+            return Ok(());
         }
         let second_turn = self
             .get(actor)
@@ -426,21 +477,21 @@ impl Battle {
                 "{user_name}'s attack missed!"
             )));
             self.clear_consecutive(actor);
-            return;
+            return Ok(());
         }
         if self.get(target).protected && actor != target {
             events.push(BattleEvent::Message(format!(
                 "{} protected itself!",
                 self.get(target).name
             )));
-            return;
+            return Ok(());
         }
         if !first_charge && self.get(target).semi_invulnerable && actor != target {
             events.push(BattleEvent::Message(format!(
                 "{} avoided the attack!",
                 self.get(target).name
             )));
-            return;
+            return Ok(());
         }
         let has_damage = spec.effects.iter().any(|e| {
             matches!(
@@ -485,6 +536,130 @@ impl Battle {
             1
         };
         pokemon.last_move = Some(spec.id);
+        Ok(())
+    }
+    fn execute_script(
+        &mut self,
+        actor: ParticipantId,
+        target: ParticipantId,
+        spec: &MoveSpec,
+        events: &mut Vec<BattleEvent>,
+    ) -> Result<bool, BattleError> {
+        let actions = self.catalog.script_actions(
+            spec,
+            ScriptContext {
+                user_hp: self.get(actor).hp,
+                target_hp: self.get(target).hp,
+                target_status: self.get(target).status,
+            },
+        )?;
+        let mut last_hit = false;
+        'actions: for action in actions {
+            match action {
+                ScriptAction::Fail => {
+                    events.push(BattleEvent::Message("But it failed!".into()));
+                    break;
+                }
+                ScriptAction::FaintUser => {
+                    let remaining = self.get(actor).hp;
+                    self.damage(actor, remaining, events);
+                }
+                ScriptAction::RechargeIfHit => {
+                    if last_hit && self.get(actor).hp > 0 {
+                        self.get_mut(actor).recharging = true;
+                        events.push(BattleEvent::Message(format!(
+                            "{} must recharge!",
+                            self.get(actor).name
+                        )));
+                    }
+                }
+                ScriptAction::Damage {
+                    power,
+                    accuracy,
+                    drain,
+                    min_target_hp,
+                    stop_on_miss,
+                } => {
+                    let targets = if spec.target == Target::AllOthers {
+                        self.actors()
+                            .into_iter()
+                            .filter(|id| *id != actor)
+                            .collect()
+                    } else {
+                        vec![target]
+                    };
+                    for recipient in targets {
+                        if self.get(recipient).hp == 0 {
+                            continue;
+                        }
+                        if self.get(recipient).protected {
+                            events.push(BattleEvent::Message(format!(
+                                "{} protected itself!",
+                                self.get(recipient).name
+                            )));
+                            continue;
+                        }
+                        if self.get(recipient).semi_invulnerable {
+                            events.push(BattleEvent::Message(format!(
+                                "{} avoided the attack!",
+                                self.get(recipient).name
+                            )));
+                            continue;
+                        }
+                        let hit = if let Some(value) = accuracy {
+                            self.hit_check_chance(actor, recipient, value)
+                        } else {
+                            self.hit_check(actor, recipient, spec)
+                        };
+                        if !hit {
+                            events.push(BattleEvent::Message(format!(
+                                "{}'s attack missed!",
+                                self.get(actor).name
+                            )));
+                            if stop_on_miss {
+                                break 'actions;
+                            }
+                            continue;
+                        }
+                        let mut details = Vec::new();
+                        if let Some(amount) = self.calculate_damage(
+                            actor,
+                            recipient,
+                            spec,
+                            power,
+                            false,
+                            false,
+                            0,
+                            &mut details,
+                        ) {
+                            let actual =
+                                amount.min(self.get(recipient).hp.saturating_sub(min_target_hp));
+                            if actual > 0 {
+                                self.damage(recipient, actual, events);
+                            }
+                            events.extend(details);
+                            last_hit = true;
+                            if let Some(fraction) = drain {
+                                if actual > 0 && self.get(actor).hp < self.get(actor).max_hp {
+                                    self.heal(
+                                        actor,
+                                        ((actual as f32 * fraction).floor() as u16).max(1),
+                                        events,
+                                    );
+                                }
+                                events.push(BattleEvent::Message(format!(
+                                    "{} had its energy drained!",
+                                    self.get(recipient).name
+                                )));
+                            }
+                        } else if stop_on_miss {
+                            break 'actions;
+                        }
+                    }
+                }
+            }
+        }
+        Ok(last_hit)
     }
     fn clear_consecutive(&mut self, actor: ParticipantId) {
         let p = self.get_mut(actor);
@@ -507,12 +682,18 @@ impl Battle {
                         .chance(0.3 + 0.01 * f32::from(user.level - defender.level))
                 }
             }
-            Accuracy::Chance(value) => {
-                let probability =
-                    value * self.get(actor).accuracy_factor() * self.get(target).evasion_factor();
-                self.rng.chance(probability)
-            }
+            Accuracy::Chance(value) => self.hit_check_chance(actor, target, value),
         }
+    }
+    fn hit_check_chance(
+        &mut self,
+        actor: ParticipantId,
+        target: ParticipantId,
+        value: f32,
+    ) -> bool {
+        let probability =
+            value * self.get(actor).accuracy_factor() * self.get(target).evasion_factor();
+        self.rng.chance(probability)
     }
     // These inputs correspond to C# PEffectAttributes plus the event sink.
     #[allow(clippy::too_many_arguments)]
@@ -1091,7 +1272,7 @@ impl Battle {
     }
     fn post_turn_weather(
         &mut self,
-        order: &[(ParticipantId, Choice, i8, i32, u64)],
+        order: &[(ParticipantId, SelectedAction, i8, i32, u64)],
         events: &mut Vec<BattleEvent>,
     ) {
         let Some(weather) = self.weather.clone() else {

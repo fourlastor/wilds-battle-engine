@@ -1,5 +1,5 @@
 use crate::model::{AppliedStatus, BattleError, PokemonType, Stat, WeatherKind};
-use mlua::{Lua, Table, Value};
+use mlua::{Function, Lua, Table, Value};
 use std::collections::{BTreeMap, HashMap};
 use std::str::FromStr;
 
@@ -15,6 +15,7 @@ pub enum Target {
     Selected,
     User,
     Field,
+    AllOthers,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -91,11 +92,34 @@ pub struct MoveSpec {
     pub priority: i8,
     pub fail_on_full_hp: bool,
     pub effects: Vec<Effect>,
+    pub(crate) script: Option<Function>,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub(crate) enum ScriptAction {
+    Damage {
+        power: u16,
+        accuracy: Option<f32>,
+        drain: Option<f32>,
+        min_target_hp: u16,
+        stop_on_miss: bool,
+    },
+    FaintUser,
+    RechargeIfHit,
+    Fail,
+}
+
+#[derive(Clone, Copy, Debug)]
+pub(crate) struct ScriptContext {
+    pub user_hp: u16,
+    pub target_hp: u16,
+    pub target_status: Option<crate::model::Status>,
 }
 
 #[derive(Clone, Debug)]
 pub struct MoveCatalog {
     moves: HashMap<String, MoveSpec>,
+    lua: Lua,
 }
 
 impl MoveCatalog {
@@ -116,7 +140,7 @@ impl MoveCatalog {
         if moves.is_empty() {
             return Err(BattleError::InvalidSetup("empty move catalog".into()));
         }
-        Ok(Self { moves })
+        Ok(Self { moves, lua })
     }
     pub fn get(&self, id: &str) -> Option<&MoveSpec> {
         self.moves.get(id)
@@ -130,6 +154,50 @@ impl MoveCatalog {
     pub fn ids(&self) -> impl Iterator<Item = &str> {
         self.moves.keys().map(String::as_str)
     }
+    pub(crate) fn script_actions(
+        &self,
+        spec: &MoveSpec,
+        context: ScriptContext,
+    ) -> Result<Vec<ScriptAction>, BattleError> {
+        let function = spec.script.as_ref().expect("scripted move");
+        let input = self.lua.create_table()?;
+        let user = self.lua.create_table()?;
+        user.set("hp", context.user_hp)?;
+        input.set("user", user)?;
+        let target = self.lua.create_table()?;
+        target.set("hp", context.target_hp)?;
+        target.set(
+            "status",
+            context.target_status.map(|status| status.lua_name()),
+        )?;
+        input.set("target", target)?;
+        let output: Table = function.call(input)?;
+        output
+            .sequence_values::<Table>()
+            .map(|value| parse_script_action(&value?))
+            .collect()
+    }
+}
+
+fn parse_script_action(t: &Table) -> Result<ScriptAction, BattleError> {
+    let kind: String = t.get("kind")?;
+    Ok(match kind.as_str() {
+        "damage" => ScriptAction::Damage {
+            power: t.get("power")?,
+            accuracy: t.get("accuracy")?,
+            drain: t.get("drain")?,
+            min_target_hp: t.get::<Option<u16>>("min_target_hp")?.unwrap_or(0),
+            stop_on_miss: t.get::<Option<bool>>("stop_on_miss")?.unwrap_or(false),
+        },
+        "faint_user" => ScriptAction::FaintUser,
+        "recharge_if_hit" => ScriptAction::RechargeIfHit,
+        "fail" => ScriptAction::Fail,
+        other => {
+            return Err(BattleError::InvalidSetup(format!(
+                "unknown script action {other}"
+            )));
+        }
+    })
 }
 
 fn parse_move(t: &Table) -> Result<MoveSpec, BattleError> {
@@ -154,6 +222,7 @@ fn parse_move(t: &Table) -> Result<MoveSpec, BattleError> {
         "selected" => Target::Selected,
         "user" => Target::User,
         "field" => Target::Field,
+        "all_others" => Target::AllOthers,
         other => return Err(BattleError::InvalidSetup(format!("unknown target {other}"))),
     };
     let accuracy = match t.get::<Value>("accuracy")? {
@@ -168,13 +237,22 @@ fn parse_move(t: &Table) -> Result<MoveSpec, BattleError> {
             )));
         }
     };
-    let effects = t
-        .get::<Table>("effects")?
-        .sequence_values::<Table>()
-        .map(|e| parse_effect(&e?))
-        .collect::<Result<Vec<_>, _>>()?;
-    if effects.is_empty() {
-        return Err(BattleError::InvalidSetup(format!("no effects for {id}")));
+    let script: Option<Function> = t.get("script")?;
+    let effects = if let Some(table) = t.get::<Option<Table>>("effects")? {
+        table
+            .sequence_values::<Table>()
+            .map(|e| parse_effect(&e?))
+            .collect::<Result<Vec<_>, _>>()?
+    } else {
+        Vec::new()
+    };
+    if effects.is_empty() && script.is_none() {
+        return Err(BattleError::InvalidSetup(format!("no behavior for {id}")));
+    }
+    if !effects.is_empty() && script.is_some() {
+        return Err(BattleError::InvalidSetup(format!(
+            "both effects and script for {id}"
+        )));
     }
     Ok(MoveSpec {
         id,
@@ -187,6 +265,7 @@ fn parse_move(t: &Table) -> Result<MoveSpec, BattleError> {
         priority: t.get::<Option<i8>>("priority")?.unwrap_or(0),
         fail_on_full_hp: t.get::<Option<bool>>("fail_on_full_hp")?.unwrap_or(false),
         effects,
+        script,
     })
 }
 

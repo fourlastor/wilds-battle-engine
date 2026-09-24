@@ -162,6 +162,18 @@ pub enum Status {
     Asleep,
     Frozen,
 }
+impl Status {
+    pub const fn lua_name(self) -> &'static str {
+        match self {
+            Self::Poisoned => "poisoned",
+            Self::BadlyPoisoned => "badly_poisoned",
+            Self::Burned => "burned",
+            Self::Paralyzed => "paralyzed",
+            Self::Asleep => "asleep",
+            Self::Frozen => "frozen",
+        }
+    }
+}
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum AppliedStatus {
@@ -252,6 +264,7 @@ pub struct Pokemon {
     pub consecutive_count: u8,
     pub crit_stage: u8,
     pub semi_invulnerable: bool,
+    pub recharging: bool,
 }
 
 impl Pokemon {
@@ -281,6 +294,7 @@ impl Pokemon {
             consecutive_count: 0,
             crit_stage: 0,
             semi_invulnerable: false,
+            recharging: false,
         }
     }
 

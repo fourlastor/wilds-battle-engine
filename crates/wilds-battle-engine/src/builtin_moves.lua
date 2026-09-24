@@ -61,4 +61,30 @@ return {
     effects={{kind="damage", power=40}} },
   { id="toxic", name="Toxic", type="poison", category="status", pp=10, accuracy=0.9,
     effects={{kind="status", status="badly_poisoned"}} },
+  -- These moves use Lua callbacks to choose actions from the current battle state.
+  { id="dream_eater", name="Dream Eater", type="psychic", category="special", pp=15,
+    script=function(ctx)
+      if ctx.target.status ~= "asleep" then return {{kind="fail"}} end
+      return {{kind="damage", power=100, drain=0.5}}
+    end },
+  { id="false_swipe", name="False Swipe", type="normal", category="physical", pp=40,
+    script=function(_)
+      return {{kind="damage", power=40, min_target_hp=1}}
+    end },
+  { id="triple_kick", name="Triple Kick", type="fighting", category="physical", pp=10,
+    script=function(_)
+      return {
+        {kind="damage", power=10, accuracy=0.9, stop_on_miss=true},
+        {kind="damage", power=20, accuracy=0.9, stop_on_miss=true},
+        {kind="damage", power=30, accuracy=0.9, stop_on_miss=true},
+      }
+    end },
+  { id="explosion", name="Explosion", type="normal", category="physical", pp=5, target="all_others",
+    script=function(_)
+      return {{kind="faint_user"}, {kind="damage", power=250}}
+    end },
+  { id="hyper_beam", name="Hyper Beam", type="normal", category="special", pp=5, accuracy=0.9,
+    script=function(_)
+      return {{kind="damage", power=150}, {kind="recharge_if_hit"}}
+    end },
 }
