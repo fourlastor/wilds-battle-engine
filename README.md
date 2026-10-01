@@ -1,8 +1,9 @@
 # Wilds battle engine
 
 `wilds-battle-engine` is the Rust battle simulation. Move definitions are loaded
-from Lua; `MoveCatalog::builtin()` loads the 29 moves currently defined under
-`pokewilds-next/battle/moves`. The host supplies choices for both sides.
+from Lua; `MoveCatalog::builtin()` embeds the 41 editable files under `moves/`,
+and `MoveCatalog::from_directory(path)` reads them from disk at runtime.
+The host supplies choices for both sides.
 The Rust API uses enums for sides, Pokémon types, stats, statuses, and weather.
 Host-facing prompts contain `Choice` enum values. The only variant today is
 `Choice::UseMove { id, move_id, target }`; item, switch, and run variants can
@@ -59,6 +60,10 @@ Rust runs the callback after each damaging move hit, even when one move hits
 several times. The reaction expires when the user next acts; poison and weather
 damage do not trigger it. Hit callbacks currently support messages and stat
 changes.
+Facade, Morning Sun, and Snore are additional sheet moves. Script callbacks
+can inspect `ctx.user.status`, heal with `ctx:heal_self(fraction)`, and call
+`ctx:flinch_target(chance)` after a hit. Snore uses the
+`usable_while_asleep=true` move property.
 Struggle is a catalog-provided system move. When all learned moves have 0 PP,
 Rust selects it automatically. Its metadata is Normal type, while its scripted
 damage is typeless; it always passes accuracy checks, targets a random opponent,
@@ -99,7 +104,13 @@ Dragon Rage, Tackle, Toxic, and Recover battles against the running C# engine,
 including different damage rolls, a miss, a critical hit, status, poison damage,
 healing, fainting, and battle outcome.
 Broader C# event parity remains to be verified.
-The FFI crate remains a placeholder while the Rust API stabilizes.
+`wilds-battle-engine-ffi` builds as a C ABI dynamic library. Its declarations
+are in `include/wilds_battle_engine.h`. `wbe_create` accepts UTF-8 JSON setup
+and a move directory; `wbe_advance` returns events, the next prompt or winner,
+and participant state as JSON. `wbe_respond` supplies a choice, while
+`wbe_catalog` validates and lists disk move files. Each returned string must
+be released with `wbe_free_string`. The PokeWilds playtest host demonstrates
+the complete call sequence and the editable setup format.
 
 `Battle::with_rng(rng, sides, catalog)` accepts a `BattleRng` implementation
 for controlled draws. `Battle::new(seed, sides, catalog)` retains the default
