@@ -1,1 +1,4 @@
 /target
+/parity/csharp/.godot
+/parity/csharp/bin
+/parity/csharp/obj

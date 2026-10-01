@@ -54,6 +54,11 @@ script runs; the move can call `ctx:break_sequence()` and
 `ctx:change_self_stat(ctx.Stat.SpDefense, 1)` and
 `ctx:boost_next_move(ctx.Type.Electric, 2)` expose typed stat changes and a
 one-use power modifier. Rust stores and consumes the modifier on the next move.
+Rage uses `ctx:watch_hits_until_next_action()` and an `on_hit` Lua callback.
+Rust runs the callback after each damaging move hit, even when one move hits
+several times. The reaction expires when the user next acts; poison and weather
+damage do not trigger it. Hit callbacks currently support messages and stat
+changes.
 Struggle is a catalog-provided system move. When all learned moves have 0 PP,
 Rust selects it automatically. Its metadata is Normal type, while its scripted
 damage is typeless; it always passes accuracy checks, targets a random opponent,
@@ -89,9 +94,22 @@ The current port covers move metadata and battle mechanics for the original 29 m
 including turn order, accuracy, damage, status, weather, charging, repeated hits,
 consecutive moves, and outcome resolution. The Rust RNG is seeded, so a Rust
 run is reproducible; it does not reproduce Godot's RNG stream. Tests exercise
-each move and selected interactions. This is not yet a verified event-for-event
-match against a running C# battle. The FFI crate remains a placeholder while
-the Rust API stabilizes.
+each move and selected interactions. The local parity suite compares one-turn
+Dragon Rage, Tackle, Toxic, and Recover battles against the running C# engine,
+including different damage rolls, a miss, a critical hit, status, poison damage,
+healing, fainting, and battle outcome.
+Broader C# event parity remains to be verified.
+The FFI crate remains a placeholder while the Rust API stabilizes.
+
+`Battle::with_rng(rng, sides, catalog)` accepts a `BattleRng` implementation
+for controlled draws. `Battle::new(seed, sides, catalog)` retains the default
+`SeededRng`. The `damage_roll` hook accepts Godot's actual damage multiplier
+without converting it through Rust's default random-float calculation. Run
+`python3 parity/run.py` to compare messages, damage, status, and final HP
+against the built PokeWilds C# assembly. This requires the sibling
+`pokewilds-next` checkout with a current Debug assembly, Godot, and the .NET
+SDK. The fixtures compare presented events and resulting state; they do not
+compare every internal C# event.
 
 Run `cargo test --workspace --offline` and
 `cargo clippy --workspace --all-targets --offline -- -D warnings`.

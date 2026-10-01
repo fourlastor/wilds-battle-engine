@@ -4,52 +4,32 @@ use crate::model::{
     PokemonType, Prompt, ScriptContinuation, Side, Stat, Status, Weather, WeatherKind,
 };
 use crate::moves::{
-    Accuracy, Category, Effect, MoveCatalog, MoveSpec, ScriptContext, ScriptOperation, Target,
+    Accuracy, Category, Effect, MoveCatalog, MoveSpec, ScriptContext, ScriptHook, ScriptOperation,
+    Target,
 };
+use crate::rng::{BattleRng, SeededRng};
 use crate::type_chart;
 use mlua::Value;
 use mlua::thread::ThreadStatus;
-
-#[derive(Clone, Copy, Debug)]
-struct Rng(u64);
-impl Rng {
-    fn new(seed: u64) -> Self {
-        Self(if seed == 0 {
-            0x9e37_79b9_7f4a_7c15
-        } else {
-            seed
-        })
-    }
-    fn next(&mut self) -> u64 {
-        let mut x = self.0;
-        x ^= x >> 12;
-        x ^= x << 25;
-        x ^= x >> 27;
-        self.0 = x;
-        x.wrapping_mul(0x2545_f491_4f6c_dd1d)
-    }
-    fn fraction(&mut self) -> f32 {
-        (self.next() >> 40) as f32 / (1u32 << 24) as f32
-    }
-    fn range(&mut self, min: u8, max: u8) -> u8 {
-        min + (self.next() % (u64::from(max - min) + 1)) as u8
-    }
-    fn chance(&mut self, value: f32) -> bool {
-        self.fraction() <= value
-    }
-}
 
 pub struct Battle {
     catalog: MoveCatalog,
     sides: [Vec<Pokemon>; 2],
     weather: Option<Weather>,
-    rng: Rng,
+    rng: Box<dyn BattleRng>,
     pending: Option<Prompt>,
     selections: Vec<(ParticipantId, SelectedAction)>,
     next_prompt_id: u64,
     winner: Option<Option<Side>>,
     turn: u64,
     active_power_multiplier: f32,
+    hit_reactions: Vec<HitReaction>,
+}
+
+#[derive(Clone)]
+struct HitReaction {
+    owner: ParticipantId,
+    move_id: String,
 }
 
 #[derive(Clone)]
@@ -67,6 +47,14 @@ struct MoveAction {
 impl Battle {
     pub fn new(
         seed: u64,
+        sides: [Vec<Pokemon>; 2],
+        catalog: MoveCatalog,
+    ) -> Result<Self, BattleError> {
+        Self::with_rng(SeededRng::new(seed), sides, catalog)
+    }
+
+    pub fn with_rng(
+        rng: impl BattleRng + 'static,
         mut sides: [Vec<Pokemon>; 2],
         catalog: MoveCatalog,
     ) -> Result<Self, BattleError> {
@@ -104,13 +92,14 @@ impl Battle {
             catalog,
             sides,
             weather: None,
-            rng: Rng::new(seed),
+            rng: Box::new(rng),
             pending: None,
             selections: Vec::new(),
             next_prompt_id: 1,
             winner: None,
             turn: 0,
             active_power_multiplier: 1.0,
+            hit_reactions: Vec::new(),
         })
     }
     pub fn participants(&self, side: Side) -> &[Pokemon] {
@@ -325,7 +314,7 @@ impl Battle {
                     SelectedAction::Recharge => 0,
                 };
                 let speed = self.get(actor).effective_stat(CombatStat::Speed) as i32;
-                (actor, choice, priority, speed, self.rng.next())
+                (actor, choice, priority, speed, self.rng.next_u64())
             })
             .collect();
         ordered.sort_by(|a, b| b.2.cmp(&a.2).then(b.3.cmp(&a.3)).then(b.4.cmp(&a.4)));
@@ -334,6 +323,8 @@ impl Battle {
             if self.winner.is_some() {
                 break;
             }
+            self.hit_reactions
+                .retain(|reaction| reaction.owner != *actor);
             self.check_sleep(*actor, &mut events);
             match choice {
                 SelectedAction::Move(choice) => self.execute_move(*actor, choice, &mut events)?,
@@ -509,7 +500,7 @@ impl Battle {
             if foes.is_empty() {
                 return Ok(());
             }
-            target = foes[(self.rng.next() as usize) % foes.len()];
+            target = foes[self.rng.index(foes.len())];
         }
         if self.get(target).hp == 0 && spec.target == Target::Selected {
             if let Some(index) = self.sides[target.side.index()]
@@ -543,7 +534,7 @@ impl Battle {
                     spec.name
                 )));
             }
-            let hit = self.execute_script(actor, target, &spec, events, false)?;
+            let hit = self.execute_script(actor, target, &spec, events, ScriptHook::Main)?;
             if let Some(lock) = self.get_mut(actor).script_continuation.as_mut() {
                 if lock.turn >= lock.total_turns {
                     self.get_mut(actor).script_continuation = None;
@@ -635,7 +626,7 @@ impl Battle {
                 single_effect,
                 second_turn,
                 events,
-            );
+            )?;
         }
         let pokemon = self.get_mut(actor);
         pokemon.consecutive_count = if pokemon.last_move.as_deref() == Some(&spec.id) {
@@ -652,7 +643,7 @@ impl Battle {
         target: ParticipantId,
         spec: &MoveSpec,
         events: &mut Vec<BattleEvent>,
-        interrupted: bool,
+        hook: ScriptHook,
     ) -> Result<bool, BattleError> {
         let continuation = self.get(actor).script_continuation.as_ref();
         let (thread, input) = self.catalog.start_script(
@@ -666,7 +657,7 @@ impl Battle {
                 turn: continuation.map_or(1, |lock| lock.turn),
                 total_turns: continuation.map(|lock| lock.total_turns),
             },
-            interrupted,
+            hook,
         )?;
         let mut yielded = thread.resume::<Value>(input)?;
         let mut any_hit = false;
@@ -688,7 +679,33 @@ impl Battle {
                     )));
                 }
             };
+            if hook == ScriptHook::Hit
+                && !matches!(
+                    operation,
+                    ScriptOperation::Message(_) | ScriptOperation::ChangeSelfStat { .. }
+                )
+            {
+                return Err(BattleError::InvalidSetup(format!(
+                    "hit hook for {} yielded an unsupported operation",
+                    spec.id
+                )));
+            }
             let response = match operation {
+                ScriptOperation::WatchHitsUntilNextAction => {
+                    if spec.on_hit.is_none() {
+                        return Err(BattleError::InvalidSetup(format!(
+                            "move {} has no hit hook",
+                            spec.id
+                        )));
+                    }
+                    self.hit_reactions
+                        .retain(|reaction| reaction.owner != actor || reaction.move_id != spec.id);
+                    self.hit_reactions.push(HitReaction {
+                        owner: actor,
+                        move_id: spec.id.clone(),
+                    });
+                    Value::Nil
+                }
                 ScriptOperation::ForceMove {
                     total_turns,
                     target_policy,
@@ -836,7 +853,7 @@ impl Battle {
                             let actual =
                                 amount.min(self.get(recipient).hp.saturating_sub(min_target_hp));
                             if actual > 0 {
-                                self.damage(recipient, actual, events);
+                                self.damage_from_move(actor, recipient, actual, events)?;
                             }
                             events.extend(details);
                             operation_hit = true;
@@ -873,7 +890,7 @@ impl Battle {
     ) -> Result<(), BattleError> {
         if self.get(actor).script_continuation.is_some() {
             if spec.on_interrupt.is_some() {
-                self.execute_script(actor, target, spec, events, true)?;
+                self.execute_script(actor, target, spec, events, ScriptHook::Interrupt)?;
             }
             self.get_mut(actor).script_continuation = None;
         }
@@ -956,7 +973,7 @@ impl Battle {
         single_effect: bool,
         second_turn: bool,
         events: &mut Vec<BattleEvent>,
-    ) {
+    ) -> Result<(), BattleError> {
         match effect {
             Effect::Damage {
                 power,
@@ -977,7 +994,7 @@ impl Battle {
                     false,
                     &mut details,
                 ) {
-                    self.damage(target, amount, events);
+                    self.damage_from_move(actor, target, amount, events)?;
                     events.extend(details);
                     if let Some(fraction) = recoil {
                         let recoil = ((amount as f32 * fraction).floor() as u16).max(1);
@@ -1005,7 +1022,7 @@ impl Battle {
             Effect::MultiHit { power, min, max } => {
                 if self.effectiveness(target, spec.move_type) == 0.0 {
                     self.immune_message(target, events);
-                    return;
+                    return Ok(());
                 }
                 let hits = self.rng.range(*min, *max);
                 // C# calculates all hits from the same pre-hit target snapshot.
@@ -1035,17 +1052,19 @@ impl Battle {
                     }
                 }
                 for amount in amounts {
-                    self.damage(target, amount, events);
+                    self.damage_from_move(actor, target, amount, events)?;
                 }
                 events.extend(details);
                 events.push(BattleEvent::Message(format!("Hit {hits} times!")));
             }
-            Effect::FixedDamage(amount) => self.direct_damage(target, spec, *amount, events),
+            Effect::FixedDamage(amount) => {
+                self.direct_damage(actor, target, spec, *amount, events)?
+            }
             Effect::LevelDamage => {
-                self.direct_damage(target, spec, self.get(actor).level as u16, events)
+                self.direct_damage(actor, target, spec, self.get(actor).level as u16, events)?
             }
             Effect::OneHitKnockout => {
-                self.direct_damage(target, spec, self.get(target).max_hp, events);
+                self.direct_damage(actor, target, spec, self.get(target).max_hp, events)?;
                 if self.effectiveness(target, spec.move_type) > 0.0 {
                     events.push(BattleEvent::Message("It's a one-hit KO!".into()));
                 }
@@ -1058,11 +1077,11 @@ impl Battle {
                 if !self.rng.chance(*chance)
                     || (has_damage && self.effectiveness(target, spec.move_type) == 0.0)
                 {
-                    return;
+                    return Ok(());
                 }
                 let recipient = if *self_target { actor } else { target };
                 if self.get(recipient).hp == 0 {
-                    return;
+                    return Ok(());
                 }
                 for (stat, delta) in stages {
                     self.change_stat(recipient, *stat, *delta, events);
@@ -1076,7 +1095,7 @@ impl Battle {
                 if !self.rng.chance(*chance)
                     || (has_damage && self.effectiveness(target, spec.move_type) == 0.0)
                 {
-                    return;
+                    return Ok(());
                 }
                 let new_status = status.battle_status();
                 let current = self.get(target).status;
@@ -1241,7 +1260,7 @@ impl Battle {
                         false,
                         &mut details,
                     ) {
-                        self.damage(target, amount, events);
+                        self.damage_from_move(actor, target, amount, events)?;
                     }
                     events.extend(details);
                 }
@@ -1272,7 +1291,7 @@ impl Battle {
                     false,
                     &mut details,
                 ) {
-                    self.damage(target, amount, events);
+                    self.damage_from_move(actor, target, amount, events)?;
                 }
                 events.extend(details);
                 if turns < max_turns {
@@ -1300,7 +1319,7 @@ impl Battle {
             Effect::Splash => {
                 if self.rng.chance(0.01) {
                     let amount = fractional(self.get(target).max_hp, 16, 1);
-                    self.damage(target, amount, events);
+                    self.damage_from_move(actor, target, amount, events)?;
                     events.push(BattleEvent::Message(
                         "Whoa! Its splash hit with force!".into(),
                     ));
@@ -1309,6 +1328,7 @@ impl Battle {
                 }
             }
         }
+        Ok(())
     }
     fn effectiveness(&self, target: ParticipantId, move_type: PokemonType) -> f32 {
         type_chart::multiplier(move_type, &self.get(target).types)
@@ -1321,16 +1341,18 @@ impl Battle {
     }
     fn direct_damage(
         &mut self,
+        actor: ParticipantId,
         target: ParticipantId,
         spec: &MoveSpec,
         amount: u16,
         events: &mut Vec<BattleEvent>,
-    ) {
+    ) -> Result<(), BattleError> {
         if self.effectiveness(target, spec.move_type) == 0.0 {
             self.immune_message(target, events);
         } else {
-            self.damage(target, amount, events);
+            self.damage_from_move(actor, target, amount, events)?;
         }
+        Ok(())
     }
     // Keep each modifier visible at the damage call sites during the parity port.
     #[allow(clippy::too_many_arguments)]
@@ -1425,7 +1447,7 @@ impl Battle {
         if crit {
             damage *= 1.5;
         }
-        damage *= 0.85 + self.rng.fraction() * 0.15;
+        damage *= self.rng.damage_roll();
         let amount = (damage.round() as u16).max(1);
         if effectiveness < 1.0 {
             events.push(BattleEvent::Message("It's not very effective...".into()));
@@ -1437,6 +1459,35 @@ impl Battle {
         }
         Some(amount)
     }
+    fn damage_from_move(
+        &mut self,
+        actor: ParticipantId,
+        target: ParticipantId,
+        amount: u16,
+        events: &mut Vec<BattleEvent>,
+    ) -> Result<(), BattleError> {
+        let before = self.get(target).hp;
+        self.damage(target, amount, events);
+        if self.get(target).hp == 0 || self.get(target).hp == before {
+            return Ok(());
+        }
+        let reactions: Vec<_> = self
+            .hit_reactions
+            .iter()
+            .filter(|reaction| reaction.owner == target)
+            .cloned()
+            .collect();
+        for reaction in reactions {
+            let spec = self
+                .catalog
+                .get(&reaction.move_id)
+                .expect("registered reaction has a move")
+                .clone();
+            self.execute_script(target, actor, &spec, events, ScriptHook::Hit)?;
+        }
+        Ok(())
+    }
+
     fn damage(&mut self, target: ParticipantId, amount: u16, events: &mut Vec<BattleEvent>) {
         let p = self.get_mut(target);
         let was_alive = p.hp > 0;
@@ -1445,6 +1496,8 @@ impl Battle {
         let name = p.name.clone();
         events.push(BattleEvent::Damage { target, amount, hp });
         if was_alive && hp == 0 {
+            self.hit_reactions
+                .retain(|reaction| reaction.owner != target);
             events.push(BattleEvent::Message(format!("{name} fainted!")));
             events.push(BattleEvent::Fainted(target));
         }

@@ -1,0 +1,12 @@
+<Project Sdk="Godot.NET.Sdk/4.6.0">
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <EnableDynamicLoading>true</EnableDynamicLoading>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="PokeWilds">
+      <HintPath>../../../pokewilds-next/.godot/mono/temp/bin/Debug/PokeWilds.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+</Project>

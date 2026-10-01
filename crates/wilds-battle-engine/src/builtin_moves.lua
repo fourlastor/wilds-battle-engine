@@ -49,6 +49,14 @@ return {
     target=Target.User, priority=4, effects={{kind=Effect.Protect}} },
   { id="recover", name="Recover", type=Type.Normal, category=Category.Status, pp=5,
     target=Target.User, accuracy=Accuracy.Always, fail_on_full_hp=true, effects={{kind=Effect.Heal, fraction=0.5}} },
+  { id="rage", name="Rage", type=Type.Normal, category=Category.Physical, pp=20,
+    on_hit=function(ctx)
+      ctx:change_self_stat(ctx.Stat.Attack, 1)
+    end,
+    script=function(ctx)
+      ctx:watch_hits_until_next_action()
+      ctx:damage(20)
+    end },
   { id="rest", name="Rest", type=Type.Psychic, category=Category.Status, pp=5,
     target=Target.User, accuracy=Accuracy.Always, fail_on_full_hp=true,
     effects={{kind=Effect.Status, status=Status.RestSleep, replace=true}, {kind=Effect.Heal, fraction=1, hide_message=true}} },

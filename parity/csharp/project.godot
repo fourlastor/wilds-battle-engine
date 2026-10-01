@@ -1,0 +1,10 @@
+config_version=5
+
+[application]
+
+config/name="Wilds parity harness"
+run/main_scene="res://parity.tscn"
+
+[dotnet]
+
+project/assembly_name="ParityHarness"

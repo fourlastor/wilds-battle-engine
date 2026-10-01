@@ -99,6 +99,7 @@ pub struct MoveSpec {
     pub effects: Vec<Effect>,
     pub(crate) script: Option<Function>,
     pub(crate) on_interrupt: Option<Function>,
+    pub(crate) on_hit: Option<Function>,
     pub(crate) manual_announce: bool,
     pub(crate) auto_only: bool,
 }
@@ -136,8 +137,16 @@ pub(crate) enum ScriptOperation {
         move_type: PokemonType,
         multiplier: f32,
     },
+    WatchHitsUntilNextAction,
 }
 impl UserData for ScriptOperation {}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum ScriptHook {
+    Main,
+    Interrupt,
+    Hit,
+}
 
 #[derive(Clone, Debug)]
 pub(crate) struct ScriptContext {
@@ -204,12 +213,12 @@ impl MoveCatalog {
         &self,
         spec: &MoveSpec,
         context: ScriptContext,
-        interrupted: bool,
+        hook: ScriptHook,
     ) -> Result<(Thread, Table), BattleError> {
-        let function = if interrupted {
-            spec.on_interrupt.as_ref().expect("interrupt hook")
-        } else {
-            spec.script.as_ref().expect("scripted move")
+        let function = match hook {
+            ScriptHook::Main => spec.script.as_ref().expect("scripted move"),
+            ScriptHook::Interrupt => spec.on_interrupt.as_ref().expect("interrupt hook"),
+            ScriptHook::Hit => spec.on_hit.as_ref().expect("hit hook"),
         };
         let api = self.lua.create_table()?;
         api.set(
@@ -380,6 +389,12 @@ impl MoveCatalog {
                 },
             )?,
         )?;
+        api.set(
+            "watch_hits_until_next_action",
+            self.lua.create_function(|lua, ()| {
+                lua.create_userdata(ScriptOperation::WatchHitsUntilNextAction)
+            })?,
+        )?;
         let user = self.lua.create_table()?;
         user.set("hp", context.user_hp)?;
         user.set("name", context.user_name)?;
@@ -481,9 +496,15 @@ fn parse_move(t: &Table) -> Result<MoveSpec, BattleError> {
     };
     let script: Option<Function> = t.get("script")?;
     let on_interrupt: Option<Function> = t.get("on_interrupt")?;
+    let on_hit: Option<Function> = t.get("on_hit")?;
     if on_interrupt.is_some() && script.is_none() {
         return Err(BattleError::InvalidSetup(format!(
             "interrupt hook without script for {id}"
+        )));
+    }
+    if on_hit.is_some() && script.is_none() {
+        return Err(BattleError::InvalidSetup(format!(
+            "hit hook without script for {id}"
         )));
     }
     let effects = if let Some(table) = t.get::<Option<Table>>("effects")? {
@@ -515,6 +536,7 @@ fn parse_move(t: &Table) -> Result<MoveSpec, BattleError> {
         effects,
         script,
         on_interrupt,
+        on_hit,
         manual_announce: t.get::<Option<bool>>("manual_announce")?.unwrap_or(false),
         auto_only: t.get::<Option<bool>>("auto_only")?.unwrap_or(false),
     })

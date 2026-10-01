@@ -2,6 +2,7 @@ mod engine;
 mod lua_symbols;
 mod model;
 mod moves;
+mod rng;
 mod type_chart;
 
 pub use engine::Battle;
@@ -11,6 +12,7 @@ pub use model::{
     PokemonType, Prompt, ScriptContinuation, Side, Stat, Status, Weather, WeatherKind,
 };
 pub use moves::{Accuracy, Category, Effect, MoveCatalog, MoveSpec, Target};
+pub use rng::{BattleRng, SeededRng};
 
 #[cfg(test)]
 mod tests {
@@ -29,6 +31,133 @@ mod tests {
             MoveCatalog::builtin().unwrap(),
         )
         .unwrap()
+    }
+
+    struct FixedRng(f32);
+
+    impl BattleRng for FixedRng {
+        fn next_u64(&mut self) -> u64 {
+            0
+        }
+
+        fn fraction(&mut self) -> f32 {
+            self.0
+        }
+    }
+
+    #[test]
+    fn supplied_rng_controls_random_move_effects() {
+        let run = |fraction| {
+            let mut battle = Battle::with_rng(
+                FixedRng(fraction),
+                [
+                    vec![Pokemon::new("Ally", vec!["splash".into()])],
+                    vec![Pokemon::new("Foe", vec!["splash".into()])],
+                ],
+                MoveCatalog::builtin().unwrap(),
+            )
+            .unwrap();
+            pick(&mut battle, "splash");
+            pick(&mut battle, "splash");
+            battle.advance().unwrap();
+            [
+                battle.participants(Side::Allies)[0].hp,
+                battle.participants(Side::Foes)[0].hp,
+            ]
+        };
+        assert_eq!(run(0.5), [100, 100]);
+        assert!(run(0.0).into_iter().all(|hp| hp < 100));
+    }
+
+    #[test]
+    fn rage_reacts_to_each_hit_and_expires_at_the_next_action() {
+        let mut ally = Pokemon::new("Ally", vec!["rage".into(), "splash".into()]);
+        ally.hp = 300;
+        ally.max_hp = 300;
+        ally.speed = 200;
+        let mut battle = Battle::with_rng(
+            FixedRng(0.5),
+            [
+                vec![ally],
+                vec![Pokemon::new("Foe", vec!["double_kick".into()])],
+            ],
+            MoveCatalog::builtin().unwrap(),
+        )
+        .unwrap();
+
+        pick(&mut battle, "rage");
+        pick(&mut battle, "double_kick");
+        let first = battle.advance().unwrap();
+        assert_eq!(battle.participants(Side::Allies)[0].stage(Stat::Attack), 2);
+        assert_eq!(
+            first
+                .events
+                .iter()
+                .filter(|event| matches!(event, BattleEvent::StatChange { target, stat: Stat::Attack, stages: 1 } if *target == id(Side::Allies)))
+                .count(),
+            2
+        );
+
+        pick(&mut battle, "splash");
+        pick(&mut battle, "double_kick");
+        battle.advance().unwrap();
+        assert_eq!(battle.participants(Side::Allies)[0].stage(Stat::Attack), 2);
+    }
+
+    #[test]
+    fn rage_stays_active_until_a_slower_user_acts_again() {
+        let mut ally = Pokemon::new("Ally", vec!["rage".into()]);
+        ally.hp = 500;
+        ally.max_hp = 500;
+        ally.speed = 50;
+        let mut foe = Pokemon::new("Foe", vec!["double_kick".into()]);
+        foe.speed = 200;
+        let mut battle = Battle::with_rng(
+            FixedRng(0.5),
+            [vec![ally], vec![foe]],
+            MoveCatalog::builtin().unwrap(),
+        )
+        .unwrap();
+        pick(&mut battle, "rage");
+        pick(&mut battle, "double_kick");
+        let first = battle.advance().unwrap();
+        assert_eq!(battle.participants(Side::Allies)[0].stage(Stat::Attack), 0);
+
+        pick(&mut battle, "rage");
+        pick(&mut battle, "double_kick");
+        let second = battle.advance().unwrap();
+        assert_eq!(battle.participants(Side::Allies)[0].stage(Stat::Attack), 2);
+        let foe_damage = |events: &[BattleEvent]| {
+            events.iter().find_map(|event| match event {
+                BattleEvent::Damage { target, amount, .. } if *target == id(Side::Foes) => {
+                    Some(*amount)
+                }
+                _ => None,
+            })
+        };
+        assert!(foe_damage(&second.events) > foe_damage(&first.events));
+
+        pick(&mut battle, "rage");
+        pick(&mut battle, "double_kick");
+        battle.advance().unwrap();
+        assert_eq!(battle.participants(Side::Allies)[0].stage(Stat::Attack), 4);
+    }
+
+    #[test]
+    fn rage_does_not_react_to_residual_status_damage() {
+        let mut ally = Pokemon::new("Ally", vec!["rage".into()]);
+        ally.status = Some(Status::Poisoned);
+        let mut battle = Battle::with_rng(
+            FixedRng(0.5),
+            [vec![ally], vec![Pokemon::new("Foe", vec!["splash".into()])]],
+            MoveCatalog::builtin().unwrap(),
+        )
+        .unwrap();
+        pick(&mut battle, "rage");
+        pick(&mut battle, "splash");
+        battle.advance().unwrap();
+        assert!(battle.participants(Side::Allies)[0].hp < 100);
+        assert_eq!(battle.participants(Side::Allies)[0].stage(Stat::Attack), 0);
     }
     fn pick(battle: &mut Battle, move_id: &str) {
         let result = battle.advance().unwrap();
@@ -50,7 +179,7 @@ mod tests {
     #[test]
     fn loads_original_and_scripted_moves() {
         let catalog = MoveCatalog::builtin().unwrap();
-        assert_eq!(catalog.len(), 38);
+        assert_eq!(catalog.len(), 39);
         assert_eq!(
             catalog.get("struggle").unwrap().move_type,
             PokemonType::Normal
@@ -67,6 +196,7 @@ mod tests {
             "solar_beam",
             "thrash",
             "charge",
+            "rage",
         ] {
             assert!(catalog.get(id).unwrap().script.is_some());
         }
