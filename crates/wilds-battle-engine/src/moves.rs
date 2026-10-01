@@ -4,6 +4,7 @@ use crate::model::{
 };
 use mlua::{Function, HookTriggers, Lua, Table, Thread, UserData, Value, VmState};
 use std::collections::{BTreeMap, HashMap};
+use std::path::Path;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicU32, Ordering};
 
@@ -102,6 +103,7 @@ pub struct MoveSpec {
     pub(crate) on_hit: Option<Function>,
     pub(crate) manual_announce: bool,
     pub(crate) auto_only: bool,
+    pub(crate) usable_while_asleep: bool,
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -138,6 +140,8 @@ pub(crate) enum ScriptOperation {
         multiplier: f32,
     },
     WatchHitsUntilNextAction,
+    HealSelf(f32),
+    FlinchTarget(f32),
 }
 impl UserData for ScriptOperation {}
 
@@ -151,6 +155,7 @@ pub(crate) enum ScriptHook {
 #[derive(Clone, Debug)]
 pub(crate) struct ScriptContext {
     pub user_hp: u16,
+    pub user_status: Option<crate::model::Status>,
     pub user_name: String,
     pub target_hp: u16,
     pub target_status: Option<crate::model::Status>,
@@ -168,7 +173,55 @@ pub struct MoveCatalog {
 
 impl MoveCatalog {
     pub fn builtin() -> Result<Self, BattleError> {
-        Self::from_lua(include_str!("builtin_moves.lua"))
+        Self::from_lua(include_str!(concat!(env!("OUT_DIR"), "/builtin_moves.lua")))
+    }
+    pub fn from_directory(path: impl AsRef<Path>) -> Result<Self, BattleError> {
+        let path = path.as_ref();
+        let mut files = std::fs::read_dir(path)
+            .map_err(|error| BattleError::InvalidSetup(format!("{}: {error}", path.display())))?
+            .map(|entry| entry.map(|entry| entry.path()))
+            .collect::<Result<Vec<_>, _>>()
+            .map_err(|error| BattleError::InvalidSetup(error.to_string()))?;
+        files.retain(|file| file.extension().is_some_and(|extension| extension == "lua"));
+        files.sort();
+        if files.is_empty() {
+            return Err(BattleError::InvalidSetup(format!(
+                "no Lua moves in {}",
+                path.display()
+            )));
+        }
+        let lua = Lua::new();
+        lua_symbols::install(&lua)?;
+        let mut moves = HashMap::new();
+        for file in files {
+            let move_source = std::fs::read_to_string(&file).map_err(|error| {
+                BattleError::InvalidSetup(format!("{}: {error}", file.display()))
+            })?;
+            let entry: Table = lua
+                .load(&move_source)
+                .set_name(file.display().to_string())
+                .eval()?;
+            let spec = parse_move(&entry).map_err(|error| {
+                BattleError::InvalidSetup(format!("{}: {error}", file.display()))
+            })?;
+            if moves.insert(spec.id.clone(), spec).is_some() {
+                return Err(BattleError::InvalidSetup(format!(
+                    "{}: duplicate move id",
+                    file.display()
+                )));
+            }
+        }
+        let system: Table = lua.load(include_str!("system_moves.lua")).eval()?;
+        let spec = parse_move(&system)?;
+        if moves.insert(spec.id.clone(), spec).is_some() {
+            return Err(BattleError::InvalidSetup("reserved system move id".into()));
+        }
+        let script_factory = lua.load(include_str!("script_api.lua")).eval()?;
+        Ok(Self {
+            moves,
+            lua,
+            script_factory,
+        })
     }
     pub fn from_lua(source: &str) -> Result<Self, BattleError> {
         let lua = Lua::new();
@@ -395,9 +448,38 @@ impl MoveCatalog {
                 lua.create_userdata(ScriptOperation::WatchHitsUntilNextAction)
             })?,
         )?;
+        api.set(
+            "heal_self",
+            self.lua.create_function(|lua, fraction: f32| {
+                if !fraction.is_finite() || !(0.0..=1.0).contains(&fraction) {
+                    return Err(mlua::Error::external(
+                        "heal fraction must be between 0 and 1",
+                    ));
+                }
+                lua.create_userdata(ScriptOperation::HealSelf(fraction))
+            })?,
+        )?;
+        api.set(
+            "flinch_target",
+            self.lua.create_function(|lua, chance: f32| {
+                if !chance.is_finite() || !(0.0..=1.0).contains(&chance) {
+                    return Err(mlua::Error::external(
+                        "flinch chance must be between 0 and 1",
+                    ));
+                }
+                lua.create_userdata(ScriptOperation::FlinchTarget(chance))
+            })?,
+        )?;
         let user = self.lua.create_table()?;
         user.set("hp", context.user_hp)?;
         user.set("name", context.user_name)?;
+        if let Some(status) = context.user_status {
+            user.set(
+                "status",
+                self.lua
+                    .create_userdata(LuaSymbol::Status(lua_symbols::applied(status)))?,
+            )?;
+        }
         let target = self.lua.create_table()?;
         target.set("hp", context.target_hp)?;
         if let Some(status) = context.target_status {
@@ -539,6 +621,9 @@ fn parse_move(t: &Table) -> Result<MoveSpec, BattleError> {
         on_hit,
         manual_announce: t.get::<Option<bool>>("manual_announce")?.unwrap_or(false),
         auto_only: t.get::<Option<bool>>("auto_only")?.unwrap_or(false),
+        usable_while_asleep: t
+            .get::<Option<bool>>("usable_while_asleep")?
+            .unwrap_or(false),
     })
 }
 

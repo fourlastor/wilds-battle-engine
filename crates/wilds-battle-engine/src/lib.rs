@@ -179,7 +179,14 @@ mod tests {
     #[test]
     fn loads_original_and_scripted_moves() {
         let catalog = MoveCatalog::builtin().unwrap();
-        assert_eq!(catalog.len(), 39);
+        assert_eq!(catalog.len(), 42);
+        let from_files =
+            MoveCatalog::from_directory(concat!(env!("CARGO_MANIFEST_DIR"), "/../../moves"))
+                .unwrap();
+        assert_eq!(from_files.len(), catalog.len());
+        for id in catalog.ids() {
+            assert!(from_files.get(id).is_some(), "missing {id}");
+        }
         assert_eq!(
             catalog.get("struggle").unwrap().move_type,
             PokemonType::Normal
@@ -1264,5 +1271,78 @@ mod tests {
         pick(&mut battle, "test");
         pick(&mut battle, "test");
         assert!(matches!(battle.advance(), Err(BattleError::Script(_))));
+    }
+
+    #[test]
+    fn facade_uses_status_to_double_power() {
+        let run = |status| {
+            let mut ally = Pokemon::new("Ally", vec!["facade".into()]);
+            ally.status = status;
+            let mut foe = Pokemon::new("Foe", vec!["splash".into()]);
+            foe.hp = 500;
+            foe.max_hp = 500;
+            let mut battle = Battle::with_rng(
+                FixedRng(0.5),
+                [vec![ally], vec![foe]],
+                MoveCatalog::builtin().unwrap(),
+            )
+            .unwrap();
+            pick(&mut battle, "facade");
+            pick(&mut battle, "splash");
+            battle.advance().unwrap();
+            500 - battle.participants(Side::Foes)[0].hp
+        };
+        assert!(run(Some(Status::Paralyzed)) > run(None));
+    }
+
+    #[test]
+    fn snore_only_acts_during_sleep() {
+        let run = |asleep| {
+            let mut ally = Pokemon::new("Ally", vec!["snore".into()]);
+            ally.speed = 200;
+            if asleep {
+                ally.status = Some(Status::Asleep);
+                ally.status_turns = 3;
+            }
+            let mut battle = Battle::with_rng(
+                FixedRng(0.5),
+                [vec![ally], vec![Pokemon::new("Foe", vec!["splash".into()])]],
+                MoveCatalog::builtin().unwrap(),
+            )
+            .unwrap();
+            pick(&mut battle, "snore");
+            pick(&mut battle, "splash");
+            battle.advance().unwrap();
+            battle.participants(Side::Foes)[0].hp
+        };
+        assert!(run(true) < run(false));
+        assert_eq!(run(false), 100);
+    }
+
+    #[test]
+    fn morning_sun_heals_more_in_sun() {
+        let run = |sun| {
+            let mut ally = Pokemon::new("Ally", vec!["morning_sun".into(), "splash".into()]);
+            ally.hp = 10;
+            ally.speed = 200;
+            let foe_move = if sun { "sunny_day" } else { "splash" };
+            let foe = Pokemon::new("Foe", vec![foe_move.into()]);
+            let mut battle = Battle::with_rng(
+                FixedRng(0.5),
+                [vec![ally], vec![foe]],
+                MoveCatalog::builtin().unwrap(),
+            )
+            .unwrap();
+            if sun {
+                pick(&mut battle, "splash");
+                pick(&mut battle, "sunny_day");
+                battle.advance().unwrap();
+            }
+            pick(&mut battle, "morning_sun");
+            pick(&mut battle, foe_move);
+            battle.advance().unwrap();
+            battle.participants(Side::Allies)[0].hp
+        };
+        assert!(run(true) > run(false));
     }
 }

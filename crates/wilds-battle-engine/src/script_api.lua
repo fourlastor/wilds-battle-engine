@@ -59,5 +59,13 @@ return function(api, user, target, statuses, weather, turn, total_turns, target_
     return coroutine.yield(api.watch_hits_until_next_action())
   end
 
+  function ctx:heal_self(fraction)
+    return coroutine.yield(api.heal_self(fraction))
+  end
+
+  function ctx:flinch_target(chance)
+    return coroutine.yield(api.flinch_target(chance))
+  end
+
   return ctx
 end

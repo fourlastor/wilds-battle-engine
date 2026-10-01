@@ -426,7 +426,7 @@ impl Battle {
                 self.interrupt_script(actor, choice.target, &spec, events)?;
                 return Ok(());
             }
-            Some(Status::Asleep) => {
+            Some(Status::Asleep) if !spec.usable_while_asleep => {
                 events.push(BattleEvent::Message(format!("{user_name} is fast asleep.")));
                 self.clear_consecutive(actor);
                 self.interrupt_script(actor, choice.target, &spec, events)?;
@@ -650,6 +650,7 @@ impl Battle {
             spec,
             ScriptContext {
                 user_hp: self.get(actor).hp,
+                user_status: self.get(actor).status,
                 user_name: self.get(actor).name.clone(),
                 target_hp: self.get(target).hp,
                 target_status: self.get(target).status,
@@ -704,6 +705,26 @@ impl Battle {
                         owner: actor,
                         move_id: spec.id.clone(),
                     });
+                    Value::Nil
+                }
+                ScriptOperation::HealSelf(fraction) => {
+                    let pokemon = self.get(actor);
+                    let amount = (pokemon.max_hp as f32 * fraction).ceil() as u16;
+                    if pokemon.hp < pokemon.max_hp {
+                        self.heal(actor, amount, events);
+                        events.push(BattleEvent::Message(format!(
+                            "{} regained health!",
+                            self.get(actor).name
+                        )));
+                    } else {
+                        events.push(BattleEvent::Message("But it failed!".into()));
+                    }
+                    Value::Nil
+                }
+                ScriptOperation::FlinchTarget(chance) => {
+                    if self.get(target).hp > 0 && self.rng.chance(chance) {
+                        self.get_mut(target).flinched = true;
+                    }
                     Value::Nil
                 }
                 ScriptOperation::ForceMove {
