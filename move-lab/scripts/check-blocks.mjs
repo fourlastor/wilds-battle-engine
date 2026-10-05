@@ -241,6 +241,16 @@ check('“as a … move” changes the type of the hits inside it', () => {
   const fire = playTurns(build('Selected', [asFire]), [mon('Ally', ['check'])], grass());
   assert.ok(fire.messages.includes("It's super effective!"));
   assert.ok(400 - fire.state.foes[0].hp > 400 - plain.state.foes[0].hp);
+
+  // The “type” block of the palette says the same as the menu the socket comes with.
+  const plugged = (block) => ({ ...asFire, inputs: { ...asFire.inputs, TYPE: { ...asFire.inputs.TYPE, block } } });
+  const picked = build('Selected', [plugged({ type: 'mlab_type_choice', fields: { TYPE: 'Fire' } })]);
+  assert.equal(workspace.getAllBlocks(false).find((block) => block.type === 'mlab_type_choice').toString(), 'type Fire');
+  assert.equal(picked.lua, build('Selected', [asFire]).lua);
+  // “type number” left the palette, but a move saved with it still opens and writes what it did.
+  const old = build('Selected', [plugged({ type: 'mlab_type_by_number', inputs: { NUMBER: number(8) } })]);
+  assert.deepEqual(old.problems, []);
+  assert.match(old.lua, /local move_type = ctx:type_number\(8\)/);
 });
 
 check('a screen built from an effect and a rule halves physical damage, until it is ended', () => {

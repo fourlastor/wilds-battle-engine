@@ -529,6 +529,7 @@ const TIPS: Record<string, string> = {
     'True the first time. After that, true 1 time in 3 for each turn in a row the move has already worked: 1 in 3, then 1 in 9, and so on. “protect the user” follows this rule by itself.',
   mlab_iv: 'One of that Pokémon’s individual values, from 0 to 31. 31 if the game did not give any.',
   mlab_type: 'A type.',
+  mlab_type_choice: 'A type picked from the list. Plug it into a block that asks for one, such as “as a … move” or “becomes a … type”.',
   mlab_type_by_number: 'The type with that number, counting from 0: Fighting, Flying, Poison, Ground, Rock, Bug, Ghost, Steel, Fire, Water, Grass, Electric, Psychic, Ice, Dragon, Dark.',
   mlab_first_type: 'The first of that Pokémon’s types.',
 
@@ -900,7 +901,10 @@ const PLAIN: object[] = [
   { type: 'mlab_used_all', message0: 'the user has used all its other moves', output: 'Boolean', ...info },
   { type: 'mlab_last_failed', message0: 'the user’s last move failed', output: 'Boolean', ...info },
   { type: 'mlab_ally_fainted', message0: 'an ally of the user fainted last turn', output: 'Boolean', ...info },
+  // A type comes bare, as what a type socket holds until something is plugged in, and with its name on it for the palette.
   { type: 'mlab_type', message0: '%1', args0: [dropdown('TYPE', TYPE_MENU)], output: 'Type', ...info },
+  { type: 'mlab_type_choice', message0: 'type %1', args0: [dropdown('TYPE', TYPE_MENU)], output: 'Type', ...info },
+  // No longer in the palette: kept so that moves saved with it still open.
   { type: 'mlab_type_by_number', message0: 'type number %1', args0: [input('NUMBER', 'Number')], output: 'Type', inputsInline: true, ...info },
   { type: 'mlab_first_type', message0: '%1 first type', args0: [dropdown('WHO', WHOSE_MENU)], output: 'Type', ...info },
 

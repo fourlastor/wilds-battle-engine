@@ -184,7 +184,7 @@ export const CATEGORIES: ToolboxCategory[] = [
       block('mlab_streak'),
       block('mlab_count'),
       block('mlab_iv'),
-      block('mlab_type_by_number', { inputs: { NUMBER: n(0) } }),
+      block('mlab_type_choice'),
       block('mlab_first_type'),
     ],
   },

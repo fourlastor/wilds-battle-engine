@@ -893,6 +893,7 @@ emit['mlab_iv'] = (block) => {
 emit['mlab_stage'] = (block) => [`${who(block)}:stage(ctx.Stat.${field(block, 'STAT')})`, Order.HIGH];
 emit['mlab_raised_stages'] = (block) => [`${who(block)}:raised_stages()`, Order.HIGH];
 emit['mlab_type'] = (block) => [`ctx.Type.${field(block, 'TYPE')}`, Order.HIGH];
+emit['mlab_type_choice'] = emit['mlab_type'];
 emit['mlab_type_by_number'] = (block) => [`ctx:type_number(${value(block, 'NUMBER', Order.NONE, '0')})`, Order.HIGH];
 emit['mlab_first_type'] = (block) => [`(${who(block)}.types[1] or ctx.Type.None)`, Order.ATOMIC];
 

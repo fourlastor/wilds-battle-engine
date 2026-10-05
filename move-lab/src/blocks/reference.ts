@@ -89,7 +89,6 @@ const EXAMPLES: Record<string, BlockState> = {
   mlab_sure: haze,
   mlab_if_reaches: when({ type: 'mlab_if_reaches', fields: { WHO: 'target' } }, sleepTarget),
   mlab_repeat_works: when({ type: 'mlab_not', inputs: { A: { block: { type: 'mlab_repeat_works' } } } }, { type: 'mlab_fail' }),
-  mlab_type_by_number: { type: 'mlab_as_type', inputs: { TYPE: { ...kind('Fire'), block: { type: 'mlab_type_by_number', inputs: { NUMBER: number(8) } } }, DO: { block: damage(60) } } },
 };
 
 const NOTES: Record<string, string> = {
@@ -104,7 +103,7 @@ const NOTES: Record<string, string> = {
   mlab_ohko:
     'With that rule the move lands about 30% of the time, a little more for each level the user has over the target, and never on a target of a higher level.',
   mlab_as_type:
-    'Plug a type block in, or a block that works one out, such as “type number” for Hidden Power or “the user’s first type”.',
+    'Pick the type in the menu, or plug in a block that works one out, such as “the user’s first type”.',
   mlab_heal:
     'The plain line heals whoever the move is used on, so Move Lab writes it only when the move is used on “the user”. For any other target the move becomes a script.',
   mlab_status:
