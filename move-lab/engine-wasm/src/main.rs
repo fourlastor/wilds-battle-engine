@@ -75,8 +75,10 @@ fn effect(value: &Effect) -> Value {
             charge_message,
             semi_invulnerable,
             skip_in_sun,
+            hidden,
         } => json!({"kind": "TwoTurn", "power": power, "charge_message": charge_message,
-            "semi_invulnerable": semi_invulnerable, "skip_in_sun": skip_in_sun}),
+            "semi_invulnerable": semi_invulnerable, "skip_in_sun": skip_in_sun,
+            "hidden": format!("{hidden:?}")}),
         Effect::Consecutive {
             power,
             min,
@@ -100,6 +102,10 @@ fn spec(value: &MoveSpec) -> Value {
         "accuracy": accuracy(value.accuracy),
         "priority": value.priority,
         "fail_on_full_hp": value.fail_on_full_hp,
+        "usable_while_asleep": value.usable_while_asleep(),
+        "usable_while_frozen": value.usable_while_frozen(),
+        "flags": value.flags,
+        "hits_hidden": value.hits_hidden.iter().map(|place| format!("{place:?}")).collect::<Vec<_>>(),
         // A move has either an effects list or a script, never both.
         "scripted": value.effects.is_empty(),
         "effects": value.effects.iter().map(effect).collect::<Vec<_>>(),
@@ -127,7 +133,14 @@ fn pokemon(value: &Pokemon) -> Value {
         "protected": value.protected,
         "recharging": value.recharging,
         "hidden": value.semi_invulnerable,
+        "hidden_in": value.hidden().map(|place| format!("{place:?}")),
         "locked": value.locked_move.is_some() || value.script_continuation.is_some(),
+        "gender": format!("{:?}", value.gender),
+        "weight": value.weight,
+        "item": value.item,
+        "ability": value.ability,
+        "ability_suppressed": value.ability_suppressed,
+        "conditions": ffi::conditions(&value.conditions),
         "boost": value.next_move_power_boost.map(|boost|
             json!({"type": format!("{:?}", boost.move_type), "multiplier": boost.multiplier})),
         "moves": value.moves,
@@ -175,5 +188,10 @@ pub unsafe extern "C" fn mlab_state(battle: *const Battle) -> *mut c_char {
             json!({"kind": format!("{:?}", weather.kind), "turns_left": weather.turns_left})),
         "allies": battle.participants(Side::Allies).iter().map(pokemon).collect::<Vec<_>>(),
         "foes": battle.participants(Side::Foes).iter().map(pokemon).collect::<Vec<_>>(),
+        "field": ffi::conditions(battle.field_conditions()),
+        "sides": {"allies": ffi::conditions(battle.side_conditions(Side::Allies)),
+            "foes": ffi::conditions(battle.side_conditions(Side::Foes))},
+        "payout": {"allies": battle.payout(Side::Allies), "foes": battle.payout(Side::Foes)},
+        "environment": battle.environment(),
     }))
 }

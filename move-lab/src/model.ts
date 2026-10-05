@@ -13,6 +13,9 @@ export const TYPE_COLORS: Record<string, string> = {
 };
 
 export const CATEGORIES = ['Physical', 'Special', 'Status'] as const;
+export const GENDERS = ['Genderless', 'Male', 'Female'] as const;
+/** Hidden places a move can be told to reach (the engine's `Hidden`). */
+export const HIDING_PLACES: [string, string][] = [['Air', 'in the air'], ['Underground', 'underground'], ['Underwater', 'underwater']];
 export type Category = (typeof CATEGORIES)[number];
 
 export const STAT_LABELS: Record<string, string> = {
@@ -47,6 +50,12 @@ export interface MoveSheet {
   priority: number;
   failOnFullHp: boolean;
   usableWhileAsleep: boolean;
+  /** Also thaws the user. Missing in moves saved before it existed. */
+  usableWhileFrozen?: boolean;
+  /** Words the engine passes on to scripts, such as "contact" and "sound". */
+  flags?: string[];
+  /** Hidden places the move still reaches: "Air", "Underground", "Underwater". */
+  hitsHidden?: string[];
 }
 
 export interface MoveDoc {
@@ -81,6 +90,11 @@ export interface MonSetup {
   stats: Stats;
   /** Move ids. For the first Pokémon on your side the move being edited is added in front. */
   moves: string[];
+  /** Things the engine only keeps for moves to read. Missing in setups saved before they existed. */
+  gender?: string;
+  weight?: number;
+  item?: string;
+  ability?: string;
 }
 
 export type FoePolicy = 'first' | 'random' | 'manual';
@@ -92,6 +106,8 @@ export interface BattleSetup {
   foes: MonSetup[];
   foePolicy: FoePolicy;
   onEdit: OnEdit;
+  /** Name of the place of the battle, such as "cave", for moves that read it. */
+  environment?: string;
 }
 
 export function slug(name: string): string {

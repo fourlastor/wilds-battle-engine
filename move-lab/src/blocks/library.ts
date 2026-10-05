@@ -132,7 +132,7 @@ function effectBlock(effect: EffectInfo): BlockState {
     case 'MultiHit':
       return make('mlab_multi_hit', { MIN: effect.min_hits, MAX: effect.max_hits, POWER: effect.power });
     case 'FixedDamage':
-      return make('mlab_fixed_damage', { AMOUNT: effect.amount });
+      return make('mlab_exact_damage', undefined, { AMOUNT: num(Number(effect.amount)) });
     case 'LevelDamage':
       return make('mlab_level_damage');
     case 'Ohko':
@@ -158,7 +158,7 @@ function effectBlock(effect: EffectInfo): BlockState {
     case 'TwoTurn':
       return make(
         'mlab_two_turn',
-        { MESSAGE: String(effect.charge_message).split('{0}').join('{user}'), POWER: effect.power },
+        { MESSAGE: String(effect.charge_message).split('{0}').join('{user}'), POWER: effect.power, ...(effect.semi_invulnerable ? { PLACE: effect.hidden } : {}) },
         undefined,
         [effect.semi_invulnerable ? 'hidden' : '', effect.skip_in_sun ? 'skip_sun' : ''].filter(Boolean),
       );
@@ -258,7 +258,10 @@ export function sheetFromInfo(info: MoveInfo): MoveSheet {
     accuracy: info.accuracy.kind === 'chance' ? { kind: 'chance', percent: percent(info.accuracy.value) } : { kind: info.accuracy.kind },
     priority: info.priority,
     failOnFullHp: info.fail_on_full_hp,
-    usableWhileAsleep: false,
+    usableWhileAsleep: info.usable_while_asleep,
+    ...(info.usable_while_frozen ? { usableWhileFrozen: true } : {}),
+    ...(info.flags.length ? { flags: [...info.flags] } : {}),
+    ...(info.hits_hidden.length ? { hitsHidden: [...info.hits_hidden] } : {}),
     ...SCRIPTED[info.id]?.().sheet,
   };
 }

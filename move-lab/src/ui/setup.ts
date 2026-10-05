@@ -1,7 +1,7 @@
 // The "Set up the test battle" dialog. It edits a copy; nothing changes until "Start battle".
-import { SPECIES, findSpecies, monFor, statsFor } from '../data/species.ts';
+import { DEFAULT_WEIGHT, SPECIES, findSpecies, monFor, statsFor } from '../data/species.ts';
 import type { MoveInfo } from '../engine/engine.ts';
-import { STATUSES, STATUS_LABELS, TYPES, TYPE_COLORS, clamp } from '../model.ts';
+import { GENDERS, STATUSES, STATUS_LABELS, TYPES, TYPE_COLORS, clamp } from '../model.ts';
 import type { BattleSetup, FoePolicy, MonSetup, OnEdit, Stats } from '../model.ts';
 import { clear, h, icon } from './dom.ts';
 
@@ -64,6 +64,7 @@ export function openSetup(options: SetupOptions): void {
         mon.types = [...species.types];
         mon.stats = statsFor(species, mon.level);
         mon.hp = mon.stats.max_hp;
+        mon.weight = species.weight;
       }
       render();
     };
@@ -126,6 +127,30 @@ export function openSetup(options: SetupOptions): void {
         ),
       ),
       h('div', null,
+        h('div', { class: 'field-title' }, h('span', null, 'For moves that read them'), h('span', { class: 'muted' }, 'names as the game writes them, like oran_berry')),
+        h('div', { class: 'setup-row' },
+          h('label', { class: 'field grow' }, 'Holds',
+            h('input', { type: 'text', class: 'in', value: mon.item ?? '', maxlength: '40', placeholder: 'nothing', oninput: (event: Event) => { mon.item = (event.target as HTMLInputElement).value.trim(); } }),
+          ),
+          h('label', { class: 'field grow' }, 'Ability',
+            h('input', { type: 'text', class: 'in', value: mon.ability ?? '', maxlength: '40', placeholder: 'none', oninput: (event: Event) => { mon.ability = (event.target as HTMLInputElement).value.trim(); } }),
+          ),
+          h('label', { class: 'field grow' }, 'Gender',
+            select(GENDERS.map((gender): [string, string] => [gender, gender === 'Genderless' ? 'None' : gender]), mon.gender ?? 'Genderless', (value) => { mon.gender = value; }, 'Gender'),
+          ),
+          h('label', { class: 'field weight' }, 'Weight kg',
+            h('input', {
+              type: 'number', class: 'in', value: String(mon.weight ?? DEFAULT_WEIGHT), min: '0.1', max: '999.9', step: 'any',
+              onchange: (event: Event) => {
+                const input = event.target as HTMLInputElement;
+                mon.weight = clamp(Number(input.value) || DEFAULT_WEIGHT, 0.1, 999.9);
+                input.value = String(mon.weight);
+              },
+            }),
+          ),
+        ),
+      ),
+      h('div', null,
         h('div', { class: 'field-title' }, h('span', null, 'Moves')),
         h('div', { class: 'move-grid' },
           pinned ? h('div', { class: 'move-pinned' }, h('span', null, options.editedName), h('span', { class: 'tag' }, 'editing')) : null,
@@ -172,6 +197,7 @@ export function openSetup(options: SetupOptions): void {
     ['User burned', () => { draft.allies[0].status = 'Burned'; }],
     ['User asleep', () => { draft.allies[0].status = 'Asleep'; }],
     ['User at low HP', () => { draft.allies[0].hp = Math.max(1, Math.ceil(draft.allies[0].stats.max_hp / 5)); }],
+    ['Target holds a berry', () => { draft.foes[0].item = 'oran_berry'; }],
     ['Everyone healthy', () => { for (const mon of [...draft.allies, ...draft.foes]) { mon.status = null; mon.hp = mon.stats.max_hp; } }],
     ['Two on two', () => {
       if (draft.allies.length < 2) draft.allies.push(monFor('Eevee', draft.allies[0].level, ['tackle']));
@@ -202,6 +228,10 @@ export function openSetup(options: SetupOptions): void {
             h('button', { type: 'button', class: 'icon-btn', 'aria-label': 'Pick a new seed', onclick: () => { draft.seed = Math.floor(Math.random() * 9999) + 1; render(); } }, icon('dice', 15)),
           ),
           h('span', { class: 'muted' }, 'Same seed, same rolls.'),
+        ),
+        h('label', { class: 'field' }, 'Place of the battle',
+          h('input', { type: 'text', class: 'in place', value: draft.environment ?? '', maxlength: '40', placeholder: 'anywhere', oninput: (event: Event) => { draft.environment = (event.target as HTMLInputElement).value.trim(); } }),
+          h('span', { class: 'muted' }, 'A name such as cave, for moves that read it.'),
         ),
         h('fieldset', { class: 'radio-group' },
           h('legend', null, 'When I edit the move'),

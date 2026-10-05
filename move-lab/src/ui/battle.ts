@@ -1,6 +1,6 @@
 // The test battle panel. It only draws what the bench reports; all rules live in the engine.
 import type { BenchView, LogEntry, MonView } from '../bench/bench.ts';
-import type { EngineChoice, MoveInfo, Ref } from '../engine/engine.ts';
+import type { ConditionInfo, EngineChoice, MoveInfo, Ref } from '../engine/engine.ts';
 import { STAT_SHORT, STATUS_SHORT, TYPE_COLORS } from '../model.ts';
 import { clear, h, icon } from './dom.ts';
 
@@ -36,7 +36,17 @@ export interface BattleUi {
   pendingMove: string | null;
 }
 
-const WEATHER_TEXT: Record<string, string> = { Sun: 'Harsh sunlight', Sandstorm: 'Sandstorm' };
+const WEATHER_TEXT: Record<string, string> = { Sun: 'Harsh sunlight', Sandstorm: 'Sandstorm', Rain: 'Rain', Hail: 'Hail' };
+const SKY: Record<string, string> = { Sun: 'sky-sun', Sandstorm: 'sky-sand', Rain: 'sky-rain', Hail: 'sky-hail' };
+const HIDING: Record<string, string> = { Air: 'IN AIR', Underground: 'DUG IN', Underwater: 'DIVED', Vanished: 'AWAY' };
+
+/** A mark or an effect as a chip: its name, the turns it has left, and its number if it carries one. */
+function conditionChip(condition: ConditionInfo): HTMLElement {
+  const turns = condition.turns === null ? '' : ` · ${condition.turns}`;
+  const value = condition.value === 1 ? '' : ` = ${condition.value}`;
+  const title = condition.turns === null ? 'Lasts until it is removed' : `${condition.turns} ${condition.turns === 1 ? 'turn' : 'turns'} left, counting this one`;
+  return h('span', { class: 'chip chip-effect', title }, `${condition.name}${value}${turns}`);
+}
 
 export function renderBattle(root: HTMLElement, model: BattleModel, on: BattleHandlers, ui: BattleUi, redraw: () => void): void {
   const { view } = model;
@@ -75,7 +85,13 @@ function screen(model: BattleModel, ui: BattleUi): HTMLElement {
     ? `${WEATHER_TEXT[weather.kind] ?? weather.kind} · ${weather.turns_left + 1} ${weather.turns_left === 0 ? 'turn' : 'turns'} left`
     : 'Clear skies';
   const turnText = view.phase === 'ended' ? 'Battle over' : view.phase === 'crashed' ? 'Stopped' : `Turn ${view.turn + 1}`;
-  const sky = weather?.kind === 'Sun' ? 'sky-sun' : weather?.kind === 'Sandstorm' ? 'sky-sand' : 'sky-clear';
+  const sky = (weather && SKY[weather.kind]) || 'sky-clear';
+  const around: [string, HTMLElement[]][] = [
+    ['Everyone', view.field.map(conditionChip)],
+    ['Your side', [...view.sides.allies.map(conditionChip), ...(view.payout.allies ? [h('span', { class: 'chip chip-item' }, `money +${view.payout.allies}`)] : [])]],
+    ['Other side', [...view.sides.foes.map(conditionChip), ...(view.payout.foes ? [h('span', { class: 'chip chip-item' }, `money +${view.payout.foes}`)] : [])]],
+  ];
+  const shown = around.filter(([, chips]) => chips.length);
 
   return h('div', { class: 'screen' },
     h('div', { class: 'screen-strip' }, h('span', null, turnText), h('span', null, weatherText)),
@@ -87,6 +103,11 @@ function screen(model: BattleModel, ui: BattleUi): HTMLElement {
       h('div', { class: 'stage-sprites stage-ally-sprites' }, view.allies.map(sprite)),
       h('div', { class: 'stage-cards stage-ally-cards' }, view.allies.map(card)),
     ),
+    shown.length
+      ? h('div', { class: 'around', 'aria-label': 'Effects on the sides and on everyone' },
+          shown.map(([label, chips]) => h('span', { class: 'around-group' }, h('span', { class: 'around-label' }, label), chips)),
+        )
+      : null,
     h('div', { class: 'message-box' }, message(model, ui)),
   );
 }
@@ -114,10 +135,13 @@ function card(mon: MonView): HTMLElement {
   if (mon.confused) chip('CONF', 'flag');
   if (mon.bound) chip('TRAP', 'flag');
   if (mon.protected) chip('PROT', 'flag');
-  if (mon.hidden) chip('AWAY', 'flag');
+  if (mon.hidden) chip(HIDING[mon.hidden_in ?? 'Vanished'] ?? 'AWAY', 'flag');
   if (mon.recharging) chip('RCHG', 'flag');
   if (mon.locked) chip('LOCK', 'flag');
   if (mon.boost) chip(`${mon.boost.type} ×${mon.boost.multiplier}`, 'up');
+  chips.push(...mon.conditions.map(conditionChip));
+  if (mon.item) chips.push(h('span', { class: 'chip chip-item', title: 'Held item' }, mon.item));
+  if (mon.ability && mon.ability_suppressed) chips.push(h('span', { class: 'chip chip-flag', title: `${mon.ability} is suppressed` }, 'NO ABILITY'));
   return h('div', { class: `mon-card${mon.hp === 0 ? ' fainted' : ''}` },
     h('div', { class: 'mon-name' }, h('span', null, mon.name), h('span', { class: 'mon-level' }, `Lv${mon.level}`)),
     h('div', { class: 'hp-track' }, h('div', { class: 'hp-fill', style: `width: ${Math.round(part * 100)}%; background: ${color}` })),

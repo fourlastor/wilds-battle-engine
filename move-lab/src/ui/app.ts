@@ -12,7 +12,8 @@ import { CATEGORIES, STYLE_COLORS, toolboxDefinition } from '../blocks/toolbox.t
 import { BUILTIN_FILES } from '../data/builtin.ts';
 import { Engine } from '../engine/engine.ts';
 import type { EngineChoice, EngineSetup, MoveInfo, SetupMon } from '../engine/engine.ts';
-import { CATEGORIES as MOVE_CATEGORIES, TYPES, TYPE_COLORS, clamp, slug, uid } from '../model.ts';
+import { DEFAULT_WEIGHT } from '../data/species.ts';
+import { HIDING_PLACES, CATEGORIES as MOVE_CATEGORIES, TYPES, TYPE_COLORS, clamp, slug, uid } from '../model.ts';
 import type { Category, MonSetup, MoveDoc } from '../model.ts';
 import { loadProject, saveProject } from '../store.ts';
 import type { Project } from '../store.ts';
@@ -264,7 +265,7 @@ class App {
       move: { scrollbars: true, drag: true, wheel: true },
       trashcan: false,
       sounds: false,
-      maxInstances: { mlab_on_use: 1, mlab_on_hit: 1, mlab_on_interrupt: 1 },
+      maxInstances: { mlab_on_use: 1, mlab_on_hit: 1, mlab_on_interrupt: 1, mlab_on_turn_start: 1 },
     });
     // The palette keeps its own size instead of following the workspace zoom.
     const flyout = this.workspace.getFlyout() as unknown as { getFlyoutScale: () => number; reflow(): void } | null;
@@ -457,6 +458,17 @@ class App {
         },
       });
 
+    const check = (label: string, checked: boolean, set: (on: boolean) => void) =>
+      h('label', { class: 'check' },
+        h('input', { type: 'checkbox', checked, onchange: (event: Event) => { set((event.target as HTMLInputElement).checked); changed(); } }),
+        label,
+      );
+    /** Adds or removes one word of a list kept on the sheet, leaving the others alone. */
+    const toggled = (list: string[] | undefined, word: string, on: boolean) => {
+      const rest = (list ?? []).filter((other) => other !== word);
+      return on ? [...rest, word] : rest;
+    };
+
     const percent = sheet.accuracy.kind === 'chance' ? sheet.accuracy.percent : 100;
     const accuracyInput = number(percent, 1, 100, (value) => { sheet.accuracy = { kind: 'chance', percent: value }; }, { step: 'any', disabled: sheet.accuracy.kind !== 'chance' });
 
@@ -476,15 +488,19 @@ class App {
           ),
         ),
         field('Priority', number(sheet.priority, -7, 7, (value) => { sheet.priority = Math.round(value); })),
-        h('label', { class: 'check' },
-          h('input', { type: 'checkbox', checked: sheet.failOnFullHp, onchange: (event: Event) => { sheet.failOnFullHp = (event.target as HTMLInputElement).checked; changed(); } }),
-          'Fails if the target has full HP',
-        ),
-        h('label', { class: 'check' },
-          h('input', { type: 'checkbox', checked: sheet.usableWhileAsleep, onchange: (event: Event) => { sheet.usableWhileAsleep = (event.target as HTMLInputElement).checked; changed(); } }),
-          'Can be used while asleep',
-        ),
         h('p', { class: 'muted' }, 'Higher priority moves go first. Most moves are 0.'),
+        check('Fails if the target has full HP', sheet.failOnFullHp, (on) => { sheet.failOnFullHp = on; }),
+        check('Can be used while asleep', sheet.usableWhileAsleep, (on) => { sheet.usableWhileAsleep = on; }),
+        check('Can be used while frozen, and thaws the user', sheet.usableWhileFrozen === true, (on) => { sheet.usableWhileFrozen = on; }),
+        check('Makes contact', sheet.flags?.includes('contact') === true, (on) => { sheet.flags = toggled(sheet.flags, 'contact', on); }),
+        h('div', { class: 'more-group' },
+          h('span', { class: 'more-title' }, 'Reaches Pokémon hiding'),
+          h('div', { class: 'more-row' },
+            HIDING_PLACES.map(([place, label]) =>
+              check(label, sheet.hitsHidden?.includes(place) === true, (on) => { sheet.hitsHidden = toggled(sheet.hitsHidden, place, on); }),
+            ),
+          ),
+        ),
       ),
     );
 
@@ -639,7 +655,7 @@ class App {
     }
     const view = this.bench.view;
     // Markers count as script steps. If that alone trips the engine's limit, run without them.
-    if (view.phase === 'crashed' && !this.traceOff && /exceeded 64 operations/.test(view.error ?? '')) {
+    if (view.phase === 'crashed' && !this.traceOff && /exceeded \d+ operations/.test(view.error ?? '')) {
       this.traceOff = true;
       this.refresh(true);
       return;
@@ -681,7 +697,13 @@ class App {
         sp_defense: mon.stats.sp_defense,
         speed: mon.stats.speed,
         types: mon.types.filter(Boolean),
+        // The game names species its own way; here it is the name in small letters.
+        species: slug(mon.species === 'Custom' ? mon.name : mon.species),
+        gender: mon.gender ?? 'Genderless',
+        weight: mon.weight ?? DEFAULT_WEIGHT,
       };
+      if (mon.item) result.item = mon.item;
+      if (mon.ability) result.ability = mon.ability;
       if (mon.status) {
         result.status = mon.status;
         // Sleep needs some turns left or the Pokémon wakes at once; bad poison starts at its first step.
@@ -689,7 +711,9 @@ class App {
       }
       return result;
     };
-    return { seed: setup.seed, allies: setup.allies.map((mon, index) => convert(mon, index === 0)), foes: setup.foes.map((mon) => convert(mon, false)) };
+    const result: EngineSetup = { seed: setup.seed, allies: setup.allies.map((mon, index) => convert(mon, index === 0)), foes: setup.foes.map((mon) => convert(mon, false)) };
+    if (setup.environment) result.environment = setup.environment;
+    return result;
   }
 
   // -------------------------------------------------------------------------

@@ -44,7 +44,10 @@ function added(base: string | null, full: string | null): string | null {
   while (start < base.length && base[start] === full[start]) start += 1;
   let end = 0;
   while (end < base.length - start && base[base.length - 1 - end] === full[full.length - 1 - end]) end += 1;
-  return full.slice(start, full.length - end).replace(/^[\s,{]+|[\s,}]+$/g, '');
+  const part = full.slice(start, full.length - end).replace(/^[\s,{]+|[\s,}]+$/g, '');
+  // A value that is itself a table loses its closing brace to the trimming above.
+  const open = part.split('{').length - part.split('}').length;
+  return part + '}'.repeat(Math.max(0, open));
 }
 
 function picture(block: Blockly.BlockSvg): SVGSVGElement {
@@ -183,7 +186,11 @@ export function openReference(options: ReferenceOptions): { close(): void } {
       h('div', { class: 'ref-key' },
         h('p', null,
           'A move file comes in two shapes. A ', tag('plain'), ' move is a list of the game’s built-in effects. A ', tag('script'),
-          ' is a small program, for moves that need more than that. Move Lab picks the shape for you: a move stays plain while every block in it has a plain line, and becomes a script as soon as one block has only a script line.',
+          ' is a small program, for moves that need more than that. Move Lab picks the shape for you: a move stays plain while every block in it has a plain line. It becomes a script as soon as one block has only a script line, the move gets a second stack, or it is used on several Pokémon at once.',
+        ),
+        h('p', null,
+          'In a script, a block that does something to another Pokémon is written inside ', h('code', null, 'if ctx:reached() then … end'),
+          ': it waits until the move has got through to that Pokémon, past protection, hiding and a miss. “the move reaches” and “ignoring protection, hiding and accuracy”, under Turns, let you decide that yourself.',
         ),
         h('p', null,
           h('span', { class: 'ref-badge' }, 'no logic yet'),

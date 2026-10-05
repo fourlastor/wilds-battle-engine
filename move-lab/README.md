@@ -5,7 +5,7 @@ A web page for making battle moves without writing code. You stack blocks, Move 
 compiled to WebAssembly.
 
 Move Lab is a separate project that happens to live in this repository. It depends on the engine
-by path; the engine does not know it exists, and nothing under `crates/` was changed for it.
+by path, and the engine does not know it exists.
 
 ## Run it
 
@@ -33,24 +33,41 @@ workspace, that builds for `wasm32-unknown-emscripten`. It compiles the engine's
 `wbe_advance` and `wbe_respond` the game does. Move files are written to Emscripten's in-memory
 file system and loaded with the engine's normal directory loader. Two extra read-only functions,
 `mlab_catalog` and `mlab_state`, expose what the public Rust API already offers (move metadata,
-stat stages, weather) so the editor can list moves and draw the battle.
+stat stages, weather, held items, marks and timed effects) so the editor can list moves and draw
+the battle.
 
 **Blocks to Lua.** `src/blocks/definitions.ts` defines the blocks and `src/blocks/generate.ts` turns
 a workspace into a move file. The engine accepts either an `effects` list or a `script` function,
 never both, so:
 
 - a stack made only of blocks the effects list can express becomes a plain move (`effects = {…}`);
-- as soon as one block needs a script (logic, messages, multi-turn control and so on), the whole
-  move becomes one;
-- blocks the chosen form cannot express are flagged on the block instead of being dropped, and the
-  message names what made the move a script. Status, weather, protect, trapping, multi-hit, fixed,
-  level and one-hit-KO damage, and stat changes on the target exist only as effects today, so they
-  cannot be combined with logic until the engine gains script calls for them.
+- as soon as one block needs a script (logic, messages, effects, marks and so on), the move has a
+  second stack, or it is used on several Pokémon at once, the whole move becomes a script;
+- every block has a script form except the engine's two ready-made multi-turn effects ("charge for
+  a turn…" and "keep attacking for…"). Those are flagged on the block instead of being dropped, and
+  the message names what made the move a script. The same moves can be built from "make this move
+  take N turns", "the user hides" and the other blocks.
 
-The engine applies a plain move's effects to the one Pokémon the move is used on, so two cases are
-written as scripts to keep the blocks true to their words: a move used on "everyone else" (only a
-script's `ctx:damage` reaches them all), and "heal the user" in a move aimed at someone else.
-"protect the user" is only accepted in a move used on the user.
+A plain move checks once whether it gets through to its target, and its effects follow. A script
+is a list of separate steps, so the generator keeps the blocks true to their words itself: in the
+main stack, every block that does something to another Pokémon is written inside
+`if ctx:reached(…) then … end`. `ctx:reached` answers with the hit already made on that Pokémon, or
+else makes the usual checks (protection, hiding, accuracy) once. "ignoring protection, hiding and
+accuracy" switches that off for the blocks inside it, and "the move reaches …" is the same check
+as a block. The stacks that react ("when the user is hit while watching", "at the start of a
+turn") act at once and only take the blocks the engine lets such a hook run.
+
+The engine applies a plain move's effects to the one Pokémon the move is used on, so "heal the
+user" in a move aimed at someone else is written as a script, and "protect the user" in a plain
+move is only accepted when the move is used on the user.
+
+**Effects, marks and what moves read.** Screens, terrains, seeds and the like are not built into
+the engine: a move starts a named effect and picks its rules from a fixed list ("takes × 0.5 damage
+from physical moves", "loses 1/8 of max HP each turn", "cannot be given sleep"…), on a Pokémon, a
+side or everyone. A mark is a named number that one move leaves and another reads (Minimize and
+Stomp, Stockpile and Swallow). Items, abilities, species, gender and weight are names and numbers
+the game hands to the engine for moves to read; the setup dialog has a field for each, and the
+battle panel shows items, marks and effects as chips.
 
 **All blocks.** The "All blocks" link in the top bar (address `#blocks`) opens a page listing every
 block with what it does and the line it writes in each form. Nothing on it is written twice: the
@@ -76,8 +93,9 @@ and repeats your choices, so only the edit changes the outcome.
   battles, comparing every event and the final state against the original Lua files, for both the
   clean and the marked-up output. `PARITY_BREAK=tackle npm run test:blocks` proves the check bites.
 - `npm run test:reference` checks that every block of the palette is on the "All blocks" page with
-  an explanation and a line, and plays short battles to confirm that blocks which say "the user"
-  act on the user whoever the move is aimed at.
+  an explanation and a line, and plays short battles to confirm that the blocks do what their words
+  say: who a block acts on, what waits for the move to get through, effects and their rules, marks,
+  hiding, the stacks that react, and the rest.
 
 ## Publishing to Cloudflare
 
@@ -118,9 +136,15 @@ src/data/         bundled move files and Pokémon presets for the setup form
 
 ## Known gaps
 
+- The engine has no switching and no bench. Moves that switch (U-turn, Dragon Tail, Pursuit) can
+  only do their damage, and "cannot leave the battle" is something for the game to read.
+- Items and abilities are names. Moves can read, take, give and suppress them, but nothing makes a
+  berry heal or an ability act: that is the game's side.
 - The battle cannot start in a chosen weather: the engine's setup has no weather field. Use Sunny
-  Day or Sandstorm in the battle instead.
-- A script may yield 64 operations per turn, and each marker is one. If markers alone push a move
-  over the limit, Move Lab runs it without them and turns block highlighting off for that move.
+  Day or Sandstorm in the battle instead, or a move of your own.
+- The engine's two ready-made multi-turn effects cannot share a move with a block that needs a
+  script (see "Blocks to Lua").
+- A stack may do 256 things per turn, and each marker is one. If markers alone push a move over
+  the limit, Move Lab runs it without them and turns block highlighting off for that move.
 - Moves and the battle setup are saved in the browser's local storage only.
 - Sprites are placeholders.

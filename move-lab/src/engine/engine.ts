@@ -34,6 +34,13 @@ export interface Advance {
   turn: number;
 }
 
+/** A mark or a timed effect. `turns` is null when it does not end by itself. */
+export interface ConditionInfo {
+  name: string;
+  value: number;
+  turns: number | null;
+}
+
 export interface EngineMon {
   name: string;
   level: number;
@@ -52,7 +59,15 @@ export interface EngineMon {
   protected: boolean;
   recharging: boolean;
   hidden: boolean;
+  /** Where it hides: "Air", "Underground", "Underwater" or "Vanished". */
+  hidden_in: string | null;
   locked: boolean;
+  gender: string;
+  weight: number;
+  item: string | null;
+  ability: string | null;
+  ability_suppressed: boolean;
+  conditions: ConditionInfo[];
   boost: { type: string; multiplier: number } | null;
   moves: string[];
   move_pp: Record<string, number>;
@@ -63,6 +78,12 @@ export interface EngineState {
   weather: { kind: string; turns_left: number } | null;
   allies: EngineMon[];
   foes: EngineMon[];
+  /** Marks and effects on everyone, and on each side. */
+  field: ConditionInfo[];
+  sides: Record<Side, ConditionInfo[]>;
+  /** Money each side has earned from moves such as Pay Day. */
+  payout: Record<Side, number>;
+  environment: string | null;
 }
 
 export interface EffectInfo {
@@ -80,6 +101,10 @@ export interface MoveInfo {
   accuracy: { kind: 'chance'; value: number } | { kind: 'always' } | { kind: 'ohko' };
   priority: number;
   fail_on_full_hp: boolean;
+  usable_while_asleep: boolean;
+  usable_while_frozen: boolean;
+  flags: string[];
+  hits_hidden: string[];
   scripted: boolean;
   effects: EffectInfo[];
 }
@@ -99,12 +124,20 @@ export interface SetupMon {
   types: string[];
   status?: string;
   status_turns?: number;
+  /** What follows is only kept for moves to read. */
+  species?: string;
+  gender?: string;
+  weight?: number;
+  item?: string;
+  ability?: string;
 }
 
 export interface EngineSetup {
   seed: number;
   allies: SetupMon[];
   foes: SetupMon[];
+  /** The place of the battle, for moves that read it. */
+  environment?: string;
 }
 
 export class EngineError extends Error {}

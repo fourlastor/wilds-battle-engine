@@ -56,6 +56,10 @@ export interface BenchView {
   weather: EngineState['weather'];
   allies: MonView[];
   foes: MonView[];
+  /** Marks and effects on everyone and on each side, and the money each side has earned. */
+  field: EngineState['field'];
+  sides: EngineState['sides'];
+  payout: EngineState['payout'];
   prompt: PromptView | null;
   winner: Side | null;
   log: LogEntry[];
@@ -83,14 +87,15 @@ export interface StartOptions {
 }
 
 const MARK = '\u0001';
-const END_OF_TURN = /is hurt by|is buffeted by|^The sunlight|^The sandstorm|^The harsh sunlight|was freed from/;
+const END_OF_TURN = /is hurt by|is buffeted by|^The sunlight|^The sandstorm|^The harsh sunlight|^Rain continues|^Hail continues|^The rain|^The hail|was freed from/;
 const STAT_NAMES: Record<string, string> = {
   Attack: 'Attack', Defense: 'Defense', SpAttack: 'Sp. Atk', SpDefense: 'Sp. Def', Speed: 'Speed', Accuracy: 'Accuracy', Evasion: 'Evasion',
 };
 
 function emptyView(): BenchView {
   return {
-    phase: 'idle', turn: 0, weather: null, allies: [], foes: [], prompt: null, winner: null, log: [],
+    phase: 'idle', turn: 0, weather: null, allies: [], foes: [], field: [], sides: { allies: [], foes: [] }, payout: { allies: 0, foes: 0 },
+    prompt: null, winner: null, log: [],
     ran: [], ranTurn: null, branches: {}, error: null, picks: [], replayed: 0, replayCut: false, changes: [],
   };
 }
@@ -242,6 +247,9 @@ export class Bench {
     view.weather = state.weather;
     view.allies = state.allies.map((mon, index) => ({ ...mon, side: 'allies' as const, index }));
     view.foes = state.foes.map((mon, index) => ({ ...mon, side: 'foes' as const, index }));
+    view.field = state.field;
+    view.sides = state.sides;
+    view.payout = state.payout;
     // Each batch belongs to the turn that just resolved; nothing carries over between batches.
     this.frames = [];
     this.current = null;

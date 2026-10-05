@@ -22,6 +22,8 @@ export const theme = Blockly.Theme.defineTheme('movelab', {
     logic_blocks: style(COLORS.logic, '#8C5000', '#7C4700'),
     info_blocks: style(COLORS.info, '#F2C230', '#D9A800'),
     text_blocks: style(COLORS.text, '#415049', '#38463F'),
+    effect_blocks: style(COLORS.effects, '#4D6808', '#425907'),
+    trait_blocks: style(COLORS.traits, '#2B435D', '#24394F'),
   },
   componentStyles: {
     workspaceBackgroundColour: '#EDF0EA',
