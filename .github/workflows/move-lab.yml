@@ -1,8 +1,8 @@
 name: Move Lab
 
 # Builds the battle engine for the browser, checks that blocks and Lua agree, and builds the site.
-# Pushes to main are also published to Cloudflare once the repository has a
-# CLOUDFLARE_ACCOUNT_ID variable and a CLOUDFLARE_API_TOKEN secret (see move-lab/README.md).
+# Pushes to main are also published to Cloudflare once the repository has the
+# CLOUDFLARE_ACCOUNT_ID and CLOUDFLARE_API_TOKEN secrets (see move-lab/README.md).
 
 on:
   push:
@@ -90,30 +90,45 @@ jobs:
 
   deploy:
     name: Publish to Cloudflare
-    # Only main is published, and only once the Cloudflare account is configured.
-    if: >-
-      (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
-      && github.ref == 'refs/heads/main'
-      && vars.CLOUDFLARE_ACCOUNT_ID != ''
+    # Only main is published.
+    if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/main'
     needs: build
     runs-on: ubuntu-latest
     steps:
+      # A job cannot be skipped based on secrets, so look here and stop quietly if they are missing.
+      - name: Check that Cloudflare is configured
+        id: cloudflare
+        env:
+          ACCOUNT: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          if [ -n "$ACCOUNT" ] && [ -n "$TOKEN" ]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Not published. Add the CLOUDFLARE_ACCOUNT_ID and CLOUDFLARE_API_TOKEN secrets to publish main."
+          fi
+
       # For move-lab/wrangler.jsonc; the site itself comes from the build job.
       - uses: actions/checkout@v7
+        if: steps.cloudflare.outputs.ready == 'true'
 
       - uses: actions/setup-node@v7
+        if: steps.cloudflare.outputs.ready == 'true'
         with:
           node-version: 24
 
       - name: Fetch the built site
+        if: steps.cloudflare.outputs.ready == 'true'
         uses: actions/download-artifact@v8
         with:
           name: move-lab
           path: move-lab/dist
 
       - name: Publish
+        if: steps.cloudflare.outputs.ready == 'true'
         working-directory: move-lab
         run: npx --yes wrangler@4 deploy
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}

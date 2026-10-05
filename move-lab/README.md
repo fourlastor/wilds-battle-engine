@@ -71,11 +71,11 @@ Cloudflare.
 
 `.github/workflows/move-lab.yml` installs Rust and the pinned Emscripten (`emsdk-version`), builds
 the engine, runs the checks and builds the site, keeping `dist/` as an artifact. Pushes to `main`
-are then published, once the repository has these two settings (Settings > Secrets and variables >
+are then published, once the repository has these two secrets (Settings > Secrets and variables >
 Actions):
 
-- variable `CLOUDFLARE_ACCOUNT_ID`: your account ID, from the Cloudflare dashboard;
-- secret `CLOUDFLARE_API_TOKEN`: an API token made from the "Edit Cloudflare Workers" template.
+- `CLOUDFLARE_ACCOUNT_ID`: your account ID, from the Cloudflare dashboard;
+- `CLOUDFLARE_API_TOKEN`: an API token made from the "Edit Cloudflare Workers" template.
 
 Until both exist, the workflow only builds and tests. The first publish creates a Worker called
 `move-lab`, reachable at `https://move-lab.<your-subdomain>.workers.dev`. Rename it or attach your
