@@ -1,35 +1,96 @@
 use crate::model::{
-    ActionSelection, AdvanceResult, AdvanceStatus, AppliedStatus, BattleError, BattleEvent, Bound,
-    Choice, CombatStat, ContinuationTarget, LockedMove, NextMovePowerBoost, ParticipantId, Pokemon,
-    PokemonType, Prompt, ScriptContinuation, Side, Stat, Status, Weather, WeatherKind,
+    ActionSelection, AdvanceResult, AdvanceStatus, BattleError, BattleEvent, Bound, Choice,
+    CombatStat, Condition, ContinuationTarget, HitInfo, LockedMove, ParticipantId, Pokemon,
+    PokemonType, Prompt, Scope, Side, Stat, Status, Weather, WeatherKind,
 };
-use crate::moves::{
-    Accuracy, Category, Effect, MoveCatalog, MoveSpec, ScriptContext, ScriptHook, ScriptOperation,
-    Target,
-};
+use crate::moves::{Accuracy, Category, Effect, MoveCatalog, MoveSpec, ScriptHook, Target};
 use crate::rng::{BattleRng, SeededRng};
 use crate::type_chart;
-use mlua::Value;
-use mlua::thread::ThreadStatus;
 
 pub struct Battle {
-    catalog: MoveCatalog,
-    sides: [Vec<Pokemon>; 2],
-    weather: Option<Weather>,
-    rng: Box<dyn BattleRng>,
+    pub(crate) catalog: MoveCatalog,
+    pub(crate) sides: [Vec<Pokemon>; 2],
+    pub(crate) weather: Option<Weather>,
+    pub(crate) rng: Box<dyn BattleRng>,
     pending: Option<Prompt>,
     selections: Vec<(ParticipantId, SelectedAction)>,
     next_prompt_id: u64,
-    winner: Option<Option<Side>>,
-    turn: u64,
+    pub(crate) winner: Option<Option<Side>>,
+    pub(crate) turn: u64,
     active_power_multiplier: f32,
-    hit_reactions: Vec<HitReaction>,
+    pub(crate) hit_reactions: Vec<HitReaction>,
+    pub(crate) side_conditions: [Vec<Condition>; 2],
+    pub(crate) field_conditions: Vec<Condition>,
+    pub(crate) last_faint_turn: [Option<u64>; 2],
+    pub(crate) payout: [u32; 2],
+    pub(crate) environment: Option<String>,
+    /// The move each Pokémon chose this turn.
+    pub(crate) turn_choices: Vec<(ParticipantId, String)>,
+    /// A move whose other users should act right away (Round).
+    pub(crate) hurry: Option<String>,
+    /// Whether the move being used right now failed, missed or had no effect.
+    pub(crate) move_failed: bool,
 }
 
 #[derive(Clone)]
-struct HitReaction {
-    owner: ParticipantId,
+pub(crate) struct HitReaction {
+    pub(crate) owner: ParticipantId,
+    pub(crate) move_id: String,
+}
+
+/// What a hit was, for the Pokémon it lands on.
+pub(crate) struct HitMeta {
     move_id: String,
+    category: Category,
+    move_type: PokemonType,
+    contact: bool,
+}
+impl HitMeta {
+    pub(crate) fn of(spec: &MoveSpec, category: Category, move_type: PokemonType) -> Self {
+        Self {
+            move_id: spec.id.clone(),
+            category,
+            move_type,
+            contact: spec.has_flag("contact"),
+        }
+    }
+    fn plain(spec: &MoveSpec) -> Self {
+        Self::of(spec, spec.category, spec.move_type)
+    }
+}
+
+/// Everything the damage formula needs to know about one hit.
+pub(crate) struct Attack<'a> {
+    pub(crate) power: u16,
+    pub(crate) high_crit: bool,
+    pub(crate) always_crit: bool,
+    pub(crate) consecutive_boost: u8,
+    pub(crate) typeless: bool,
+    pub(crate) move_type: PokemonType,
+    pub(crate) also_type: Option<PokemonType>,
+    pub(crate) effective: &'a [(PokemonType, f32)],
+    pub(crate) category: Category,
+    /// Whose attacking stat is used.
+    pub(crate) attack_from: ParticipantId,
+    pub(crate) attack_stat: Option<CombatStat>,
+    pub(crate) defense_stat: Option<CombatStat>,
+    pub(crate) ignore_stages: bool,
+}
+
+pub(crate) struct Roll {
+    pub(crate) amount: u16,
+    pub(crate) critical: bool,
+    pub(crate) effectiveness: f32,
+}
+
+fn raw_stat(pokemon: &Pokemon, stat: CombatStat) -> f32 {
+    f32::from(match stat {
+        CombatStat::Attack => pokemon.attack,
+        CombatStat::Defense => pokemon.defense,
+        CombatStat::SpAttack => pokemon.sp_attack,
+        CombatStat::SpDefense => pokemon.sp_defense,
+        CombatStat::Speed => pokemon.speed,
+    })
 }
 
 #[derive(Clone)]
@@ -100,6 +161,14 @@ impl Battle {
             turn: 0,
             active_power_multiplier: 1.0,
             hit_reactions: Vec::new(),
+            side_conditions: [Vec::new(), Vec::new()],
+            field_conditions: Vec::new(),
+            last_faint_turn: [None, None],
+            payout: [0, 0],
+            environment: None,
+            turn_choices: Vec::new(),
+            hurry: None,
+            move_failed: false,
         })
     }
     pub fn participants(&self, side: Side) -> &[Pokemon] {
@@ -114,13 +183,35 @@ impl Battle {
     pub fn catalog(&self) -> &MoveCatalog {
         &self.catalog
     }
-    fn get(&self, id: ParticipantId) -> &Pokemon {
+    /// Marks and timed effects on one side, or on the field.
+    pub fn side_conditions(&self, side: Side) -> &[Condition] {
+        self.conditions(Scope::Side(side))
+    }
+    pub fn field_conditions(&self) -> &[Condition] {
+        self.conditions(Scope::Field)
+    }
+    /// Money a side's moves have earned so far (Pay Day).
+    pub fn payout(&self, side: Side) -> u32 {
+        self.payout[side.index()]
+    }
+    /// Where the battle takes place, for moves that depend on it (Secret Power).
+    pub fn environment(&self) -> Option<&str> {
+        self.environment.as_deref()
+    }
+    pub fn set_environment(&mut self, environment: Option<String>) {
+        self.environment = environment;
+    }
+    /// Whether an effect keeps this Pokémon from leaving the battle.
+    pub fn trapped(&self, id: ParticipantId) -> bool {
+        self.is_trapped(id) || self.get(id).bound.is_some()
+    }
+    pub(crate) fn get(&self, id: ParticipantId) -> &Pokemon {
         &self.sides[id.side.index()][id.index]
     }
-    fn get_mut(&mut self, id: ParticipantId) -> &mut Pokemon {
+    pub(crate) fn get_mut(&mut self, id: ParticipantId) -> &mut Pokemon {
         &mut self.sides[id.side.index()][id.index]
     }
-    fn actors(&self) -> Vec<ParticipantId> {
+    pub(crate) fn actors(&self) -> Vec<ParticipantId> {
         Side::ALL
             .into_iter()
             .flat_map(|side| {
@@ -147,24 +238,44 @@ impl Battle {
             {
                 vec![lock.target]
             } else {
+                let allies = |with_user: bool| -> Vec<ParticipantId> {
+                    (0..self.sides[actor.side.index()].len())
+                        .filter(|&index| self.sides[actor.side.index()][index].hp > 0)
+                        .filter(|&index| with_user || index != actor.index)
+                        .map(|index| ParticipantId {
+                            side: actor.side,
+                            index,
+                        })
+                        .collect()
+                };
                 match spec.target {
-                    Target::User => vec![actor],
-                    Target::Field | Target::AllOthers | Target::RandomOpponent => self.sides
-                        [actor.side.opposite().index()]
-                    .iter()
-                    .position(|p| p.hp > 0)
-                    .map(|index| ParticipantId {
-                        side: actor.side.opposite(),
-                        index,
-                    })
-                    .into_iter()
-                    .collect(),
+                    Target::User | Target::AllAllies | Target::UserAndAllies => vec![actor],
+                    Target::Field
+                    | Target::AllOthers
+                    | Target::RandomOpponent
+                    | Target::AllOpponents
+                    | Target::All => self.sides[actor.side.opposite().index()]
+                        .iter()
+                        .position(|p| p.hp > 0)
+                        .map(|index| ParticipantId {
+                            side: actor.side.opposite(),
+                            index,
+                        })
+                        .into_iter()
+                        .collect(),
                     Target::Selected => (0..self.sides[actor.side.opposite().index()].len())
                         .filter(|&index| self.sides[actor.side.opposite().index()][index].hp > 0)
                         .map(|index| ParticipantId {
                             side: actor.side.opposite(),
                             index,
                         })
+                        .collect(),
+                    Target::Ally => allies(false),
+                    Target::UserOrAlly => allies(true),
+                    Target::AnyOther => self
+                        .actors()
+                        .into_iter()
+                        .filter(|id| *id != actor)
                         .collect(),
                 }
             };
@@ -310,32 +421,76 @@ impl Battle {
                     }
                     SelectedAction::Recharge => 0,
                 };
-                let speed = self.get(actor).effective_stat(CombatStat::Speed) as i32;
+                let speed = self.stat_value(actor, CombatStat::Speed) as i32;
                 (actor, choice, priority, speed, self.rng.next_u64())
             })
             .collect();
         ordered.sort_by(|a, b| b.2.cmp(&a.2).then(b.3.cmp(&a.3)).then(b.4.cmp(&a.4)));
+        for pokemon in self.sides.iter_mut().flatten() {
+            pokemon.acted = false;
+            pokemon.damage_taken = 0;
+            pokemon.hurt_this_turn = false;
+            pokemon.last_hit = None;
+        }
+        self.turn_choices = ordered
+            .iter()
+            .filter_map(|(actor, choice, ..)| match choice {
+                SelectedAction::Move(choice) => Some((*actor, choice.move_id.clone())),
+                SelectedAction::Recharge => None,
+            })
+            .collect();
+        self.hurry = None;
         let mut events = Vec::new();
-        for (actor, choice, _, _, _) in &ordered {
+        // Moves that get ready before anyone acts (Focus Punch, Beak Blast).
+        for (actor, choice, ..) in &ordered {
+            let SelectedAction::Move(choice) = choice else {
+                continue;
+            };
+            let spec = self.catalog.get(&choice.move_id).expect("validated choice");
+            if spec.on_turn_start.is_some() && self.get(*actor).hp > 0 {
+                let spec = spec.clone();
+                self.execute_script(
+                    *actor,
+                    choice.target,
+                    &spec,
+                    &mut events,
+                    ScriptHook::TurnStart,
+                )?;
+            }
+        }
+        let mut next = 0;
+        while next < ordered.len() {
             if self.winner.is_some() {
                 break;
             }
+            let actor = ordered[next].0;
+            let choice = ordered[next].1.clone();
+            next += 1;
             self.hit_reactions
-                .retain(|reaction| reaction.owner != *actor);
-            self.check_sleep(*actor, &mut events);
-            match choice {
-                SelectedAction::Move(choice) => self.execute_move(*actor, choice, &mut events)?,
+                .retain(|reaction| reaction.owner != actor);
+            self.check_sleep(actor, &mut events);
+            match &choice {
+                SelectedAction::Move(choice) => self.execute_move(actor, choice, &mut events)?,
                 SelectedAction::Recharge => {
-                    self.get_mut(*actor).recharging = false;
-                    if self.get(*actor).hp > 0 {
+                    self.get_mut(actor).recharging = false;
+                    if self.get(actor).hp > 0 {
                         events.push(BattleEvent::Message(format!(
                             "{} must recharge!",
-                            self.get(*actor).name
+                            self.get(actor).name
                         )));
                     }
                 }
             }
+            self.get_mut(actor).acted = true;
             self.resolve_outcome(&mut events);
+            if let Some(move_id) = self.hurry.take() {
+                // Everyone else who chose that move goes next, in their usual order.
+                let (now, later): (Vec<_>, Vec<_>) = ordered.drain(next..).partition(|entry| {
+                    matches!(&entry.1, SelectedAction::Move(action) if action.move_id == move_id)
+                });
+                ordered.extend(now);
+                ordered.extend(later);
+            }
         }
         if self.winner.is_none() {
             for (actor, _, _, _, _) in &ordered {
@@ -348,6 +503,11 @@ impl Battle {
         }
         if self.winner.is_none() {
             self.post_turn_weather(&ordered, &mut events);
+            self.resolve_outcome(&mut events);
+        }
+        if self.winner.is_none() {
+            let order: Vec<ParticipantId> = ordered.iter().map(|entry| entry.0).collect();
+            self.tick_conditions(&order, &mut events);
             self.resolve_outcome(&mut events);
         }
         for pokemon in self.sides.iter_mut().flatten() {
@@ -378,14 +538,46 @@ impl Battle {
         choice: &MoveAction,
         events: &mut Vec<BattleEvent>,
     ) -> Result<(), BattleError> {
+        self.move_failed = false;
+        let used = self.perform_move(actor, choice, events)?;
+        let failed = self.move_failed;
+        let pokemon = self.get_mut(actor);
+        if used {
+            pokemon.last_move_failed = failed;
+        }
+        // A streak is the same move used turn after turn without failing.
+        if used && !failed {
+            pokemon.streak = if pokemon.streak_move.as_deref() == Some(&choice.move_id) {
+                pokemon.streak.saturating_add(1)
+            } else {
+                1
+            };
+            pokemon.streak_move = Some(choice.move_id.clone());
+        } else {
+            pokemon.streak = 0;
+            pokemon.streak_move = None;
+        }
+        Ok(())
+    }
+    /// Uses a move. Returns false if the Pokémon could not act at all.
+    fn perform_move(
+        &mut self,
+        actor: ParticipantId,
+        choice: &MoveAction,
+        events: &mut Vec<BattleEvent>,
+    ) -> Result<bool, BattleError> {
         if self.get(actor).hp == 0 {
-            return Ok(());
+            return Ok(false);
         }
         let spec = self
             .catalog
             .get(&choice.move_id)
             .expect("validated choice")
             .clone();
+        // A Pokémon that hid through a script comes back when it next acts.
+        if self.get(actor).semi_invulnerable && self.get(actor).locked_move.is_none() {
+            self.get_mut(actor).semi_invulnerable = false;
+        }
         self.active_power_multiplier = self
             .get_mut(actor)
             .next_move_power_boost
@@ -398,6 +590,14 @@ impl Battle {
             .script_continuation
             .as_ref()
             .is_some_and(|lock| lock.move_id == spec.id);
+        if self.get(actor).status == Some(Status::Frozen) && spec.usable_while_frozen {
+            self.get_mut(actor).status = None;
+            events.push(BattleEvent::Message(format!("{user_name} thawed out!")));
+            events.push(BattleEvent::Status {
+                target: actor,
+                status: None,
+            });
+        }
         let status = self.get(actor).status;
         match status {
             Some(Status::Frozen) if self.rng.chance(0.2) => {
@@ -413,7 +613,7 @@ impl Battle {
                     "{user_name} is frozen solid!"
                 )));
                 self.interrupt_script(actor, choice.target, &spec, events)?;
-                return Ok(());
+                return Ok(false);
             }
             Some(Status::Paralyzed) if self.rng.chance(0.25) => {
                 events.push(BattleEvent::Message(format!(
@@ -421,13 +621,13 @@ impl Battle {
                 )));
                 self.clear_consecutive(actor);
                 self.interrupt_script(actor, choice.target, &spec, events)?;
-                return Ok(());
+                return Ok(false);
             }
             Some(Status::Asleep) if !spec.usable_while_asleep => {
                 events.push(BattleEvent::Message(format!("{user_name} is fast asleep.")));
                 self.clear_consecutive(actor);
                 self.interrupt_script(actor, choice.target, &spec, events)?;
-                return Ok(());
+                return Ok(false);
             }
             _ => {}
         }
@@ -436,7 +636,7 @@ impl Battle {
             self.get_mut(actor).flinched = false;
             self.clear_consecutive(actor);
             self.interrupt_script(actor, choice.target, &spec, events)?;
-            return Ok(());
+            return Ok(false);
         }
         if let Some(turns) = self.get(actor).confused_turns {
             if turns == 0 {
@@ -463,9 +663,14 @@ impl Battle {
                     self.damage(actor, amount, events);
                     self.clear_consecutive(actor);
                     self.interrupt_script(actor, choice.target, &spec, events)?;
-                    return Ok(());
+                    return Ok(false);
                 }
             }
+        }
+        {
+            let pokemon = self.get_mut(actor);
+            pokemon.last_used = Some(spec.id.clone());
+            pokemon.moves_used.insert(spec.id.clone());
         }
         let streak = if self.get(actor).last_move.as_deref() == Some(&spec.id) {
             self.get(actor).consecutive_count
@@ -480,8 +685,9 @@ impl Battle {
                 spec.name
             )));
             events.push(BattleEvent::Message("But it failed!".into()));
+            self.move_failed = true;
             self.clear_consecutive(actor);
-            return Ok(());
+            return Ok(true);
         }
         let mut target = choice.target;
         // Forced turns pick a new opponent too when the script asked for one. This shares the
@@ -503,19 +709,31 @@ impl Battle {
                 })
                 .collect();
             if foes.is_empty() {
-                return Ok(());
+                return Ok(false);
             }
             target = foes[self.rng.index(foes.len())];
         }
-        if self.get(target).hp == 0 && spec.target == Target::Selected {
-            if let Some(index) = self.sides[target.side.index()]
-                .iter()
-                .position(|p| p.hp > 0)
-            {
-                target.index = index;
-            } else {
-                return Ok(());
-            }
+        if self.get(target).hp == 0
+            && matches!(
+                spec.target,
+                Target::Selected | Target::Ally | Target::AnyOther
+            )
+        {
+            // The chosen Pokémon is gone: another one on its side takes its place, never the user.
+            let Some(index) =
+                self.sides[target.side.index()]
+                    .iter()
+                    .enumerate()
+                    .position(|(index, p)| {
+                        p.hp > 0 && (target.side != actor.side || index != actor.index)
+                    })
+            else {
+                return Ok(false);
+            };
+            target.index = index;
+        }
+        if self.get(target).hp == 0 && spec.target == Target::UserOrAlly {
+            target = actor;
         }
         if spec.fail_on_full_hp && self.get(target).hp == self.get(target).max_hp {
             events.push(BattleEvent::Message(format!(
@@ -523,7 +741,8 @@ impl Battle {
                 spec.name
             )));
             events.push(BattleEvent::Message("But it failed!".into()));
-            return Ok(());
+            self.move_failed = true;
+            return Ok(true);
         }
         if !spec.auto_only
             && !forced_script
@@ -549,7 +768,7 @@ impl Battle {
             }
             if !hit {
                 self.clear_consecutive(actor);
-                return Ok(());
+                return Ok(true);
             }
             let pokemon = self.get_mut(actor);
             pokemon.consecutive_count = if pokemon.last_move.as_deref() == Some(&spec.id) {
@@ -558,7 +777,7 @@ impl Battle {
                 1
             };
             pokemon.last_move = Some(spec.id);
-            return Ok(());
+            return Ok(true);
         }
         let second_turn = self
             .get(actor)
@@ -576,26 +795,36 @@ impl Battle {
                 spec.name
             )));
         }
-        if !first_charge && !self.hit_check(actor, target, &spec) {
+        if !(first_charge
+            || self.always_hits(actor, target)
+            || self.hit_check(actor, target, &spec, false))
+        {
             events.push(BattleEvent::Message(format!(
                 "{user_name}'s attack missed!"
             )));
+            self.move_failed = true;
             self.clear_consecutive(actor);
-            return Ok(());
+            return Ok(true);
         }
         if self.get(target).protected && actor != target {
             events.push(BattleEvent::Message(format!(
                 "{} protected itself!",
                 self.get(target).name
             )));
-            return Ok(());
+            self.move_failed = true;
+            return Ok(true);
         }
-        if !first_charge && self.get(target).semi_invulnerable && actor != target {
+        if !first_charge
+            && actor != target
+            && let Some(place) = self.get(target).hidden()
+            && !(spec.hits_hidden.contains(&place) || self.always_hits(actor, target))
+        {
             events.push(BattleEvent::Message(format!(
                 "{} avoided the attack!",
                 self.get(target).name
             )));
-            return Ok(());
+            self.move_failed = true;
+            return Ok(true);
         }
         let has_damage = spec.effects.iter().any(|e| {
             matches!(
@@ -640,274 +869,9 @@ impl Battle {
             1
         };
         pokemon.last_move = Some(spec.id);
-        Ok(())
+        Ok(true)
     }
-    fn execute_script(
-        &mut self,
-        actor: ParticipantId,
-        target: ParticipantId,
-        spec: &MoveSpec,
-        events: &mut Vec<BattleEvent>,
-        hook: ScriptHook,
-    ) -> Result<bool, BattleError> {
-        let continuation = self.get(actor).script_continuation.as_ref();
-        let (thread, input) = self.catalog.start_script(
-            spec,
-            ScriptContext {
-                user_hp: self.get(actor).hp,
-                user_status: self.get(actor).status,
-                user_name: self.get(actor).name.clone(),
-                target_hp: self.get(target).hp,
-                target_status: self.get(target).status,
-                weather: self.weather.as_ref().map(|weather| weather.kind),
-                turn: continuation.map_or(1, |lock| lock.turn),
-                total_turns: continuation.map(|lock| lock.total_turns),
-            },
-            hook,
-        )?;
-        let mut yielded = thread.resume::<Value>(input)?;
-        let mut any_hit = false;
-        let mut operations = 0;
-        while thread.status() == ThreadStatus::Resumable {
-            operations += 1;
-            if operations > 64 {
-                return Err(BattleError::InvalidSetup(format!(
-                    "script for {} exceeded 64 operations",
-                    spec.id
-                )));
-            }
-            let operation = match yielded {
-                Value::UserData(ref userdata) => userdata.borrow::<ScriptOperation>()?.clone(),
-                _ => {
-                    return Err(BattleError::InvalidSetup(format!(
-                        "script for {} yielded a value outside the battle API",
-                        spec.id
-                    )));
-                }
-            };
-            if hook == ScriptHook::Hit
-                && !matches!(
-                    operation,
-                    ScriptOperation::Message(_) | ScriptOperation::ChangeSelfStat { .. }
-                )
-            {
-                return Err(BattleError::InvalidSetup(format!(
-                    "hit hook for {} yielded an unsupported operation",
-                    spec.id
-                )));
-            }
-            let response = match operation {
-                ScriptOperation::WatchHitsUntilNextAction => {
-                    if spec.on_hit.is_none() {
-                        return Err(BattleError::InvalidSetup(format!(
-                            "move {} has no hit hook",
-                            spec.id
-                        )));
-                    }
-                    self.hit_reactions
-                        .retain(|reaction| reaction.owner != actor || reaction.move_id != spec.id);
-                    self.hit_reactions.push(HitReaction {
-                        owner: actor,
-                        move_id: spec.id.clone(),
-                    });
-                    Value::Nil
-                }
-                ScriptOperation::HealSelf(fraction) => {
-                    let pokemon = self.get(actor);
-                    let amount = (pokemon.max_hp as f32 * fraction).ceil() as u16;
-                    if pokemon.hp < pokemon.max_hp {
-                        self.heal(actor, amount, events);
-                        events.push(BattleEvent::Message(format!(
-                            "{} regained health!",
-                            self.get(actor).name
-                        )));
-                    } else {
-                        events.push(BattleEvent::Message("But it failed!".into()));
-                    }
-                    Value::Nil
-                }
-                ScriptOperation::FlinchTarget(chance) => {
-                    if self.get(target).hp > 0 && self.rng.chance(chance) {
-                        self.get_mut(target).flinched = true;
-                    }
-                    Value::Nil
-                }
-                ScriptOperation::ForceMove {
-                    total_turns,
-                    target_policy,
-                } => {
-                    if self.get(actor).script_continuation.is_some() {
-                        return Err(BattleError::InvalidSetup("move is already forced".into()));
-                    }
-                    self.get_mut(actor).script_continuation = Some(ScriptContinuation {
-                        move_id: spec.id.clone(),
-                        target,
-                        turn: 1,
-                        total_turns,
-                        target_policy,
-                    });
-                    Value::Nil
-                }
-                ScriptOperation::BreakSequence => {
-                    self.get_mut(actor).script_continuation = None;
-                    Value::Nil
-                }
-                ScriptOperation::RandomInt { min, max } => {
-                    Value::Integer(self.rng.range(min, max) as i64)
-                }
-                ScriptOperation::Message(message) => {
-                    events.push(BattleEvent::Message(message));
-                    Value::Nil
-                }
-                ScriptOperation::Announce => {
-                    events.push(BattleEvent::Message(format!(
-                        "{} used {}!",
-                        self.get(actor).name,
-                        spec.name
-                    )));
-                    Value::Nil
-                }
-                ScriptOperation::ConfuseSelf => {
-                    if self.get(actor).hp > 0 && self.get(actor).confused_turns.is_none() {
-                        let turns = self.rng.range(1, 4);
-                        self.get_mut(actor).confused_turns = Some(turns);
-                        events.push(BattleEvent::Message(format!(
-                            "{} became confused!",
-                            self.get(actor).name
-                        )));
-                    }
-                    Value::Nil
-                }
-                ScriptOperation::RecoilMaxHp(fraction) => {
-                    let max_hp = self.get(actor).max_hp;
-                    let amount = ((f32::from(max_hp) * fraction).round() as u16).max(1);
-                    self.damage(actor, amount, events);
-                    events.push(BattleEvent::Message(format!(
-                        "{} was damaged by the recoil!",
-                        self.get(actor).name
-                    )));
-                    Value::Nil
-                }
-                ScriptOperation::ChangeSelfStat { stat, stages } => {
-                    self.change_stat(actor, stat, stages, events);
-                    Value::Nil
-                }
-                ScriptOperation::BoostNextMove {
-                    move_type,
-                    multiplier,
-                } => {
-                    self.get_mut(actor).next_move_power_boost = Some(NextMovePowerBoost {
-                        move_type,
-                        multiplier,
-                    });
-                    Value::Nil
-                }
-                ScriptOperation::Fail => {
-                    events.push(BattleEvent::Message("But it failed!".into()));
-                    break;
-                }
-                ScriptOperation::FaintUser => {
-                    let remaining = self.get(actor).hp;
-                    self.damage(actor, remaining, events);
-                    Value::Nil
-                }
-                ScriptOperation::Recharge => {
-                    if self.get(actor).hp > 0 {
-                        self.get_mut(actor).recharging = true;
-                    }
-                    Value::Nil
-                }
-                ScriptOperation::Damage {
-                    power,
-                    accuracy,
-                    drain,
-                    min_target_hp,
-                    typeless,
-                } => {
-                    let targets = if spec.target == Target::AllOthers {
-                        self.actors()
-                            .into_iter()
-                            .filter(|id| *id != actor)
-                            .collect()
-                    } else {
-                        vec![target]
-                    };
-                    let mut operation_hit = false;
-                    let mut total_damage = 0u16;
-                    for recipient in targets {
-                        if self.get(recipient).hp == 0 {
-                            continue;
-                        }
-                        if self.get(recipient).protected {
-                            events.push(BattleEvent::Message(format!(
-                                "{} protected itself!",
-                                self.get(recipient).name
-                            )));
-                            continue;
-                        }
-                        if self.get(recipient).semi_invulnerable {
-                            events.push(BattleEvent::Message(format!(
-                                "{} avoided the attack!",
-                                self.get(recipient).name
-                            )));
-                            continue;
-                        }
-                        let hit = if let Some(value) = accuracy {
-                            self.hit_check_chance(actor, recipient, value)
-                        } else {
-                            self.hit_check(actor, recipient, spec)
-                        };
-                        if !hit {
-                            events.push(BattleEvent::Message(format!(
-                                "{}'s attack missed!",
-                                self.get(actor).name
-                            )));
-                            continue;
-                        }
-                        let mut details = Vec::new();
-                        if let Some(amount) = self.calculate_damage(
-                            actor,
-                            recipient,
-                            spec,
-                            power,
-                            false,
-                            false,
-                            0,
-                            typeless,
-                            &mut details,
-                        ) {
-                            let actual =
-                                amount.min(self.get(recipient).hp.saturating_sub(min_target_hp));
-                            if actual > 0 {
-                                self.damage_from_move(actor, recipient, actual, events)?;
-                            }
-                            events.extend(details);
-                            operation_hit = true;
-                            any_hit = true;
-                            total_damage = total_damage.saturating_add(actual);
-                            if let Some(fraction) = drain {
-                                if actual > 0 && self.get(actor).hp < self.get(actor).max_hp {
-                                    self.heal(
-                                        actor,
-                                        ((actual as f32 * fraction).floor() as u16).max(1),
-                                        events,
-                                    );
-                                }
-                                events.push(BattleEvent::Message(format!(
-                                    "{} had its energy drained!",
-                                    self.get(recipient).name
-                                )));
-                            }
-                        }
-                    }
-                    Value::Table(self.catalog.damage_result(operation_hit, total_damage)?)
-                }
-            };
-            yielded = thread.resume::<Value>(response)?;
-        }
-        Ok(any_hit)
-    }
-    fn interrupt_script(
+    pub(crate) fn interrupt_script(
         &mut self,
         actor: ParticipantId,
         target: ParticipantId,
@@ -930,13 +894,14 @@ impl Battle {
             p.locked_move = None;
         }
     }
-    fn change_stat(
+    /// Changes a stat stage, and returns by how much it really moved.
+    pub(crate) fn change_stat(
         &mut self,
         recipient: ParticipantId,
         stat: Stat,
         delta: i8,
         events: &mut Vec<BattleEvent>,
-    ) {
+    ) -> i8 {
         let change = self.get_mut(recipient).change_stage(stat, delta);
         let tail = match change {
             3.. => "rose drastically!",
@@ -960,8 +925,15 @@ impl Battle {
                 stages: change,
             });
         }
+        change
     }
-    fn hit_check(&mut self, actor: ParticipantId, target: ParticipantId, spec: &MoveSpec) -> bool {
+    pub(crate) fn hit_check(
+        &mut self,
+        actor: ParticipantId,
+        target: ParticipantId,
+        spec: &MoveSpec,
+        ignore_evasion: bool,
+    ) -> bool {
         match spec.accuracy {
             Accuracy::Always => true,
             Accuracy::OneHitKnockout => {
@@ -974,17 +946,22 @@ impl Battle {
                         .chance(0.3 + 0.01 * f32::from(user.level - defender.level))
                 }
             }
-            Accuracy::Chance(value) => self.hit_check_chance(actor, target, value),
+            Accuracy::Chance(value) => self.hit_check_chance(actor, target, value, ignore_evasion),
         }
     }
-    fn hit_check_chance(
+    pub(crate) fn hit_check_chance(
         &mut self,
         actor: ParticipantId,
         target: ParticipantId,
         value: f32,
+        ignore_evasion: bool,
     ) -> bool {
-        let probability =
-            value * self.get(actor).accuracy_factor() * self.get(target).evasion_factor();
+        let evasion = if ignore_evasion {
+            1.0
+        } else {
+            self.get(target).evasion_factor()
+        };
+        let probability = value * self.get(actor).accuracy_factor() * evasion;
         self.rng.chance(probability)
     }
     // These inputs correspond to C# PEffectAttributes plus the event sink.
@@ -1020,7 +997,7 @@ impl Battle {
                     false,
                     &mut details,
                 ) {
-                    self.damage_from_move(actor, target, amount, events)?;
+                    self.damage_from_move(actor, target, amount, &HitMeta::plain(spec), events)?;
                     events.extend(details);
                     if let Some(fraction) = recoil {
                         let recoil = ((amount as f32 * fraction).floor() as u16).max(1);
@@ -1078,7 +1055,7 @@ impl Battle {
                     }
                 }
                 for amount in amounts {
-                    self.damage_from_move(actor, target, amount, events)?;
+                    self.damage_from_move(actor, target, amount, &HitMeta::plain(spec), events)?;
                 }
                 events.extend(details);
                 events.push(BattleEvent::Message(format!("Hit {hits} times!")));
@@ -1100,7 +1077,8 @@ impl Battle {
                 chance,
                 self_target,
             } => {
-                if !self.rng.chance(*chance)
+                let chance = self.effect_chance(actor, *chance);
+                if !self.rng.chance(chance)
                     || (has_damage && self.effectiveness(target, spec.move_type) == 0.0)
                 {
                     return Ok(());
@@ -1110,6 +1088,13 @@ impl Battle {
                     return Ok(());
                 }
                 for (stat, delta) in stages {
+                    if *delta < 0 && recipient != actor && self.blocks_stat_drops(recipient) {
+                        events.push(BattleEvent::Message(format!(
+                            "{}'s stats were not lowered!",
+                            self.get(recipient).name
+                        )));
+                        break;
+                    }
                     self.change_stat(recipient, *stat, *delta, events);
                 }
             }
@@ -1118,57 +1103,27 @@ impl Battle {
                 chance,
                 replace,
             } => {
-                if !self.rng.chance(*chance)
+                let chance = self.effect_chance(actor, *chance);
+                if !self.rng.chance(chance)
                     || (has_damage && self.effectiveness(target, spec.move_type) == 0.0)
                 {
                     return Ok(());
                 }
-                let new_status = status.battle_status();
-                let current = self.get(target).status;
-                let immune =
-                    type_chart::status_immune(new_status, spec.move_type, &self.get(target).types);
-                if (current.is_none() || *replace) && !immune {
-                    let turns = match status {
-                        AppliedStatus::RestSleep => 2,
-                        AppliedStatus::Asleep => self.rng.range(1, 3),
-                        AppliedStatus::BadlyPoisoned => 1,
-                        _ => 0,
-                    };
-                    let p = self.get_mut(target);
-                    p.status = Some(new_status);
-                    p.status_turns = turns;
-                    events.push(BattleEvent::Status {
-                        target,
-                        status: Some(new_status),
-                    });
-                    let message = match status {
-                        AppliedStatus::RestSleep => {
-                            format!("{} slept and became healthy!", self.get(target).name)
-                        }
-                        AppliedStatus::Asleep => format!("{} fell asleep!", self.get(target).name),
-                        AppliedStatus::Frozen => {
-                            format!("{} was frozen solid!", self.get(target).name)
-                        }
-                        _ => format!("{} was {}!", self.get(target).name, status.description()),
-                    };
-                    events.push(BattleEvent::Message(message));
-                } else if single_effect {
-                    let text = if immune {
-                        format!("It doesn't affect {}...", self.get(target).name)
-                    } else if current == Some(new_status) {
-                        format!(
-                            "{} was already {}!",
-                            self.get(target).name,
-                            status.description()
-                        )
-                    } else {
-                        "But it failed!".into()
-                    };
-                    events.push(BattleEvent::Message(text));
-                }
+                self.inflict_status(
+                    actor,
+                    target,
+                    *status,
+                    *replace,
+                    spec.move_type,
+                    single_effect,
+                    events,
+                );
             }
             Effect::Confuse => {
                 self.rng.chance(1.0); // C# ConfuseEffect checks its default chance.
+                if target != actor && self.blocks_confusion(target) {
+                    return Ok(());
+                }
                 if self.get(target).confused_turns.is_none() {
                     let turns = self.rng.range(1, 4);
                     self.get_mut(target).confused_turns = Some(turns);
@@ -1184,7 +1139,8 @@ impl Battle {
                 }
             }
             Effect::Flinch(chance) => {
-                if self.rng.chance(*chance) && self.effectiveness(target, spec.move_type) != 0.0 {
+                let chance = self.effect_chance(actor, *chance);
+                if self.rng.chance(chance) && self.effectiveness(target, spec.move_type) != 0.0 {
                     self.get_mut(target).flinched = true;
                 }
             }
@@ -1230,23 +1186,8 @@ impl Battle {
                 }
             }
             Effect::Weather { kind, turns } => {
-                if self.weather.as_ref().is_some_and(|w| w.kind == *kind) {
-                    events.push(BattleEvent::Message("But it failed!".into()));
-                } else {
-                    let weather = Weather {
-                        kind: *kind,
-                        turns_left: *turns,
-                    };
-                    self.weather = Some(weather.clone());
-                    events.push(BattleEvent::Message(
-                        if *kind == WeatherKind::Sun {
-                            "The sunlight turned harsh!"
-                        } else {
-                            "A sandstorm kicked up!"
-                        }
-                        .into(),
-                    ));
-                    events.push(BattleEvent::Weather(Some(weather)));
+                if !self.start_weather(*kind, *turns, events) {
+                    self.move_failed = true;
                 }
             }
             Effect::TwoTurn {
@@ -1254,6 +1195,7 @@ impl Battle {
                 charge_message,
                 semi_invulnerable,
                 skip_in_sun,
+                hidden,
             } => {
                 if !(second_turn
                     || *skip_in_sun
@@ -1270,6 +1212,7 @@ impl Battle {
                         charging: true,
                     });
                     self.get_mut(actor).semi_invulnerable = *semi_invulnerable;
+                    self.get_mut(actor).hidden_kind = *hidden;
                     events.push(BattleEvent::Message(
                         charge_message.replace("{0}", &self.get(actor).name),
                     ));
@@ -1286,7 +1229,13 @@ impl Battle {
                         false,
                         &mut details,
                     ) {
-                        self.damage_from_move(actor, target, amount, events)?;
+                        self.damage_from_move(
+                            actor,
+                            target,
+                            amount,
+                            &HitMeta::plain(spec),
+                            events,
+                        )?;
                     }
                     events.extend(details);
                 }
@@ -1317,7 +1266,7 @@ impl Battle {
                     false,
                     &mut details,
                 ) {
-                    self.damage_from_move(actor, target, amount, events)?;
+                    self.damage_from_move(actor, target, amount, &HitMeta::plain(spec), events)?;
                 }
                 events.extend(details);
                 if turns < max_turns {
@@ -1345,7 +1294,7 @@ impl Battle {
             Effect::Splash => {
                 if self.rng.chance(0.01) {
                     let amount = fractional(self.get(target).max_hp, 16, 1);
-                    self.damage_from_move(actor, target, amount, events)?;
+                    self.damage_from_move(actor, target, amount, &HitMeta::plain(spec), events)?;
                     events.push(BattleEvent::Message(
                         "Whoa! Its splash hit with force!".into(),
                     ));
@@ -1356,10 +1305,36 @@ impl Battle {
         }
         Ok(())
     }
-    fn effectiveness(&self, target: ParticipantId, move_type: PokemonType) -> f32 {
-        type_chart::multiplier(move_type, &self.get(target).types)
+    pub(crate) fn effectiveness(&self, target: ParticipantId, move_type: PokemonType) -> f32 {
+        type_chart::multiplier(move_type, &self.defending_types(target, move_type))
     }
-    fn immune_message(&self, target: ParticipantId, events: &mut Vec<BattleEvent>) {
+    /// How well a hit does against a Pokémon's types, with the hit's own exceptions.
+    pub(crate) fn matchup(&self, target: ParticipantId, attack: &Attack) -> f32 {
+        let against = |move_type: PokemonType, exceptions: &[(PokemonType, f32)]| -> f32 {
+            if exceptions.is_empty() {
+                return self.effectiveness(target, move_type);
+            }
+            self.defending_types(target, move_type)
+                .iter()
+                .map(|defender| {
+                    exceptions
+                        .iter()
+                        .find(|(own, _)| own == defender)
+                        .map_or_else(
+                            || type_chart::multiplier(move_type, &[*defender]),
+                            |(_, factor)| *factor,
+                        )
+                })
+                .product()
+        };
+        let first = against(attack.move_type, attack.effective);
+        match attack.also_type {
+            Some(second) => first * against(second, &[]),
+            None => first,
+        }
+    }
+    pub(crate) fn immune_message(&mut self, target: ParticipantId, events: &mut Vec<BattleEvent>) {
+        self.move_failed = true;
         events.push(BattleEvent::Message(format!(
             "It doesn't affect {}...",
             self.get(target).name
@@ -1376,7 +1351,7 @@ impl Battle {
         if self.effectiveness(target, spec.move_type) == 0.0 {
             self.immune_message(target, events);
         } else {
-            self.damage_from_move(actor, target, amount, events)?;
+            self.damage_from_move(actor, target, amount, &HitMeta::plain(spec), events)?;
         }
         Ok(())
     }
@@ -1394,84 +1369,123 @@ impl Battle {
         typeless: bool,
         events: &mut Vec<BattleEvent>,
     ) -> Option<u16> {
+        let attack = Attack {
+            power,
+            high_crit,
+            always_crit,
+            consecutive_boost,
+            typeless,
+            move_type: self.converted_type(actor, spec.move_type),
+            also_type: None,
+            effective: &[],
+            category: spec.category,
+            attack_from: actor,
+            attack_stat: None,
+            defense_stat: None,
+            ignore_stages: false,
+        };
+        self.calculate(actor, target, &attack, events)
+            .map(|roll| roll.amount)
+    }
+    /// The damage formula. Returns nothing if the target is immune.
+    pub(crate) fn calculate(
+        &mut self,
+        actor: ParticipantId,
+        target: ParticipantId,
+        attack: &Attack,
+        events: &mut Vec<BattleEvent>,
+    ) -> Option<Roll> {
         let defender = self.get(target).clone();
         let attacker = self.get(actor).clone();
-        let crit_stage = attacker.crit_stage.saturating_add(u8::from(high_crit));
+        let source = self.get(attack.attack_from).clone();
+        let move_type = attack.move_type;
+        let typeless = attack.typeless;
+        let crit_stage = attacker
+            .crit_stage
+            .saturating_add(u8::from(attack.high_crit));
         let chance = match crit_stage {
             0 => 1.0 / 24.0,
             1 => 1.0 / 8.0,
             2 => 0.5,
             _ => 1.0,
         };
-        let crit = always_crit || self.rng.chance(chance);
+        let crit = attack.always_crit || self.rng.chance(chance);
         let effectiveness = if typeless {
             1.0
         } else {
-            self.effectiveness(target, spec.move_type)
+            self.matchup(target, attack)
         };
         if effectiveness == 0.0 {
             self.immune_message(target, events);
             return None;
         }
-        let (atk_name, def_name) = match spec.category {
+        let (atk_name, def_name) = match attack.category {
             Category::Physical => (CombatStat::Attack, CombatStat::Defense),
             _ => (CombatStat::SpAttack, CombatStat::SpDefense),
         };
-        let attack = if crit && attacker.stage(atk_name.into()) < 0 {
-            (match atk_name {
-                CombatStat::Attack => attacker.attack,
-                CombatStat::SpAttack => attacker.sp_attack,
-                _ => unreachable!(),
-            }) as f32
+        let atk_name = attack.attack_stat.unwrap_or(atk_name);
+        let def_name = attack.defense_stat.unwrap_or(def_name);
+        let attack_value = if crit && source.stage(atk_name.into()) < 0 {
+            raw_stat(&source, atk_name)
         } else {
-            attacker.effective_stat(atk_name)
+            self.stat_value(attack.attack_from, atk_name)
         };
-        let mut defense = if crit && defender.stage(def_name.into()) > 0 {
-            (match def_name {
-                CombatStat::Defense => defender.defense,
-                CombatStat::SpDefense => defender.sp_defense,
-                _ => unreachable!(),
-            }) as f32
+        let mut defense = if attack.ignore_stages {
+            (raw_stat(&defender, def_name) * self.stat_factor(target, def_name)).trunc()
+        } else if crit && defender.stage(def_name.into()) > 0 {
+            raw_stat(&defender, def_name)
         } else {
-            defender.effective_stat(def_name)
+            self.stat_value(target, def_name)
         };
-        if self
-            .weather
-            .as_ref()
-            .is_some_and(|w| w.kind == WeatherKind::Sandstorm)
+        let weather = self.weather.as_ref().map(|weather| weather.kind);
+        if weather == Some(WeatherKind::Sandstorm)
             && def_name == CombatStat::SpDefense
             && defender.types.contains(&PokemonType::Rock)
         {
             defense *= 1.5;
         }
+        if weather == Some(WeatherKind::Hail)
+            && def_name == CombatStat::Defense
+            && defender.types.contains(&PokemonType::Ice)
+        {
+            defense *= 1.5;
+        }
         defense = defense.max(1.0);
-        let adjusted_power =
-            f32::from(power) * 2f32.powi(consecutive_boost as i32) * self.active_power_multiplier;
-        let mut damage = (2.0 * f32::from(attacker.level) * 0.2 + 2.0) * adjusted_power * attack
-            / defense
-            / 50.0
-            + 2.0;
-        if attacker.status == Some(Status::Burned) && spec.category == Category::Physical {
+        let adjusted_power = f32::from(attack.power)
+            * 2f32.powi(attack.consecutive_boost as i32)
+            * self.active_power_multiplier;
+        let mut damage =
+            (2.0 * f32::from(attacker.level) * 0.2 + 2.0) * adjusted_power * attack_value
+                / defense
+                / 50.0
+                + 2.0;
+        if attacker.status == Some(Status::Burned) && attack.category == Category::Physical {
             damage /= 2.0;
         }
-        if self
-            .weather
-            .as_ref()
-            .is_some_and(|w| w.kind == WeatherKind::Sun)
-        {
-            if !typeless && spec.move_type == PokemonType::Fire {
+        if !typeless {
+            let (boosted, weakened) = match weather {
+                Some(WeatherKind::Sun) => (Some(PokemonType::Fire), Some(PokemonType::Water)),
+                Some(WeatherKind::Rain) => (Some(PokemonType::Water), Some(PokemonType::Fire)),
+                _ => (None, None),
+            };
+            if boosted == Some(move_type) {
                 damage *= 1.5;
             }
-            if !typeless && spec.move_type == PokemonType::Water {
+            if weakened == Some(move_type) {
                 damage *= 0.5;
             }
         }
         damage *= effectiveness;
-        if !typeless && attacker.types.iter().any(|t| t == &spec.move_type) {
+        if !typeless && self.types_of(actor).contains(&move_type) {
             damage *= 1.5;
         }
         if crit {
             damage *= 1.5;
+        }
+        let dealt = self.damage_dealt_factor(actor, attack.category, move_type);
+        let taken = self.damage_taken_factor(target, attack.category, move_type, crit);
+        if dealt != 1.0 || taken != 1.0 {
+            damage *= dealt * taken;
         }
         damage *= self.rng.damage_roll();
         let amount = (damage.round() as u16).max(1);
@@ -1483,17 +1497,47 @@ impl Battle {
         if crit {
             events.push(BattleEvent::Message("A critical hit!".into()));
         }
-        Some(amount)
+        Some(Roll {
+            amount,
+            critical: crit,
+            effectiveness,
+        })
     }
-    fn damage_from_move(
+    /// Takes HP away as the damage of a move: it can be endured and it sets off hit reactions.
+    pub(crate) fn damage_from_move(
         &mut self,
         actor: ParticipantId,
         target: ParticipantId,
         amount: u16,
+        meta: &HitMeta,
         events: &mut Vec<BattleEvent>,
     ) -> Result<(), BattleError> {
         let before = self.get(target).hp;
+        let mut amount = amount;
+        if amount >= before && before > 0 && self.endures(target) {
+            amount = before - 1;
+            events.push(BattleEvent::Message(format!(
+                "{} endured the hit!",
+                self.get(target).name
+            )));
+            if amount == 0 {
+                return Ok(());
+            }
+        }
         self.damage(target, amount, events);
+        let lost = before - self.get(target).hp;
+        if lost > 0 {
+            let pokemon = self.get_mut(target);
+            pokemon.damage_taken = pokemon.damage_taken.saturating_add(lost);
+            pokemon.last_hit = Some(HitInfo {
+                attacker: actor,
+                move_id: meta.move_id.clone(),
+                category: meta.category,
+                move_type: meta.move_type,
+                damage: lost,
+                contact: meta.contact,
+            });
+        }
         if self.get(target).hp == 0 || self.get(target).hp == before {
             return Ok(());
         }
@@ -1514,21 +1558,37 @@ impl Battle {
         Ok(())
     }
 
-    fn damage(&mut self, target: ParticipantId, amount: u16, events: &mut Vec<BattleEvent>) {
+    pub(crate) fn damage(
+        &mut self,
+        target: ParticipantId,
+        amount: u16,
+        events: &mut Vec<BattleEvent>,
+    ) {
+        let turn = self.turn;
         let p = self.get_mut(target);
         let was_alive = p.hp > 0;
         p.hp = p.hp.saturating_sub(amount);
+        if amount > 0 {
+            p.hurt_this_turn = true;
+        }
         let hp = p.hp;
         let name = p.name.clone();
         events.push(BattleEvent::Damage { target, amount, hp });
         if was_alive && hp == 0 {
+            self.get_mut(target).conditions.clear();
+            self.last_faint_turn[target.side.index()] = Some(turn);
             self.hit_reactions
                 .retain(|reaction| reaction.owner != target);
             events.push(BattleEvent::Message(format!("{name} fainted!")));
             events.push(BattleEvent::Fainted(target));
         }
     }
-    fn heal(&mut self, target: ParticipantId, amount: u16, events: &mut Vec<BattleEvent>) {
+    pub(crate) fn heal(
+        &mut self,
+        target: ParticipantId,
+        amount: u16,
+        events: &mut Vec<BattleEvent>,
+    ) {
         let p = self.get_mut(target);
         p.hp = p.hp.saturating_add(amount).min(p.max_hp);
         events.push(BattleEvent::Heal {
@@ -1593,50 +1653,36 @@ impl Battle {
         let Some(weather) = self.weather.clone() else {
             return;
         };
+        let (_, continues, stops) = weather.kind.messages();
         if weather.turns_left == 0 {
-            events.push(BattleEvent::Message(
-                if weather.kind == WeatherKind::Sun {
-                    "The harsh sunlight faded."
-                } else {
-                    "The sandstorm subsided."
-                }
-                .into(),
-            ));
+            events.push(BattleEvent::Message(stops.into()));
             self.weather = None;
             events.push(BattleEvent::Weather(None));
             return;
         }
         self.weather.as_mut().unwrap().turns_left -= 1;
-        events.push(BattleEvent::Message(
-            if weather.kind == WeatherKind::Sun {
-                "The sunlight is strong."
-            } else {
-                "The sandstorm rages."
+        events.push(BattleEvent::Message(continues.into()));
+        let (spared, name): (&[PokemonType], &str) = match weather.kind {
+            WeatherKind::Sandstorm => (
+                &[PokemonType::Rock, PokemonType::Ground, PokemonType::Steel],
+                "sandstorm",
+            ),
+            WeatherKind::Hail => (&[PokemonType::Ice], "hail"),
+            WeatherKind::Sun | WeatherKind::Rain => return,
+        };
+        for (id, _, _, _, _) in order {
+            let p = self.get(*id).clone();
+            if p.hp == 0 || p.types.iter().any(|kind| spared.contains(kind)) {
+                continue;
             }
-            .into(),
-        ));
-        if weather.kind == WeatherKind::Sandstorm {
-            for (id, _, _, _, _) in order {
-                let p = self.get(*id).clone();
-                if p.hp == 0
-                    || p.types.iter().any(|t| {
-                        matches!(
-                            t,
-                            PokemonType::Rock | PokemonType::Ground | PokemonType::Steel
-                        )
-                    })
-                {
-                    continue;
-                }
-                events.push(BattleEvent::Message(format!(
-                    "{} is buffeted by the sandstorm!",
-                    p.name
-                )));
-                self.damage(*id, fractional(p.max_hp, 16, 1), events);
-            }
+            events.push(BattleEvent::Message(format!(
+                "{} is buffeted by the {name}!",
+                p.name
+            )));
+            self.damage(*id, fractional(p.max_hp, 16, 1), events);
         }
     }
-    fn resolve_outcome(&mut self, events: &mut Vec<BattleEvent>) {
+    pub(crate) fn resolve_outcome(&mut self, events: &mut Vec<BattleEvent>) {
         let alive: Vec<_> = self
             .sides
             .iter()

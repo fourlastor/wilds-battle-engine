@@ -1,4 +1,5 @@
-use std::collections::BTreeMap;
+use crate::moves::Category;
+use std::collections::{BTreeMap, BTreeSet};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub enum Side {
@@ -90,6 +91,156 @@ impl From<CombatStat> for Stat {
 pub enum WeatherKind {
     Sun,
     Sandstorm,
+    Rain,
+    Hail,
+}
+
+impl WeatherKind {
+    /// The lines shown when the weather starts, at the end of each turn, and when it stops.
+    pub const fn messages(self) -> (&'static str, &'static str, &'static str) {
+        match self {
+            Self::Sun => (
+                "The sunlight turned harsh!",
+                "The sunlight is strong.",
+                "The harsh sunlight faded.",
+            ),
+            Self::Sandstorm => (
+                "A sandstorm kicked up!",
+                "The sandstorm rages.",
+                "The sandstorm subsided.",
+            ),
+            Self::Rain => (
+                "It started to rain!",
+                "Rain continues to fall.",
+                "The rain stopped.",
+            ),
+            Self::Hail => (
+                "It started to hail!",
+                "Hail continues to fall.",
+                "The hail stopped.",
+            ),
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum Gender {
+    Male,
+    Female,
+    #[default]
+    Genderless,
+}
+
+/// Where a semi-invulnerable Pokémon is. Moves name the places they still reach.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum HiddenKind {
+    Air,
+    Underground,
+    Underwater,
+    #[default]
+    Vanished,
+}
+
+/// What a condition is attached to.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Scope {
+    Pokemon(ParticipantId),
+    Side(Side),
+    Field,
+}
+
+/// One thing the engine enforces for as long as a condition lasts.
+/// A rule on a side applies to every Pokémon of that side, one on the field to everyone.
+#[derive(Clone, Debug, PartialEq)]
+pub enum Rule {
+    /// Loses this share of max HP at the end of each turn.
+    DamageEachTurn {
+        fraction: f32,
+        except_types: Vec<PokemonType>,
+        message: Option<String>,
+    },
+    /// Regains this share of max HP at the end of each turn.
+    HealEachTurn {
+        fraction: f32,
+        message: Option<String>,
+    },
+    /// Loses this share of max HP at the end of each turn, and `to` regains what was lost.
+    DrainEachTurn {
+        fraction: f32,
+        to: ParticipantId,
+        message: Option<String>,
+    },
+    /// Damage from moves against the holder is multiplied.
+    DamageTaken {
+        category: Option<Category>,
+        move_type: Option<PokemonType>,
+        factor: f32,
+        not_on_crit: bool,
+    },
+    /// Damage from the holder's moves is multiplied.
+    DamageDealt {
+        category: Option<Category>,
+        move_type: Option<PokemonType>,
+        factor: f32,
+    },
+    StatMultiplier {
+        stat: CombatStat,
+        factor: f32,
+    },
+    /// The listed statuses (all of them if the list is empty) cannot be inflicted by others.
+    BlockStatus {
+        statuses: Vec<Status>,
+        confusion: bool,
+    },
+    /// Stats cannot be lowered by others.
+    BlockStatDrops,
+    /// Chances of the extra effects of the holder's moves are multiplied.
+    EffectChance {
+        factor: f32,
+    },
+    /// Moves of one type are used as another.
+    MoveType {
+        from: PokemonType,
+        to: PokemonType,
+    },
+    /// Loses any immunity to Ground moves.
+    Grounded,
+    /// Cannot leave the battle. The engine only reports this; it has no switching.
+    Trapped,
+    /// Survives damage from moves with 1 HP.
+    Endure,
+    /// The holder's moves cannot miss (only against `against`, if given) and reach hidden targets.
+    AlwaysHit {
+        against: Option<ParticipantId>,
+    },
+    /// One of the holder's types is ignored.
+    WithoutType(PokemonType),
+}
+
+/// A named mark or timed effect on a Pokémon, a side or the field.
+/// Moves set these to remember things and to switch engine rules on for a while.
+#[derive(Clone, Debug, PartialEq)]
+pub struct Condition {
+    pub name: String,
+    /// A counter that scripts read back; 1 for a plain mark.
+    pub value: i32,
+    /// Turns left, counting the current one; `None` lasts until removed.
+    pub turns_left: Option<u8>,
+    pub rules: Vec<Rule>,
+    /// Starting a condition ends any other condition of the same group in the same place.
+    pub group: Option<String>,
+    pub end_message: Option<String>,
+}
+
+/// The last hit a Pokémon took from a move this turn.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct HitInfo {
+    pub attacker: ParticipantId,
+    pub move_id: String,
+    pub category: Category,
+    pub move_type: PokemonType,
+    pub damage: u16,
+    pub contact: bool,
 }
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct ParticipantId {
@@ -205,6 +356,38 @@ pub struct Pokemon {
     pub crit_stage: u8,
     pub semi_invulnerable: bool,
     pub recharging: bool,
+    /// Free-form species name for scripts that care (Chatter, Relic Song).
+    pub species: String,
+    pub gender: Gender,
+    /// Kilograms; 0 when unknown.
+    pub weight: f32,
+    /// Held item id. The engine does not know what items do.
+    pub item: Option<String>,
+    /// Ability id. The engine does not know what abilities do.
+    pub ability: Option<String>,
+    pub ability_suppressed: bool,
+    /// HP, Attack, Defense, Sp. Attack, Sp. Defense, Speed.
+    pub ivs: Option<[u8; 6]>,
+    pub happiness: Option<u8>,
+    /// Where it is while `semi_invulnerable`.
+    pub hidden_kind: HiddenKind,
+    pub conditions: Vec<Condition>,
+    /// The battle turn it entered on (0 at the start).
+    pub entered_turn: u64,
+    /// Whether it has finished its action this turn.
+    pub acted: bool,
+    /// HP lost to moves this turn.
+    pub damage_taken: u16,
+    /// Whether it lost HP for any reason this turn.
+    pub hurt_this_turn: bool,
+    pub last_hit: Option<HitInfo>,
+    pub moves_used: BTreeSet<String>,
+    /// The move it last tried to use, whatever came of it.
+    pub last_used: Option<String>,
+    pub last_move_failed: bool,
+    /// How many turns in a row `streak_move` has been used without failing.
+    pub streak_move: Option<String>,
+    pub streak: u8,
 }
 
 impl Pokemon {
@@ -238,7 +421,37 @@ impl Pokemon {
             crit_stage: 0,
             semi_invulnerable: false,
             recharging: false,
+            species: String::new(),
+            gender: Gender::Genderless,
+            weight: 0.0,
+            item: None,
+            ability: None,
+            ability_suppressed: false,
+            ivs: None,
+            happiness: None,
+            hidden_kind: HiddenKind::Vanished,
+            conditions: Vec::new(),
+            entered_turn: 0,
+            acted: false,
+            damage_taken: 0,
+            hurt_this_turn: false,
+            last_hit: None,
+            moves_used: BTreeSet::new(),
+            last_used: None,
+            last_move_failed: false,
+            streak_move: None,
+            streak: 0,
         }
+    }
+
+    /// Where the Pokémon is hiding, if it is semi-invulnerable.
+    pub fn hidden(&self) -> Option<HiddenKind> {
+        self.semi_invulnerable.then_some(self.hidden_kind)
+    }
+    pub fn condition(&self, name: &str) -> Option<&Condition> {
+        self.conditions
+            .iter()
+            .find(|condition| condition.name == name)
     }
 
     pub fn stage(&self, stat: Stat) -> i8 {

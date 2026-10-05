@@ -4,8 +4,8 @@ use std::ffi::{CStr, CString, c_char};
 use std::panic::{AssertUnwindSafe, catch_unwind};
 use std::sync::Mutex;
 use wilds_battle_engine::{
-    ActionSelection, AdvanceStatus, Battle, BattleEvent, Choice, MoveCatalog, ParticipantId,
-    Pokemon, PokemonType, Side, Status,
+    ActionSelection, AdvanceStatus, Battle, BattleEvent, Choice, Condition, Gender, MoveCatalog,
+    ParticipantId, Pokemon, PokemonType, Side, Status,
 };
 
 static LAST_ERROR: Mutex<String> = Mutex::new(String::new());
@@ -16,6 +16,8 @@ struct Setup {
     seed: u64,
     allies: Vec<SetupPokemon>,
     foes: Vec<SetupPokemon>,
+    /// Where the battle takes place ("cave", "grass", ...), for moves that depend on it.
+    environment: Option<String>,
 }
 fn one() -> u64 {
     1
@@ -53,6 +55,18 @@ struct SetupPokemon {
     status: Option<String>,
     #[serde(default)]
     status_turns: u8,
+    #[serde(default)]
+    species: String,
+    /// "Male", "Female" or "Genderless".
+    gender: Option<String>,
+    /// Kilograms.
+    #[serde(default)]
+    weight: f32,
+    item: Option<String>,
+    ability: Option<String>,
+    /// HP, Attack, Defense, Sp. Attack, Sp. Defense, Speed.
+    ivs: Option<[u8; 6]>,
+    happiness: Option<u8>,
 }
 
 fn pokemon(config: SetupPokemon) -> Result<Pokemon, String> {
@@ -75,6 +89,18 @@ fn pokemon(config: SetupPokemon) -> Result<Pokemon, String> {
     }
     value.status = config.status.as_deref().map(parse_status).transpose()?;
     value.status_turns = config.status_turns;
+    value.species = config.species;
+    value.gender = match config.gender.as_deref() {
+        None | Some("Genderless") => Gender::Genderless,
+        Some("Male") => Gender::Male,
+        Some("Female") => Gender::Female,
+        Some(other) => return Err(format!("unknown gender {other}")),
+    };
+    value.weight = config.weight;
+    value.item = config.item.filter(|item| !item.is_empty());
+    value.ability = config.ability.filter(|ability| !ability.is_empty());
+    value.ivs = config.ivs;
+    value.happiness = config.happiness;
     Ok(value)
 }
 
@@ -181,10 +207,10 @@ pub unsafe extern "C" fn wbe_create(
             .into_iter()
             .map(pokemon)
             .collect::<Result<Vec<_>, _>>()?;
-        Battle::new(setup.seed, [allies, foes], catalog)
-            .map(Box::new)
-            .map(Box::into_raw)
-            .map_err(|error| error.to_string())
+        let mut battle =
+            Battle::new(setup.seed, [allies, foes], catalog).map_err(|error| error.to_string())?;
+        battle.set_environment(setup.environment.filter(|place| !place.is_empty()));
+        Ok(Box::into_raw(Box::new(battle)))
     })
 }
 #[unsafe(no_mangle)]
@@ -213,6 +239,11 @@ pub unsafe extern "C" fn wbe_advance(ptr: *mut Battle) -> *mut c_char {
             "status":status, "turn":battle.turn(),
             "allies":battle.participants(Side::Allies).iter().map(snapshot).collect::<Vec<_>>(),
             "foes":battle.participants(Side::Foes).iter().map(snapshot).collect::<Vec<_>>(),
+            "weather":battle.weather().map(|weather| format!("{:?}", weather.kind)),
+            "field":conditions(battle.field_conditions()),
+            "sides":{"allies":conditions(battle.side_conditions(Side::Allies)),
+                "foes":conditions(battle.side_conditions(Side::Foes))},
+            "payout":{"allies":battle.payout(Side::Allies), "foes":battle.payout(Side::Foes)},
         })))
     })
 }
@@ -271,11 +302,23 @@ fn choice(value: &Choice) -> Value {
             "id":id, "kind":"use_move", "move_id":move_id, "target":participant(*target) }),
     }
 }
+/// The marks and timed effects in one place: name, value and turns left (null if it does not end).
+pub fn conditions(values: &[Condition]) -> Value {
+    values
+        .iter()
+        .map(|condition| {
+            json!({"name":condition.name, "value":condition.value, "turns":condition.turns_left})
+        })
+        .collect()
+}
 fn snapshot(value: &Pokemon) -> Value {
     json!({"name":value.name, "species_id":value.species_id,
         "hp":value.hp, "max_hp":value.max_hp,
         "status":value.status.map(|status| format!("{status:?}")),
-        "moves":value.moves, "move_pp":value.move_pp})
+        "moves":value.moves, "move_pp":value.move_pp,
+        "types":value.types.iter().map(|kind| format!("{kind:?}")).collect::<Vec<_>>(),
+        "item":value.item, "hidden":value.hidden().map(|place| format!("{place:?}")),
+        "conditions":conditions(&value.conditions)})
 }
 fn event(value: &BattleEvent) -> Value {
     match value {

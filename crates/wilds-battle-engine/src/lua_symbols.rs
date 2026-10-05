@@ -1,5 +1,6 @@
 use crate::model::{
-    AppliedStatus, BattleError, ContinuationTarget, PokemonType, Stat, Status, WeatherKind,
+    AppliedStatus, BattleError, ContinuationTarget, Gender, HiddenKind, PokemonType, Stat,
+    WeatherKind,
 };
 use crate::moves::{Category, Target};
 use mlua::{AnyUserData, Lua, MetaMethod, Table, UserData, UserDataMethods, Value};
@@ -30,6 +31,26 @@ pub(crate) enum AccuracyKind {
     Ohko,
 }
 
+/// The kinds of rule a timed effect can carry; see `model::Rule`.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum RuleKind {
+    DamageEachTurn,
+    HealEachTurn,
+    DrainEachTurn,
+    DamageTaken,
+    DamageDealt,
+    StatMultiplier,
+    BlockStatus,
+    BlockStatDrops,
+    EffectChance,
+    MoveType,
+    Grounded,
+    Trapped,
+    Endure,
+    AlwaysHit,
+    WithoutType,
+}
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum LuaSymbol {
     Type(PokemonType),
@@ -41,6 +62,9 @@ pub(crate) enum LuaSymbol {
     Effect(EffectKind),
     Accuracy(AccuracyKind),
     ContinuationTarget(ContinuationTarget),
+    Hidden(HiddenKind),
+    Gender(Gender),
+    Rule(RuleKind),
 }
 
 impl UserData for LuaSymbol {
@@ -117,14 +141,58 @@ pub(crate) fn install(lua: &Lua) -> Result<(), BattleError> {
     globals.set("Status", statuses)?;
 
     let weather = lua.create_table()?;
-    add(lua, &weather, "Sun", LuaSymbol::Weather(WeatherKind::Sun))?;
-    add(
-        lua,
-        &weather,
-        "Sandstorm",
-        LuaSymbol::Weather(WeatherKind::Sandstorm),
-    )?;
+    for (name, value) in [
+        ("Sun", WeatherKind::Sun),
+        ("Sandstorm", WeatherKind::Sandstorm),
+        ("Rain", WeatherKind::Rain),
+        ("Hail", WeatherKind::Hail),
+    ] {
+        add(lua, &weather, name, LuaSymbol::Weather(value))?;
+    }
     globals.set("Weather", weather)?;
+
+    let hidden = lua.create_table()?;
+    for (name, value) in [
+        ("Air", HiddenKind::Air),
+        ("Underground", HiddenKind::Underground),
+        ("Underwater", HiddenKind::Underwater),
+        ("Vanished", HiddenKind::Vanished),
+    ] {
+        add(lua, &hidden, name, LuaSymbol::Hidden(value))?;
+    }
+    globals.set("Hidden", hidden)?;
+
+    let genders = lua.create_table()?;
+    for (name, value) in [
+        ("Male", Gender::Male),
+        ("Female", Gender::Female),
+        ("Genderless", Gender::Genderless),
+    ] {
+        add(lua, &genders, name, LuaSymbol::Gender(value))?;
+    }
+    globals.set("Gender", genders)?;
+
+    let rules = lua.create_table()?;
+    for (name, value) in [
+        ("DamageEachTurn", RuleKind::DamageEachTurn),
+        ("HealEachTurn", RuleKind::HealEachTurn),
+        ("DrainEachTurn", RuleKind::DrainEachTurn),
+        ("DamageTaken", RuleKind::DamageTaken),
+        ("DamageDealt", RuleKind::DamageDealt),
+        ("StatMultiplier", RuleKind::StatMultiplier),
+        ("BlockStatus", RuleKind::BlockStatus),
+        ("BlockStatDrops", RuleKind::BlockStatDrops),
+        ("EffectChance", RuleKind::EffectChance),
+        ("MoveType", RuleKind::MoveType),
+        ("Grounded", RuleKind::Grounded),
+        ("Trapped", RuleKind::Trapped),
+        ("Endure", RuleKind::Endure),
+        ("AlwaysHit", RuleKind::AlwaysHit),
+        ("WithoutType", RuleKind::WithoutType),
+    ] {
+        add(lua, &rules, name, LuaSymbol::Rule(value))?;
+    }
+    globals.set("Rule", rules)?;
 
     let categories = lua.create_table()?;
     for (name, value) in [
@@ -143,6 +211,13 @@ pub(crate) fn install(lua: &Lua) -> Result<(), BattleError> {
         ("Field", Target::Field),
         ("AllOthers", Target::AllOthers),
         ("RandomOpponent", Target::RandomOpponent),
+        ("AllOpponents", Target::AllOpponents),
+        ("Ally", Target::Ally),
+        ("UserOrAlly", Target::UserOrAlly),
+        ("AnyOther", Target::AnyOther),
+        ("AllAllies", Target::AllAllies),
+        ("UserAndAllies", Target::UserAndAllies),
+        ("All", Target::All),
     ] {
         add(lua, &targets, name, LuaSymbol::Target(value))?;
     }
@@ -226,16 +301,5 @@ pub(crate) fn optional(table: &Table, field: &str) -> Result<Option<LuaSymbol>, 
         _ => Err(BattleError::InvalidSetup(format!(
             "{field} requires a battle enum value"
         ))),
-    }
-}
-
-pub(crate) fn applied(status: Status) -> AppliedStatus {
-    match status {
-        Status::Poisoned => AppliedStatus::Poisoned,
-        Status::BadlyPoisoned => AppliedStatus::BadlyPoisoned,
-        Status::Burned => AppliedStatus::Burned,
-        Status::Paralyzed => AppliedStatus::Paralyzed,
-        Status::Asleep => AppliedStatus::Asleep,
-        Status::Frozen => AppliedStatus::Frozen,
     }
 }
