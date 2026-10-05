@@ -1,0 +1,119 @@
+name: Move Lab
+
+# Builds the battle engine for the browser, checks that blocks and Lua agree, and builds the site.
+# Pushes to main are also published to Cloudflare once the repository has a
+# CLOUDFLARE_ACCOUNT_ID variable and a CLOUDFLARE_API_TOKEN secret (see move-lab/README.md).
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'move-lab/**'
+      - 'crates/**'
+      - 'moves/**'
+      - 'build.rs'
+      - 'Cargo.toml'
+      - 'Cargo.lock'
+      - '.github/workflows/move-lab.yml'
+  pull_request:
+    paths:
+      - 'move-lab/**'
+      - 'crates/**'
+      - 'moves/**'
+      - 'build.rs'
+      - 'Cargo.toml'
+      - 'Cargo.lock'
+      - '.github/workflows/move-lab.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: move-lab-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: move-lab
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: move-lab/package-lock.json
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-emscripten
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: move-lab/engine-wasm
+
+      - name: Read the pinned Emscripten version
+        id: emsdk
+        run: echo "version=$(tr -d '[:space:]' < emsdk-version)" >> "$GITHUB_OUTPUT"
+
+      - name: Cache Emscripten
+        uses: actions/cache@v6
+        with:
+          path: move-lab/.emsdk
+          key: emsdk-${{ runner.os }}-${{ steps.emsdk.outputs.version }}
+
+      - name: Install Emscripten
+        run: npm run setup:emsdk
+
+      - name: Install packages
+        run: npm ci
+
+      - name: Build the engine for the browser
+        run: npm run build:engine
+
+      - name: Test the engine and the blocks
+        run: npm test
+
+      - name: Build the site
+        run: npm run build
+
+      - name: Keep the built site
+        uses: actions/upload-artifact@v7
+        with:
+          name: move-lab
+          path: move-lab/dist
+          if-no-files-found: error
+
+  deploy:
+    name: Publish to Cloudflare
+    # Only main is published, and only once the Cloudflare account is configured.
+    if: >-
+      (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+      && github.ref == 'refs/heads/main'
+      && vars.CLOUDFLARE_ACCOUNT_ID != ''
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      # For move-lab/wrangler.jsonc; the site itself comes from the build job.
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+
+      - name: Fetch the built site
+        uses: actions/download-artifact@v8
+        with:
+          name: move-lab
+          path: move-lab/dist
+
+      - name: Publish
+        working-directory: move-lab
+        run: npx --yes wrangler@4 deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}

@@ -1,0 +1,29 @@
+{
+  "name": "move-lab",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Block-based move editor and test battle for the Wilds battle engine",
+  "scripts": {
+    "setup:emsdk": "bash scripts/setup-emsdk.sh",
+    "build:engine": "bash scripts/build-engine.sh",
+    "dev": "vite",
+    "typecheck": "tsc --noEmit",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "deploy": "npm run build && npx --yes wrangler@4 deploy",
+    "test:engine": "node scripts/smoke-engine.mjs",
+    "test:blocks": "node --disable-warning=ExperimentalWarning scripts/parity-blocks.mjs",
+    "test": "npm run test:engine && npm run test:blocks"
+  },
+  "dependencies": {
+    "blockly": "^13.3.0"
+  },
+  "devDependencies": {
+    "typescript": "^7.0.2",
+    "vite": "^8.3.2"
+  },
+  "engines": {
+    "node": ">=24"
+  }
+}

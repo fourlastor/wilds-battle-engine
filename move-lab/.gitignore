@@ -1,0 +1,8 @@
+# Downloaded toolchain (see scripts/setup-emsdk.sh)
+/.emsdk/
+
+# Build outputs
+/node_modules/
+/dist/
+/engine-wasm/target/
+/public/engine/

@@ -1,0 +1,11 @@
+{
+  // Cloudflare Workers, static assets only: there is no Worker script, Cloudflare just serves dist/.
+  // The site is published at https://<name>.<your-subdomain>.workers.dev
+  "name": "move-lab",
+  "compatibility_date": "2026-10-01",
+  "assets": {
+    "directory": "./dist"
+  }
+  // To serve it from your own domain (the domain must be on the same Cloudflare account), add:
+  // "routes": [{ "pattern": "movelab.example.com", "custom_domain": true }]
+}

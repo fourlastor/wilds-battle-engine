@@ -1,0 +1,22 @@
+[package]
+name = "move-lab-engine"
+version = "0.1.0"
+edition = "2024"
+publish = false
+description = "Builds the Wilds battle engine for the browser. Not part of the engine workspace."
+
+[[bin]]
+name = "wbe"
+path = "src/main.rs"
+
+[dependencies]
+wilds-battle-engine = { path = "../../crates/wilds-battle-engine" }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+[profile.release]
+opt-level = "s"
+lto = true
+
+# Standalone on purpose: the engine workspace does not know about this crate.
+[workspace]

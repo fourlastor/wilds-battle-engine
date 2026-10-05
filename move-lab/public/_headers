@@ -1,0 +1,5 @@
+# Read by Cloudflare when the site is published. Vite copies this file into dist/.
+# Files under /assets/ have a content hash in their name, so they can be cached for good.
+# Everything else (the page and the engine) keeps Cloudflare's default: revalidate on every load.
+/assets/*
+  Cache-Control: public, max-age=31556952, immutable
