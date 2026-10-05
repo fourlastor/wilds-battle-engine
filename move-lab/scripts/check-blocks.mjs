@@ -1,6 +1,7 @@
 // Checks that the blocks do what their words and the "All blocks" page say:
-// every block is explained and writes at least one line, and a block that says "the user" acts
-// on the user in the real engine, whoever the move is aimed at.
+// every block is explained and writes at least one line, a block that says "the user" acts on the
+// user in the real engine whoever the move is aimed at, and a multi-turn move aims its later turns
+// the way its menu says.
 // Run with: npm run test:reference
 import assert from 'node:assert/strict';
 import { Blockly, engine, originals } from './headless.mjs';
@@ -54,6 +55,8 @@ const protect = () => ({ type: 'mlab_protect' });
 const poison = () => ({ type: 'mlab_status', fields: { STATUS: 'Poisoned', CHANCE: 100 } });
 const message = () => ({ type: 'mlab_message', fields: { TEXT: 'Hello!' } });
 const sunlight = () => ({ type: 'mlab_weather', fields: { WEATHER: 'Sun', TURNS: 5 } });
+const onFirstTurn = (then) => ({ type: 'mlab_if', inputs: { COND: { block: { type: 'mlab_first_turn' } }, DO: { block: then } } });
+const threeTurns = (policy) => ({ type: 'mlab_force_move', fields: { POLICY: policy }, inputs: { TURNS: number(3) } });
 
 /** The move file for a stack of blocks under "when this move is used on <target>". */
 function build(target, stack) {
@@ -124,6 +127,41 @@ check('a block that only works in plain moves is told what made the move a scrip
   const everyone = build('AllOthers', [sunlight()]).problems;
   assert.equal(everyone.length, 1);
   assert.match(everyone[0].message, /because it is used on “everyone else”\./);
+});
+
+/** Which foes a three-turn move used on the second foe hits on its first turn and on its later turns, over many seeds. */
+function threeTurnTargets(policy) {
+  const generated = build('Selected', [onFirstTurn(threeTurns(policy)), damage()]);
+  assert.deepEqual(generated.problems, []);
+  engine.setMoves({ ...originals, 'check.lua': generated.lua });
+  const first = new Set();
+  const later = new Set();
+  const sturdy = (name) => ({ ...bystander(name), max_hp: 400, hp: 400 });
+  for (let seed = 1; seed <= 16; seed += 1) {
+    const battle = engine.createBattle({ seed, allies: [mon('Ally', ['check'])], foes: [sturdy('Foe'), sturdy('Other')] });
+    try {
+      for (let step = 0; step < 30; step += 1) {
+        const result = battle.advance();
+        for (const event of result.events) {
+          if (event.kind === 'damage' && event.target.side === 'foes') (result.turn === 1 ? first : later).add(event.target.index);
+        }
+        if (result.status.kind === 'end' || result.turn >= 3) break;
+        const { choices, prompt_id: promptId } = result.status;
+        battle.respond(promptId, (choices.find((choice) => choice.move_id === 'check' && choice.target.index === 1) ?? choices[0]).id);
+      }
+    } finally {
+      battle.dispose();
+    }
+  }
+  return { first: [...first].sort(), later: [...later].sort() };
+}
+
+check('a multi-turn move “aimed at the same target” keeps hitting the foe it was used on', () => {
+  assert.deepEqual(threeTurnTargets('SameTarget'), { first: [1], later: [1] });
+});
+
+check('a multi-turn move “aimed at a random foe” picks a foe again on each later turn', () => {
+  assert.deepEqual(threeTurnTargets('RandomOpponent'), { first: [1], later: [0, 1] });
 });
 
 console.log(`\n${checks} checks passed.`);

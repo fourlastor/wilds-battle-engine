@@ -202,15 +202,12 @@ impl Battle {
                 continue;
             }
             if let Some(continuation) = self.get(actor).script_continuation.clone() {
-                let target = match continuation.target_policy {
-                    ContinuationTarget::SameTarget => continuation.target,
-                    ContinuationTarget::RandomOpponent => continuation.target,
-                };
+                // A RandomOpponent continuation is re-aimed when the move executes.
                 self.selections.push((
                     actor,
                     SelectedAction::Move(MoveAction {
                         move_id: continuation.move_id,
-                        target,
+                        target: continuation.target,
                     }),
                 ));
                 continue;
@@ -487,7 +484,15 @@ impl Battle {
             return Ok(());
         }
         let mut target = choice.target;
-        if spec.target == Target::RandomOpponent {
+        // Forced turns pick a new opponent too when the script asked for one. This shares the
+        // roll below, so a move that is random in both ways still rolls once.
+        let random_continuation = forced_script
+            && self
+                .get(actor)
+                .script_continuation
+                .as_ref()
+                .is_some_and(|lock| lock.target_policy == ContinuationTarget::RandomOpponent);
+        if spec.target == Target::RandomOpponent || random_continuation {
             let foes: Vec<_> = self.sides[actor.side.opposite().index()]
                 .iter()
                 .enumerate()

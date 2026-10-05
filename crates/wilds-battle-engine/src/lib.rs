@@ -574,6 +574,89 @@ mod tests {
         assert_eq!(targets, [0, 1].into());
     }
 
+    /// Uses a three-turn forced move on the second foe over many seeds, and returns which foes
+    /// were hit on the chosen turn and on the two forced turns.
+    fn forced_move_targets(
+        policy: &str,
+    ) -> (
+        std::collections::BTreeSet<usize>,
+        std::collections::BTreeSet<usize>,
+    ) {
+        let source = r#"return {
+            {id='test', name='Test', type=Type.Normal, category=Category.Physical, pp=5,
+                accuracy=Accuracy.Always,
+                script=function(ctx)
+                    if not ctx.total_turns then ctx:force_move(3, ctx.TargetPolicy.POLICY) end
+                    ctx:damage(10)
+                end},
+            {id='wait', name='Wait', type=Type.Normal, category=Category.Status, pp=5,
+                target=Target.User, script=function(_) end}}"#
+            .replace("POLICY", policy);
+        let mut chosen = std::collections::BTreeSet::new();
+        let mut forced = std::collections::BTreeSet::new();
+        for seed in 1..=32 {
+            let foe = |name: &str| {
+                let mut foe = Pokemon::new(name, vec!["wait".into()]);
+                foe.hp = 1000;
+                foe.max_hp = 1000;
+                foe
+            };
+            let mut battle = Battle::new(
+                seed,
+                [
+                    vec![Pokemon::new("Ally", vec!["test".into()])],
+                    vec![foe("First"), foe("Second")],
+                ],
+                MoveCatalog::from_lua(&source).unwrap(),
+            )
+            .unwrap();
+            let AdvanceStatus::Awaiting(prompt) = battle.advance().unwrap().status else {
+                panic!("expected prompt")
+            };
+            let second_foe = prompt
+                .choices
+                .iter()
+                .find(|c| matches!(c, Choice::UseMove { target, .. } if target.index == 1))
+                .unwrap();
+            battle
+                .set_response(ActionSelection {
+                    prompt_id: prompt.id,
+                    choice_id: second_foe.id(),
+                })
+                .unwrap();
+            for turn in 1..=3 {
+                pick(&mut battle, "wait");
+                pick(&mut battle, "wait");
+                for event in battle.advance().unwrap().events {
+                    if let BattleEvent::Damage { target, .. } = event
+                        && target.side == Side::Foes
+                    {
+                        if turn == 1 {
+                            chosen.insert(target.index);
+                        } else {
+                            forced.insert(target.index);
+                        }
+                    }
+                }
+            }
+        }
+        (chosen, forced)
+    }
+
+    #[test]
+    fn forced_turns_keep_the_chosen_target_with_same_target() {
+        let (chosen, forced) = forced_move_targets("SameTarget");
+        assert_eq!(chosen, [1].into());
+        assert_eq!(forced, [1].into());
+    }
+
+    #[test]
+    fn forced_turns_pick_random_opponents_with_random_opponent() {
+        let (chosen, forced) = forced_move_targets("RandomOpponent");
+        assert_eq!(chosen, [1].into());
+        assert_eq!(forced, [0, 1].into());
+    }
+
     fn exhausted_battle(seed: u64, ally_type: PokemonType, foe_move: &str) -> Battle {
         let mut ally = Pokemon::new("Ally", vec!["splash".into()]);
         ally.max_hp = 202;

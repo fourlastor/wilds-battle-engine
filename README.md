@@ -48,6 +48,8 @@ Scripts can inspect `ctx.weather`, `ctx.turn`, and `ctx.total_turns`. A move
 can call `ctx:force_move(total_turns, ctx.TargetPolicy.SameTarget)` or
 `ctx.TargetPolicy.RandomOpponent` to lock subsequent turns. Rust owns the lock,
 chooses random targets, and spends PP only when the move is first selected.
+With `RandomOpponent` each forced turn is aimed at a random living opponent;
+the turn the move is selected on keeps the chosen target.
 `on_interrupt` is a Lua callback for forced turns stopped before the main
 script runs; the move can call `ctx:break_sequence()` and
 `ctx:confuse_self()`. Scripts also have `ctx:random_int`, `ctx:message`, and

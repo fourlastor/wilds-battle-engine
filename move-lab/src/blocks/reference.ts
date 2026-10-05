@@ -69,7 +69,7 @@ const NOTES: Record<string, string> = {
   mlab_weather:
     'Harsh sunlight makes Fire moves 1.5 times as strong and Water moves half as strong. A sandstorm takes 1/16 of max HP at the end of each turn from every Pokémon that is not a Rock, Ground or Steel type, and raises the Sp. Def of Rock types.',
   mlab_force_move:
-    'Running it again on a later turn stops the battle with an error, so put it inside “if first turn of this move”. The engine aims every turn at the first target whichever choice the menu shows; for a new random foe each turn, set the starting block to “a random foe”.',
+    'Running it again on a later turn stops the battle with an error, so put it inside “if first turn of this move”. With “a random foe”, each later turn is aimed at a foe picked at random; the first turn still goes to whoever the starting block says.',
   mlab_announce: 'It also writes manual_announce = true at the top of the file, which turns the usual announcement off.',
 };
 
