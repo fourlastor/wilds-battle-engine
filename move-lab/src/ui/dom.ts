@@ -61,6 +61,7 @@ const ICONS = {
   trash: '<path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/>',
   copy: '<rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/>',
   fit: '<path d="M3 9V4h5"/><path d="M21 9V4h-5"/><path d="M3 15v5h5"/><path d="M21 15v5h-5"/>',
+  back: '<path d="m12 19-7-7 7-7"/><path d="M19 12H5"/>',
 } as const;
 
 export type IconName = keyof typeof ICONS;
@@ -73,4 +74,13 @@ export function icon(name: IconName, size = 16): HTMLElement {
     `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" ` +
     `stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">${ICONS[name]}</svg>`;
   return span;
+}
+
+/** The logo and name at the left of a top bar. */
+export function brand(): HTMLElement {
+  const logo = h('span', { class: 'logo', 'aria-hidden': 'true' });
+  logo.innerHTML =
+    '<svg width="18" height="18" viewBox="0 0 24 24" fill="#173C2E"><path d="M4 4h9a2 2 0 0 1 2 2v3H9.5v2h-3V9H4z"/>' +
+    '<path d="M4 13h2.5v2h3v-2H18a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H4z"/></svg>';
+  return h('div', { class: 'brand' }, logo, h('span', null, 'Move Lab'));
 }

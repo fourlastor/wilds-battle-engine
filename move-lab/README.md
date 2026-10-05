@@ -23,7 +23,7 @@ Run `npm run build:engine` again whenever the engine changes. Move files are pic
 rebuilding: the page bundles `../moves/*.lua` as text.
 
 `npm run build` writes a static site to `dist/` that can be hosted anywhere (it uses relative
-paths). `npm test` runs the two checks described below.
+paths). `npm test` runs the checks described below.
 
 ## How it works
 
@@ -40,11 +40,25 @@ a workspace into a move file. The engine accepts either an `effects` list or a `
 never both, so:
 
 - a stack made only of blocks the effects list can express becomes a plain move (`effects = {…}`);
-- anything with Logic, Turns or Battle info blocks becomes a script;
-- blocks the chosen form cannot express are flagged on the block instead of being dropped. Status,
-  weather, protect, trapping, multi-hit, fixed, level and one-hit-KO damage, and stat changes on
-  the target exist only as effects today, so they cannot be combined with logic until the engine
-  gains script calls for them.
+- as soon as one block needs a script (logic, messages, multi-turn control and so on), the whole
+  move becomes one;
+- blocks the chosen form cannot express are flagged on the block instead of being dropped, and the
+  message names what made the move a script. Status, weather, protect, trapping, multi-hit, fixed,
+  level and one-hit-KO damage, and stat changes on the target exist only as effects today, so they
+  cannot be combined with logic until the engine gains script calls for them.
+
+The engine applies a plain move's effects to the one Pokémon the move is used on, so two cases are
+written as scripts to keep the blocks true to their words: a move used on "everyone else" (only a
+script's `ctx:damage` reaches them all), and "heal the user" in a move aimed at someone else.
+"protect the user" is only accepted in a move used on the user.
+
+**All blocks.** The "All blocks" link in the top bar (address `#blocks`) opens a page listing every
+block with what it does and the line it writes in each form. Nothing on it is written twice: the
+explanations are the blocks' tooltips (`TIPS` in `src/blocks/definitions.ts`), the lines come from
+the generator, and the pictures are the real blocks, drawn once by Blockly off screen and copied
+in. `src/blocks/reference.ts` only adds the order, fuller examples and a few longer notes. The
+tooltips describe engine behaviour, so check them against `crates/wilds-battle-engine/src/engine.rs`
+when the engine changes.
 
 **Opening built-in moves.** Plain built-ins are converted to blocks from the engine's own
 description of them. The twelve scripted ones are rebuilt by hand in `src/blocks/library.ts`.
@@ -61,6 +75,9 @@ and repeats your choices, so only the edit changes the outcome.
 - `npm run test:blocks` rebuilds all 41 built-in moves from blocks and plays about 5,900 seeded
   battles, comparing every event and the final state against the original Lua files, for both the
   clean and the marked-up output. `PARITY_BREAK=tackle npm run test:blocks` proves the check bites.
+- `npm run test:reference` checks that every block of the palette is on the "All blocks" page with
+  an explanation and a line, and plays short battles to confirm that blocks which say "the user"
+  act on the user whoever the move is aimed at.
 
 ## Publishing to Cloudflare
 
@@ -91,11 +108,11 @@ and the engine are revalidated on every load, so a new build shows up straight a
 
 ```
 engine-wasm/      Rust crate that builds the engine for the browser
-scripts/          emsdk setup, engine build, and the two checks
+scripts/          emsdk setup, engine build, and the checks
 src/engine/       loads the wasm module and wraps the C interface
-src/blocks/       block definitions, palette, Lua generator, built-in moves as blocks
+src/blocks/       block definitions, palette, Lua generator, built-in moves as blocks, block reference
 src/bench/        battle runner, log and trace
-src/ui/           the page: editor, battle panel, setup dialog
+src/ui/           the page: editor, battle panel, setup dialog, "All blocks" page
 src/data/         bundled move files and Pokémon presets for the setup form
 ```
 

@@ -18,7 +18,8 @@ import { loadProject, saveProject } from '../store.ts';
 import type { Project } from '../store.ts';
 import { renderBattle } from './battle.ts';
 import type { Banner, BattleUi } from './battle.ts';
-import { clear, h, icon } from './dom.ts';
+import { brand, clear, h, icon } from './dom.ts';
+import { openReference } from './reference.ts';
 import { defaultSetup, openSetup } from './setup.ts';
 
 /** One runnable version of the edited move: the files to load and how to read its trace. */
@@ -32,6 +33,8 @@ interface Build {
 }
 
 const DEFAULT_SCALE = 0.85;
+/** The block reference has its own address, so the browser's Back button leaves it. */
+const REFERENCE_HASH = '#blocks';
 
 interface Blocked {
   title: string;
@@ -39,8 +42,19 @@ interface Blocked {
   blockId: string | null;
 }
 
+/**
+ * Blockly sizes a block from the width of its text and remembers the widths, so the blocks' font
+ * has to be there before the first block is drawn. Gives up after a moment rather than hang offline.
+ */
+function blockFont(): Promise<unknown> {
+  const { family, weight, size } = theme.fontStyle;
+  const patience = new Promise((resolve) => window.setTimeout(resolve, 3000));
+  return Promise.race([document.fonts.load(`${weight} ${size}pt ${family}`), patience]).catch(() => undefined);
+}
+
 export async function startApp(root: HTMLElement): Promise<void> {
   root.append(h('div', { class: 'splash' }, 'Loading the battle engine…'));
+  const font = blockFont();
   let engine: Engine;
   try {
     engine = await Engine.load(new URL('engine/', document.baseURI).href);
@@ -56,6 +70,7 @@ export async function startApp(root: HTMLElement): Promise<void> {
     );
     return;
   }
+  await font;
   Blockly.setLocale(En as unknown as { [key: string]: string });
   defineBlocks();
   clear(root);
@@ -83,6 +98,9 @@ class App {
   private timer = 0;
   private saved = true;
   private readonly battleUi: BattleUi = { pendingMove: null };
+  private reference: { close(): void } | null = null;
+  /** Whether the reference was opened from the editor, so that leaving it can step back in history. */
+  private referenceFromEditor = false;
 
   // Elements that are updated in place.
   private readonly moveButton = h('button', { type: 'button', class: 'move-switch', 'aria-haspopup': 'dialog' });
@@ -116,18 +134,43 @@ class App {
     this.buildDom(root);
     this.initWorkspace();
     this.openDoc(this.doc);
+    window.addEventListener('hashchange', () => {
+      this.referenceFromEditor = true;
+      this.syncReference();
+    });
+    this.syncReference();
     if (import.meta.env.DEV) (window as unknown as { moveLab: unknown }).moveLab = this;
+  }
+
+  // -------------------------------------------------------------------------
+  // The block reference
+
+  /** Shows or hides the reference to match the address. */
+  private syncReference(): void {
+    const wanted = window.location.hash === REFERENCE_HASH;
+    if (wanted && !this.reference) {
+      this.toggleMenu(false);
+      this.reference = openReference({ moveName: this.doc.sheet.name || 'your move', onClose: () => this.leaveReference() });
+    } else if (!wanted && this.reference) {
+      this.reference.close();
+      this.reference = null;
+    }
+  }
+
+  private leaveReference(): void {
+    if (this.referenceFromEditor) {
+      window.history.back();
+      return;
+    }
+    // The page was opened straight on the reference: there is no editor entry to go back to.
+    window.history.replaceState(null, '', window.location.pathname + window.location.search);
+    this.syncReference();
   }
 
   // -------------------------------------------------------------------------
   // Layout
 
   private buildDom(root: HTMLElement): void {
-    const logo = h('span', { class: 'logo', 'aria-hidden': 'true' });
-    logo.innerHTML =
-      '<svg width="18" height="18" viewBox="0 0 24 24" fill="#173C2E"><path d="M4 4h9a2 2 0 0 1 2 2v3H9.5v2h-3V9H4z"/>' +
-      '<path d="M4 13h2.5v2h3v-2H18a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H4z"/></svg>';
-
     this.moveButton.addEventListener('click', () => this.toggleMenu());
     document.addEventListener('pointerdown', (event) => {
       if (this.moveMenu.hidden) return;
@@ -139,13 +182,14 @@ class App {
     });
 
     const header = h('header', { class: 'topbar' },
-      h('div', { class: 'brand' }, logo, h('span', null, 'Move Lab')),
+      brand(),
       h('div', { class: 'move-switch-wrap' }, this.moveButton, this.moveMenu),
       this.pathLabel,
       h('div', { class: 'top-actions' },
         this.savedLabel,
         h('button', { type: 'button', class: 'top-icon', 'aria-label': 'Undo', title: 'Undo', onclick: () => this.workspace.undo(false) }, icon('undo')),
         h('button', { type: 'button', class: 'top-icon', 'aria-label': 'Redo', title: 'Redo', onclick: () => this.workspace.undo(true) }, icon('redo')),
+        h('a', { class: 'top-link', href: REFERENCE_HASH, title: 'What each block does' }, 'All blocks'),
         h('button', { type: 'button', class: 'top-primary', onclick: () => this.download() }, icon('download'), 'Download .lua'),
       ),
     );

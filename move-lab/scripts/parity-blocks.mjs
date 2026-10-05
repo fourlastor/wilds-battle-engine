@@ -1,41 +1,10 @@
 // Rebuilds every built-in move from blocks and checks that the generated Lua behaves exactly like
 // the original file: same events, same final state, over many seeded battles in the real engine.
 // Run with: npm run test:blocks
-import { readFileSync, readdirSync } from 'node:fs';
-import { registerHooks } from 'node:module';
-import path from 'node:path';
-import { fileURLToPath, pathToFileURL } from 'node:url';
+import { Blockly, engine, originals } from './headless.mjs';
 
-const here = path.dirname(fileURLToPath(import.meta.url));
-const root = path.join(here, '..');
-
-// In Node, "blockly/core" resolves to a CommonJS build without named exports. The browser build
-// has them and runs headless just as well, so point the editor's imports at that one.
-const blocklyEsm = pathToFileURL(path.join(root, 'node_modules/blockly/blockly.mjs')).href;
-registerHooks({
-  resolve(specifier, context, nextResolve) {
-    if (specifier === 'blockly/core') return { url: blocklyEsm, shortCircuit: true };
-    return nextResolve(specifier, context);
-  },
-});
-
-const Blockly = await import('blockly/core');
-// Blockly's own Node entry does this too: shadow blocks are serialized through XML helpers.
-const { JSDOM } = await import('jsdom');
-Blockly.utils.xml.injectDependencies(new JSDOM('<!DOCTYPE html>').window);
-const { defineBlocks } = await import('../src/blocks/definitions.ts');
 const { generate } = await import('../src/blocks/generate.ts');
 const { blocksFromInfo, canOpen, sheetFromInfo } = await import('../src/blocks/library.ts');
-const { Engine } = await import('../src/engine/engine.ts');
-
-defineBlocks();
-const engine = await Engine.load(pathToFileURL(path.join(root, 'public/engine')).href + '/');
-
-const movesDir = path.join(root, '../moves');
-const originals = {};
-for (const file of readdirSync(movesDir).filter((name) => name.endsWith('.lua'))) {
-  originals[file] = readFileSync(path.join(movesDir, file), 'utf8');
-}
 
 engine.setMoves(originals);
 const catalog = engine.catalog().filter((move) => move.id !== 'struggle');

@@ -14,7 +14,8 @@
     "deploy": "npm run build && npx --yes wrangler@4 deploy",
     "test:engine": "node scripts/smoke-engine.mjs",
     "test:blocks": "node --disable-warning=ExperimentalWarning scripts/parity-blocks.mjs",
-    "test": "npm run test:engine && npm run test:blocks"
+    "test:reference": "node --disable-warning=ExperimentalWarning scripts/check-blocks.mjs",
+    "test": "npm run test:engine && npm run test:blocks && npm run test:reference"
   },
   "dependencies": {
     "blockly": "^13.3.0"

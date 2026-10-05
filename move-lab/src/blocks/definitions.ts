@@ -229,6 +229,94 @@ const OPTIONS: Record<string, OptionSpec[]> = {
 };
 
 // ---------------------------------------------------------------------------
+// What each block does. Shown when hovering a block and in the block reference, so every sentence
+// here has to match what the engine does (crates/wilds-battle-engine/src/engine.rs).
+
+const TIPS: Record<string, string> = {
+  // Starts
+  mlab_on_use:
+    'Everything under this block happens when the move is used. The menu picks who it is used on. Blocks that say “the target” mean that Pokémon.',
+  mlab_on_hit:
+    'Runs each time a move damages the user without knocking it out, from “watch for hits” until the user’s next action. In this stack “the target” is the attacker, and only messages and changes to the user’s stats work.',
+  mlab_on_interrupt:
+    'Runs if sleep, paralysis, freezing, a flinch or confusion stops a later turn of a multi-turn move. The multi-turn move ends there.',
+
+  // Damage
+  mlab_damage:
+    'A normal attack on the target. The damage comes from this power, the stats of both Pokémon and the type matchup. “+ option” adds extras such as draining HP.',
+  mlab_fixed_damage: 'Takes away exactly this much HP, whatever the stats. It does nothing to a target that is immune to the move’s type.',
+  mlab_level_damage: 'Takes away as many HP as the user’s level. It does nothing to a target that is immune to the move’s type.',
+  mlab_ohko:
+    'Takes away the target’s whole max HP. It is meant to go with the “One-hit KO rule” for accuracy, under More in the move details.',
+  mlab_multi_hit: 'Hits a random number of times between the two numbers, each time with this power, then shows “Hit … times!”.',
+  mlab_recoil_max_hp: 'The user loses this share of its own max HP, whether or not the move did any damage.',
+  mlab_faint_user: 'The user’s HP drops to 0. The blocks below it still run.',
+
+  // Healing
+  mlab_heal: 'Gives the user back this share of its max HP. It has no effect when the user is already at full HP.',
+
+  // Status
+  mlab_status: 'Gives the target a lasting condition. It does not replace one the target already has, unless you add that option.',
+  mlab_confuse_target:
+    'Confuses the target for 1 to 4 turns. A confused Pokémon hurts itself instead of moving about a third of the time.',
+  mlab_confuse_self: 'Confuses the user for 1 to 4 turns. It does nothing if the user is already confused.',
+  mlab_flinch: 'The target loses its turn if it has not moved yet this turn, so this only matters when the user moves first.',
+  mlab_bind: 'Traps the target for 4 or 5 turns. It loses 1/8 of its max HP at the end of each of them.',
+  mlab_protect:
+    'Moves used on the user fail for the rest of this turn. Give the move a high priority, under More, so that it goes first. It often fails when used several turns in a row.',
+
+  // Stats
+  mlab_stats: 'Raises or lowers a battle stat by stages, between −6 and +6 in total. Each stage is a step, not a number of points.',
+  mlab_boost_next:
+    'Multiplies the power of the user’s next move if that is a damaging move of this type. The boost is used up by the next move either way.',
+
+  // Field
+  mlab_weather: 'Changes the weather for this many turns after this one. It fails if that weather is already there.',
+
+  // Turns
+  mlab_force_move:
+    'Makes this a multi-turn move: the user repeats it on the following turns without choosing, until this many turns have passed, counting this one. From 2 to 8 turns. Run it on the first turn only.',
+  mlab_break_sequence: 'Ends the multi-turn move with this turn. Next turn the user chooses a move again.',
+  mlab_recharge: 'The user cannot act on the next turn. “… must recharge!” is shown instead.',
+  mlab_watch_hits:
+    'From now until the user’s next action, each move that damages the user runs the “when the user is hit while watching” stack. The move needs that stack.',
+  mlab_fail: 'Shows “But it failed!” and stops. Nothing below this block runs.',
+  mlab_stop: 'Ends the stack for this turn. Nothing below this block runs.',
+  mlab_two_turn:
+    'The engine’s built-in two-turn attack: the first turn only shows the message, the second turn hits. Type {user} for the user’s name.',
+  mlab_consecutive:
+    'The engine’s built-in rampage: the user repeats the move for a random number of turns between the two numbers and cannot choose another.',
+
+  // Logic
+  mlab_if: 'Runs the blocks inside only when the condition is true.',
+  mlab_if_else: 'Runs the first group of blocks when the condition is true, and the second group when it is not.',
+  mlab_repeat: 'Runs the blocks inside this many times. A move can do at most 64 things in one turn, or the engine stops the battle.',
+  mlab_repeat_count: '1 the first time round, 2 the second, and so on. Use it inside “repeat”.',
+  mlab_compare: 'True when the comparison between the two numbers holds.',
+  mlab_and_or: '“and” is true when both sides are true. “or” is true when at least one side is.',
+  mlab_not: 'True when the condition is false, and false when it is true.',
+  mlab_arith: 'Adds, subtracts, multiplies or divides two numbers.',
+  mlab_random: 'A whole number picked at random, both ends included. The numbers can go from 0 to 255.',
+  mlab_number: 'A number. Drop another block on it to work the number out instead.',
+
+  // Battle info
+  mlab_hp: 'The HP that Pokémon has when this stack starts. Damage dealt by the blocks above does not change it.',
+  mlab_turn: '1 on the turn the move is chosen, 2 on the next, and so on.',
+  mlab_last_damage: 'How much HP the last “deal damage” block above took away. 0 if it missed, or if none has run yet.',
+  mlab_status_is: 'Checks the condition that Pokémon has when this stack starts. “healthy” means none.',
+  mlab_weather_is: 'Checks the weather when this stack starts. “clear” means none.',
+  mlab_first_turn: 'True on the turn the move is chosen, false on the later turns of a multi-turn move.',
+  mlab_last_turn: 'True on the final turn of a multi-turn move.',
+  mlab_in_sequence: 'True on the later turns of a multi-turn move, false on its first turn.',
+  mlab_hit_landed: 'True if the last “deal damage” block above hit. False if it missed, or if none has run yet.',
+
+  // Text
+  mlab_message: 'Shows a line of text in the battle. Type {user} for the user’s name.',
+  mlab_announce: 'Shows “… used …!” at this point instead of at the start of the move.',
+  mlab_splash: 'Shows “But nothing happened!”. One time in a hundred it hits the target for 1/16 of its max HP instead.',
+};
+
+// ---------------------------------------------------------------------------
 
 const statement = { previousStatement: null, nextStatement: null, inputsInline: true };
 const lastStatement = { previousStatement: null, inputsInline: true };
@@ -245,42 +333,36 @@ const WITH_OPTIONS: Record<string, object> = {
     args0: [{ type: 'input_value', name: 'POWER', check: 'Number' }],
     ...statement,
     style: 'damage_blocks',
-    tooltip: 'A normal attack. The damage depends on power, stats and types. “+ option” adds extras such as draining HP.',
   },
   mlab_heal: {
     message0: 'heal the user by %1 % of its max HP',
     args0: [pct('PERCENT', 50)],
     ...statement,
     style: 'heal_blocks',
-    tooltip: 'Restores part of the user’s HP. Fails if the user is already at full HP.',
   },
   mlab_status: {
     message0: 'give the target %1 %2 % of the time',
     args0: [dropdown('STATUS', GIVE_STATUS_MENU), pct('CHANCE', 100)],
     ...statement,
     style: 'status_blocks',
-    tooltip: 'Inflicts a lasting condition on whoever the move is used on.',
   },
   mlab_two_turn: {
     message0: 'charge for a turn saying %1 %2 then hit with power %3',
     args0: [{ type: 'field_input', name: 'MESSAGE', text: '{user} is getting ready!' }, endRow, number('POWER', 80, 1, 999)],
     ...statement,
     style: 'turn_blocks',
-    tooltip: 'The engine’s built-in two-turn attack. Type {user} for the user’s name.',
   },
   mlab_consecutive: {
     message0: 'keep attacking for %1 to %2 turns %3 with power %4',
     args0: [number('MIN', 2, 1, 8), number('MAX', 3, 1, 8), endRow, number('POWER', 120, 1, 999)],
     ...statement,
     style: 'turn_blocks',
-    tooltip: 'The engine’s built-in rampage: the user repeats the move for a few turns.',
   },
   mlab_stats: {
     message0: 'change %1 %2 by %3',
     args0: [dropdown('WHO', WHOSE_MENU), dropdown('STAT', STAT_MENU), dropdown('STAGES', STAGE_MENU)],
     ...statement,
     style: 'stats_blocks',
-    tooltip: 'Raises or lowers battle stats by stages. Each stage is a step, not a number of points.',
   },
 };
 
@@ -292,27 +374,24 @@ const PLAIN: object[] = [
     args0: [dropdown('TARGET', TARGET_MENU)],
     nextStatement: null,
     style: 'hat_blocks',
-    tooltip: 'Everything under this block happens when the move is used.',
   },
   {
     type: 'mlab_on_hit',
     message0: 'when the user is hit while watching',
     nextStatement: null,
     style: 'hat_blocks',
-    tooltip: 'Runs each time an attack hits the user, after “watch for hits”. Only messages and changes to the user’s stats work here.',
   },
   {
     type: 'mlab_on_interrupt',
     message0: 'when a multi-turn move is cut short',
     nextStatement: null,
     style: 'hat_blocks',
-    tooltip: 'Runs if sleep, paralysis, a flinch or confusion stops one of the move’s later turns.',
   },
 
   // Damage
-  { type: 'mlab_fixed_damage', message0: 'deal exactly %1 HP of damage', args0: [number('AMOUNT', 40, 1, 9999)], ...statement, style: 'damage_blocks', tooltip: 'Always the same amount, whatever the stats and types.' },
+  { type: 'mlab_fixed_damage', message0: 'deal exactly %1 HP of damage', args0: [number('AMOUNT', 40, 1, 9999)], ...statement, style: 'damage_blocks' },
   { type: 'mlab_level_damage', message0: 'deal damage equal to the user’s level', ...statement, style: 'damage_blocks' },
-  { type: 'mlab_ohko', message0: 'knock out in one hit', ...statement, style: 'damage_blocks', tooltip: 'Pair it with the “one-hit KO” accuracy rule in the move details.' },
+  { type: 'mlab_ohko', message0: 'knock out in one hit', ...statement, style: 'damage_blocks' },
   {
     type: 'mlab_multi_hit',
     message0: 'hit %1 to %2 times with power %3',
@@ -337,7 +416,6 @@ const PLAIN: object[] = [
     args0: [dropdown('TYPE', TYPE_MENU), number('MULT', 2, 0.1, 8, 0.1)],
     ...statement,
     style: 'stats_blocks',
-    tooltip: 'The boost is used up by the user’s next move, whatever its type.',
   },
 
   // Field
@@ -354,13 +432,12 @@ const PLAIN: object[] = [
     ],
     ...statement,
     style: 'turn_blocks',
-    tooltip: 'From 2 to 8 turns in total, counting this one. The user cannot pick another move until it is over.',
   },
   { type: 'mlab_break_sequence', message0: 'end the multi-turn move now', ...statement, style: 'turn_blocks' },
   { type: 'mlab_recharge', message0: 'the user must recharge next turn', ...statement, style: 'turn_blocks' },
-  { type: 'mlab_watch_hits', message0: 'watch for hits until the user’s next action', ...statement, style: 'turn_blocks', tooltip: 'Needs a “when the user is hit while watching” stack to say what happens.' },
-  { type: 'mlab_fail', message0: 'the move fails', ...lastStatement, style: 'turn_blocks', tooltip: 'Shows “But it failed!” and stops.' },
-  { type: 'mlab_stop', message0: 'stop here', ...lastStatement, style: 'turn_blocks', tooltip: 'Nothing below this block runs this turn.' },
+  { type: 'mlab_watch_hits', message0: 'watch for hits until the user’s next action', ...statement, style: 'turn_blocks' },
+  { type: 'mlab_fail', message0: 'the move fails', ...lastStatement, style: 'turn_blocks' },
+  { type: 'mlab_stop', message0: 'stop here', ...lastStatement, style: 'turn_blocks' },
 
   // Logic
   {
@@ -393,7 +470,7 @@ const PLAIN: object[] = [
     ...statement,
     style: 'logic_blocks',
   },
-  { type: 'mlab_repeat_count', message0: 'repeat number', output: 'Number', style: 'logic_blocks', tooltip: '1 the first time round, 2 the second, and so on. Use it inside “repeat”.' },
+  { type: 'mlab_repeat_count', message0: 'repeat number', output: 'Number', style: 'logic_blocks' },
   {
     type: 'mlab_compare',
     message0: '%1 %2 %3',
@@ -441,25 +518,24 @@ const PLAIN: object[] = [
     output: 'Number',
     inputsInline: true,
     style: 'logic_blocks',
-    tooltip: 'Whole numbers from 0 to 255, both ends included.',
   },
   { type: 'mlab_number', message0: '%1', args0: [{ type: 'field_number', name: 'NUM', value: 0 }], output: 'Number', style: 'logic_blocks' },
 
   // Battle info
   { type: 'mlab_hp', message0: '%1 HP', args0: [dropdown('WHO', WHOSE_MENU)], output: 'Number', style: 'info_blocks', classes: 'mlab-info' },
-  { type: 'mlab_turn', message0: 'turn of this move', output: 'Number', style: 'info_blocks', classes: 'mlab-info', tooltip: '1 on the turn the move is chosen, 2 on the next, and so on.' },
+  { type: 'mlab_turn', message0: 'turn of this move', output: 'Number', style: 'info_blocks', classes: 'mlab-info' },
   { type: 'mlab_last_damage', message0: 'damage of the last hit', output: 'Number', style: 'info_blocks', classes: 'mlab-info' },
   { type: 'mlab_status_is', message0: '%1 %2 %3', args0: [dropdown('WHO', WHO_MENU), dropdown('OP', IS_MENU), dropdown('STATUS', STATUS_IS_MENU)], output: 'Boolean', style: 'info_blocks', classes: 'mlab-info' },
   { type: 'mlab_weather_is', message0: 'weather %1 %2', args0: [dropdown('OP', IS_MENU), dropdown('WEATHER', WEATHER_IS_MENU)], output: 'Boolean', style: 'info_blocks', classes: 'mlab-info' },
   { type: 'mlab_first_turn', message0: 'first turn of this move', output: 'Boolean', style: 'info_blocks', classes: 'mlab-info' },
-  { type: 'mlab_last_turn', message0: 'last turn of this move', output: 'Boolean', style: 'info_blocks', classes: 'mlab-info', tooltip: 'True on the final turn of a multi-turn move.' },
-  { type: 'mlab_in_sequence', message0: 'already a multi-turn move', output: 'Boolean', style: 'info_blocks', classes: 'mlab-info', tooltip: 'True once “make this move take … turns” has run for this use of the move.' },
+  { type: 'mlab_last_turn', message0: 'last turn of this move', output: 'Boolean', style: 'info_blocks', classes: 'mlab-info' },
+  { type: 'mlab_in_sequence', message0: 'already a multi-turn move', output: 'Boolean', style: 'info_blocks', classes: 'mlab-info' },
   { type: 'mlab_hit_landed', message0: 'the last hit landed', output: 'Boolean', style: 'info_blocks', classes: 'mlab-info' },
 
   // Text
-  { type: 'mlab_message', message0: 'show message %1', args0: [{ type: 'field_input', name: 'TEXT', text: '{user} is ready!' }], ...statement, style: 'text_blocks', tooltip: 'Type {user} for the user’s name.' },
-  { type: 'mlab_announce', message0: 'announce the move', ...statement, style: 'text_blocks', tooltip: 'Shows “… used …!” here instead of at the start of the move.' },
-  { type: 'mlab_splash', message0: 'nothing happens', ...statement, style: 'text_blocks', tooltip: 'The engine’s Splash effect.' },
+  { type: 'mlab_message', message0: 'show message %1', args0: [{ type: 'field_input', name: 'TEXT', text: '{user} is ready!' }], ...statement, style: 'text_blocks' },
+  { type: 'mlab_announce', message0: 'announce the move', ...statement, style: 'text_blocks' },
+  { type: 'mlab_splash', message0: 'nothing happens', ...statement, style: 'text_blocks' },
 ];
 
 let defined = false;
@@ -467,15 +543,20 @@ let defined = false;
 export function defineBlocks(): void {
   if (defined) return;
   defined = true;
-  Blockly.defineBlocksWithJsonArray(PLAIN);
+  Blockly.defineBlocksWithJsonArray(PLAIN.map((json) => ({ ...json, tooltip: TIPS[(json as { type: string }).type] })));
   for (const [type, json] of Object.entries(WITH_OPTIONS)) {
     Blockly.Blocks[type] = {
       init(this: OptionBlock) {
-        this.jsonInit(json);
+        this.jsonInit({ ...json, tooltip: TIPS[type] });
         installOptions(this, OPTIONS[type], type !== 'mlab_damage');
       },
     };
   }
+}
+
+/** The rows that "+ option" can add to a block. */
+export function optionSpecs(type: string): OptionSpec[] {
+  return OPTIONS[type] ?? [];
 }
 
 export const HAT_TYPES = ['mlab_on_use', 'mlab_on_hit', 'mlab_on_interrupt'];

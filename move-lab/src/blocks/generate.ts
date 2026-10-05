@@ -37,11 +37,15 @@ export const MARK = '\u0001';
 type PassKind = 'annotated' | 'traced';
 type Hook = 'script' | 'on_hit' | 'on_interrupt';
 
+const HOOKS: Record<string, Hook> = { mlab_on_use: 'script', mlab_on_hit: 'on_hit', mlab_on_interrupt: 'on_interrupt' };
+
 interface Pass {
   kind: PassKind;
   marks: string[];
   problems: Map<string, Problem>;
   useResult: boolean;
+  /** Why this move is a script, said to the blocks that only exist in plain moves. */
+  cause: string;
 }
 
 let pass: Pass;
@@ -49,7 +53,7 @@ let pass: Pass;
 const lua = new LuaGenerator('MoveLab');
 lua.INDENT = '  ';
 
-const PLAIN_ONLY = 'This block only works in plain moves for now. It cannot share a move with Logic, Turns or Battle info blocks.';
+const PLAIN_ONLY = 'This block only works in plain moves for now.';
 
 const EFFECT_ONLY = new Set([
   'mlab_fixed_damage', 'mlab_level_damage', 'mlab_ohko', 'mlab_multi_hit', 'mlab_status', 'mlab_confuse_target',
@@ -126,8 +130,9 @@ function problem(block: Blockly.Block | null, message: string): void {
   if (!pass.problems.has(key)) pass.problems.set(key, { blockId: block?.id ?? null, message });
 }
 
-function unsupported(block: Blockly.Block, message: string): string {
-  problem(block, message);
+/** Reports a block that a script cannot hold, and says what made the move a script. */
+function unsupported(block: Blockly.Block, reason: string): string {
+  problem(block, `${reason} ${pass.cause}`);
   return '';
 }
 
@@ -149,13 +154,13 @@ function scriptReason(block: Blockly.Block): string | null {
   switch (block.type) {
     case 'mlab_damage':
       if (hasOption(block, 'recoil') || hasOption(block, 'high_crit') || hasOption(block, 'always_crit')) {
-        return 'Recoil from the damage and critical-hit options only work in plain moves for now. Remove them, or remove the Logic, Turns and Battle info blocks.';
+        return 'Recoil from the damage dealt and the critical-hit options only work in plain moves for now.';
       }
       return null;
     case 'mlab_heal':
       return hasOption(block, 'quiet') ? 'Healing without a message only works in plain moves for now.' : null;
     case 'mlab_stats':
-      if (field(block, 'WHO') !== 'user') return 'Changing the target’s stats only works in plain moves for now. Scripts can change the user’s stats.';
+      if (field(block, 'WHO') !== 'user') return 'Changing the target’s stats only works in plain moves for now. A script can change the user’s stats.';
       if (hasOption(block, 'chance')) return 'A chance on stat changes only works in plain moves for now.';
       return null;
     default:
@@ -163,8 +168,11 @@ function scriptReason(block: Blockly.Block): string | null {
   }
 }
 
-/** The block as an entry of the `effects` list, or null if it has no such form. */
-function effectForm(block: Blockly.Block): string | null {
+/**
+ * The block as an entry of the `effects` list, or null if it has no such form.
+ * `target` is who the move is used on: the engine applies a plain move's effects to that Pokémon.
+ */
+function effectForm(block: Blockly.Block, target: string): string | null {
   const entry = (kind: string, ...fields: (string | false)[]) =>
     `{${[`kind = Effect.${kind}`, ...fields.filter((item): item is string => item !== false)].join(', ')}}`;
   switch (block.type) {
@@ -190,6 +198,8 @@ function effectForm(block: Blockly.Block): string | null {
     case 'mlab_multi_hit':
       return entry('MultiHit', `power = ${num(fieldNumber(block, 'POWER'))}`, `min_hits = ${num(fieldNumber(block, 'MIN'))}`, `max_hits = ${num(fieldNumber(block, 'MAX'))}`);
     case 'mlab_heal':
+      // The Heal effect heals whoever the move is used on; only a script can heal the user of a move aimed elsewhere.
+      if (target !== 'User') return null;
       return entry('Heal', `fraction = ${fraction(fieldNumber(block, 'PERCENT'))}`, hasOption(block, 'quiet') && 'hide_message = true');
     case 'mlab_status': {
       const chance = fieldNumber(block, 'CHANCE');
@@ -266,6 +276,16 @@ simple('mlab_watch_hits', 'ctx:watch_hits_until_next_action()');
 simple('mlab_announce', 'ctx:announce()');
 
 for (const type of EFFECT_ONLY) emit[type] = (block) => unsupported(block, PLAIN_ONLY);
+
+/** Only the first words of a block, to point at it in a message. */
+function shortName(block: Blockly.Block): string {
+  for (const input of block.inputList) {
+    for (const item of input.fieldRow) {
+      if (item instanceof Blockly.FieldLabel && item.getText().trim()) return item.getText().trim();
+    }
+  }
+  return block.type;
+}
 
 emit['mlab_damage'] = (block) => {
   const reason = scriptReason(block);
@@ -467,7 +487,7 @@ function validateScript(hats: Partial<Record<Hook, Blockly.Block>>): void {
     for (const block of below(hat)) {
       if (block.outputConnection) continue;
       const reason = scriptReason(block);
-      if (reason) problem(block, reason);
+      if (reason) unsupported(block, reason);
     }
   }
   const hit = hats.on_hit;
@@ -485,7 +505,7 @@ function validateScript(hats: Partial<Record<Hook, Blockly.Block>>): void {
 }
 
 function build(kind: PassKind, workspace: Blockly.Workspace, sheet: MoveSheet, problems: Map<string, Problem>, marks: string[]) {
-  pass = { kind, marks, problems, useResult: false };
+  pass = { kind, marks, problems, useResult: false, cause: '' };
   const tops = workspace.getTopBlocks(true).filter((block) => block.isEnabled());
   const hats: Partial<Record<Hook, Blockly.Block>> = {
     script: tops.find((block) => block.type === 'mlab_on_use'),
@@ -501,12 +521,23 @@ function build(kind: PassKind, workspace: Blockly.Workspace, sheet: MoveSheet, p
 
   let mode: Generated['mode'];
   const body: string[] = [];
-  const forms = stack.map(effectForm);
+  const forms = stack.map((block) => effectForm(block, target));
+  const scripted = stack.find((_, index) => forms[index] === null);
+  // A plain move's effects reach one Pokémon, so "everyone else" takes a script too.
+  const cause = hats.on_hit
+    ? 'it has a “when the user is hit while watching” stack'
+    : hats.on_interrupt
+      ? 'it has a “when a multi-turn move is cut short” stack'
+      : target === 'AllOthers'
+        ? 'it is used on “everyone else”'
+        : scripted
+          ? `of “${shortName(scripted)}”`
+          : '';
   if (!main || stack.length === 0) {
     mode = 'empty';
     problem(main ?? null, 'Add at least one block under “when this move is used”.');
     body.push('-- nothing yet: add a block under "when this move is used"');
-  } else if (!hats.on_hit && !hats.on_interrupt && forms.every((form) => form !== null)) {
+  } else if (!cause) {
     mode = 'effects';
     body.push(`effects = {${kind === 'annotated' ? ` --@${markOf(main)}` : ''}`);
     stack.forEach((block, index) => {
@@ -515,10 +546,15 @@ function build(kind: PassKind, workspace: Blockly.Workspace, sheet: MoveSheet, p
       if ((block.type === 'mlab_multi_hit' || block.type === 'mlab_consecutive') && fieldNumber(block, 'MIN') > fieldNumber(block, 'MAX')) {
         problem(block, 'The first number must not be larger than the second.');
       }
+      // The Protect effect protects whoever the move is used on.
+      if (block.type === 'mlab_protect' && target !== 'User') {
+        problem(block, 'This protects whoever the move is used on. Set “when this move is used on” to “the user”.');
+      }
     });
     body.push('},');
   } else {
     mode = 'script';
+    pass.cause = `This move is a script because ${cause}.`;
     validateScript(hats);
     lua.init(workspace);
     if (hats.on_interrupt) body.push(...hookFunction('on_interrupt', hats.on_interrupt));
@@ -530,6 +566,34 @@ function build(kind: PassKind, workspace: Blockly.Workspace, sheet: MoveSheet, p
   const lines = [...header(sheet, target, announces), ...body];
   const text = `return {\n${lines.map((line) => lua.INDENT + line).join('\n')}\n}\n`;
   return { text, mode, effectBlocks };
+}
+
+export interface BlockForms {
+  /** What the block writes in a plain move, or null if it cannot be in one. */
+  plain: string | null;
+  /** What the block writes in a script, or null if it cannot be in one. */
+  script: string | null;
+}
+
+/**
+ * What one block writes in each shape of move file, for the block reference.
+ * The plain form is the one for a move used on its own user, where every plain block is allowed.
+ */
+export function formsOf(block: Blockly.Block): BlockForms {
+  const hook = HOOKS[block.type];
+  if (hook) return { plain: hook === 'script' ? 'effects = { … }' : null, script: `${hook} = function(ctx) … end` };
+  const inside = block.getDescendants(false);
+  pass = {
+    kind: 'annotated',
+    marks: [],
+    problems: new Map(),
+    useResult: inside.some((other) => other.type === 'mlab_hit_landed' || other.type === 'mlab_last_damage'),
+    cause: '',
+  };
+  lua.init(block.workspace);
+  if (block.outputConnection) return { plain: null, script: (lua.blockToCode(block) as [string, number])[0] };
+  const code = scriptReason(block) ? null : (lua.blockToCode(block, true) as string).replace(/ --@\d+$/gm, '').trimEnd();
+  return { plain: effectForm(block, 'User'), script: code };
 }
 
 export function generate(workspace: Blockly.Workspace, sheet: MoveSheet): Generated {
