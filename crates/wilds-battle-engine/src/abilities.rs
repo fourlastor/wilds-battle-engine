@@ -424,6 +424,12 @@ impl Battle {
     ) -> f32 {
         use crate::model::CombatStat::*;
         if stat == Speed
+            && self.has_ability(who, "slushrush")
+            && self.effective_weather() == Some(crate::model::WeatherKind::Hail)
+        {
+            return 2.0;
+        }
+        if stat == Speed
             && self.has_ability(who, "chlorophyll")
             && self.effective_weather() == Some(crate::model::WeatherKind::Sun)
         {

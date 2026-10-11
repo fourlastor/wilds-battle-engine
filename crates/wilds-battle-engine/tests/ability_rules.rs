@@ -1369,3 +1369,8 @@ fn swift_swim_doubles_speed_in_effective_rain() {
 fn chlorophyll_doubles_speed_in_effective_weather() {
     check_weather_speed("chlorophyll", "sunny_day");
 }
+
+#[test]
+fn slushrush_doubles_speed_in_effective_weather() {
+    check_weather_speed("slush-rush", "hail");
+}
