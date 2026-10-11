@@ -3571,3 +3571,32 @@ fn protean_changes_type_on_each_move_under_generation_eight_rules() {
 fn libero_changes_type_on_each_move_under_generation_eight_rules() {
     check_changing_move_type("libero");
 }
+
+#[test]
+fn imposter_transforms_on_entry_into_the_opposite_slot_and_respects_substitute() {
+    for substitute in [false, true] {
+        let mut user = mon("User", &["splash"]);
+        user.ability = Some("imposter".into());
+        user.hp = 600;
+        let target = mon("Near", &["ember"]);
+        let mut opposite = mon("Across", &["water-gun"]);
+        opposite.attack = 321;
+        opposite.ability = Some("water-absorb".into());
+        opposite.substitute_hp = if substitute { 100 } else { 0 };
+        let mut battle = Battle::with_rng(
+            Fixed(0.5),
+            [vec![user, mon("Ally", &["splash"])], vec![target, opposite]],
+            MoveCatalog::builtin().unwrap(),
+        )
+        .unwrap();
+        battle.advance().unwrap();
+        assert_eq!(ally(&battle).transformed(), !substitute);
+        assert_eq!(ally(&battle).hp, 600);
+        if !substitute {
+            assert_eq!(ally(&battle).attack, 321);
+            assert_eq!(ally(&battle).moves, ["water-gun"]);
+            assert_eq!(ally(&battle).move_pp["water-gun"], 5);
+            assert_eq!(ally(&battle).ability.as_deref(), Some("water-absorb"));
+        }
+    }
+}

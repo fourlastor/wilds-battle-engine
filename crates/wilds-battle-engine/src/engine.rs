@@ -526,7 +526,9 @@ impl Battle {
             let mut entrants = self.actors();
             entrants.sort_by_key(|&id| std::cmp::Reverse(self.action_speed(id)));
             for who in entrants {
-                self.ability_on_entry(who, &mut events);
+                if !self.imposter_on_entry(who, &mut events) {
+                    self.ability_on_entry(who, &mut events);
+                }
             }
         }
         self.resolve_outcome(&mut events);

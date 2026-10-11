@@ -167,7 +167,9 @@ impl Battle {
         }
         self.heal_replacement(to, events);
         self.entry_hazards(to, events);
-        self.ability_on_entry(to, events);
+        if !self.imposter_on_entry(to, events) {
+            self.ability_on_entry(to, events);
+        }
         self.ignored_ability = ignored;
         true
     }

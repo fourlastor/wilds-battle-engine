@@ -27,6 +27,28 @@ fn cannot_suppress(ability: &str) -> bool {
 }
 
 impl Battle {
+    pub(crate) fn imposter_on_entry(
+        &mut self,
+        who: ParticipantId,
+        events: &mut Vec<BattleEvent>,
+    ) -> bool {
+        if !self.has_ability(who, "imposter") {
+            return false;
+        }
+        let side = who.side.opposite();
+        let Some(slot) = self
+            .position(who)
+            .and_then(|p| self.active[side.index()].len().checked_sub(p + 1))
+        else {
+            return false;
+        };
+        let target = ParticipantId {
+            side,
+            index: self.active[side.index()][slot],
+        };
+        self.transform(who, target, events)
+    }
+
     pub(crate) fn ability_prepare_type(
         &mut self,
         who: ParticipantId,
