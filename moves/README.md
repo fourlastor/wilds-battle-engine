@@ -3,8 +3,8 @@
 Each move has a standalone `<Name>.lua` file in this directory. `Name` is the
 canonical slug from `pokewilds-next/pokemon_data/assets/moves/<ID>.json`;
 `HumanName` supplies its display name. All 588 slugs in that source are unique.
-Gravity and Stockpile have no local source JSON; their names and parameters come
-from PokeAPI, with the individual references recorded in the manifest.
+Moves without local source JSON use PokeAPI names and parameters, checked against
+the pinned Gen 8 behavior reference; individual references are in the manifest.
 
 Of the 572 entries in the [Saved moves sheet](https://docs.google.com/spreadsheets/d/1e9lPFCqyuwpX6R6s69HXoFUXedoIAD8SdtSbswY48Q8/edit?gid=1664051581),
 538 remain in the active catalog. The 16 Z-Moves and 18 Max Moves are deliberately
@@ -18,8 +18,9 @@ otherwise Electric. The host supplies its current form; automatic Hunger Switch
 form changes remain part of the unfinished ability catalog.
 
 With seven additional support moves, 14 further moves from the local JSON data,
-and the nine original moves outside the sheet, the runtime catalog has 568 moves:
-567 files here and Struggle in `src/system_moves.lua` inside the crate.
+1 further Gen 1–8 moves and the nine original moves outside the sheet,
+the runtime catalog has 569 moves: 568 files here and Struggle in
+`src/system_moves.lua` inside the crate.
 The 22 original filenames containing underscores have been renamed with hyphens.
 
 New move IDs equal their filename slugs. Original runtime IDs retain underscores

@@ -5,7 +5,7 @@
     "https://pokeapi.co/api/v2/move/{id}/",
     "https://github.com/smogon/pokemon-showdown/blob/942cda71d14bf0618bd57991708a2e2734b6daba/data/moves.ts"
   ],
-  "parameter_policy": "JSON names and parameters; actual behavior for conflicting spreadsheet descriptions; original runtime IDs and behaviors retained for existing moves. Gravity and Stockpile have no local source JSON and use PokeAPI parameters.",
+  "parameter_policy": "Local JSON names and parameters where available; PokeAPI names and Gen 8 parameters for other moves. Actual behavior takes precedence over conflicting spreadsheet descriptions; original runtime IDs and behaviors retained for existing moves.",
   "global_limitations": [
     "The engine supports benches, switches, entry hazards, Substitute and selected ability/item effects. The item and ability catalogs are not exhaustive.",
     "General battle interactions follow the current Rust engine; catalog coverage is not full official battle parity."
@@ -180,6 +180,17 @@
       "file": "moves/wing-attack.lua",
       "status": "implemented",
       "limitations": []
+    },
+    {
+      "id": 18,
+      "slug": "whirlwind",
+      "name": "Whirlwind",
+      "sheet_row": null,
+      "runtime_id": "whirlwind",
+      "file": "moves/whirlwind.lua",
+      "status": "implemented",
+      "limitations": [],
+      "parameter_source": "https://pokeapi.co/api/v2/move/18/"
     },
     {
       "id": 19,
@@ -5976,7 +5987,8 @@
       "aura-wheel",
       "overdrive",
       "apple-acid",
-      "life-dew"
+      "life-dew",
+      "whirlwind"
     ]
   }
 }
