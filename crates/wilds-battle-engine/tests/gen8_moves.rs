@@ -647,3 +647,28 @@ fn heat_crash_uses_relative_weight() {
     turn(&mut b);
     assert_eq!(1000 - b.participants(Side::Foes)[0].hp, expected);
 }
+
+#[test]
+fn gyro_ball_uses_modified_speed_and_caps_at_150_power() {
+    for (speed, power) in [
+        (1, 150),
+        (16, 150),
+        (25, 101),
+        (50, 51),
+        (100, 26),
+        (200, 13),
+        (500, 6),
+    ] {
+        let mut user = mon("User", &["gyro-ball"]);
+        user.speed = speed;
+        let foe = mon("Foe", &["splash"]);
+        let expected = control_damage(power, "Steel", "Physical", user.clone(), foe.clone());
+        let mut b = game(user, vec![foe], 0.5);
+        turn(&mut b);
+        assert_eq!(
+            1000 - b.participants(Side::Foes)[0].hp,
+            expected,
+            "speed {speed}"
+        );
+    }
+}

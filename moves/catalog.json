@@ -2861,6 +2861,17 @@
       "limitations": []
     },
     {
+      "id": 360,
+      "slug": "gyro-ball",
+      "name": "Gyro Ball",
+      "sheet_row": null,
+      "runtime_id": "gyro-ball",
+      "file": "moves/gyro-ball.lua",
+      "status": "implemented",
+      "limitations": [],
+      "parameter_source": "https://pokeapi.co/api/v2/move/360/"
+    },
+    {
       "id": 362,
       "slug": "brine",
       "name": "Brine",
@@ -6288,7 +6299,8 @@
       "veevee-volley",
       "grass-knot",
       "heavy-slam",
-      "heat-crash"
+      "heat-crash",
+      "gyro-ball"
     ]
   }
 }
