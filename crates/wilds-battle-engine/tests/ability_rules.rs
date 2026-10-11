@@ -1374,3 +1374,20 @@ fn chlorophyll_doubles_speed_in_effective_weather() {
 fn slushrush_doubles_speed_in_effective_weather() {
     check_weather_speed("slush-rush", "hail");
 }
+
+fn check_weather_immunity(ability: &str, weather: &str) {
+    for suppressed in [false, true] {
+        let mut target = mon("Target", &["splash"]);
+        target.ability = Some(ability.into());
+        target.ability_suppressed = suppressed;
+        let mut battle = game(mon("User", &[weather]), target, 0.5);
+        turn(&mut battle, weather, "splash");
+        assert_eq!(foe(&battle).hp, if suppressed { 938 } else { 1000 });
+    }
+}
+
+#[test]
+fn sand_rush_doubles_speed_and_prevents_sandstorm_damage() {
+    check_weather_speed("sand-rush", "sandstorm");
+    check_weather_immunity("sand-rush", "sandstorm");
+}

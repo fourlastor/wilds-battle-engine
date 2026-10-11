@@ -177,7 +177,8 @@ impl Battle {
         who: ParticipantId,
         kind: crate::model::WeatherKind,
     ) -> bool {
-        self.has_ability(who, "overcoat")
+        (kind == crate::model::WeatherKind::Sandstorm && self.has_ability(who, "sandrush"))
+            || self.has_ability(who, "overcoat")
             || (kind == crate::model::WeatherKind::Hail && self.has_ability(who, "icebody"))
     }
 
@@ -423,6 +424,12 @@ impl Battle {
         stat: crate::model::CombatStat,
     ) -> f32 {
         use crate::model::CombatStat::*;
+        if stat == Speed
+            && self.has_ability(who, "sandrush")
+            && self.effective_weather() == Some(crate::model::WeatherKind::Sandstorm)
+        {
+            return 2.0;
+        }
         if stat == Speed
             && self.has_ability(who, "slushrush")
             && self.effective_weather() == Some(crate::model::WeatherKind::Hail)

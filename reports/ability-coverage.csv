@@ -144,7 +144,7 @@ id,ability,status,verification
 143,poison-touch,MISSING,No native battle behavior
 144,regenerator,IMPLEMENTED,Source inventory; existing tests only
 145,big-pecks,IMPLEMENTED,ability_rules::big_pecks_blocks_external_defense_drops_only
-146,sand-rush,MISSING,No native battle behavior
+146,sand-rush,IMPLEMENTED,ability_rules::sand_rush_doubles_speed_and_prevents_sandstorm_damage
 147,wonder-skin,MISSING,No native battle behavior
 148,analytic,MISSING,No native battle behavior
 149,illusion,MISSING,No native battle behavior
