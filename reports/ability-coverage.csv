@@ -105,7 +105,7 @@ id,ability,status,verification
 104,mold-breaker,IMPLEMENTED,Source inventory; existing tests only
 105,super-luck,IMPLEMENTED,ability_rules::super_luck_adds_a_critical_stage_but_respects_critical_immunity
 106,aftermath,IMPLEMENTED,ability_rules::aftermath_damages_only_contact_knockouts
-107,anticipation,MISSING,No native battle behavior
+107,anticipation,IMPLEMENTED,ability_rules::anticipation_warns_about_weaknesses_ohko_and_hidden_power
 108,forewarn,MISSING,No native battle behavior
 109,unaware,MISSING,No native battle behavior
 110,tinted-lens,IMPLEMENTED,ability_rules::tintedlens_only_modifies_the_relevant_type_matchups

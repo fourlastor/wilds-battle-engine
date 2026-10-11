@@ -3128,3 +3128,27 @@ fn trace_copies_and_activates_eligible_foe_abilities_and_retries_later() {
     turn(&mut battle, "splash", "switch:1");
     assert_eq!(ally(&battle).ability.as_deref(), Some("huge-power"));
 }
+
+#[test]
+fn anticipation_warns_about_weaknesses_ohko_and_hidden_power() {
+    for (kind, move_id, expected) in [
+        (PokemonType::Water, "thunderbolt", true),
+        (PokemonType::Water, "thunder-wave", false),
+        (PokemonType::Normal, "fissure", true),
+        (PokemonType::Normal, "tackle", false),
+        (PokemonType::Psychic, "hidden-power", true),
+    ] {
+        let mut user = mon("User", &["splash"]);
+        user.types = vec![kind];
+        user.ability = Some("anticipation".into());
+        let target = mon("Target", &[move_id, "splash"]);
+        let mut battle = game(user, target, 0.5);
+        let events = turn(&mut battle, "splash", "splash");
+        assert_eq!(
+            events
+                .iter()
+                .any(|e| matches!(e, BattleEvent::Message(m) if m.contains("Anticipation"))),
+            expected
+        );
+    }
+}

@@ -638,6 +638,39 @@ impl Battle {
             return;
         }
         self.ability_terrain_entry(who, events);
+        if self.has_ability(who, "anticipation")
+            && self.actors().into_iter().any(|foe| {
+                foe.side != who.side
+                    && self.get(foe).moves.iter().any(|id| {
+                        self.catalog.get(id).is_some_and(|spec| {
+                            let kind = if item_key(id) == "hiddenpower" {
+                                use crate::model::PokemonType::*;
+                                let ivs = self.get(foe).ivs.unwrap_or([31; 6]);
+                                let bits: usize = [0, 1, 2, 5, 3, 4]
+                                    .iter()
+                                    .enumerate()
+                                    .map(|(bit, i)| usize::from(ivs[*i] % 2) << bit)
+                                    .sum();
+                                [
+                                    Fighting, Flying, Poison, Ground, Rock, Bug, Ghost, Steel,
+                                    Fire, Water, Grass, Electric, Psychic, Ice, Dragon, Dark,
+                                ][bits * 15 / 63]
+                            } else {
+                                spec.move_type
+                            };
+                            spec.category != crate::moves::Category::Status
+                                && (spec.accuracy == crate::moves::Accuracy::OneHitKnockout
+                                    || crate::type_chart::multiplier(kind, &self.types_of(who))
+                                        > 1.0)
+                        })
+                    })
+            })
+        {
+            events.push(BattleEvent::Message(format!(
+                "{} shuddered with Anticipation!",
+                self.get(who).name
+            )));
+        }
         if self.has_ability(who, "frisk") {
             for foe in self.actors() {
                 if foe.side != who.side
