@@ -1913,3 +1913,9 @@ fn static_has_thirty_percent_contact_paralysis_with_type_immunity() {
 fn flame_body_has_thirty_percent_contact_burn_with_type_immunity() {
     check_contact_status("flame-body", Status::Burned, PokemonType::Fire);
 }
+
+#[test]
+fn poison_point_has_thirty_percent_contact_poison_with_type_immunity() {
+    check_contact_status("poison-point", Status::Poisoned, PokemonType::Poison);
+    check_contact_status("poison-point", Status::Poisoned, PokemonType::Steel);
+}

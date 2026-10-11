@@ -47,6 +47,7 @@ impl Battle {
         let contact_status = match ability {
             "static" => Some(crate::model::AppliedStatus::Paralyzed),
             "flamebody" => Some(crate::model::AppliedStatus::Burned),
+            "poisonpoint" => Some(crate::model::AppliedStatus::Poisoned),
             _ => None,
         };
         if let Some(status) = contact_status

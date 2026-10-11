@@ -36,7 +36,7 @@ id,ability,status,verification
 35,illuminate,MISSING,No native battle behavior
 36,trace,MISSING,No native battle behavior
 37,huge-power,IMPLEMENTED,Source inventory; existing tests only
-38,poison-point,MISSING,No native battle behavior
+38,poison-point,IMPLEMENTED,ability_rules::poison_point_has_thirty_percent_contact_poison_with_type_immunity
 39,inner-focus,IMPLEMENTED,Source inventory; existing tests only
 40,magma-armor,IMPLEMENTED,Source inventory; existing tests only
 41,water-veil,IMPLEMENTED,Source inventory; existing tests only
