@@ -169,6 +169,7 @@ return function(api, fields, roster)
   function ctx:adjacent(a, b) return op("adjacent", a, b) end
   function ctx:eat_stolen_berry(from, to) return op("eat_stolen_berry", from, to) end
   function ctx:eat_berry(who, forced) return op("eat_berry", who, forced) end
+  function ctx:recycle_item(who) return op("recycle_item", who) end
   function ctx:consume_item(who) return op("consume_item", who) end
   function ctx:take_item(who) return op("take_item", who) end
   function ctx:give_item(who, item) return op("give_item", who, item) end

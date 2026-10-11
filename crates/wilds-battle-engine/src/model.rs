@@ -424,6 +424,8 @@ pub struct Pokemon {
     pub consumed_items: BTreeSet<String>,
     pub ate_berry: bool,
     pub last_consumed_item: Option<String>,
+    /// Most recently consumed held item, available once to Recycle. Stolen berries do not count.
+    pub recyclable_item: Option<String>,
     /// Ability id. Supported mechanics query its active/suppressed state.
     pub ability: Option<String>,
     pub ability_suppressed: bool,
@@ -506,6 +508,7 @@ impl Pokemon {
             consumed_items: BTreeSet::new(),
             ate_berry: false,
             last_consumed_item: None,
+            recyclable_item: None,
             ability: None,
             ability_suppressed: false,
             ability_rules: Vec::new(),

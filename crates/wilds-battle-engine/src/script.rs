@@ -1748,6 +1748,7 @@ impl Battle {
             ScriptOperation::EatBerry { who, forced } => {
                 Value::Boolean(self.eat_berry(who, forced, events))
             }
+            ScriptOperation::RecycleItem { who } => Value::Boolean(self.recycle_item(who)),
             ScriptOperation::ConsumeItem { who } => match self.consume_item(who) {
                 Some(item) => Value::String(self.catalog.lua().create_string(&item)?),
                 None => Value::Nil,

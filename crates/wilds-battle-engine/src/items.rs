@@ -10,9 +10,22 @@ impl Battle {
         }
         let item = pokemon.item.take()?;
         pokemon.ate_berry |= crate::berries::is_berry(&item);
+        pokemon.recyclable_item = Some(item.clone());
         pokemon.last_consumed_item = Some(item.clone());
         pokemon.consumed_items.insert(item.clone());
         Some(item)
+    }
+
+    pub(crate) fn recycle_item(&mut self, who: ParticipantId) -> bool {
+        let pokemon = self.get_mut(who);
+        if pokemon.hp == 0 || pokemon.item.is_some() {
+            return false;
+        }
+        let Some(item) = pokemon.recyclable_item.take() else {
+            return false;
+        };
+        pokemon.item = Some(item);
+        true
     }
 
     /// Called only when a move has actually entered its charging phase.

@@ -145,6 +145,9 @@ impl Battle {
         };
         let factor = if self.has_ability(who, "ripen") { 2 } else { 1 };
         let p = self.get_mut(who);
+        if !stolen {
+            p.recyclable_item = Some(item.clone());
+        }
         p.last_consumed_item = Some(item.clone());
         p.consumed_items.insert(item.clone());
         p.ate_berry |= !stolen

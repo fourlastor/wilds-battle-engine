@@ -2132,3 +2132,64 @@ fn teatime_without_berries_is_not_a_stomping_tantrum_failure() {
     turn(&mut b);
     assert!(!b.participants(Side::Allies)[0].last_move_failed);
 }
+
+fn choose_move(prompt: &Prompt, allies: &str, foes: &str) -> u32 {
+    let desired = if prompt.actor.side == Side::Allies {
+        allies
+    } else {
+        foes
+    };
+    prompt
+        .choices
+        .iter()
+        .find(|c| matches!(c, Choice::UseMove {move_id,..} if move_id == desired))
+        .unwrap()
+        .id()
+}
+
+#[test]
+fn recycle_restores_consumed_held_items_once_but_not_removed_items() {
+    let mut user = mon("User", &["solar_beam", "recycle"]);
+    user.item = Some("power-herb".into());
+    let mut foe = mon("Foe", &["splash", "knock-off"]);
+    foe.speed = 200;
+    let mut b = game(user, vec![foe], 0.5);
+    turn_with(&mut b, |p| choose_move(p, "solar_beam", "splash"));
+    assert!(b.participants(Side::Allies)[0].item.is_none());
+    assert_eq!(
+        b.participants(Side::Allies)[0].recyclable_item.as_deref(),
+        Some("power-herb")
+    );
+    turn_with(&mut b, |p| choose_move(p, "recycle", "splash"));
+    assert_eq!(
+        b.participants(Side::Allies)[0].item.as_deref(),
+        Some("power-herb")
+    );
+    assert!(b.participants(Side::Allies)[0].recyclable_item.is_none());
+    turn_with(&mut b, |p| choose_move(p, "recycle", "knock-off"));
+    assert!(b.participants(Side::Allies)[0].item.is_none());
+    assert!(b.participants(Side::Allies)[0].last_move_failed);
+}
+
+#[test]
+fn recycle_ignores_stolen_berries_and_preserves_prior_consumption_history() {
+    for previous in [None, Some("power-herb")] {
+        let mut user = mon("User", &["bug-bite", "recycle"]);
+        user.recyclable_item = previous.map(str::to_owned);
+        let mut foe = mon("Foe", &["splash"]);
+        foe.item = Some("oran-berry".into());
+        let mut b = game(user, vec![foe], 0.5);
+        turn_with(&mut b, |p| choose_move(p, "bug-bite", "splash"));
+        assert_eq!(
+            b.participants(Side::Allies)[0]
+                .last_consumed_item
+                .as_deref(),
+            Some("oran-berry")
+        );
+        turn_with(&mut b, |p| choose_move(p, "recycle", "splash"));
+        let user = &b.participants(Side::Allies)[0];
+        assert_eq!(user.item.as_deref(), previous);
+        assert_eq!(user.last_move_failed, previous.is_none());
+        assert!(user.ate_berry);
+    }
+}

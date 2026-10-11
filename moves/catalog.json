@@ -2448,6 +2448,17 @@
       "limitations": []
     },
     {
+      "id": 278,
+      "slug": "recycle",
+      "name": "Recycle",
+      "sheet_row": null,
+      "runtime_id": "recycle",
+      "file": "moves/recycle.lua",
+      "status": "implemented",
+      "limitations": [],
+      "parameter_source": "https://pokeapi.co/api/v2/move/278/"
+    },
+    {
       "id": 279,
       "slug": "revenge",
       "name": "Revenge",
@@ -6984,7 +6995,8 @@
       "memento",
       "sappy-seed",
       "corrosive-gas",
-      "teatime"
+      "teatime",
+      "recycle"
     ]
   }
 }

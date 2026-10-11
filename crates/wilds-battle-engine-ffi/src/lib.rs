@@ -391,7 +391,7 @@ fn snapshot(value: &Pokemon) -> Value {
         "status":value.status.map(|status| format!("{status:?}")),
         "moves":value.moves, "move_pp":value.move_pp,
         "types":value.types.iter().map(|kind| format!("{kind:?}")).collect::<Vec<_>>(),
-        "ate_berry":value.ate_berry, "consumed_items":value.consumed_items, "last_consumed_item":value.last_consumed_item,
+        "ate_berry":value.ate_berry, "consumed_items":value.consumed_items, "last_consumed_item":value.last_consumed_item, "recyclable_item":value.recyclable_item,
         "nature_down":value.nature_down.map(|stat| format!("{stat:?}")),
         "ability":value.ability, "ability_suppressed":value.ability_suppressed,
         "carrying":value.carrying.map(participant), "carried_by":value.carried_by.map(participant),
