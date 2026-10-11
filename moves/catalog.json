@@ -5316,6 +5316,16 @@
       "limitations": []
     },
     {
+      "id": 787,
+      "slug": "apple-acid",
+      "name": "Apple Acid",
+      "sheet_row": null,
+      "runtime_id": "apple-acid",
+      "file": "moves/apple-acid.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
       "id": 788,
       "slug": "grav-apple",
       "name": "Grav Apple",
@@ -5954,7 +5964,8 @@
       "behemoth-blade",
       "behemoth-bash",
       "aura-wheel",
-      "overdrive"
+      "overdrive",
+      "apple-acid"
     ]
   }
 }

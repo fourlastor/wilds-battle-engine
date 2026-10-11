@@ -693,3 +693,67 @@ fn overdrive_respects_soundproof_ground_immunity_and_protect() {
         assert!(battle.participants(Side::Foes)[1].hp < 1000, "{block}");
     }
 }
+
+#[test]
+fn apple_acid_lowers_special_defense_after_damage() {
+    use wilds_battle_engine::Stat;
+    let mut battle = game(
+        mon("User", &["apple-acid"]),
+        vec![mon("Foe", &["splash"])],
+        0.5,
+    );
+    turn(&mut battle);
+    let first = 1000 - battle.participants(Side::Foes)[0].hp;
+    assert!(first > 0);
+    assert_eq!(
+        battle.participants(Side::Foes)[0].stage(Stat::SpDefense),
+        -1
+    );
+    turn(&mut battle);
+    let second = 1000 - first - battle.participants(Side::Foes)[0].hp;
+    assert!(second > first);
+    assert_eq!(
+        battle.participants(Side::Foes)[0].stage(Stat::SpDefense),
+        -2
+    );
+}
+
+#[test]
+fn apple_acid_secondary_respects_hit_results_and_stage_abilities() {
+    use wilds_battle_engine::Stat;
+    for (mode, expected) in [
+        ("substitute", 0),
+        ("protect", 0),
+        ("sap-sipper", 0),
+        ("clear-body", 0),
+        ("contrary", 1),
+        ("miss", 0),
+    ] {
+        let mut foe = mon(
+            "Foe",
+            &[if mode == "protect" {
+                "protect"
+            } else {
+                "splash"
+            }],
+        );
+        match mode {
+            "substitute" => foe.substitute_hp = 1,
+            "miss" => {
+                foe.stages.insert(Stat::Evasion, 6);
+            }
+            "protect" => {}
+            _ => foe.ability = Some(mode.into()),
+        }
+        let mut battle = game(mon("User", &["apple-acid"]), vec![foe], 0.5);
+        turn(&mut battle);
+        assert_eq!(
+            battle.participants(Side::Foes)[0].stage(Stat::SpDefense),
+            expected,
+            "{mode}"
+        );
+        if matches!(mode, "protect" | "sap-sipper" | "miss") {
+            assert_eq!(battle.participants(Side::Foes)[0].hp, 1000, "{mode}");
+        }
+    }
+}

@@ -17,9 +17,9 @@ Aura Wheel requires Morpeko and uses Dark typing in the `morpeko-hangry` form,
 otherwise Electric. The host supplies its current form; automatic Hunger Switch
 form changes remain part of the unfinished ability catalog.
 
-With seven additional support moves, 12 further moves from the local JSON data,
-and the nine original moves outside the sheet, the runtime catalog has 566 moves:
-565 files here and Struggle in `src/system_moves.lua` inside the crate.
+With seven additional support moves, 13 further moves from the local JSON data,
+and the nine original moves outside the sheet, the runtime catalog has 567 moves:
+566 files here and Struggle in `src/system_moves.lua` inside the crate.
 The 22 original filenames containing underscores have been renamed with hyphens.
 
 New move IDs equal their filename slugs. Original runtime IDs retain underscores
