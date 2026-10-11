@@ -969,6 +969,10 @@ impl Battle {
     ) -> Option<crate::model::PokemonType> {
         self.has_ability(actor, "refrigerate")
             .then_some(crate::model::PokemonType::Ice)
+            .or_else(|| {
+                self.has_ability(actor, "aerilate")
+                    .then_some(crate::model::PokemonType::Flying)
+            })
     }
 
     pub(crate) fn ability_base_power_factor(

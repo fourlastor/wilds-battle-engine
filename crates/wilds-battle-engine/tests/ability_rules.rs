@@ -2540,3 +2540,8 @@ fn check_normal_conversion(ability: &str, kind: PokemonType) {
 fn refrigerate_converts_normal_moves_to_ice_and_boosts_power() {
     check_normal_conversion("refrigerate", PokemonType::Ice);
 }
+
+#[test]
+fn aerilate_converts_normal_moves_to_flying_and_boosts_power() {
+    check_normal_conversion("aerilate", PokemonType::Flying);
+}

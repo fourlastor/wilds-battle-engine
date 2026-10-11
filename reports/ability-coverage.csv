@@ -182,7 +182,7 @@ id,ability,status,verification
 181,tough-claws,IMPLEMENTED,ability_rules::toughclaws_boosts_matching_moves_only
 182,pixilate,MISSING,No native battle behavior
 183,gooey,IMPLEMENTED,ability_rules::gooey_lowers_contact_attackers_speed_with_stat_protection
-184,aerilate,MISSING,No native battle behavior
+184,aerilate,IMPLEMENTED,ability_rules::aerilate_converts_normal_moves_to_flying_and_boosts_power
 185,parental-bond,MISSING,No native battle behavior
 186,dark-aura,MISSING,No native battle behavior
 187,fairy-aura,MISSING,No native battle behavior
