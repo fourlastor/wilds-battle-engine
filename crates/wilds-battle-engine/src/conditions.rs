@@ -606,9 +606,16 @@ impl Battle {
         target: ParticipantId,
         spec: &MoveSpec,
     ) -> bool {
-        actor.side != target.side && spec.target != Target::Field
-            && self.effective_move_priority(actor, spec) > 0
-            && self.rules(target).any(|rule| matches!(rule, Rule::BlockPriority {grounded_only} if !grounded_only || (self.on_ground(target) && self.get(target).hidden().is_none())))
+        if actor.side == target.side
+            || spec.target == Target::Field
+            || self.effective_move_priority(actor, spec) <= 0
+        {
+            return false;
+        }
+        self.rules(target).any(|rule| matches!(rule, Rule::BlockPriority {grounded_only} if !grounded_only || (self.on_ground(target) && self.get(target).hidden().is_none())))
+            || (!self.ability_bypass && self.actors().into_iter().any(|ally| {
+                ally.side == target.side && self.has_ability(ally, "queenlymajesty")
+            }))
     }
 
     pub(crate) fn prankster_blocked(

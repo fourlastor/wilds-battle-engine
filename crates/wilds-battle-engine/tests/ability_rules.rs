@@ -1778,3 +1778,36 @@ fn triage_gives_healing_and_drain_moves_three_priority() {
         );
     }
 }
+
+fn check_priority_protection(ability: &str) {
+    for (move_id, suppressed, breaker, protected) in [
+        ("quick-attack", false, false, true),
+        ("tackle", false, false, false),
+        ("quick-attack", true, false, false),
+        ("quick-attack", false, true, false),
+    ] {
+        let mut user = mon("User", &[move_id]);
+        user.ability = breaker.then(|| "mold-breaker".into());
+        let target = mon("Target", &["splash"]);
+        let mut partner = mon("Partner", &["splash"]);
+        partner.ability = Some(ability.into());
+        partner.ability_suppressed = suppressed;
+        let mut battle = Battle::with_rng(
+            Fixed(0.5),
+            [vec![user], vec![target, partner]],
+            MoveCatalog::builtin().unwrap(),
+        )
+        .unwrap();
+        turn(&mut battle, move_id, "splash");
+        assert_eq!(
+            foe(&battle).hp == 1000,
+            protected,
+            "{ability}/{move_id}/{suppressed}/{breaker}"
+        );
+    }
+}
+
+#[test]
+fn queenly_majesty_protects_allies_from_priority_and_allows_mold_breaker() {
+    check_priority_protection("queenly-majesty");
+}

@@ -212,7 +212,7 @@ id,ability,status,verification
 211,power-construct,MISSING,No native battle behavior
 212,corrosion,IMPLEMENTED,Source inventory; existing tests only
 213,comatose,IMPLEMENTED,Source inventory; existing tests only
-214,queenly-majesty,MISSING,No native battle behavior
+214,queenly-majesty,IMPLEMENTED,ability_rules::queenly_majesty_protects_allies_from_priority_and_allows_mold_breaker
 215,innards-out,MISSING,No native battle behavior
 216,dancer,MISSING,No native battle behavior
 217,battery,MISSING,No native battle behavior
