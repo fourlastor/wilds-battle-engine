@@ -2321,3 +2321,23 @@ fn mirror_armor_reflects_stat_drops_once_and_respects_mold_breaker() {
         );
     }
 }
+
+#[test]
+fn serene_grace_doubles_opponent_and_self_secondary_chances() {
+    for suppressed in [false, true] {
+        let mut user = mon("User", &["thunderbolt", "ancient_power"]);
+        user.ability = Some("serene-grace".into());
+        user.ability_suppressed = suppressed;
+        let mut battle = game(user, mon("Target", &["splash"]), 0.15);
+        turn(&mut battle, "thunderbolt", "splash");
+        assert_eq!(
+            foe(&battle).status,
+            (!suppressed).then_some(Status::Paralyzed)
+        );
+        turn(&mut battle, "ancient_power", "splash");
+        assert_eq!(
+            ally(&battle).stage(wilds_battle_engine::Stat::Attack),
+            i8::from(!suppressed)
+        );
+    }
+}

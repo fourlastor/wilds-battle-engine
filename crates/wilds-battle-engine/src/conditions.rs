@@ -394,6 +394,12 @@ impl Battle {
 
     /// A chance of an extra effect of one of `id`'s moves, after any multipliers.
     pub(crate) fn effect_chance(&self, id: ParticipantId, chance: f32) -> f32 {
+        let chance = chance
+            * if self.has_ability(id, "serenegrace") {
+                2.0
+            } else {
+                1.0
+            };
         self.rules(id)
             .fold(chance, |chance, rule| match rule {
                 Rule::EffectChance { factor } => chance * factor,

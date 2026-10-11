@@ -30,7 +30,7 @@ id,ability,status,verification
 29,clear-body,IMPLEMENTED,Source inventory; existing tests only
 30,natural-cure,IMPLEMENTED,Source inventory; existing tests only
 31,lightning-rod,IMPLEMENTED,ability_rules::lightning_rod_redirects_damage_and_status_but_not_mold_breaker
-32,serene-grace,MISSING,No native battle behavior
+32,serene-grace,IMPLEMENTED,ability_rules::serene_grace_doubles_opponent_and_self_secondary_chances
 33,swift-swim,IMPLEMENTED,ability_rules::swift_swim_doubles_speed_in_effective_rain
 34,chlorophyll,IMPLEMENTED,ability_rules::chlorophyll_doubles_speed_in_effective_weather
 35,illuminate,MISSING,No native battle behavior
