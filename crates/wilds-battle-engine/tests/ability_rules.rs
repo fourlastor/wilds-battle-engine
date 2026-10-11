@@ -3488,3 +3488,30 @@ fn unburden_doubles_speed_after_losing_an_item_until_reacquired_or_suppressed() 
     assert!(ally(&battle).item.is_some());
     assert!(!first_move_is_user(&turn(&mut battle, "tackle", "tackle")));
 }
+
+#[test]
+fn harvest_recovers_consumed_berries_with_half_chance_or_guaranteed_sun() {
+    for (move_id, dice, cloud, restored) in [
+        ("splash", 0.25, false, true),
+        ("splash", 0.75, false, false),
+        ("sunny_day", 0.75, false, true),
+        ("sunny_day", 0.75, true, false),
+    ] {
+        let mut user = mon("User", &[move_id]);
+        user.ability = Some("harvest".into());
+        user.item = Some("sitrus-berry".into());
+        user.hp = 500;
+        let mut target = mon("Target", &["splash"]);
+        target.ability = cloud.then(|| "cloud-nine".into());
+        let mut battle = game(user, target, dice);
+        turn(&mut battle, move_id, "splash");
+        assert_eq!(ally(&battle).hp, 750);
+        assert_eq!(ally(&battle).item.is_some(), restored);
+    }
+    let mut user = mon("User", &["splash"]);
+    user.ability = Some("harvest".into());
+    user.recyclable_item = Some("power-herb".into());
+    let mut battle = game(user, mon("Target", &["splash"]), 0.25);
+    turn(&mut battle, "splash", "splash");
+    assert!(ally(&battle).item.is_none());
+}

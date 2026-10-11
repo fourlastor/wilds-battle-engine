@@ -137,7 +137,7 @@ id,ability,status,verification
 136,multiscale,IMPLEMENTED,Source inventory; existing tests only
 137,toxic-boost,IMPLEMENTED,Source inventory; existing tests only
 138,flare-boost,IMPLEMENTED,Source inventory; existing tests only
-139,harvest,MISSING,No native battle behavior
+139,harvest,IMPLEMENTED,ability_rules::harvest_recovers_consumed_berries_with_half_chance_or_guaranteed_sun
 140,telepathy,IMPLEMENTED,Source inventory; existing tests only
 141,moody,IMPLEMENTED,ability_rules::moody_raises_and_lowers_distinct_non_accuracy_stats_with_caps
 142,overcoat,IMPLEMENTED,ability_rules::overcoat_prevents_sand_and_hail_damage_only_while_active

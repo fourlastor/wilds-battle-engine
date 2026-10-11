@@ -649,6 +649,22 @@ impl Battle {
         let mut order = self.actors();
         order.sort_by_key(|&who| std::cmp::Reverse(self.action_speed(who)));
         for who in order {
+            if self.has_ability(who, "harvest")
+                && self.get(who).item.is_none()
+                && self
+                    .get(who)
+                    .recyclable_item
+                    .as_deref()
+                    .is_some_and(crate::berries::is_berry)
+                && (self.effective_weather() == Some(crate::model::WeatherKind::Sun)
+                    || self.rng.chance(0.5))
+                && self.recycle_item(who)
+            {
+                events.push(BattleEvent::Message(format!(
+                    "{} restored its berry with Harvest!",
+                    self.get(who).name
+                )));
+            }
             if self.has_ability(who, "slowstart") && self.get(who).entered_turn < self.turn {
                 if let Some(counter) = self
                     .get_mut(who)
