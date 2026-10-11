@@ -739,3 +739,20 @@ fn crush_grip_uses_targets_current_hp_with_fixed_point_rounding() {
         assert_eq!(1000 - b.participants(Side::Foes)[0].hp, expected, "HP {hp}");
     }
 }
+
+#[test]
+fn trump_card_uses_pp_remaining_after_spending_this_use() {
+    for (pp, power) in [(5, 40), (4, 50), (3, 60), (2, 80), (1, 200)] {
+        let mut user = mon("User", &["trump-card"]);
+        user.move_pp.insert("trump-card".into(), pp);
+        let foe = mon("Foe", &["splash"]);
+        let expected = control_damage(power, "Normal", "Special", user.clone(), foe.clone());
+        let mut b = game(user, vec![foe], 0.5);
+        turn(&mut b);
+        assert_eq!(1000 - b.participants(Side::Foes)[0].hp, expected, "PP {pp}");
+        assert_eq!(
+            b.participants(Side::Allies)[0].move_pp["trump-card"],
+            pp - 1
+        );
+    }
+}

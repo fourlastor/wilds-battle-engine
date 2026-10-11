@@ -2942,6 +2942,17 @@
       "limitations": []
     },
     {
+      "id": 376,
+      "slug": "trump-card",
+      "name": "Trump Card",
+      "sheet_row": null,
+      "runtime_id": "trump-card",
+      "file": "moves/trump-card.lua",
+      "status": "implemented",
+      "limitations": [],
+      "parameter_source": "https://pokeapi.co/api/v2/move/376/"
+    },
+    {
       "id": 378,
       "slug": "wring-out",
       "name": "Wring Out",
@@ -6336,7 +6347,8 @@
       "gyro-ball",
       "electro-ball",
       "wring-out",
-      "crush-grip"
+      "crush-grip",
+      "trump-card"
     ]
   }
 }
