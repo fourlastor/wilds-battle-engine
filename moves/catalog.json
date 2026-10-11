@@ -2613,6 +2613,17 @@
       "parameter_source": "https://pokeapi.co/api/v2/move/266/"
     },
     {
+      "id": 267,
+      "slug": "nature-power",
+      "name": "Nature Power",
+      "sheet_row": null,
+      "runtime_id": "nature-power",
+      "file": "moves/nature-power.lua",
+      "status": "implemented",
+      "limitations": [],
+      "parameter_source": "https://pokeapi.co/api/v2/move/267/"
+    },
+    {
       "id": 268,
       "slug": "charge",
       "name": "Charge",
@@ -7992,7 +8003,8 @@
       "natural-gift",
       "fling",
       "mimic",
-      "sketch"
+      "sketch",
+      "nature-power"
     ]
   }
 }

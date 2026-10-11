@@ -1363,6 +1363,12 @@ impl Battle {
             }
         }
         let value = match operation {
+            ScriptOperation::CallMove { id, target } => {
+                let success = self.call_move(actor, &id, target, events)?;
+                frame.any_hit |= success;
+                frame.failed |= !success;
+                Value::Boolean(success)
+            }
             ScriptOperation::MoveInfo(id) => match self.catalog.get(&id) {
                 None => Value::Nil,
                 Some(info) => {

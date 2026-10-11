@@ -49,6 +49,7 @@ pub struct Battle {
     pub(crate) hurry: Vec<ParticipantId>,
     /// Whether the move being used right now failed, missed or had no effect.
     pub(crate) move_failed: bool,
+    call_depth: u8,
 }
 
 #[derive(Clone)]
@@ -259,6 +260,7 @@ impl Battle {
             pending_actors: Vec::new(),
             hurry: Vec::new(),
             move_failed: false,
+            call_depth: 0,
         })
     }
     pub(crate) fn has_started(&self) -> bool {
@@ -1040,7 +1042,7 @@ impl Battle {
         self.substitute_hits.clear();
         self.active_gem = None;
         self.expire_action_conditions(actor, Some(&choice.move_id));
-        let result = self.perform_move(actor, choice, events);
+        let result = self.perform_move(actor, choice, false, events);
         self.finish_item_hits(events);
         self.substitute_hits.clear();
         self.ignored_ability = None;
@@ -1069,11 +1071,84 @@ impl Battle {
         }
         Ok(())
     }
+    pub(crate) fn call_move(
+        &mut self,
+        actor: ParticipantId,
+        move_id: &str,
+        target: Option<ParticipantId>,
+        events: &mut Vec<BattleEvent>,
+    ) -> Result<bool, BattleError> {
+        if self.call_depth >= 8 || self.get(actor).hp == 0 || !self.is_active(actor) {
+            return Ok(false);
+        }
+        let Some(spec) = self.catalog.get(move_id) else {
+            return Ok(false);
+        };
+        let kind = self.move_target_kind(actor, spec);
+        let target = if matches!(
+            kind,
+            Target::User | Target::Field | Target::UserAndAllies | Target::All
+        ) {
+            actor
+        } else if kind == Target::UserOrAlly {
+            target
+                .filter(|id| id.side == actor.side && self.is_active(*id) && self.get(*id).hp > 0)
+                .unwrap_or(actor)
+        } else if let Some(target) = target.filter(|id| {
+            self.is_active(*id)
+                && self.get(*id).hp > 0
+                && *id != actor
+                && (kind != Target::Ally || (id.side == actor.side && self.adjacent(actor, *id)))
+        }) {
+            target
+        } else {
+            let choices: Vec<_> = self
+                .actors()
+                .into_iter()
+                .filter(|id| {
+                    if kind == Target::Ally {
+                        id.side == actor.side && *id != actor && self.adjacent(actor, *id)
+                    } else {
+                        id.side != actor.side
+                            && (!spec.has_flag("adjacent_target") || self.adjacent(actor, *id))
+                    }
+                })
+                .collect();
+            if choices.is_empty() {
+                return Ok(false);
+            }
+            choices[self.rng.index(choices.len())]
+        };
+        let choice = MoveAction {
+            forced: false,
+            move_id: move_id.to_owned(),
+            target,
+            target_position: self.position(target).expect("active target"),
+        };
+        let previous_failed = self.move_failed;
+        let power = self.active_power_multiplier;
+        let gem = self.active_gem.take();
+        let bypass = self.ability_bypass;
+        let ignored = self.ignored_ability;
+        self.move_failed = false;
+        self.call_depth += 1;
+        let result = self.perform_move(actor, &choice, true, events);
+        let failed = self.move_failed;
+        self.call_depth -= 1;
+        self.move_failed = previous_failed;
+        self.active_power_multiplier = power;
+        self.active_gem = gem;
+        self.ability_bypass = bypass;
+        self.ignored_ability = ignored;
+        result.map(|used| used && !failed)
+    }
+
     /// Uses a move. Returns false if the Pokémon could not act at all.
     fn perform_move(
         &mut self,
         actor: ParticipantId,
         choice: &MoveAction,
+        called: bool,
         events: &mut Vec<BattleEvent>,
     ) -> Result<bool, BattleError> {
         if self.get(actor).hp == 0 || !self.is_active(actor) || self.get(actor).carried_by.is_some()
@@ -1095,7 +1170,11 @@ impl Battle {
             .get(&choice.move_id)
             .expect("validated choice")
             .clone();
-        if let Some(message) = self.move_block(actor, &spec) {
+        if let Some(message) = if called {
+            self.called_move_block(actor, &spec)
+        } else {
+            self.move_block(actor, &spec)
+        } {
             events.push(BattleEvent::Message(crate::conditions::named(
                 message,
                 &self.get(actor).name,
@@ -1114,29 +1193,24 @@ impl Battle {
         {
             self.get_mut(actor).semi_invulnerable = false;
         }
-        self.active_power_multiplier = self
-            .get_mut(actor)
-            .next_move_power_boost
-            .take()
-            .filter(|boost| boost.move_type == spec.move_type && spec.category != Category::Status)
-            .map_or(1.0, |boost| boost.multiplier);
+        if !spec.has_flag("calls_move") {
+            self.active_power_multiplier = self
+                .get_mut(actor)
+                .next_move_power_boost
+                .take()
+                .filter(|boost| {
+                    boost.move_type == spec.move_type && spec.category != Category::Status
+                })
+                .map_or(1.0, |boost| boost.multiplier);
+        }
         let user_name = self.get(actor).name.clone();
         let forced_script = self
             .get(actor)
             .script_continuation
             .as_ref()
             .is_some_and(|lock| lock.move_id == spec.id);
-        if self.get(actor).status == Some(Status::Frozen) && spec.usable_while_frozen {
-            self.get_mut(actor).status = None;
-            events.push(BattleEvent::Message(format!("{user_name} thawed out!")));
-            events.push(BattleEvent::Status {
-                target: actor,
-                status: None,
-            });
-        }
-        let status = self.get(actor).status;
-        match status {
-            Some(Status::Frozen) if self.rng.chance(0.2) => {
+        if !called {
+            if self.get(actor).status == Some(Status::Frozen) && spec.usable_while_frozen {
                 self.get_mut(actor).status = None;
                 events.push(BattleEvent::Message(format!("{user_name} thawed out!")));
                 events.push(BattleEvent::Status {
@@ -1144,74 +1218,85 @@ impl Battle {
                     status: None,
                 });
             }
-            Some(Status::Frozen) => {
-                events.push(BattleEvent::Message(format!(
-                    "{user_name} is frozen solid!"
-                )));
-                self.interrupt_script(actor, choice.target, &spec, events)?;
-                return Ok(false);
-            }
-            Some(Status::Paralyzed) if self.rng.chance(0.25) => {
-                events.push(BattleEvent::Message(format!(
-                    "{user_name} is paralyzed! It can't move!"
-                )));
-                self.clear_consecutive(actor);
-                self.interrupt_script(actor, choice.target, &spec, events)?;
-                return Ok(false);
-            }
-            Some(Status::Asleep) if !spec.usable_while_asleep => {
-                events.push(BattleEvent::Message(format!("{user_name} is fast asleep.")));
-                self.clear_consecutive(actor);
-                self.interrupt_script(actor, choice.target, &spec, events)?;
-                return Ok(false);
-            }
-            _ => {}
-        }
-        if self.get(actor).flinched && !self.blocks_flinch(actor) {
-            events.push(BattleEvent::Message(format!("{user_name} flinched!")));
-            self.get_mut(actor).flinched = false;
-            self.clear_consecutive(actor);
-            self.interrupt_script(actor, choice.target, &spec, events)?;
-            return Ok(false);
-        }
-        if let Some(turns) = self.get(actor).confused_turns {
-            if turns == 0 {
-                self.get_mut(actor).confused_turns = None;
-                events.push(BattleEvent::Message(format!(
-                    "{user_name} snapped out of confusion!"
-                )));
-            } else {
-                self.get_mut(actor).confused_turns = Some(turns - 1);
-                events.push(BattleEvent::Message(format!("{user_name} is confused!")));
-                if self.rng.chance(0.33) {
-                    events.push(BattleEvent::Message(
-                        "It hurt itself in its confusion!".into(),
-                    ));
-                    let p = self.get(actor).clone();
-                    let attack = p.effective_stat(CombatStat::Attack);
-                    let defense = self.battle_staged_stat(actor, CombatStat::Defense).max(1.0);
-                    let amount = (((2.0 * p.level as f32 * 0.2 + 2.0) * 40.0 * attack
-                        / defense
-                        / 50.0
-                        + 2.0)
-                        .round() as u16)
-                        .max(1);
-                    self.damage(actor, amount, events);
+            let status = self.get(actor).status;
+            match status {
+                Some(Status::Frozen) if self.rng.chance(0.2) => {
+                    self.get_mut(actor).status = None;
+                    events.push(BattleEvent::Message(format!("{user_name} thawed out!")));
+                    events.push(BattleEvent::Status {
+                        target: actor,
+                        status: None,
+                    });
+                }
+                Some(Status::Frozen) => {
+                    events.push(BattleEvent::Message(format!(
+                        "{user_name} is frozen solid!"
+                    )));
+                    self.interrupt_script(actor, choice.target, &spec, events)?;
+                    return Ok(false);
+                }
+                Some(Status::Paralyzed) if self.rng.chance(0.25) => {
+                    events.push(BattleEvent::Message(format!(
+                        "{user_name} is paralyzed! It can't move!"
+                    )));
                     self.clear_consecutive(actor);
                     self.interrupt_script(actor, choice.target, &spec, events)?;
                     return Ok(false);
                 }
+                Some(Status::Asleep) if !spec.usable_while_asleep => {
+                    events.push(BattleEvent::Message(format!("{user_name} is fast asleep.")));
+                    self.clear_consecutive(actor);
+                    self.interrupt_script(actor, choice.target, &spec, events)?;
+                    return Ok(false);
+                }
+                _ => {}
+            }
+            if self.get(actor).flinched && !self.blocks_flinch(actor) {
+                events.push(BattleEvent::Message(format!("{user_name} flinched!")));
+                self.get_mut(actor).flinched = false;
+                self.clear_consecutive(actor);
+                self.interrupt_script(actor, choice.target, &spec, events)?;
+                return Ok(false);
+            }
+            if let Some(turns) = self.get(actor).confused_turns {
+                if turns == 0 {
+                    self.get_mut(actor).confused_turns = None;
+                    events.push(BattleEvent::Message(format!(
+                        "{user_name} snapped out of confusion!"
+                    )));
+                } else {
+                    self.get_mut(actor).confused_turns = Some(turns - 1);
+                    events.push(BattleEvent::Message(format!("{user_name} is confused!")));
+                    if self.rng.chance(0.33) {
+                        events.push(BattleEvent::Message(
+                            "It hurt itself in its confusion!".into(),
+                        ));
+                        let p = self.get(actor).clone();
+                        let attack = p.effective_stat(CombatStat::Attack);
+                        let defense = self.battle_staged_stat(actor, CombatStat::Defense).max(1.0);
+                        let amount =
+                            (((2.0 * p.level as f32 * 0.2 + 2.0) * 40.0 * attack / defense / 50.0
+                                + 2.0)
+                                .round() as u16)
+                                .max(1);
+                        self.damage(actor, amount, events);
+                        self.clear_consecutive(actor);
+                        self.interrupt_script(actor, choice.target, &spec, events)?;
+                        return Ok(false);
+                    }
+                }
+            }
+            if self.infatuation_prevents_move(actor) {
+                events.push(BattleEvent::Message(format!(
+                    "{user_name} is immobilized by love!"
+                )));
+                self.clear_consecutive(actor);
+                self.interrupt_script(actor, choice.target, &spec, events)?;
+                return Ok(false);
             }
         }
-        if self.infatuation_prevents_move(actor) {
-            events.push(BattleEvent::Message(format!(
-                "{user_name} is immobilized by love!"
-            )));
-            self.clear_consecutive(actor);
-            self.interrupt_script(actor, choice.target, &spec, events)?;
-            return Ok(false);
-        }
-        if self.get(actor).locked_move.is_none()
+        if !called
+            && self.get(actor).locked_move.is_none()
             && !forced_script
             && self.get(actor).move_pp.get(&spec.id) == Some(&0)
         {
@@ -1223,7 +1308,7 @@ impl Battle {
             self.clear_consecutive(actor);
             return Ok(true);
         }
-        {
+        if !called {
             let pokemon = self.get_mut(actor);
             pokemon.last_used = Some(spec.id.clone());
             pokemon.moves_used.insert(spec.id.clone());
@@ -1318,7 +1403,8 @@ impl Battle {
             self.move_failed = true;
             return Ok(true);
         }
-        if !spec.auto_only
+        if !called
+            && !spec.auto_only
             && !forced_script
             && self.get(actor).locked_move.is_none()
             && let Some(pp) = self.get_mut(actor).move_pp.get_mut(&spec.id)
@@ -1392,7 +1478,9 @@ impl Battle {
                 pokemon.semi_invulnerable = false;
                 hit = self.execute_script(actor, target, &spec, events, ScriptHook::Main)?;
             }
-            if let Some(lock) = self.get_mut(actor).script_continuation.as_mut() {
+            if let Some(lock) = self.get_mut(actor).script_continuation.as_mut()
+                && lock.move_id == spec.id
+            {
                 if lock.turn >= lock.total_turns {
                     self.get_mut(actor).script_continuation = None;
                 } else {

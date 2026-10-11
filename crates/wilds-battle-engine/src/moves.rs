@@ -196,6 +196,10 @@ pub(crate) enum ScriptOperation {
         amount: u16,
     },
     MoveInfo(String),
+    CallMove {
+        id: String,
+        target: Option<ParticipantId>,
+    },
     SwapAbilities {
         a: ParticipantId,
         b: ParticipantId,
@@ -1367,6 +1371,14 @@ fn parse_op(name: &str, args: &[Value]) -> mlua::Result<ScriptOperation> {
         "add_type" => ScriptOperation::AddType {
             who: who(0)?,
             kind: type_of(arg(1), "add_type")?,
+        },
+        "call_move" => ScriptOperation::CallMove {
+            id: name_of(arg(0), "call_move id")?,
+            target: if matches!(arg(1), Value::Nil) {
+                None
+            } else {
+                Some(who(1)?)
+            },
         },
         "move_info" => ScriptOperation::MoveInfo(text_of(arg(0), name)?),
         "set_types" => {

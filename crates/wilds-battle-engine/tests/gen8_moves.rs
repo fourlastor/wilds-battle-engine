@@ -6247,3 +6247,127 @@ fn sketch_bypasses_protect_and_substitute_but_rejects_forbidden_moves() {
     assert_eq!(b.participants(Side::Allies)[0].moves, ["sketch", "pound"]);
     assert!(b.participants(Side::Allies)[0].last_move_failed);
 }
+
+#[test]
+fn nature_power_calls_the_environment_move_without_spending_its_pp() {
+    for (environment, called) in [
+        ("plain", "tri-attack"),
+        ("grass", "energy-ball"),
+        ("cave", "power-gem"),
+        ("water", "hydro-pump"),
+        ("snow", "ice-beam"),
+        ("space", "draco-meteor"),
+    ] {
+        let user = mon("User", &["nature-power", called]);
+        let foe = mon("Foe", &["splash"]);
+        let mut expected = game(mon("User", &[called]), vec![foe.clone()], 0.5);
+        turn(&mut expected);
+        let mut b = game(user, vec![foe], 0.5);
+        b.set_environment(Some(environment.into()));
+        turn(&mut b);
+        let user = &b.participants(Side::Allies)[0];
+        assert_eq!(
+            b.participants(Side::Foes)[0].hp,
+            expected.participants(Side::Foes)[0].hp,
+            "{environment}"
+        );
+        assert_eq!(user.move_pp["nature-power"], 19);
+        assert_eq!(
+            user.move_pp[called],
+            MoveCatalog::builtin().unwrap().get(called).unwrap().pp
+        );
+        assert_eq!(user.last_used.as_deref(), Some("nature-power"));
+        assert_eq!(
+            user.last_move_type,
+            expected.participants(Side::Allies)[0].last_move_type
+        );
+    }
+}
+#[test]
+fn nature_power_uses_terrain_even_when_airborne_and_called_hits_respect_protection() {
+    let mut user = mon("User", &["electric-terrain", "nature-power"]);
+    user.types = vec![PokemonType::Flying];
+    let mut b = game(user, vec![mon("Foe", &["splash", "protect"])], 0.5);
+    b.set_environment(Some("cave".into()));
+    turn(&mut b);
+    turn_with(&mut b, |p| choose_move(p, "nature-power", "splash"));
+    assert_eq!(
+        b.participants(Side::Allies)[0].last_move_type,
+        Some(PokemonType::Electric)
+    );
+    let hp = b.participants(Side::Foes)[0].hp;
+    turn_with(&mut b, |p| choose_move(p, "nature-power", "protect"));
+    assert_eq!(b.participants(Side::Foes)[0].hp, hp);
+    assert!(b.participants(Side::Allies)[0].last_move_failed);
+}
+#[test]
+fn nature_power_called_spread_move_reaches_all_other_active_pokemon() {
+    let mut b = Battle::with_rng(
+        Fixed(0.5),
+        [
+            vec![mon("User", &["nature-power"]), mon("Ally", &["splash"])],
+            vec![mon("Foe", &["splash"]), mon("Other", &["splash"])],
+        ],
+        MoveCatalog::builtin().unwrap(),
+    )
+    .unwrap();
+    b.set_environment(Some("volcano".into()));
+    turn(&mut b);
+    assert!(b.participants(Side::Allies)[1].hp < 1000);
+    assert!(b.participants(Side::Foes).iter().all(|p| p.hp < 1000));
+    assert_eq!(b.participants(Side::Allies)[0].hp, 1000);
+}
+
+#[test]
+fn called_charge_continues_once_without_deducting_called_pp() {
+    let catalog=MoveCatalog::from_lua(r#"return {
+      {id="caller",name="Caller",type=Type.Normal,category=Category.Status,pp=10,flags={"calls_move"},script=function(ctx) ctx:call_move("charge",ctx.target) end},
+      {id="charge",name="Charge",type=Type.Normal,category=Category.Physical,pp=10,accuracy=Accuracy.Always,script=function(ctx)
+        if ctx.turn==1 then ctx:force_move(2,TargetPolicy.SameTarget) else ctx:damage(40) end end},
+      {id="wait",name="Wait",type=Type.Normal,category=Category.Status,pp=10,target=Target.User,script=function(_) end}
+    }"#).unwrap();
+    let mut b = Battle::with_rng(
+        Fixed(0.5),
+        [
+            vec![mon("User", &["caller", "charge"])],
+            vec![mon("Foe", &["wait"])],
+        ],
+        catalog,
+    )
+    .unwrap();
+    turn(&mut b);
+    assert_eq!(b.participants(Side::Foes)[0].hp, 1000);
+    assert_eq!(
+        b.participants(Side::Allies)[0]
+            .script_continuation
+            .as_ref()
+            .unwrap()
+            .turn,
+        2
+    );
+    turn(&mut b);
+    assert!(b.participants(Side::Foes)[0].hp < 1000);
+    assert!(
+        b.participants(Side::Allies)[0]
+            .script_continuation
+            .is_none()
+    );
+    assert_eq!(b.participants(Side::Allies)[0].move_pp["caller"], 9);
+    assert_eq!(b.participants(Side::Allies)[0].move_pp["charge"], 10);
+}
+#[test]
+fn called_move_recursion_is_bounded_without_spending_additional_pp() {
+    let catalog=MoveCatalog::from_lua(r#"return {
+      {id="loop",name="Loop",type=Type.Normal,category=Category.Status,pp=10,target=Target.User,flags={"calls_move"},script=function(ctx) ctx:call_move("loop") end},
+      {id="wait",name="Wait",type=Type.Normal,category=Category.Status,pp=10,target=Target.User,script=function(_) end}
+    }"#).unwrap();
+    let mut b = Battle::with_rng(
+        Fixed(0.5),
+        [vec![mon("User", &["loop"])], vec![mon("Foe", &["wait"])]],
+        catalog,
+    )
+    .unwrap();
+    turn(&mut b);
+    assert_eq!(b.participants(Side::Allies)[0].move_pp["loop"], 9);
+    assert!(b.participants(Side::Allies)[0].last_move_failed);
+}
