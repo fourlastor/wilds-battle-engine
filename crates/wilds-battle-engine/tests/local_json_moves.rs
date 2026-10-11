@@ -261,3 +261,46 @@ fn dragon_darts_respects_redirection_and_does_not_target_the_bench() {
     turn(&mut single);
     assert_eq!(foes[1].hp, single.participants(Side::Foes)[0].hp);
 }
+
+fn order_damage(move_id: &str, speed: u16, recharge: bool) -> u16 {
+    let mut user = mon("User", &[move_id]);
+    user.speed = speed;
+    let mut foe = mon("Foe", &["splash"]);
+    foe.recharging = recharge;
+    let mut battle = game(user, vec![foe], 0.5);
+    turn(&mut battle);
+    1000 - battle.participants(Side::Foes)[0].hp
+}
+
+fn switched_damage(move_id: &str) -> u16 {
+    let mut battle = game(
+        mon("User", &[move_id]),
+        vec![mon("Outgoing", &["splash"]), mon("Incoming", &["splash"])],
+        0.5,
+    );
+    battle.set_active([vec![0], vec![0]]).unwrap();
+    turn_with(&mut battle, |p| {
+        p.choices
+            .iter()
+            .find(|c| {
+                if p.actor.side == Side::Foes {
+                    matches!(c, Choice::Switch { to, .. } if to.index == 1)
+                } else {
+                    matches!(c, Choice::UseMove { .. })
+                }
+            })
+            .unwrap()
+            .id()
+    });
+    assert_eq!(battle.participants(Side::Foes)[0].hp, 1000);
+    1000 - battle.participants(Side::Foes)[1].hp
+}
+
+#[test]
+fn bolt_beak_doubles_before_a_move_or_after_a_switch_but_not_recharge() {
+    let base = order_damage("bolt-beak", 10, false);
+    let boosted = order_damage("bolt-beak", 200, false);
+    assert!(base > 0 && boosted > base * 18 / 10 && boosted <= base * 2);
+    assert_eq!(order_damage("bolt-beak", 200, true), base);
+    assert_eq!(switched_damage("bolt-beak"), boosted);
+}

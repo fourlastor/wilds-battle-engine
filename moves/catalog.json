@@ -5186,6 +5186,16 @@
       "limitations": []
     },
     {
+      "id": 754,
+      "slug": "bolt-beak",
+      "name": "Bolt Beak",
+      "sheet_row": null,
+      "runtime_id": "bolt-beak",
+      "file": "moves/bolt-beak.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
       "id": 778,
       "slug": "drum-beating",
       "name": "Drum Beating",
@@ -5855,7 +5865,8 @@
       "substitute",
       "sonic-boom",
       "seismic-toss",
-      "dragon-darts"
+      "dragon-darts",
+      "bolt-beak"
     ]
   }
 }
