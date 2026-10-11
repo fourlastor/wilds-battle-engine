@@ -1186,3 +1186,34 @@ fn rivalry_scales_damage_by_gender_and_leaves_genderless_targets_unchanged() {
         assert!((f32::from(run(false)) - f32::from(run(true)) * factor).abs() <= 2.0);
     }
 }
+
+fn weight_damage(ability: &str, suppressed: bool, breaker: bool) -> u16 {
+    let mut user = mon("User", &["low-kick"]);
+    user.ability = breaker.then(|| "mold-breaker".into());
+    let mut target = mon("Target", &["splash"]);
+    target.weight = 120.0;
+    target.ability = Some(ability.into());
+    target.ability_suppressed = suppressed;
+    let mut battle = game(user, target, 0.5);
+    turn(&mut battle, "low-kick", "splash");
+    1000 - foe(&battle).hp
+}
+
+#[test]
+fn heavy_metal_modifies_battle_weight_without_compounding_autotomize() {
+    assert!(weight_damage("heavy-metal", false, false) > weight_damage("", false, false));
+    assert_eq!(
+        weight_damage("heavy-metal", true, false),
+        weight_damage("", false, false)
+    );
+    assert_eq!(
+        weight_damage("heavy-metal", false, true),
+        weight_damage("", false, false)
+    );
+    let mut user = mon("User", &["autotomize"]);
+    user.ability = Some("heavy-metal".into());
+    user.weight = 120.0;
+    let mut battle = game(user, mon("Target", &["splash"]), 0.5);
+    turn(&mut battle, "autotomize", "splash");
+    assert_eq!(ally(&battle).weight, 20.0);
+}

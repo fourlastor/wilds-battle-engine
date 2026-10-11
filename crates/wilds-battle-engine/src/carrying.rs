@@ -3,7 +3,7 @@ use crate::{Battle, BattleEvent, HiddenKind, ParticipantId};
 
 impl Battle {
     pub(crate) fn carry(&mut self, actor: ParticipantId, target: ParticipantId) -> bool {
-        if actor.side == target.side || self.get(target).weight >= 200.0 {
+        if actor.side == target.side || self.effective_weight(target) >= 200.0 {
             return false;
         }
         for id in [actor, target] {

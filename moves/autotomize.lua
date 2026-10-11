@@ -3,7 +3,7 @@
 
 local move = {script = function(ctx)
 if ctx:change_stat(ctx.user, Stat.Speed, 2) == 0 then return ctx:fail() end
-ctx:set_weight(ctx.user, math.max(0.1, ctx.user.weight - 100))
+ctx:set_weight(ctx.user, math.max(0.1, ctx.user.raw_weight - 100))
 end}
 
 move.id = "autotomize"

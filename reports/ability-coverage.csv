@@ -132,7 +132,7 @@ id,ability,status,verification
 131,healer,IMPLEMENTED,Source inventory; existing tests only
 132,friend-guard,MISSING,No native battle behavior
 133,weak-armor,MISSING,No native battle behavior
-134,heavy-metal,MISSING,No native battle behavior
+134,heavy-metal,IMPLEMENTED,ability_rules::heavy_metal_modifies_battle_weight_without_compounding_autotomize
 135,light-metal,MISSING,No native battle behavior
 136,multiscale,IMPLEMENTED,Source inventory; existing tests only
 137,toxic-boost,IMPLEMENTED,Source inventory; existing tests only

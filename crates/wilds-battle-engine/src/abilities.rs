@@ -349,6 +349,15 @@ impl Battle {
             })
     }
 
+    pub(crate) fn effective_weight(&self, who: ParticipantId) -> f32 {
+        let weight = self.get(who).weight;
+        if self.has_ability(who, "heavymetal") {
+            (weight * 2.0).max(0.1)
+        } else {
+            weight.max(0.1)
+        }
+    }
+
     pub(crate) fn ability_stat_factor(
         &self,
         who: ParticipantId,

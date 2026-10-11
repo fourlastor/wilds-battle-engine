@@ -196,7 +196,8 @@ impl Battle {
             "gender",
             symbol(lua, "Gender", &format!("{:?}", pokemon.gender))?,
         )?;
-        table.raw_set("weight", pokemon.weight)?;
+        table.raw_set("weight", self.effective_weight(id))?;
+        table.raw_set("raw_weight", pokemon.weight)?;
         table.raw_set("item", pokemon.item.as_deref())?;
         table.raw_set("item_active", self.item_active(id))?;
         table.raw_set(
