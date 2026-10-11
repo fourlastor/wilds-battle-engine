@@ -3040,3 +3040,8 @@ fn foresight_preserves_negative_evasion_for_incoming_accuracy() {
     turn_with(&mut b, |p| choose_move(p, "zap-cannon", "splash"));
     assert!(b.participants(Side::Foes)[0].hp < 1000);
 }
+
+#[test]
+fn odor_sleuth_identifies_ghost_types_and_bypasses_positive_evasion() {
+    check_foresight("odor-sleuth");
+}

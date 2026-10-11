@@ -2819,6 +2819,17 @@
       "limitations": []
     },
     {
+      "id": 316,
+      "slug": "odor-sleuth",
+      "name": "Odor Sleuth",
+      "sheet_row": null,
+      "runtime_id": "odor-sleuth",
+      "file": "moves/odor-sleuth.lua",
+      "status": "implemented",
+      "limitations": [],
+      "parameter_source": "https://pokeapi.co/api/v2/move/316/"
+    },
+    {
       "id": 317,
       "slug": "rock-tomb",
       "name": "Rock Tomb",
@@ -7248,7 +7259,8 @@
       "bestow",
       "detect",
       "endure",
-      "foresight"
+      "foresight",
+      "odor-sleuth"
     ]
   }
 }
