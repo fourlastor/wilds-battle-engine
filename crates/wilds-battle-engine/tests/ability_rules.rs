@@ -2047,3 +2047,10 @@ fn justified_boosts_attack_when_damaged_by_dark_moves() {
     check_hit_stat_boost("justified", "dark-pulse", Stat::Attack, 1);
     check_hit_stat_boost("justified", "tackle", Stat::Attack, 0);
 }
+
+#[test]
+fn water_compaction_boosts_defense_by_two_when_damaged_by_water() {
+    use wilds_battle_engine::Stat;
+    check_hit_stat_boost("water-compaction", "water-gun", Stat::Defense, 2);
+    check_hit_stat_boost("water-compaction", "tackle", Stat::Defense, 0);
+}
