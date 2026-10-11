@@ -192,7 +192,7 @@ id,ability,status,verification
 191,delta-stream,MISSING,No native battle behavior
 192,stamina,IMPLEMENTED,ability_rules::stamina_raises_defense_per_direct_hit
 193,wimp-out,IMPLEMENTED,ability_rules::wimp_out_offers_a_switch_after_crossing_half_hp_with_berry_and_pivot_timing
-194,emergency-exit,MISSING,No native battle behavior
+194,emergency-exit,IMPLEMENTED,ability_rules::emergency_exit_offers_a_switch_after_crossing_half_hp_with_berry_and_pivot_timing
 195,water-compaction,IMPLEMENTED,ability_rules::water_compaction_boosts_defense_by_two_when_damaged_by_water
 196,merciless,IMPLEMENTED,Source inventory; existing tests only
 197,shields-down,IMPLEMENTED,ability_rules::shields_down_changes_minior_forms_and_blocks_new_statuses_without_curing_existing_ones

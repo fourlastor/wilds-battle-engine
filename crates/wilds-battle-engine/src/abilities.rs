@@ -43,7 +43,7 @@ impl Battle {
     ) {
         for &(who, hp) in before {
             if hp_cost == Some(who)
-                || !self.has_ability(who, "wimpout")
+                || !(self.has_ability(who, "wimpout") || self.has_ability(who, "emergencyexit"))
                 || hp <= self.get(who).max_hp / 2
                 || self.get(who).hp > self.get(who).max_hp / 2
                 || self.bench(who.side).is_empty()

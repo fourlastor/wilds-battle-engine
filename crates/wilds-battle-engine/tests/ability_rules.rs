@@ -4251,3 +4251,8 @@ fn check_exit_ability(ability: &str) {
 fn wimp_out_offers_a_switch_after_crossing_half_hp_with_berry_and_pivot_timing() {
     check_exit_ability("wimp-out");
 }
+
+#[test]
+fn emergency_exit_offers_a_switch_after_crossing_half_hp_with_berry_and_pivot_timing() {
+    check_exit_ability("emergency-exit");
+}
