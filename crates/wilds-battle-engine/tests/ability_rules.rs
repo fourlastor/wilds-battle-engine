@@ -1613,3 +1613,55 @@ fn screen_cleaner_removes_both_sides_screens_but_preserves_mist() {
             .any(|c| c.name == "mist")
     );
 }
+
+fn check_trap(
+    ability: &str,
+    kind: PokemonType,
+    victim_ability: &str,
+    suppressed: bool,
+    trapped: bool,
+) {
+    let mut victim = mon("Victim", &["splash"]);
+    victim.types = vec![kind];
+    victim.ability = Some(victim_ability.into());
+    let mut source = mon("Trapper", &["splash"]);
+    source.ability = Some(ability.into());
+    source.ability_suppressed = suppressed;
+    let mut battle = Battle::with_rng(
+        Fixed(0.5),
+        [vec![victim, mon("Bench", &["splash"])], vec![source]],
+        MoveCatalog::builtin().unwrap(),
+    )
+    .unwrap();
+    battle.set_active([vec![0], vec![0]]).unwrap();
+    let id = wilds_battle_engine::ParticipantId {
+        side: Side::Allies,
+        index: 0,
+    };
+    assert_eq!(battle.trapped(id), trapped);
+    let result = battle.advance().unwrap();
+    let AdvanceStatus::Awaiting(prompt) = result.status else {
+        panic!("no prompt");
+    };
+    assert_eq!(
+        prompt
+            .choices
+            .iter()
+            .any(|c| matches!(c, Choice::Switch { .. })),
+        !trapped
+    );
+}
+
+#[test]
+fn shadow_tag_blocks_voluntary_switches_except_ghosts_and_other_shadow_tag_users() {
+    check_trap("shadow-tag", PokemonType::Normal, "", false, true);
+    check_trap("shadow-tag", PokemonType::Ghost, "", false, false);
+    check_trap(
+        "shadow-tag",
+        PokemonType::Normal,
+        "shadow-tag",
+        false,
+        false,
+    );
+    check_trap("shadow-tag", PokemonType::Normal, "", true, false);
+}

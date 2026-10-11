@@ -333,7 +333,7 @@ impl Battle {
             .as_deref()
             .is_some_and(|item| crate::items::item_key(item) == "shedshell")
             && self.item_active(id);
-        !shell && (self.is_trapped(id) || self.get(id).bound.is_some())
+        !shell && (self.is_trapped(id) || self.get(id).bound.is_some() || self.ability_traps(id))
     }
     pub(crate) fn get(&self, id: ParticipantId) -> &Pokemon {
         &self.sides[id.side.index()][id.index]

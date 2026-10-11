@@ -462,6 +462,15 @@ impl Battle {
             })
     }
 
+    pub(crate) fn ability_traps(&self, who: ParticipantId) -> bool {
+        self.actors().into_iter().any(|source| {
+            source.side != who.side
+                && self.adjacent(source, who)
+                && self.has_ability(source, "shadowtag")
+                && !self.has_ability(who, "shadowtag")
+        })
+    }
+
     pub(crate) fn effective_weight(&self, who: ParticipantId) -> f32 {
         let weight = self.get(who).weight;
         if self.has_ability(who, "heavymetal") {

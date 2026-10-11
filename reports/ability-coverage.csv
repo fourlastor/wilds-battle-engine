@@ -21,7 +21,7 @@ id,ability,status,verification
 20,own-tempo,IMPLEMENTED,Source inventory; existing tests only
 21,suction-cups,IMPLEMENTED,Source inventory; existing tests only
 22,intimidate,IMPLEMENTED,Source inventory; existing tests only
-23,shadow-tag,MISSING,No native battle behavior
+23,shadow-tag,IMPLEMENTED,ability_rules::shadow_tag_blocks_voluntary_switches_except_ghosts_and_other_shadow_tag_users
 24,rough-skin,MISSING,No native battle behavior
 25,wonder-guard,IMPLEMENTED,Source inventory; existing tests only
 26,levitate,IMPLEMENTED,Source inventory; existing tests only
