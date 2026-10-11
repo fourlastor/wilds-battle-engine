@@ -1282,3 +1282,25 @@ fn topsy_turvy_inverts_positive_and_negative_stages_without_contrary() {
     turn(&mut b);
     assert!(b.participants(Side::Allies)[0].last_move_failed);
 }
+
+#[test]
+fn refresh_cures_burn_poison_and_paralysis_and_fails_when_healthy() {
+    use wilds_battle_engine::Status;
+    for status in [
+        None,
+        Some(Status::Burned),
+        Some(Status::Poisoned),
+        Some(Status::BadlyPoisoned),
+        Some(Status::Paralyzed),
+    ] {
+        let mut user = mon("User", &["refresh"]);
+        user.status = status;
+        let mut b = game(user, vec![mon("Foe", &["splash"])], 0.5);
+        turn(&mut b);
+        assert_eq!(b.participants(Side::Allies)[0].status, None);
+        assert_eq!(
+            b.participants(Side::Allies)[0].last_move_failed,
+            status.is_none()
+        );
+    }
+}
