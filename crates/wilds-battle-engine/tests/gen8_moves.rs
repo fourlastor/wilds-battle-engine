@@ -376,3 +376,18 @@ fn light_screen_reduces_its_damage_category_without_refreshing() {
 fn reflect_reduces_its_damage_category_without_refreshing() {
     check_screen("reflect", "reflect", "tackle", "water-gun");
 }
+
+#[test]
+fn haze_clears_both_sides_through_protect_and_substitute() {
+    use wilds_battle_engine::Stat;
+    let mut user = mon("User", &["haze"]);
+    user.stages.insert(Stat::Attack, -3);
+    let mut foe = mon("Foe", &["protect"]);
+    foe.stages.insert(Stat::SpDefense, 6);
+    foe.substitute_hp = 50;
+    let mut b = game(user, vec![foe], 0.5);
+    turn(&mut b);
+    assert_eq!(b.participants(Side::Allies)[0].stage(Stat::Attack), 0);
+    assert_eq!(b.participants(Side::Foes)[0].stage(Stat::SpDefense), 0);
+    assert_eq!(b.participants(Side::Foes)[0].substitute_hp, 50);
+}

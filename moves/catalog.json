@@ -1125,6 +1125,17 @@
       "parameter_source": "https://pokeapi.co/api/v2/move/113/"
     },
     {
+      "id": 114,
+      "slug": "haze",
+      "name": "Haze",
+      "sheet_row": null,
+      "runtime_id": "haze",
+      "file": "moves/haze.lua",
+      "status": "implemented",
+      "limitations": [],
+      "parameter_source": "https://pokeapi.co/api/v2/move/114/"
+    },
+    {
       "id": 115,
       "slug": "reflect",
       "name": "Reflect",
@@ -6168,7 +6179,8 @@
       "thunder-cage",
       "teleport",
       "light-screen",
-      "reflect"
+      "reflect",
+      "haze"
     ]
   }
 }
