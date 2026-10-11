@@ -4243,3 +4243,30 @@ fn ion_deluge_converts_normal_attacks_status_and_fixed_damage_for_one_turn() {
         }
     }
 }
+
+#[test]
+fn electrify_converts_pending_moves_including_dynamic_types_and_expires_after_the_turn() {
+    for attack in ["ember", "weather-ball", "super-fang"] {
+        let mut user = mon("User", &["electrify", "splash"]);
+        user.speed = 200;
+        user.types = vec![PokemonType::Ground];
+        let mut b = game(user, vec![mon("Foe", &[attack])], 0.5);
+        turn(&mut b);
+        assert_eq!(b.participants(Side::Allies)[0].hp, 1000);
+        assert!(!b.participants(Side::Allies)[0].last_move_failed);
+        turn_with(&mut b, |p| choose_move(p, "splash", attack));
+        assert!(b.participants(Side::Allies)[0].hp < 1000);
+    }
+    let mut user = mon("User", &["electrify"]);
+    user.speed = 50;
+    let mut b = game(user, vec![mon("Foe", &["splash"])], 0.5);
+    turn(&mut b);
+    assert!(b.participants(Side::Allies)[0].last_move_failed);
+    for response in ["protect", "substitute"] {
+        let mut user = mon("User", &["electrify"]);
+        user.speed = 50;
+        let mut b = game(user, vec![mon("Foe", &[response])], 0.5);
+        turn(&mut b);
+        assert!(b.participants(Side::Allies)[0].last_move_failed);
+    }
+}

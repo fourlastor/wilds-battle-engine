@@ -5448,6 +5448,17 @@
       "parameter_source": "https://pokeapi.co/api/v2/move/579/"
     },
     {
+      "id": 582,
+      "slug": "electrify",
+      "name": "Electrify",
+      "sheet_row": null,
+      "runtime_id": "electrify",
+      "file": "moves/electrify.lua",
+      "status": "implemented",
+      "limitations": [],
+      "parameter_source": "https://pokeapi.co/api/v2/move/582/"
+    },
+    {
       "id": 583,
       "slug": "play-rough",
       "name": "Play Rough",
@@ -7524,7 +7535,8 @@
       "trick-room",
       "wonder-room",
       "ally-switch",
-      "ion-deluge"
+      "ion-deluge",
+      "electrify"
     ]
   }
 }
