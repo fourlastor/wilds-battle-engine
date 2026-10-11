@@ -2921,3 +2921,28 @@ fn mummy_replaces_contact_attackers_abilities_except_protected_ones() {
         assert_eq!(ally(&battle).ability.as_deref(), Some(expected));
     }
 }
+
+#[test]
+fn wandering_spirit_exchanges_contact_abilities_with_skill_swap_restrictions() {
+    for (move_id, ability, swaps) in [
+        ("tackle", "huge-power", true),
+        ("swift", "huge-power", false),
+        ("tackle", "long-reach", false),
+        ("tackle", "multitype", false),
+    ] {
+        let mut user = mon("User", &[move_id]);
+        user.ability = Some(ability.into());
+        let mut target = mon("Target", &["splash"]);
+        target.ability = Some("wandering-spirit".into());
+        let mut battle = game(user, target, 0.5);
+        turn(&mut battle, move_id, "splash");
+        assert_eq!(
+            ally(&battle).ability.as_deref(),
+            Some(if swaps { "wandering-spirit" } else { ability })
+        );
+        assert_eq!(
+            foe(&battle).ability.as_deref(),
+            Some(if swaps { ability } else { "wandering-spirit" })
+        );
+    }
+}

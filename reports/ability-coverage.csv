@@ -252,7 +252,7 @@ id,ability,status,verification
 251,screen-cleaner,IMPLEMENTED,ability_rules::screen_cleaner_removes_both_sides_screens_but_preserves_mist
 252,steely-spirit,IMPLEMENTED,ability_rules::steely_spirit_boosts_steel_for_holder_and_allies_and_stacks
 253,perish-body,MISSING,No native battle behavior
-254,wandering-spirit,MISSING,No native battle behavior
+254,wandering-spirit,IMPLEMENTED,ability_rules::wandering_spirit_exchanges_contact_abilities_with_skill_swap_restrictions
 255,gorilla-tactics,MISSING,No native battle behavior
 256,neutralizing-gas,MISSING,No native battle behavior
 257,pastel-veil,IMPLEMENTED,Source inventory; existing tests only

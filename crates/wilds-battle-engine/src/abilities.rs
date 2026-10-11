@@ -170,6 +170,9 @@ impl Battle {
         if hit.damage == 0 || hit.attacker == target {
             return;
         }
+        if ability == "wanderingspirit" && hit.contact {
+            self.swap_abilities(hit.attacker, target, events);
+        }
         if ability == "mummy" && hit.contact && !self.has_ability(hit.attacker, "mummy") {
             self.replace_ability(
                 hit.attacker,
