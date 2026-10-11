@@ -378,6 +378,10 @@ impl Battle {
         if self.ability_bypass {
             self.ignored_ability = Some(target);
         }
+        if spec.id == "captivate" && self.has_ability(target, "oblivious") {
+            self.immune_message(target, events);
+            return true;
+        }
         let kind = self.converted_type(actor, spec.move_type);
         let absorbs = (kind == crate::model::PokemonType::Electric
             && (self.has_ability(target, "voltabsorb")

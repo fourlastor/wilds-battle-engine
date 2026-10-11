@@ -327,3 +327,22 @@ fn punk_rock_boosts_only_sound_attacks_and_reduces_incoming_sound() {
         ability_damage("tackle", "", "", false)
     );
 }
+
+#[test]
+fn oblivious_prevents_captivate_unless_suppressed_or_bypassed() {
+    for (suppressed, breaker) in [(false, false), (true, false), (false, true)] {
+        let mut user = mon("User", &["captivate"]);
+        user.gender = wilds_battle_engine::Gender::Male;
+        user.ability = breaker.then(|| "mold-breaker".into());
+        let mut target = mon("Target", &["splash"]);
+        target.gender = wilds_battle_engine::Gender::Female;
+        target.ability = Some("oblivious".into());
+        target.ability_suppressed = suppressed;
+        let mut battle = game(user, target, 0.5);
+        turn(&mut battle, "captivate", "splash");
+        assert_eq!(
+            foe(&battle).stage(wilds_battle_engine::Stat::SpAttack),
+            if suppressed || breaker { -2 } else { 0 }
+        );
+    }
+}
