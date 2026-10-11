@@ -1618,6 +1618,17 @@
       "limitations": []
     },
     {
+      "id": 179,
+      "slug": "reversal",
+      "name": "Reversal",
+      "sheet_row": null,
+      "runtime_id": "reversal",
+      "file": "moves/reversal.lua",
+      "status": "implemented",
+      "limitations": [],
+      "parameter_source": "https://pokeapi.co/api/v2/move/179/"
+    },
+    {
       "id": 181,
       "slug": "powder-snow",
       "name": "Powder Snow",
@@ -6192,7 +6203,8 @@
       "light-screen",
       "reflect",
       "haze",
-      "flail"
+      "flail",
+      "reversal"
     ]
   }
 }

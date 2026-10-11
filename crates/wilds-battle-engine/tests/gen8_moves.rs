@@ -417,3 +417,29 @@ fn flail_uses_the_current_hp_brackets() {
         assert_eq!(1000 - b.participants(Side::Foes)[0].hp, expected, "HP {hp}");
     }
 }
+
+#[test]
+fn reversal_uses_the_current_hp_brackets() {
+    for (hp, power) in [
+        (1, 200),
+        (41, 200),
+        (42, 150),
+        (104, 150),
+        (105, 100),
+        (208, 100),
+        (209, 80),
+        (354, 80),
+        (355, 40),
+        (687, 40),
+        (688, 20),
+        (1000, 20),
+    ] {
+        let mut user = mon("User", &["reversal"]);
+        user.hp = hp;
+        let foe = mon("Foe", &["splash"]);
+        let expected = control_damage(power, "Fighting", "Physical", user.clone(), foe.clone());
+        let mut b = game(user, vec![foe], 0.5);
+        turn(&mut b);
+        assert_eq!(1000 - b.participants(Side::Foes)[0].hp, expected, "HP {hp}");
+    }
+}
