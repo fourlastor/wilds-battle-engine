@@ -644,3 +644,36 @@ fn magic_guard_stops_binding_and_nightmare_but_not_direct_hits() {
     turn(&mut battle, "nightmare", "splash");
     assert_eq!(foe(&battle).hp, 1000);
 }
+
+#[test]
+fn normalize_changes_damage_and_status_types_and_boosts_power_except_variable_types() {
+    for move_id in ["ember", "thunder-wave"] {
+        for (kind, expected) in [(PokemonType::Ghost, false), (PokemonType::Ground, true)] {
+            let mut user = mon("User", &[move_id]);
+            user.ability = Some("normalize".into());
+            let mut target = mon("Target", &["splash"]);
+            target.types = vec![kind];
+            let mut battle = game(user, target, 0.5);
+            turn(&mut battle, move_id, "splash");
+            assert_eq!(
+                foe(&battle).hp < 1000 || foe(&battle).status.is_some(),
+                expected,
+                "{move_id}"
+            );
+            assert_eq!(ally(&battle).last_move_type, Some(PokemonType::Normal));
+        }
+    }
+    assert!(
+        ability_damage("tackle", "normalize", "", false) > ability_damage("tackle", "", "", false)
+    );
+    let run = |ability: &str| {
+        let mut user = mon("User", &["rain-dance", "weather-ball"]);
+        user.ability = Some(ability.into());
+        let mut battle = game(user, mon("Target", &["splash"]), 0.5);
+        turn(&mut battle, "rain-dance", "splash");
+        turn(&mut battle, "weather-ball", "splash");
+        assert_eq!(ally(&battle).last_move_type, Some(PokemonType::Water));
+        foe(&battle).hp
+    };
+    assert_eq!(run("normalize"), run(""));
+}

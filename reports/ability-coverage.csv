@@ -94,7 +94,7 @@ id,ability,status,verification
 93,hydration,IMPLEMENTED,Source inventory; existing tests only
 94,solar-power,MISSING,No native battle behavior
 95,quick-feet,IMPLEMENTED,Source inventory; existing tests only
-96,normalize,PARTIAL,Source inventory; existing tests only
+96,normalize,IMPLEMENTED,ability_rules::normalize_changes_damage_and_status_types_and_boosts_power_except_variable_types
 97,sniper,MISSING,No native battle behavior
 98,magic-guard,IMPLEMENTED,ability_rules::magic_guard_blocks_indirect_damage_but_keeps_hp_costs_and_struggle_recoil
 99,no-guard,MISSING,No native battle behavior

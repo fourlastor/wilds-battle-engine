@@ -56,7 +56,7 @@ pub struct Battle {
     call_depth: u8,
     snatching: bool,
     pub(crate) last_battle_move: Option<String>,
-    current_move: Option<String>,
+    pub(crate) current_move: Option<String>,
 }
 
 #[derive(Clone)]
@@ -2595,6 +2595,7 @@ impl Battle {
         // Base-power conditions round halves down, before the existing damage modifiers.
         let base_power = (f32::from(attack.power)
             * self.base_power_factor(actor, move_type)
+            * self.ability_base_power_factor(actor, attack)
             * self.incoming_base_power_factor(target, attack.move_id, move_type)
             - 0.5)
             .ceil()

@@ -406,7 +406,17 @@ impl Battle {
                     || self.has_ability(target, "dryskin")))
             || (kind == crate::model::PokemonType::Fire && self.has_ability(target, "flashfire"))
             || (kind == crate::model::PokemonType::Grass && self.has_ability(target, "sapsipper"));
-        absorbs && self.ability_blocks_damage(actor, target, kind, 2.0, false, false, true, events)
+        if absorbs
+            && self.ability_blocks_damage(actor, target, kind, 2.0, false, false, true, events)
+        {
+            return true;
+        }
+        // Thunder Wave uniquely checks type effectiveness even as a status move.
+        if spec.id == "thunder-wave" && self.move_effectiveness(actor, target, kind) == 0.0 {
+            self.immune_message(target, events);
+            return true;
+        }
+        false
     }
 
     #[allow(clippy::too_many_arguments)]
@@ -469,6 +479,33 @@ impl Battle {
             self.set_mark(crate::model::Scope::Pokemon(target), "flash_fire", 1, None);
         }
         true
+    }
+
+    pub(crate) fn normalizable_move(move_id: &str) -> bool {
+        !matches!(
+            crate::items::item_key(move_id).as_str(),
+            "hiddenpower"
+                | "judgment"
+                | "multiattack"
+                | "naturalgift"
+                | "revelationdance"
+                | "struggle"
+                | "technoblast"
+                | "terrainpulse"
+                | "weatherball"
+        )
+    }
+
+    pub(crate) fn ability_base_power_factor(
+        &self,
+        actor: ParticipantId,
+        attack: &crate::engine::Attack,
+    ) -> f32 {
+        if self.has_ability(actor, "normalize") && Self::normalizable_move(attack.move_id) {
+            1.2
+        } else {
+            1.0
+        }
     }
 
     pub(crate) fn ability_damage_factor(

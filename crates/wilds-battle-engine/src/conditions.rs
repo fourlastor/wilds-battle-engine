@@ -404,6 +404,13 @@ impl Battle {
 
     /// The type a move of `move_type` has when `id` uses it.
     pub(crate) fn converted_type(&self, id: ParticipantId, move_type: PokemonType) -> PokemonType {
+        let move_type = if self.has_ability(id, "normalize")
+            && Self::normalizable_move(self.current_move.as_deref().unwrap_or(""))
+        {
+            PokemonType::Normal
+        } else {
+            move_type
+        };
         self.rules(id)
             .find_map(|rule| match rule {
                 Rule::MoveType { from, to } if *from == move_type => Some(*to),
