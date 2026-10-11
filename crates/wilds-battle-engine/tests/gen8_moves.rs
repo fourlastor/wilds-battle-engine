@@ -1875,3 +1875,26 @@ fn mirror_coat_returns_special_damage_only_and_respects_dark_immunity() {
         );
     }
 }
+
+#[test]
+fn metal_burst_returns_one_and_a_half_times_damage_only_if_it_acts_after_the_hit() {
+    for (attack, speed, returns) in [
+        ("tackle", 1, true),
+        ("water-gun", 1, true),
+        ("tackle", 200, false),
+    ] {
+        let mut user = mon("User", &["metal-burst"]);
+        user.speed = speed;
+        let mut b = game(user, vec![mon("Foe", &[attack])], 0.5);
+        turn(&mut b);
+        assert_eq!(
+            1000 - b.participants(Side::Foes)[0].hp,
+            if returns {
+                (1000 - b.participants(Side::Allies)[0].hp) * 3 / 2
+            } else {
+                0
+            }
+        );
+        assert_eq!(b.participants(Side::Allies)[0].last_move_failed, !returns);
+    }
+}

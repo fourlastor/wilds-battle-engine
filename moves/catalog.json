@@ -3199,6 +3199,17 @@
       "parameter_source": "https://pokeapi.co/api/v2/move/367/"
     },
     {
+      "id": 368,
+      "slug": "metal-burst",
+      "name": "Metal Burst",
+      "sheet_row": null,
+      "runtime_id": "metal-burst",
+      "file": "moves/metal-burst.lua",
+      "status": "implemented",
+      "limitations": [],
+      "parameter_source": "https://pokeapi.co/api/v2/move/368/"
+    },
+    {
       "id": 369,
       "slug": "u-turn",
       "name": "U-turn",
@@ -6876,7 +6887,8 @@
       "jungle-healing",
       "celebrate",
       "counter",
-      "mirror-coat"
+      "mirror-coat",
+      "metal-burst"
     ]
   }
 }
