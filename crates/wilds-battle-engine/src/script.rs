@@ -1015,7 +1015,7 @@ impl Battle {
             ScriptOperation::FlinchTarget(chance) => {
                 let chance = self.effect_chance(actor, chance);
                 if self.get(target).hp > 0 && self.rng.chance(chance) {
-                    self.get_mut(target).flinched = true;
+                    self.flinch(target);
                 }
                 Value::Nil
             }
@@ -1213,10 +1213,8 @@ impl Battle {
                 Value::Boolean(self.effect_roll(actor, chance) && self.confuse(actor, who, events))
             }
             ScriptOperation::Flinch { who, chance } => {
-                let flinched = self.get(who).hp > 0 && self.effect_roll(actor, chance);
-                if flinched {
-                    self.get_mut(who).flinched = true;
-                }
+                let flinched =
+                    self.get(who).hp > 0 && self.effect_roll(actor, chance) && self.flinch(who);
                 Value::Boolean(flinched)
             }
             ScriptOperation::ChangeStat {

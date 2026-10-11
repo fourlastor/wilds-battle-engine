@@ -726,9 +726,11 @@ fn rule_of(value: &Value) -> mlua::Result<Rule> {
         RuleKind::MoveType => &["kind", "from", "to"],
         RuleKind::AlwaysHit => &["kind", "against"],
         RuleKind::WithoutType => &["kind", "type"],
-        RuleKind::BlockStatDrops | RuleKind::Grounded | RuleKind::Trapped | RuleKind::Endure => {
-            &["kind"]
-        }
+        RuleKind::BlockFlinch
+        | RuleKind::BlockStatDrops
+        | RuleKind::Grounded
+        | RuleKind::Trapped
+        | RuleKind::Endure => &["kind"],
     };
     let options = Options::new(Some(value), "rule", allowed)?;
     let required = |key: &str| {
@@ -802,6 +804,7 @@ fn rule_of(value: &Value) -> mlua::Result<Rule> {
             }
         }
         RuleKind::BlockStatDrops => Rule::BlockStatDrops,
+        RuleKind::BlockFlinch => Rule::BlockFlinch,
         RuleKind::EffectChance => Rule::EffectChance { factor: factor()? },
         RuleKind::MoveType => Rule::MoveType {
             from: type_of(&required("from")?, "rule option from")?,

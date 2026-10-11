@@ -1805,6 +1805,23 @@ fn an_effect_chance_follows_the_rainbow() {
 // Guard rails
 
 #[test]
+fn a_timed_rule_blocks_scripted_flinches_and_expires() {
+    let script = test_move(
+        "",
+        "
+        ctx:start_effect(ctx.user, 'focus', {turns=1, rules={{kind=Rule.BlockFlinch}}})
+        assert(not ctx:flinch(ctx.user))
+        assert(not ctx.user.flinched)
+        ctx:end_effect(ctx.user, 'focus')
+        assert(ctx:flinch(ctx.user))
+        assert(ctx.user.flinched)
+    ",
+    );
+    let mut game = Game::duel(&[&script], &["test"]);
+    game.turn(&["test", "wait"]);
+}
+
+#[test]
 fn stat_change_history_survives_reversal_and_resets_each_turn() {
     let script = test_move(
         "",

@@ -253,7 +253,7 @@ ctx:end_effect(ctx.target.team, "reflect")                  -- Brick Break
 | `StatMultiplier` | `stat`, `factor` |
 | `BlockMoves` | nonempty `flags` list, optional `message`; prevents selection and execution of matching moves |
 | `BlockStatus` | `statuses` (all if left out), `confusion`. Does not stop what a Pokémon does to itself. |
-| `BlockStatDrops`, `Grounded`, `Trapped`, `Endure` | |
+| `BlockStatDrops`, `BlockFlinch`, `Grounded`, `Trapped`, `Endure` | |
 | `EffectChance` | `factor` for the `chance` of the holder's extra effects |
 | `MoveType` | `from`, `to` |
 | `AlwaysHit` | `against` one Pokémon, or anyone |

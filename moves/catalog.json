@@ -1951,10 +1951,8 @@
       "sheet_row": 188,
       "runtime_id": "focus-punch",
       "file": "moves/focus-punch.lua",
-      "status": "partial",
-      "limitations": [
-        "Losing focus checks damaging move hits; its immunity to flinching requires an engine hook before action interruption."
-      ]
+      "status": "implemented",
+      "limitations": []
     },
     {
       "id": 265,

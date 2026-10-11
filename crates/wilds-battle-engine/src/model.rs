@@ -203,6 +203,8 @@ pub enum Rule {
     },
     /// Stats cannot be lowered by others.
     BlockStatDrops,
+    /// Flinching cannot interrupt the holder.
+    BlockFlinch,
     /// Chances of the extra effects of the holder's moves are multiplied.
     EffectChance {
         factor: f32,

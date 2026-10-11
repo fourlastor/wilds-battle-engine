@@ -79,6 +79,21 @@ fn said(events: &[BattleEvent], text: &str) -> bool {
 }
 
 #[test]
+fn focus_punch_loses_focus_from_damage_without_being_interrupted_by_flinch() {
+    let mut foe = mon("Foe", &["headbutt"]);
+    foe.speed = 200;
+    let mut game = Game::duel(&["focus-punch", "tackle"], foe, 0.2);
+    let events = game.turn("focus-punch", "headbutt");
+    assert!(said(&events, "lost its focus"));
+    assert!(!said(&events, "flinched"));
+    assert_eq!(game.foe().hp, 1000);
+    assert!(game.ally().condition("focus_punch").is_none());
+    let events = game.turn("tackle", "headbutt");
+    // Immunity expired with Focus Punch.
+    assert!(said(&events, "flinched"));
+}
+
+#[test]
 fn lash_out_uses_actual_drops_this_turn_and_forgets_previous_turns() {
     let damage = |capped: bool, lowered: bool| {
         let mut ally = mon("Ally", &["lash-out"]);

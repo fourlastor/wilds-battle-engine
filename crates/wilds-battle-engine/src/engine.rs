@@ -651,7 +651,7 @@ impl Battle {
             }
             _ => {}
         }
-        if self.get(actor).flinched {
+        if self.get(actor).flinched && !self.blocks_flinch(actor) {
             events.push(BattleEvent::Message(format!("{user_name} flinched!")));
             self.get_mut(actor).flinched = false;
             self.clear_consecutive(actor);
@@ -1165,7 +1165,7 @@ impl Battle {
             Effect::Flinch(chance) => {
                 let chance = self.effect_chance(actor, *chance);
                 if self.rng.chance(chance) && self.effectiveness(target, spec.move_type) != 0.0 {
-                    self.get_mut(target).flinched = true;
+                    self.flinch(target);
                 }
             }
             Effect::Bind => {

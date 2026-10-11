@@ -226,6 +226,18 @@ impl Battle {
         self.rules(id).any(|rule| matches!(rule, Rule::Trapped))
     }
 
+    pub(crate) fn blocks_flinch(&self, id: ParticipantId) -> bool {
+        self.rules(id).any(|rule| matches!(rule, Rule::BlockFlinch))
+    }
+
+    pub(crate) fn flinch(&mut self, id: ParticipantId) -> bool {
+        if self.get(id).hp == 0 || self.blocks_flinch(id) {
+            return false;
+        }
+        self.get_mut(id).flinched = true;
+        true
+    }
+
     pub(crate) fn endures(&self, id: ParticipantId) -> bool {
         self.rules(id).any(|rule| matches!(rule, Rule::Endure))
     }
