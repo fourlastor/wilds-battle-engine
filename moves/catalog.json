@@ -1954,6 +1954,17 @@
       "parameter_source": "https://pokeapi.co/api/v2/move/212/"
     },
     {
+      "id": 215,
+      "slug": "heal-bell",
+      "name": "Heal Bell",
+      "sheet_row": null,
+      "runtime_id": "heal-bell",
+      "file": "moves/heal-bell.lua",
+      "status": "implemented",
+      "limitations": [],
+      "parameter_source": "https://pokeapi.co/api/v2/move/215/"
+    },
+    {
       "id": 216,
       "slug": "return",
       "name": "Return",
@@ -6804,7 +6815,8 @@
       "whirlpool",
       "spite",
       "gastro-acid",
-      "acupressure"
+      "acupressure",
+      "heal-bell"
     ]
   }
 }
