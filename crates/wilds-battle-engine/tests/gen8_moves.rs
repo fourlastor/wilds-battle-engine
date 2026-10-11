@@ -1617,3 +1617,24 @@ fn spite_removes_four_pp_from_the_last_move_and_fails_at_zero() {
         assert_eq!(b.participants(Side::Allies)[0].last_move_failed, failed);
     }
 }
+
+#[test]
+fn gastro_acid_suppresses_ordinary_abilities_but_respects_protected_ones_and_substitute() {
+    for (ability, sub, suppressed) in [
+        (Some("huge-power"), 0, true),
+        (Some("multitype"), 0, false),
+        (Some("huge-power"), 50, false),
+        (None, 0, false),
+    ] {
+        let mut foe = mon("Foe", &["splash"]);
+        foe.ability = ability.map(str::to_owned);
+        foe.substitute_hp = sub;
+        let mut b = game(mon("User", &["gastro-acid"]), vec![foe], 0.5);
+        turn(&mut b);
+        assert_eq!(b.participants(Side::Foes)[0].ability_suppressed, suppressed);
+        assert_eq!(
+            b.participants(Side::Allies)[0].last_move_failed,
+            !suppressed
+        );
+    }
+}

@@ -3217,6 +3217,17 @@
       "parameter_source": "https://pokeapi.co/api/v2/move/378/"
     },
     {
+      "id": 380,
+      "slug": "gastro-acid",
+      "name": "Gastro Acid",
+      "sheet_row": null,
+      "runtime_id": "gastro-acid",
+      "file": "moves/gastro-acid.lua",
+      "status": "implemented",
+      "limitations": [],
+      "parameter_source": "https://pokeapi.co/api/v2/move/380/"
+    },
+    {
       "id": 381,
       "slug": "lucky-chant",
       "name": "Lucky Chant",
@@ -6780,7 +6791,8 @@
       "belly-drum",
       "spit-up",
       "whirlpool",
-      "spite"
+      "spite",
+      "gastro-acid"
     ]
   }
 }
