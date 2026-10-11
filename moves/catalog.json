@@ -2219,6 +2219,17 @@
       "parameter_source": "https://pokeapi.co/api/v2/move/258/"
     },
     {
+      "id": 260,
+      "slug": "flatter",
+      "name": "Flatter",
+      "sheet_row": null,
+      "runtime_id": "flatter",
+      "file": "moves/flatter.lua",
+      "status": "implemented",
+      "limitations": [],
+      "parameter_source": "https://pokeapi.co/api/v2/move/260/"
+    },
+    {
       "id": 261,
       "slug": "will-o-wisp",
       "name": "Will-O-Wisp",
@@ -6552,7 +6563,8 @@
       "tailwind",
       "fairy-lock",
       "rain-dance",
-      "hail"
+      "hail",
+      "flatter"
     ]
   }
 }

@@ -1117,3 +1117,28 @@ fn hail_sets_five_turn_weather_and_cannot_refresh_it() {
     assert!(b.participants(Side::Allies)[0].last_move_failed);
     assert_eq!(b.weather().unwrap().turns_left, 3);
 }
+
+#[test]
+fn flatter_raises_special_attack_and_confuses_but_respects_protection() {
+    use wilds_battle_engine::Stat;
+    for (response, sub, lands) in [
+        ("splash", 0, true),
+        ("protect", 0, false),
+        ("splash", 50, false),
+    ] {
+        let mut user = mon("User", &["flatter"]);
+        user.speed = 1;
+        let mut foe = mon("Foe", &[response]);
+        foe.substitute_hp = sub;
+        let mut b = game(user, vec![foe], 0.5);
+        turn(&mut b);
+        assert_eq!(
+            b.participants(Side::Foes)[0].stage(Stat::SpAttack),
+            i8::from(lands)
+        );
+        assert_eq!(
+            b.participants(Side::Foes)[0].confused_turns.is_some(),
+            lands
+        );
+    }
+}
