@@ -4489,6 +4489,17 @@
       "limitations": []
     },
     {
+      "id": 513,
+      "slug": "reflect-type",
+      "name": "Reflect Type",
+      "sheet_row": null,
+      "runtime_id": "reflect-type",
+      "file": "moves/reflect-type.lua",
+      "status": "implemented",
+      "limitations": [],
+      "parameter_source": "https://pokeapi.co/api/v2/move/513/"
+    },
+    {
       "id": 514,
       "slug": "retaliate",
       "name": "Retaliate",
@@ -7104,7 +7115,8 @@
       "soak",
       "magic-powder",
       "trick-or-treat",
-      "forests-curse"
+      "forests-curse",
+      "reflect-type"
     ]
   }
 }

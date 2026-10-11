@@ -2529,3 +2529,39 @@ fn forests_curse_respects_substitute_protect_and_existing_grass_type() {
         assert!(b.participants(Side::Allies)[0].last_move_failed);
     }
 }
+
+#[test]
+fn reflect_type_copies_base_and_added_types_through_substitute() {
+    let mut user = mon("User", &["reflect-type"]);
+    user.added_type = Some(PokemonType::Grass);
+    let mut foe = mon("Foe", &["splash"]);
+    foe.types = vec![PokemonType::Fire, PokemonType::Flying];
+    foe.added_type = Some(PokemonType::Ghost);
+    foe.substitute_hp = 50;
+    let mut b = game(user, vec![foe], 0.5);
+    turn(&mut b);
+    let user = &b.participants(Side::Allies)[0];
+    assert_eq!(user.types, vec![PokemonType::Fire, PokemonType::Flying]);
+    assert_eq!(user.added_type, Some(PokemonType::Ghost));
+}
+#[test]
+fn reflect_type_fails_for_immutable_users_protect_and_typeless_targets() {
+    for (species, response, kind) in [
+        (493, "splash", PokemonType::Fire),
+        (773, "splash", PokemonType::Fire),
+        (0, "protect", PokemonType::Fire),
+        (0, "splash", PokemonType::None),
+    ] {
+        let mut user = mon("User", &["reflect-type"]);
+        user.species_id = species;
+        let mut foe = mon("Foe", &[response]);
+        foe.types = vec![kind];
+        let mut b = game(user, vec![foe], 0.5);
+        turn(&mut b);
+        assert_eq!(
+            b.participants(Side::Allies)[0].types,
+            vec![PokemonType::Normal]
+        );
+        assert!(b.participants(Side::Allies)[0].last_move_failed);
+    }
+}
