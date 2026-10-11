@@ -37,6 +37,13 @@ impl Battle {
         if hit.damage == 0 || hit.attacker == target {
             return;
         }
+        if ability == "aftermath" && self.get(target).hp == 0 && hit.contact {
+            self.indirect_damage(
+                hit.attacker,
+                (self.get(hit.attacker).max_hp / 4).max(1),
+                events,
+            );
+        }
         let last_used = self
             .get(hit.attacker)
             .last_used

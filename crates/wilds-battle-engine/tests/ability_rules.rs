@@ -2154,3 +2154,23 @@ fn cursed_body_disables_the_damaging_move_for_four_turns_including_the_hit() {
         }
     }
 }
+
+#[test]
+fn aftermath_damages_only_contact_knockouts() {
+    for (move_id, attacker_ability, hp, expected) in [
+        ("tackle", "", 1, 250),
+        ("tackle", "", 1000, 0),
+        ("swift", "", 1, 0),
+        ("tackle", "long-reach", 1, 0),
+        ("tackle", "magic-guard", 1, 0),
+    ] {
+        let mut user = mon("User", &[move_id]);
+        user.ability = Some(attacker_ability.into());
+        let mut target = mon("Target", &["splash"]);
+        target.hp = hp;
+        target.ability = Some("aftermath".into());
+        let mut battle = game(user, target, 0.5);
+        turn(&mut battle, move_id, "splash");
+        assert_eq!(1000 - ally(&battle).hp, expected);
+    }
+}
