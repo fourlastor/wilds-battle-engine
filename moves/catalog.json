@@ -1686,6 +1686,17 @@
       ]
     },
     {
+      "id": 174,
+      "slug": "curse",
+      "name": "Curse",
+      "sheet_row": null,
+      "runtime_id": "curse",
+      "file": "moves/curse.lua",
+      "status": "implemented",
+      "limitations": [],
+      "parameter_source": "https://pokeapi.co/api/v2/move/174/"
+    },
+    {
       "id": 175,
       "slug": "flail",
       "name": "Flail",
@@ -7368,7 +7379,8 @@
       "taunt",
       "disable",
       "torment",
-      "imprison"
+      "imprison",
+      "curse"
     ]
   }
 }

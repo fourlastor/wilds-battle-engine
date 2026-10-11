@@ -3562,3 +3562,69 @@ fn imprison_does_not_seal_allies_and_leaves_struggle_available() {
     turn_with(&mut b, |p| choose_move(p, "splash", "struggle"));
     assert!(b.participants(Side::Foes)[0].hp < 1000);
 }
+
+#[test]
+fn curse_boosts_non_ghost_users_and_offers_a_self_target() {
+    use wilds_battle_engine::Stat;
+    let mut b = game(mon("User", &["curse"]), vec![mon("Foe", &["splash"])], 0.5);
+    turn_with(&mut b, |p| {
+        if p.actor.side == Side::Allies {
+            assert!(
+                p.choices
+                    .iter()
+                    .all(|c| matches!(c,Choice::UseMove{target,..} if *target==p.actor))
+            );
+        }
+        p.choices[0].id()
+    });
+    let user = &b.participants(Side::Allies)[0];
+    assert_eq!(user.stage(Stat::Attack), 1);
+    assert_eq!(user.stage(Stat::Defense), 1);
+    assert_eq!(user.stage(Stat::Speed), -1);
+    assert_eq!(user.hp, 1000);
+}
+
+#[test]
+fn ghost_curse_pays_half_max_hp_once_and_drains_through_protect_and_substitute() {
+    let mut user = mon("User", &["curse"]);
+    user.types = vec![PokemonType::Ghost];
+    let mut foe = mon("Foe", &["protect"]);
+    foe.substitute_hp = 50;
+    let mut b = game(user, vec![foe], 0.5);
+    turn(&mut b);
+    assert_eq!(b.participants(Side::Allies)[0].hp, 500);
+    assert_eq!(b.participants(Side::Foes)[0].hp, 750);
+    assert_eq!(b.participants(Side::Foes)[0].substitute_hp, 50);
+    turn(&mut b);
+    assert_eq!(b.participants(Side::Allies)[0].hp, 500);
+    assert_eq!(b.participants(Side::Foes)[0].hp, 500);
+    assert!(b.participants(Side::Allies)[0].last_move_failed);
+}
+
+#[test]
+fn curse_rechecks_its_users_type_after_an_earlier_type_change() {
+    use wilds_battle_engine::Stat;
+    for ghost in [true, false] {
+        let mut user = mon("User", &["curse"]);
+        user.speed = 50;
+        if ghost {
+            user.types = vec![PokemonType::Ghost];
+        }
+        let mut foe = mon("Foe", &[if ghost { "soak" } else { "trick-or-treat" }]);
+        foe.speed = 200;
+        let mut b = game(user, vec![foe], 0.5);
+        turn(&mut b);
+        assert_eq!(
+            b.participants(Side::Allies)[0].hp,
+            if ghost { 1000 } else { 500 }
+        );
+        assert_eq!(
+            b.participants(Side::Allies)[0].stage(Stat::Attack),
+            if ghost { 1 } else { 0 }
+        );
+        assert_eq!(
+            b.participants(Side::Foes)[0].hp,
+            if ghost { 1000 } else { 750 }
+        );
+    }
+}

@@ -238,7 +238,7 @@ impl Battle {
     ) -> ParticipantId {
         if spec.has_flag("ignore_redirection")
             || !matches!(
-                spec.target,
+                self.move_target_kind(actor, spec),
                 Target::Selected | Target::AnyOther | Target::UserOrAlly | Target::RandomOpponent
             )
             || actor == target

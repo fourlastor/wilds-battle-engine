@@ -105,6 +105,8 @@ pub struct MoveSpec {
     pub category: Category,
     pub pp: u8,
     pub target: Target,
+    /// Use the normal target only while the user has this type; otherwise target the user.
+    pub target_user_unless_type: Option<PokemonType>,
     pub accuracy: Accuracy,
     pub priority: i8,
     pub fail_on_full_hp: bool,
@@ -1673,6 +1675,10 @@ fn parse_move(t: &Table) -> Result<MoveSpec, BattleError> {
         category,
         pp: t.get("pp")?,
         target,
+        target_user_unless_type: t
+            .get::<Option<Value>>("target_user_unless_type")?
+            .map(|value| type_of(&value, "target_user_unless_type"))
+            .transpose()?,
         accuracy,
         priority: t.get::<Option<i8>>("priority")?.unwrap_or(0),
         fail_on_full_hp: t.get::<Option<bool>>("fail_on_full_hp")?.unwrap_or(false),

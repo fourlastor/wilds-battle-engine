@@ -355,6 +355,17 @@ impl Battle {
             })
             .collect()
     }
+    pub(crate) fn move_target_kind(&self, actor: ParticipantId, spec: &MoveSpec) -> Target {
+        if spec
+            .target_user_unless_type
+            .is_some_and(|kind| !self.types_of(actor).contains(&kind))
+        {
+            Target::User
+        } else {
+            spec.target
+        }
+    }
+
     fn legal_choices(&self, actor: ParticipantId) -> Vec<Choice> {
         let pokemon = self.get(actor);
         let move_ids: Vec<&str> = match &pokemon.locked_move {
@@ -392,7 +403,7 @@ impl Battle {
                         })
                         .collect()
                 };
-                match spec.target {
+                match self.move_target_kind(actor, spec) {
                     Target::User | Target::AllAllies | Target::UserAndAllies => vec![actor],
                     Target::Field
                     | Target::AllOthers
@@ -1150,6 +1161,10 @@ impl Battle {
             side: choice.target.side,
             index: self.active[choice.target.side.index()][choice.target_position],
         });
+        let target_kind = self.move_target_kind(actor, &spec);
+        if target_kind == Target::User {
+            target = actor;
+        }
         // Forced turns pick a new opponent too when the script asked for one. This shares the
         // roll below, so a move that is random in both ways still rolls once.
         let random_continuation = forced_script
@@ -1158,11 +1173,14 @@ impl Battle {
                 .script_continuation
                 .as_ref()
                 .is_some_and(|lock| lock.target_policy == ContinuationTarget::RandomOpponent);
-        if spec.target == Target::RandomOpponent || random_continuation {
+        if target_kind == Target::RandomOpponent || random_continuation {
             let foes: Vec<_> = self
                 .actors()
                 .into_iter()
-                .filter(|id| id.side != actor.side)
+                .filter(|id| {
+                    id.side != actor.side
+                        && (!spec.has_flag("adjacent_target") || self.adjacent(actor, *id))
+                })
                 .collect();
             if foes.is_empty() {
                 return Ok(false);
@@ -1171,7 +1189,7 @@ impl Battle {
         }
         if self.get(target).hp == 0
             && matches!(
-                spec.target,
+                target_kind,
                 Target::Selected | Target::Ally | Target::AnyOther
             )
         {
@@ -1185,7 +1203,7 @@ impl Battle {
             };
             target = replacement;
         }
-        if self.get(target).hp == 0 && spec.target == Target::UserOrAlly {
+        if self.get(target).hp == 0 && target_kind == Target::UserOrAlly {
             target = actor;
         }
         let redirected = if self.get(actor).carrying == Some(target)

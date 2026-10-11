@@ -377,7 +377,7 @@ impl Battle {
     /// Everyone `frame`'s move is aimed at when a script does not name one Pokémon.
     fn recipients(&self, frame: &Frame) -> Vec<ParticipantId> {
         let actor = frame.actor;
-        match frame.spec.target {
+        match self.move_target_kind(actor, frame.spec) {
             Target::AllOthers => self
                 .actors()
                 .into_iter()
