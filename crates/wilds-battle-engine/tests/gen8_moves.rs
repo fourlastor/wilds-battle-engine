@@ -2351,3 +2351,22 @@ fn strength_sap_heals_from_attack_with_stages_but_without_huge_power() {
     assert_eq!(b.participants(Side::Allies)[0].hp, 223);
     assert_eq!(b.participants(Side::Foes)[0].stage(Stat::Attack), 0);
 }
+
+#[test]
+fn power_trick_swaps_raw_attack_and_defense_and_toggles_without_changing_stages() {
+    use wilds_battle_engine::Stat;
+    let mut user = mon("User", &["power-trick"]);
+    user.attack = 40;
+    user.defense = 200;
+    user.change_stage(Stat::Attack, 3);
+    user.change_stage(Stat::Defense, -2);
+    user.ability = Some("huge-power".into());
+    let mut b = game(user, vec![mon("Foe", &["splash"])], 0.5);
+    for expected in [(200, 40), (40, 200), (200, 40)] {
+        turn(&mut b);
+        let p = &b.participants(Side::Allies)[0];
+        assert_eq!((p.attack, p.defense), expected);
+        assert_eq!(p.stage(Stat::Attack), 3);
+        assert_eq!(p.stage(Stat::Defense), -2);
+    }
+}

@@ -3316,6 +3316,17 @@
       "parameter_source": "https://pokeapi.co/api/v2/move/378/"
     },
     {
+      "id": 379,
+      "slug": "power-trick",
+      "name": "Power Trick",
+      "sheet_row": null,
+      "runtime_id": "power-trick",
+      "file": "moves/power-trick.lua",
+      "status": "implemented",
+      "limitations": [],
+      "parameter_source": "https://pokeapi.co/api/v2/move/379/"
+    },
+    {
       "id": 380,
       "slug": "gastro-acid",
       "name": "Gastro Acid",
@@ -7044,7 +7055,8 @@
       "power-split",
       "guard-split",
       "speed-swap",
-      "strength-sap"
+      "strength-sap",
+      "power-trick"
     ]
   }
 }
