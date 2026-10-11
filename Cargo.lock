@@ -327,6 +327,7 @@ name = "wilds-battle-engine"
 version = "0.1.0"
 dependencies = [
  "mlua",
+ "serde_json",
 ]
 
 [[package]]

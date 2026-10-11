@@ -1,8 +1,12 @@
 # Wilds battle engine
 
 `wilds-battle-engine` is the Rust battle simulation. Move definitions are loaded
-from Lua; `MoveCatalog::builtin()` embeds the 41 editable files under `moves/`,
+from Lua; `MoveCatalog::builtin()` embeds the 580 files under `moves/`,
 and `MoveCatalog::from_directory(path)` reads them from disk at runtime.
+Both catalogs also include the system move Struggle, for 581 moves in total.
+The [move catalog](moves/README.md) covers all 572 entries in the Saved moves sheet,
+with canonical slug filenames and JSON display names. Unsupported mechanics are
+flagged in each affected file and in [catalog.json](moves/catalog.json).
 The host supplies choices for both sides.
 The Rust API uses enums for sides, Pokémon types, stats, statuses, and weather.
 Host-facing prompts contain `Choice` enum values. The only variant today is
@@ -19,13 +23,10 @@ evaluating move definitions; values from the wrong enum family are rejected.
   effects={{kind=Effect.Status, status=Status.BadlyPoisoned}} }
 ```
 
-Five additional moves from the [Saved moves sheet](https://docs.google.com/spreadsheets/d/1e9lPFCqyuwpX6R6s69HXoFUXedoIAD8SdtSbswY48Q8/edit?gid=1664051581)
-use Lua callbacks: Dream Eater, False Swipe, Triple Kick, Explosion, and Hyper Beam.
-Solar Beam now uses a Lua callback too, while retaining its current C# values.
-Thrash is included as a sixth additional move, using its Generation V onward
-duration, interruption, and confusion rules.
-Charge and Thunder Shock come from the sheet as a next-move effect and a simple
-Electric attack. Charge's Lua script raises Special Defense and asks Rust to
+Moves such as Dream Eater, False Swipe, Triple Kick, Explosion, and Hyper Beam
+use Lua callbacks. The original 41 files retain their runtime IDs and behavior;
+their filenames now use hyphens. New moves use the JSON's `Name` as their runtime
+ID as well as their filename. Charge's Lua script raises Special Defense and asks Rust to
 double the power of the next Electric attack; any other next move consumes the
 boost without applying it.
 Each callback receives `ctx`: tables describing the battle (`ctx.user`,
@@ -99,7 +100,7 @@ loop {
 # Ok::<(), wilds_battle_engine::BattleError>(())
 ```
 
-The current port covers move metadata and battle mechanics for the original 29 moves,
+The original compatibility port covers metadata and battle mechanics for 29 C# moves,
 including turn order, accuracy, damage, status, weather, charging, repeated hits,
 consecutive moves, and outcome resolution. The Rust RNG is seeded, so a Rust
 run is reproducible; it does not reproduce Godot's RNG stream. Tests exercise
@@ -135,9 +136,12 @@ A scripted move is a table with `script = function(ctx) … end` instead of `eff
 It can also have `on_hit`, `on_interrupt` and `on_turn_start` callbacks.
 Everything a plain `effects` list can do, a script can do too.
 
-For worked examples, `crates/wilds-battle-engine/tests/sheet_moves.lua` has about 120
-moves written with what follows, from Fly and Gravity to Stockpile, Shell Trap and the
-pledges; `tests/sheet_moves.rs` plays them.
+Production definitions live in `moves/`. The older API examples in
+`crates/wilds-battle-engine/tests/sheet_moves.lua` exercise the script API, including
+deliberately altered move names and prototypes. They are not the production catalog
+or an authoritative source of move behavior. `tests/move_catalog.rs` exercises the
+shipped files, including identity, spread targeting, critical hits, multi-hit attacks,
+trapping metadata and incomplete mechanics.
 
 ### Move fields
 

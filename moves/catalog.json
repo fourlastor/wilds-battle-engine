@@ -1,0 +1,5996 @@
+{
+  "source_sheet": "https://docs.google.com/spreadsheets/d/1e9lPFCqyuwpX6R6s69HXoFUXedoIAD8SdtSbswY48Q8/edit?gid=1664051581",
+  "source_json_directory": "pokewilds-next/pokemon_data/assets/moves",
+  "behavior_references": [
+    "https://pokeapi.co/api/v2/move/{id}/",
+    "https://github.com/smogon/pokemon-showdown/blob/942cda71d14bf0618bd57991708a2e2734b6daba/data/moves.ts"
+  ],
+  "parameter_policy": "JSON names and parameters; actual behavior for conflicting spreadsheet descriptions; original runtime IDs and behaviors retained for existing moves.",
+  "global_limitations": [
+    "The engine currently has no switching, benched party, held-item activation, ability execution, substitute, redirection or dynamic move-priority hooks.",
+    "General battle interactions follow the current Rust engine; catalog coverage is not full official battle parity."
+  ],
+  "moves": [
+    {
+      "id": 1,
+      "slug": "pound",
+      "name": "Pound",
+      "sheet_row": 2,
+      "runtime_id": "pound",
+      "file": "moves/pound.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 2,
+      "slug": "karate-chop",
+      "name": "Karate Chop",
+      "sheet_row": 3,
+      "runtime_id": "karate-chop",
+      "file": "moves/karate-chop.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 3,
+      "slug": "double-slap",
+      "name": "Double Slap",
+      "sheet_row": 4,
+      "runtime_id": "double-slap",
+      "file": "moves/double-slap.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 4,
+      "slug": "comet-punch",
+      "name": "Comet Punch",
+      "sheet_row": 5,
+      "runtime_id": "comet-punch",
+      "file": "moves/comet-punch.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 5,
+      "slug": "mega-punch",
+      "name": "Mega Punch",
+      "sheet_row": 6,
+      "runtime_id": "mega-punch",
+      "file": "moves/mega-punch.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 6,
+      "slug": "pay-day",
+      "name": "Pay Day",
+      "sheet_row": 7,
+      "runtime_id": "pay-day",
+      "file": "moves/pay-day.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 7,
+      "slug": "fire-punch",
+      "name": "Fire Punch",
+      "sheet_row": 8,
+      "runtime_id": "fire-punch",
+      "file": "moves/fire-punch.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 8,
+      "slug": "ice-punch",
+      "name": "Ice Punch",
+      "sheet_row": 9,
+      "runtime_id": "ice-punch",
+      "file": "moves/ice-punch.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 9,
+      "slug": "thunder-punch",
+      "name": "Thunder Punch",
+      "sheet_row": 10,
+      "runtime_id": "thunder-punch",
+      "file": "moves/thunder-punch.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 10,
+      "slug": "scratch",
+      "name": "Scratch",
+      "sheet_row": 11,
+      "runtime_id": "scratch",
+      "file": "moves/scratch.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 11,
+      "slug": "vice-grip",
+      "name": "Vise Grip",
+      "sheet_row": 12,
+      "runtime_id": "vice-grip",
+      "file": "moves/vice-grip.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 12,
+      "slug": "guillotine",
+      "name": "Guillotine",
+      "sheet_row": 13,
+      "runtime_id": "guillotine",
+      "file": "moves/guillotine.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 13,
+      "slug": "razor-wind",
+      "name": "Razor Wind",
+      "sheet_row": 14,
+      "runtime_id": "razor-wind",
+      "file": "moves/razor-wind.lua",
+      "status": "partial",
+      "limitations": [
+        "Power Herb item activation is not available; normal charge and weather shortcuts are implemented."
+      ]
+    },
+    {
+      "id": 14,
+      "slug": "swords-dance",
+      "name": "Swords Dance",
+      "sheet_row": 15,
+      "runtime_id": "swords-dance",
+      "file": "moves/swords-dance.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 15,
+      "slug": "cut",
+      "name": "Cut",
+      "sheet_row": 16,
+      "runtime_id": "cut",
+      "file": "moves/cut.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 16,
+      "slug": "gust",
+      "name": "Gust",
+      "sheet_row": 17,
+      "runtime_id": "gust",
+      "file": "moves/gust.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 17,
+      "slug": "wing-attack",
+      "name": "Wing Attack",
+      "sheet_row": 18,
+      "runtime_id": "wing-attack",
+      "file": "moves/wing-attack.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 19,
+      "slug": "fly",
+      "name": "Fly",
+      "sheet_row": 19,
+      "runtime_id": "fly",
+      "file": "moves/fly.lua",
+      "status": "partial",
+      "limitations": [
+        "Gravity is respected when present, but Gravity itself is outside this sheet catalog."
+      ]
+    },
+    {
+      "id": 21,
+      "slug": "slam",
+      "name": "Slam",
+      "sheet_row": 20,
+      "runtime_id": "slam",
+      "file": "moves/slam.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 22,
+      "slug": "vine-whip",
+      "name": "Vine Whip",
+      "sheet_row": 21,
+      "runtime_id": "vine-whip",
+      "file": "moves/vine-whip.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 23,
+      "slug": "stomp",
+      "name": "Stomp",
+      "sheet_row": 22,
+      "runtime_id": "stomp",
+      "file": "moves/stomp.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 24,
+      "slug": "double-kick",
+      "name": "Double Kick",
+      "sheet_row": 23,
+      "runtime_id": "double_kick",
+      "file": "moves/double-kick.lua",
+      "status": "existing",
+      "limitations": [
+        "Existing move parameters and behavior preserved."
+      ]
+    },
+    {
+      "id": 25,
+      "slug": "mega-kick",
+      "name": "Mega Kick",
+      "sheet_row": 24,
+      "runtime_id": "mega-kick",
+      "file": "moves/mega-kick.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 26,
+      "slug": "jump-kick",
+      "name": "Jump Kick",
+      "sheet_row": 25,
+      "runtime_id": "jump-kick",
+      "file": "moves/jump-kick.lua",
+      "status": "partial",
+      "limitations": [
+        "Gravity is respected when present, but Gravity itself is outside this sheet catalog."
+      ]
+    },
+    {
+      "id": 27,
+      "slug": "rolling-kick",
+      "name": "Rolling Kick",
+      "sheet_row": 26,
+      "runtime_id": "rolling-kick",
+      "file": "moves/rolling-kick.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 28,
+      "slug": "sand-attack",
+      "name": "Sand Attack",
+      "sheet_row": 27,
+      "runtime_id": "sand-attack",
+      "file": "moves/sand-attack.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 29,
+      "slug": "headbutt",
+      "name": "Headbutt",
+      "sheet_row": 28,
+      "runtime_id": "headbutt",
+      "file": "moves/headbutt.lua",
+      "status": "existing",
+      "limitations": [
+        "Existing move parameters and behavior preserved."
+      ]
+    },
+    {
+      "id": 30,
+      "slug": "horn-attack",
+      "name": "Horn Attack",
+      "sheet_row": 29,
+      "runtime_id": "horn-attack",
+      "file": "moves/horn-attack.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 31,
+      "slug": "fury-attack",
+      "name": "Fury Attack",
+      "sheet_row": 30,
+      "runtime_id": "fury-attack",
+      "file": "moves/fury-attack.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 32,
+      "slug": "horn-drill",
+      "name": "Horn Drill",
+      "sheet_row": 31,
+      "runtime_id": "horn-drill",
+      "file": "moves/horn-drill.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 33,
+      "slug": "tackle",
+      "name": "Tackle",
+      "sheet_row": 32,
+      "runtime_id": "tackle",
+      "file": "moves/tackle.lua",
+      "status": "existing",
+      "limitations": [
+        "Existing move parameters and behavior preserved."
+      ]
+    },
+    {
+      "id": 34,
+      "slug": "body-slam",
+      "name": "Body Slam",
+      "sheet_row": 33,
+      "runtime_id": "body-slam",
+      "file": "moves/body-slam.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 36,
+      "slug": "take-down",
+      "name": "Take Down",
+      "sheet_row": 34,
+      "runtime_id": "take-down",
+      "file": "moves/take-down.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 37,
+      "slug": "thrash",
+      "name": "Thrash",
+      "sheet_row": 35,
+      "runtime_id": "thrash",
+      "file": "moves/thrash.lua",
+      "status": "existing",
+      "limitations": [
+        "Existing move parameters and behavior preserved."
+      ]
+    },
+    {
+      "id": 38,
+      "slug": "double-edge",
+      "name": "Double-Edge",
+      "sheet_row": 36,
+      "runtime_id": "double_edge",
+      "file": "moves/double-edge.lua",
+      "status": "existing",
+      "limitations": [
+        "Existing move parameters and behavior preserved."
+      ]
+    },
+    {
+      "id": 39,
+      "slug": "tail-whip",
+      "name": "Tail Whip",
+      "sheet_row": 37,
+      "runtime_id": "tail-whip",
+      "file": "moves/tail-whip.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 40,
+      "slug": "poison-sting",
+      "name": "Poison Sting",
+      "sheet_row": 38,
+      "runtime_id": "poison_sting",
+      "file": "moves/poison-sting.lua",
+      "status": "existing",
+      "limitations": [
+        "Existing move parameters and behavior preserved."
+      ]
+    },
+    {
+      "id": 41,
+      "slug": "twineedle",
+      "name": "Twineedle",
+      "sheet_row": 39,
+      "runtime_id": "twineedle",
+      "file": "moves/twineedle.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 42,
+      "slug": "pin-missile",
+      "name": "Pin Missile",
+      "sheet_row": 40,
+      "runtime_id": "pin_missile",
+      "file": "moves/pin-missile.lua",
+      "status": "existing",
+      "limitations": [
+        "Existing move parameters and behavior preserved."
+      ]
+    },
+    {
+      "id": 43,
+      "slug": "leer",
+      "name": "Leer",
+      "sheet_row": 41,
+      "runtime_id": "leer",
+      "file": "moves/leer.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 44,
+      "slug": "bite",
+      "name": "Bite",
+      "sheet_row": 42,
+      "runtime_id": "bite",
+      "file": "moves/bite.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 45,
+      "slug": "growl",
+      "name": "Growl",
+      "sheet_row": 43,
+      "runtime_id": "growl",
+      "file": "moves/growl.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 47,
+      "slug": "sing",
+      "name": "Sing",
+      "sheet_row": 44,
+      "runtime_id": "sing",
+      "file": "moves/sing.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 48,
+      "slug": "supersonic",
+      "name": "Supersonic",
+      "sheet_row": 45,
+      "runtime_id": "supersonic",
+      "file": "moves/supersonic.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 51,
+      "slug": "acid",
+      "name": "Acid",
+      "sheet_row": 46,
+      "runtime_id": "acid",
+      "file": "moves/acid.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 52,
+      "slug": "ember",
+      "name": "Ember",
+      "sheet_row": 47,
+      "runtime_id": "ember",
+      "file": "moves/ember.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 53,
+      "slug": "flamethrower",
+      "name": "Flamethrower",
+      "sheet_row": 48,
+      "runtime_id": "flamethrower",
+      "file": "moves/flamethrower.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 55,
+      "slug": "water-gun",
+      "name": "Water Gun",
+      "sheet_row": 49,
+      "runtime_id": "water-gun",
+      "file": "moves/water-gun.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 56,
+      "slug": "hydro-pump",
+      "name": "Hydro Pump",
+      "sheet_row": 50,
+      "runtime_id": "hydro-pump",
+      "file": "moves/hydro-pump.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 57,
+      "slug": "surf",
+      "name": "Surf",
+      "sheet_row": 51,
+      "runtime_id": "surf",
+      "file": "moves/surf.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 58,
+      "slug": "ice-beam",
+      "name": "Ice Beam",
+      "sheet_row": 52,
+      "runtime_id": "ice-beam",
+      "file": "moves/ice-beam.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 59,
+      "slug": "blizzard",
+      "name": "Blizzard",
+      "sheet_row": 53,
+      "runtime_id": "blizzard",
+      "file": "moves/blizzard.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 60,
+      "slug": "psybeam",
+      "name": "Psybeam",
+      "sheet_row": 54,
+      "runtime_id": "psybeam",
+      "file": "moves/psybeam.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 61,
+      "slug": "bubble-beam",
+      "name": "Bubble Beam",
+      "sheet_row": 55,
+      "runtime_id": "bubble-beam",
+      "file": "moves/bubble-beam.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 62,
+      "slug": "aurora-beam",
+      "name": "Aurora Beam",
+      "sheet_row": 56,
+      "runtime_id": "aurora-beam",
+      "file": "moves/aurora-beam.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 63,
+      "slug": "hyper-beam",
+      "name": "Hyper Beam",
+      "sheet_row": 57,
+      "runtime_id": "hyper_beam",
+      "file": "moves/hyper-beam.lua",
+      "status": "existing",
+      "limitations": [
+        "Existing move parameters and behavior preserved."
+      ]
+    },
+    {
+      "id": 64,
+      "slug": "peck",
+      "name": "Peck",
+      "sheet_row": 58,
+      "runtime_id": "peck",
+      "file": "moves/peck.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 65,
+      "slug": "drill-peck",
+      "name": "Drill Peck",
+      "sheet_row": 59,
+      "runtime_id": "drill-peck",
+      "file": "moves/drill-peck.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 66,
+      "slug": "submission",
+      "name": "Submission",
+      "sheet_row": 60,
+      "runtime_id": "submission",
+      "file": "moves/submission.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 70,
+      "slug": "strength",
+      "name": "Strength",
+      "sheet_row": 61,
+      "runtime_id": "strength",
+      "file": "moves/strength.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 71,
+      "slug": "absorb",
+      "name": "Absorb",
+      "sheet_row": 62,
+      "runtime_id": "absorb",
+      "file": "moves/absorb.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 72,
+      "slug": "mega-drain",
+      "name": "Mega Drain",
+      "sheet_row": 63,
+      "runtime_id": "mega-drain",
+      "file": "moves/mega-drain.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 74,
+      "slug": "growth",
+      "name": "Growth",
+      "sheet_row": 64,
+      "runtime_id": "growth",
+      "file": "moves/growth.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 75,
+      "slug": "razor-leaf",
+      "name": "Razor Leaf",
+      "sheet_row": 65,
+      "runtime_id": "razor-leaf",
+      "file": "moves/razor-leaf.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 76,
+      "slug": "solar-beam",
+      "name": "Solar Beam",
+      "sheet_row": 66,
+      "runtime_id": "solar_beam",
+      "file": "moves/solar-beam.lua",
+      "status": "existing",
+      "limitations": [
+        "Existing move parameters and behavior preserved."
+      ]
+    },
+    {
+      "id": 77,
+      "slug": "poison-powder",
+      "name": "Poison Powder",
+      "sheet_row": 67,
+      "runtime_id": "poison-powder",
+      "file": "moves/poison-powder.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 78,
+      "slug": "stun-spore",
+      "name": "Stun Spore",
+      "sheet_row": 68,
+      "runtime_id": "stun-spore",
+      "file": "moves/stun-spore.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 79,
+      "slug": "sleep-powder",
+      "name": "Sleep Powder",
+      "sheet_row": 69,
+      "runtime_id": "sleep-powder",
+      "file": "moves/sleep-powder.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 80,
+      "slug": "petal-dance",
+      "name": "Petal Dance",
+      "sheet_row": 70,
+      "runtime_id": "petal_dance",
+      "file": "moves/petal-dance.lua",
+      "status": "existing",
+      "limitations": [
+        "Existing move parameters and behavior preserved."
+      ]
+    },
+    {
+      "id": 81,
+      "slug": "string-shot",
+      "name": "String Shot",
+      "sheet_row": 71,
+      "runtime_id": "string-shot",
+      "file": "moves/string-shot.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 84,
+      "slug": "thunder-shock",
+      "name": "Thunder Shock",
+      "sheet_row": 72,
+      "runtime_id": "thunder_shock",
+      "file": "moves/thunder-shock.lua",
+      "status": "existing",
+      "limitations": [
+        "Existing move parameters and behavior preserved."
+      ]
+    },
+    {
+      "id": 85,
+      "slug": "thunderbolt",
+      "name": "Thunderbolt",
+      "sheet_row": 73,
+      "runtime_id": "thunderbolt",
+      "file": "moves/thunderbolt.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 86,
+      "slug": "thunder-wave",
+      "name": "Thunder Wave",
+      "sheet_row": 74,
+      "runtime_id": "thunder-wave",
+      "file": "moves/thunder-wave.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 87,
+      "slug": "thunder",
+      "name": "Thunder",
+      "sheet_row": 75,
+      "runtime_id": "thunder",
+      "file": "moves/thunder.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 88,
+      "slug": "rock-throw",
+      "name": "Rock Throw",
+      "sheet_row": 76,
+      "runtime_id": "rock-throw",
+      "file": "moves/rock-throw.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 89,
+      "slug": "earthquake",
+      "name": "Earthquake",
+      "sheet_row": 77,
+      "runtime_id": "earthquake",
+      "file": "moves/earthquake.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 90,
+      "slug": "fissure",
+      "name": "Fissure",
+      "sheet_row": 78,
+      "runtime_id": "fissure",
+      "file": "moves/fissure.lua",
+      "status": "existing",
+      "limitations": [
+        "Existing move parameters and behavior preserved."
+      ]
+    },
+    {
+      "id": 91,
+      "slug": "dig",
+      "name": "Dig",
+      "sheet_row": 79,
+      "runtime_id": "dig",
+      "file": "moves/dig.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 92,
+      "slug": "toxic",
+      "name": "Toxic",
+      "sheet_row": 80,
+      "runtime_id": "toxic",
+      "file": "moves/toxic.lua",
+      "status": "existing",
+      "limitations": [
+        "Existing move parameters and behavior preserved."
+      ]
+    },
+    {
+      "id": 93,
+      "slug": "confusion",
+      "name": "Confusion",
+      "sheet_row": 81,
+      "runtime_id": "confusion",
+      "file": "moves/confusion.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 94,
+      "slug": "psychic",
+      "name": "Psychic",
+      "sheet_row": 82,
+      "runtime_id": "psychic",
+      "file": "moves/psychic.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 95,
+      "slug": "hypnosis",
+      "name": "Hypnosis",
+      "sheet_row": 83,
+      "runtime_id": "hypnosis",
+      "file": "moves/hypnosis.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 96,
+      "slug": "meditate",
+      "name": "Meditate",
+      "sheet_row": 84,
+      "runtime_id": "meditate",
+      "file": "moves/meditate.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 97,
+      "slug": "agility",
+      "name": "Agility",
+      "sheet_row": 85,
+      "runtime_id": "agility",
+      "file": "moves/agility.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 98,
+      "slug": "quick-attack",
+      "name": "Quick Attack",
+      "sheet_row": 86,
+      "runtime_id": "quick-attack",
+      "file": "moves/quick-attack.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 99,
+      "slug": "rage",
+      "name": "Rage",
+      "sheet_row": 87,
+      "runtime_id": "rage",
+      "file": "moves/rage.lua",
+      "status": "existing",
+      "limitations": [
+        "Existing move parameters and behavior preserved."
+      ]
+    },
+    {
+      "id": 103,
+      "slug": "screech",
+      "name": "Screech",
+      "sheet_row": 88,
+      "runtime_id": "screech",
+      "file": "moves/screech.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 104,
+      "slug": "double-team",
+      "name": "Double Team",
+      "sheet_row": 89,
+      "runtime_id": "double_team",
+      "file": "moves/double-team.lua",
+      "status": "existing",
+      "limitations": [
+        "Existing move parameters and behavior preserved."
+      ]
+    },
+    {
+      "id": 105,
+      "slug": "recover",
+      "name": "Recover",
+      "sheet_row": 90,
+      "runtime_id": "recover",
+      "file": "moves/recover.lua",
+      "status": "existing",
+      "limitations": [
+        "Existing move parameters and behavior preserved."
+      ]
+    },
+    {
+      "id": 106,
+      "slug": "harden",
+      "name": "Harden",
+      "sheet_row": 91,
+      "runtime_id": "harden",
+      "file": "moves/harden.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 107,
+      "slug": "minimize",
+      "name": "Minimize",
+      "sheet_row": 92,
+      "runtime_id": "minimize",
+      "file": "moves/minimize.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 108,
+      "slug": "smokescreen",
+      "name": "Smokescreen",
+      "sheet_row": 93,
+      "runtime_id": "smokescreen",
+      "file": "moves/smokescreen.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 109,
+      "slug": "confuse-ray",
+      "name": "Confuse Ray",
+      "sheet_row": 94,
+      "runtime_id": "confuse_ray",
+      "file": "moves/confuse-ray.lua",
+      "status": "existing",
+      "limitations": [
+        "Existing move parameters and behavior preserved."
+      ]
+    },
+    {
+      "id": 110,
+      "slug": "withdraw",
+      "name": "Withdraw",
+      "sheet_row": 95,
+      "runtime_id": "withdraw",
+      "file": "moves/withdraw.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 111,
+      "slug": "defense-curl",
+      "name": "Defense Curl",
+      "sheet_row": 96,
+      "runtime_id": "defense-curl",
+      "file": "moves/defense-curl.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 112,
+      "slug": "barrier",
+      "name": "Barrier",
+      "sheet_row": 97,
+      "runtime_id": "barrier",
+      "file": "moves/barrier.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 120,
+      "slug": "self-destruct",
+      "name": "Self-Destruct",
+      "sheet_row": 98,
+      "runtime_id": "self-destruct",
+      "file": "moves/self-destruct.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 121,
+      "slug": "egg-bomb",
+      "name": "Egg Bomb",
+      "sheet_row": 99,
+      "runtime_id": "egg-bomb",
+      "file": "moves/egg-bomb.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 122,
+      "slug": "lick",
+      "name": "Lick",
+      "sheet_row": 100,
+      "runtime_id": "lick",
+      "file": "moves/lick.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 123,
+      "slug": "smog",
+      "name": "Smog",
+      "sheet_row": 101,
+      "runtime_id": "smog",
+      "file": "moves/smog.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 124,
+      "slug": "sludge",
+      "name": "Sludge",
+      "sheet_row": 102,
+      "runtime_id": "sludge",
+      "file": "moves/sludge.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 125,
+      "slug": "bone-club",
+      "name": "Bone Club",
+      "sheet_row": 103,
+      "runtime_id": "bone-club",
+      "file": "moves/bone-club.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 126,
+      "slug": "fire-blast",
+      "name": "Fire Blast",
+      "sheet_row": 104,
+      "runtime_id": "fire-blast",
+      "file": "moves/fire-blast.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 127,
+      "slug": "waterfall",
+      "name": "Waterfall",
+      "sheet_row": 105,
+      "runtime_id": "waterfall",
+      "file": "moves/waterfall.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 129,
+      "slug": "swift",
+      "name": "Swift",
+      "sheet_row": 106,
+      "runtime_id": "swift",
+      "file": "moves/swift.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 130,
+      "slug": "skull-bash",
+      "name": "Skull Bash",
+      "sheet_row": 107,
+      "runtime_id": "skull-bash",
+      "file": "moves/skull-bash.lua",
+      "status": "partial",
+      "limitations": [
+        "Power Herb item activation is not available; normal charge and weather shortcuts are implemented."
+      ]
+    },
+    {
+      "id": 131,
+      "slug": "spike-cannon",
+      "name": "Spike Cannon",
+      "sheet_row": 108,
+      "runtime_id": "spike-cannon",
+      "file": "moves/spike-cannon.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 132,
+      "slug": "constrict",
+      "name": "Constrict",
+      "sheet_row": 109,
+      "runtime_id": "constrict",
+      "file": "moves/constrict.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 133,
+      "slug": "amnesia",
+      "name": "Amnesia",
+      "sheet_row": 110,
+      "runtime_id": "amnesia",
+      "file": "moves/amnesia.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 134,
+      "slug": "kinesis",
+      "name": "Kinesis",
+      "sheet_row": 111,
+      "runtime_id": "kinesis",
+      "file": "moves/kinesis.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 135,
+      "slug": "soft-boiled",
+      "name": "Soft-Boiled",
+      "sheet_row": 112,
+      "runtime_id": "soft-boiled",
+      "file": "moves/soft-boiled.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 136,
+      "slug": "high-jump-kick",
+      "name": "High Jump Kick",
+      "sheet_row": 113,
+      "runtime_id": "high-jump-kick",
+      "file": "moves/high-jump-kick.lua",
+      "status": "partial",
+      "limitations": [
+        "Gravity is respected when present, but Gravity itself is outside this sheet catalog."
+      ]
+    },
+    {
+      "id": 137,
+      "slug": "glare",
+      "name": "Glare",
+      "sheet_row": 114,
+      "runtime_id": "glare",
+      "file": "moves/glare.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 138,
+      "slug": "dream-eater",
+      "name": "Dream Eater",
+      "sheet_row": 115,
+      "runtime_id": "dream_eater",
+      "file": "moves/dream-eater.lua",
+      "status": "existing",
+      "limitations": [
+        "Existing move parameters and behavior preserved."
+      ]
+    },
+    {
+      "id": 139,
+      "slug": "poison-gas",
+      "name": "Poison Gas",
+      "sheet_row": 116,
+      "runtime_id": "poison-gas",
+      "file": "moves/poison-gas.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 140,
+      "slug": "barrage",
+      "name": "Barrage",
+      "sheet_row": 117,
+      "runtime_id": "barrage",
+      "file": "moves/barrage.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 141,
+      "slug": "leech-life",
+      "name": "Leech Life",
+      "sheet_row": 118,
+      "runtime_id": "leech-life",
+      "file": "moves/leech-life.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 142,
+      "slug": "lovely-kiss",
+      "name": "Lovely Kiss",
+      "sheet_row": 119,
+      "runtime_id": "lovely-kiss",
+      "file": "moves/lovely-kiss.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 143,
+      "slug": "sky-attack",
+      "name": "Sky Attack",
+      "sheet_row": 120,
+      "runtime_id": "sky-attack",
+      "file": "moves/sky-attack.lua",
+      "status": "partial",
+      "limitations": [
+        "Power Herb item activation is not available; normal charge and weather shortcuts are implemented."
+      ]
+    },
+    {
+      "id": 145,
+      "slug": "bubble",
+      "name": "Bubble",
+      "sheet_row": 121,
+      "runtime_id": "bubble",
+      "file": "moves/bubble.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 146,
+      "slug": "dizzy-punch",
+      "name": "Dizzy Punch",
+      "sheet_row": 122,
+      "runtime_id": "dizzy-punch",
+      "file": "moves/dizzy-punch.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 147,
+      "slug": "spore",
+      "name": "Spore",
+      "sheet_row": 123,
+      "runtime_id": "spore",
+      "file": "moves/spore.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 148,
+      "slug": "flash",
+      "name": "Flash",
+      "sheet_row": 124,
+      "runtime_id": "flash",
+      "file": "moves/flash.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 151,
+      "slug": "acid-armor",
+      "name": "Acid Armor",
+      "sheet_row": 125,
+      "runtime_id": "acid-armor",
+      "file": "moves/acid-armor.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 152,
+      "slug": "crabhammer",
+      "name": "Crabhammer",
+      "sheet_row": 126,
+      "runtime_id": "crabhammer",
+      "file": "moves/crabhammer.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 153,
+      "slug": "explosion",
+      "name": "Explosion",
+      "sheet_row": 127,
+      "runtime_id": "explosion",
+      "file": "moves/explosion.lua",
+      "status": "existing",
+      "limitations": [
+        "Existing move parameters and behavior preserved."
+      ]
+    },
+    {
+      "id": 154,
+      "slug": "fury-swipes",
+      "name": "Fury Swipes",
+      "sheet_row": 128,
+      "runtime_id": "fury-swipes",
+      "file": "moves/fury-swipes.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 155,
+      "slug": "bonemerang",
+      "name": "Bonemerang",
+      "sheet_row": 129,
+      "runtime_id": "bonemerang",
+      "file": "moves/bonemerang.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 157,
+      "slug": "rock-slide",
+      "name": "Rock Slide",
+      "sheet_row": 130,
+      "runtime_id": "rock-slide",
+      "file": "moves/rock-slide.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 158,
+      "slug": "hyper-fang",
+      "name": "Hyper Fang",
+      "sheet_row": 131,
+      "runtime_id": "hyper-fang",
+      "file": "moves/hyper-fang.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 159,
+      "slug": "sharpen",
+      "name": "Sharpen",
+      "sheet_row": 132,
+      "runtime_id": "sharpen",
+      "file": "moves/sharpen.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 163,
+      "slug": "slash",
+      "name": "Slash",
+      "sheet_row": 133,
+      "runtime_id": "slash",
+      "file": "moves/slash.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 165,
+      "slug": "struggle",
+      "name": "Struggle",
+      "sheet_row": 134,
+      "runtime_id": "struggle",
+      "file": "crates/wilds-battle-engine/src/system_moves.lua",
+      "status": "system",
+      "limitations": []
+    },
+    {
+      "id": 167,
+      "slug": "triple-kick",
+      "name": "Triple Kick",
+      "sheet_row": 135,
+      "runtime_id": "triple_kick",
+      "file": "moves/triple-kick.lua",
+      "status": "existing",
+      "limitations": [
+        "Existing move parameters and behavior preserved."
+      ]
+    },
+    {
+      "id": 168,
+      "slug": "thief",
+      "name": "Thief",
+      "sheet_row": 136,
+      "runtime_id": "thief",
+      "file": "moves/thief.lua",
+      "status": "partial",
+      "limitations": [
+        "Species-bound unremovable items require the host item/ability rules; ordinary items and Sticky Hold are handled."
+      ]
+    },
+    {
+      "id": 172,
+      "slug": "flame-wheel",
+      "name": "Flame Wheel",
+      "sheet_row": 137,
+      "runtime_id": "flame-wheel",
+      "file": "moves/flame-wheel.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 173,
+      "slug": "snore",
+      "name": "Snore",
+      "sheet_row": 138,
+      "runtime_id": "snore",
+      "file": "moves/snore.lua",
+      "status": "existing",
+      "limitations": [
+        "Existing move parameters and behavior preserved."
+      ]
+    },
+    {
+      "id": 177,
+      "slug": "aeroblast",
+      "name": "Aeroblast",
+      "sheet_row": 139,
+      "runtime_id": "aeroblast",
+      "file": "moves/aeroblast.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 178,
+      "slug": "cotton-spore",
+      "name": "Cotton Spore",
+      "sheet_row": 140,
+      "runtime_id": "cotton-spore",
+      "file": "moves/cotton-spore.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 181,
+      "slug": "powder-snow",
+      "name": "Powder Snow",
+      "sheet_row": 141,
+      "runtime_id": "powder-snow",
+      "file": "moves/powder-snow.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 183,
+      "slug": "mach-punch",
+      "name": "Mach Punch",
+      "sheet_row": 142,
+      "runtime_id": "mach-punch",
+      "file": "moves/mach-punch.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 184,
+      "slug": "scary-face",
+      "name": "Scary Face",
+      "sheet_row": 143,
+      "runtime_id": "scary-face",
+      "file": "moves/scary-face.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 185,
+      "slug": "feint-attack",
+      "name": "Feint Attack",
+      "sheet_row": 144,
+      "runtime_id": "feint-attack",
+      "file": "moves/feint-attack.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 186,
+      "slug": "sweet-kiss",
+      "name": "Sweet Kiss",
+      "sheet_row": 145,
+      "runtime_id": "sweet-kiss",
+      "file": "moves/sweet-kiss.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 188,
+      "slug": "sludge-bomb",
+      "name": "Sludge Bomb",
+      "sheet_row": 146,
+      "runtime_id": "sludge-bomb",
+      "file": "moves/sludge-bomb.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 189,
+      "slug": "mud-slap",
+      "name": "Mud-Slap",
+      "sheet_row": 147,
+      "runtime_id": "mud-slap",
+      "file": "moves/mud-slap.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 190,
+      "slug": "octazooka",
+      "name": "Octazooka",
+      "sheet_row": 148,
+      "runtime_id": "octazooka",
+      "file": "moves/octazooka.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 192,
+      "slug": "zap-cannon",
+      "name": "Zap Cannon",
+      "sheet_row": 149,
+      "runtime_id": "zap-cannon",
+      "file": "moves/zap-cannon.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 196,
+      "slug": "icy-wind",
+      "name": "Icy Wind",
+      "sheet_row": 150,
+      "runtime_id": "icy-wind",
+      "file": "moves/icy-wind.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 198,
+      "slug": "bone-rush",
+      "name": "Bone Rush",
+      "sheet_row": 151,
+      "runtime_id": "bone-rush",
+      "file": "moves/bone-rush.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 200,
+      "slug": "outrage",
+      "name": "Outrage",
+      "sheet_row": 152,
+      "runtime_id": "outrage",
+      "file": "moves/outrage.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 202,
+      "slug": "giga-drain",
+      "name": "Giga Drain",
+      "sheet_row": 153,
+      "runtime_id": "giga-drain",
+      "file": "moves/giga-drain.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 204,
+      "slug": "charm",
+      "name": "Charm",
+      "sheet_row": 154,
+      "runtime_id": "charm",
+      "file": "moves/charm.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 205,
+      "slug": "rollout",
+      "name": "Rollout",
+      "sheet_row": 155,
+      "runtime_id": "rollout",
+      "file": "moves/rollout.lua",
+      "status": "existing",
+      "limitations": [
+        "Existing move parameters and behavior preserved."
+      ]
+    },
+    {
+      "id": 206,
+      "slug": "false-swipe",
+      "name": "False Swipe",
+      "sheet_row": 156,
+      "runtime_id": "false_swipe",
+      "file": "moves/false-swipe.lua",
+      "status": "existing",
+      "limitations": [
+        "Existing move parameters and behavior preserved."
+      ]
+    },
+    {
+      "id": 208,
+      "slug": "milk-drink",
+      "name": "Milk Drink",
+      "sheet_row": 157,
+      "runtime_id": "milk-drink",
+      "file": "moves/milk-drink.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 209,
+      "slug": "spark",
+      "name": "Spark",
+      "sheet_row": 158,
+      "runtime_id": "spark",
+      "file": "moves/spark.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 210,
+      "slug": "fury-cutter",
+      "name": "Fury Cutter",
+      "sheet_row": 159,
+      "runtime_id": "fury-cutter",
+      "file": "moves/fury-cutter.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 211,
+      "slug": "steel-wing",
+      "name": "Steel Wing",
+      "sheet_row": 160,
+      "runtime_id": "steel-wing",
+      "file": "moves/steel-wing.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 221,
+      "slug": "sacred-fire",
+      "name": "Sacred Fire",
+      "sheet_row": 161,
+      "runtime_id": "sacred-fire",
+      "file": "moves/sacred-fire.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 223,
+      "slug": "dynamic-punch",
+      "name": "Dynamic Punch",
+      "sheet_row": 162,
+      "runtime_id": "dynamic-punch",
+      "file": "moves/dynamic-punch.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 224,
+      "slug": "megahorn",
+      "name": "Megahorn",
+      "sheet_row": 163,
+      "runtime_id": "megahorn",
+      "file": "moves/megahorn.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 225,
+      "slug": "dragon-breath",
+      "name": "Dragon Breath",
+      "sheet_row": 164,
+      "runtime_id": "dragon-breath",
+      "file": "moves/dragon-breath.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 228,
+      "slug": "pursuit",
+      "name": "Pursuit",
+      "sheet_row": 165,
+      "runtime_id": "pursuit",
+      "file": "moves/pursuit.lua",
+      "status": "partial",
+      "limitations": [
+        "Switching, bench selection and switch interception are not implemented; only the on-field damage/stat effect runs."
+      ]
+    },
+    {
+      "id": 229,
+      "slug": "rapid-spin",
+      "name": "Rapid Spin",
+      "sheet_row": 166,
+      "runtime_id": "rapid-spin",
+      "file": "moves/rapid-spin.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 230,
+      "slug": "sweet-scent",
+      "name": "Sweet Scent",
+      "sheet_row": 167,
+      "runtime_id": "sweet-scent",
+      "file": "moves/sweet-scent.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 231,
+      "slug": "iron-tail",
+      "name": "Iron Tail",
+      "sheet_row": 168,
+      "runtime_id": "iron-tail",
+      "file": "moves/iron-tail.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 232,
+      "slug": "metal-claw",
+      "name": "Metal Claw",
+      "sheet_row": 169,
+      "runtime_id": "metal-claw",
+      "file": "moves/metal-claw.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 233,
+      "slug": "vital-throw",
+      "name": "Vital Throw",
+      "sheet_row": 170,
+      "runtime_id": "vital-throw",
+      "file": "moves/vital-throw.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 234,
+      "slug": "morning-sun",
+      "name": "Morning Sun",
+      "sheet_row": 171,
+      "runtime_id": "morning_sun",
+      "file": "moves/morning-sun.lua",
+      "status": "existing",
+      "limitations": [
+        "Existing move parameters and behavior preserved."
+      ]
+    },
+    {
+      "id": 235,
+      "slug": "synthesis",
+      "name": "Synthesis",
+      "sheet_row": 172,
+      "runtime_id": "synthesis",
+      "file": "moves/synthesis.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 236,
+      "slug": "moonlight",
+      "name": "Moonlight",
+      "sheet_row": 173,
+      "runtime_id": "moonlight",
+      "file": "moves/moonlight.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 237,
+      "slug": "hidden-power",
+      "name": "Hidden Power",
+      "sheet_row": 174,
+      "runtime_id": "hidden-power",
+      "file": "moves/hidden-power.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 238,
+      "slug": "cross-chop",
+      "name": "Cross Chop",
+      "sheet_row": 175,
+      "runtime_id": "cross-chop",
+      "file": "moves/cross-chop.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 239,
+      "slug": "twister",
+      "name": "Twister",
+      "sheet_row": 176,
+      "runtime_id": "twister",
+      "file": "moves/twister.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 242,
+      "slug": "crunch",
+      "name": "Crunch",
+      "sheet_row": 177,
+      "runtime_id": "crunch",
+      "file": "moves/crunch.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 245,
+      "slug": "extreme-speed",
+      "name": "Extreme Speed",
+      "sheet_row": 178,
+      "runtime_id": "extreme-speed",
+      "file": "moves/extreme-speed.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 246,
+      "slug": "ancient-power",
+      "name": "Ancient Power",
+      "sheet_row": 179,
+      "runtime_id": "ancient_power",
+      "file": "moves/ancient-power.lua",
+      "status": "existing",
+      "limitations": [
+        "Existing move parameters and behavior preserved."
+      ]
+    },
+    {
+      "id": 247,
+      "slug": "shadow-ball",
+      "name": "Shadow Ball",
+      "sheet_row": 180,
+      "runtime_id": "shadow-ball",
+      "file": "moves/shadow-ball.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 249,
+      "slug": "rock-smash",
+      "name": "Rock Smash",
+      "sheet_row": 181,
+      "runtime_id": "rock-smash",
+      "file": "moves/rock-smash.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 252,
+      "slug": "fake-out",
+      "name": "Fake Out",
+      "sheet_row": 182,
+      "runtime_id": "fake-out",
+      "file": "moves/fake-out.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 253,
+      "slug": "uproar",
+      "name": "Uproar",
+      "sheet_row": 183,
+      "runtime_id": "uproar",
+      "file": "moves/uproar.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 256,
+      "slug": "swallow",
+      "name": "Swallow",
+      "sheet_row": 184,
+      "runtime_id": "swallow",
+      "file": "moves/swallow.lua",
+      "status": "partial",
+      "limitations": [
+        "Stockpile is outside the sheet catalog; requires compatible stockpile, stockpile_defense and stockpile_sp_defense marks from a host move."
+      ]
+    },
+    {
+      "id": 257,
+      "slug": "heat-wave",
+      "name": "Heat Wave",
+      "sheet_row": 185,
+      "runtime_id": "heat-wave",
+      "file": "moves/heat-wave.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 261,
+      "slug": "will-o-wisp",
+      "name": "Will-O-Wisp",
+      "sheet_row": 186,
+      "runtime_id": "will-o-wisp",
+      "file": "moves/will-o-wisp.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 263,
+      "slug": "facade",
+      "name": "Facade",
+      "sheet_row": 187,
+      "runtime_id": "facade",
+      "file": "moves/facade.lua",
+      "status": "existing",
+      "limitations": [
+        "Existing move parameters and behavior preserved."
+      ]
+    },
+    {
+      "id": 264,
+      "slug": "focus-punch",
+      "name": "Focus Punch",
+      "sheet_row": 188,
+      "runtime_id": "focus-punch",
+      "file": "moves/focus-punch.lua",
+      "status": "partial",
+      "limitations": [
+        "Losing focus checks damaging move hits; its immunity to flinching requires an engine hook before action interruption."
+      ]
+    },
+    {
+      "id": 265,
+      "slug": "smelling-salts",
+      "name": "Smelling Salts",
+      "sheet_row": 189,
+      "runtime_id": "smelling-salts",
+      "file": "moves/smelling-salts.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 268,
+      "slug": "charge",
+      "name": "Charge",
+      "sheet_row": 190,
+      "runtime_id": "charge",
+      "file": "moves/charge.lua",
+      "status": "existing",
+      "limitations": [
+        "Existing move parameters and behavior preserved."
+      ]
+    },
+    {
+      "id": 276,
+      "slug": "superpower",
+      "name": "Superpower",
+      "sheet_row": 191,
+      "runtime_id": "superpower",
+      "file": "moves/superpower.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 279,
+      "slug": "revenge",
+      "name": "Revenge",
+      "sheet_row": 192,
+      "runtime_id": "revenge",
+      "file": "moves/revenge.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 280,
+      "slug": "brick-break",
+      "name": "Brick Break",
+      "sheet_row": 193,
+      "runtime_id": "brick-break",
+      "file": "moves/brick-break.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 282,
+      "slug": "knock-off",
+      "name": "Knock Off",
+      "sheet_row": 194,
+      "runtime_id": "knock-off",
+      "file": "moves/knock-off.lua",
+      "status": "partial",
+      "limitations": [
+        "Species-bound unremovable items require host item rules; ordinary items and Sticky Hold are handled."
+      ]
+    },
+    {
+      "id": 284,
+      "slug": "eruption",
+      "name": "Eruption",
+      "sheet_row": 195,
+      "runtime_id": "eruption",
+      "file": "moves/eruption.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 290,
+      "slug": "secret-power",
+      "name": "Secret Power",
+      "sheet_row": 196,
+      "runtime_id": "secret-power",
+      "file": "moves/secret-power.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 291,
+      "slug": "dive",
+      "name": "Dive",
+      "sheet_row": 197,
+      "runtime_id": "dive",
+      "file": "moves/dive.lua",
+      "status": "existing",
+      "limitations": [
+        "Existing move parameters and behavior preserved."
+      ]
+    },
+    {
+      "id": 292,
+      "slug": "arm-thrust",
+      "name": "Arm Thrust",
+      "sheet_row": 198,
+      "runtime_id": "arm-thrust",
+      "file": "moves/arm-thrust.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 294,
+      "slug": "tail-glow",
+      "name": "Tail Glow",
+      "sheet_row": 199,
+      "runtime_id": "tail-glow",
+      "file": "moves/tail-glow.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 295,
+      "slug": "luster-purge",
+      "name": "Luster Purge",
+      "sheet_row": 200,
+      "runtime_id": "luster-purge",
+      "file": "moves/luster-purge.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 296,
+      "slug": "mist-ball",
+      "name": "Mist Ball",
+      "sheet_row": 201,
+      "runtime_id": "mist-ball",
+      "file": "moves/mist-ball.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 297,
+      "slug": "feather-dance",
+      "name": "Feather Dance",
+      "sheet_row": 202,
+      "runtime_id": "feather-dance",
+      "file": "moves/feather-dance.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 298,
+      "slug": "teeter-dance",
+      "name": "Teeter Dance",
+      "sheet_row": 203,
+      "runtime_id": "teeter-dance",
+      "file": "moves/teeter-dance.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 299,
+      "slug": "blaze-kick",
+      "name": "Blaze Kick",
+      "sheet_row": 204,
+      "runtime_id": "blaze-kick",
+      "file": "moves/blaze-kick.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 301,
+      "slug": "ice-ball",
+      "name": "Ice Ball",
+      "sheet_row": 205,
+      "runtime_id": "ice-ball",
+      "file": "moves/ice-ball.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 302,
+      "slug": "needle-arm",
+      "name": "Needle Arm",
+      "sheet_row": 206,
+      "runtime_id": "needle-arm",
+      "file": "moves/needle-arm.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 303,
+      "slug": "slack-off",
+      "name": "Slack Off",
+      "sheet_row": 207,
+      "runtime_id": "slack-off",
+      "file": "moves/slack-off.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 304,
+      "slug": "hyper-voice",
+      "name": "Hyper Voice",
+      "sheet_row": 208,
+      "runtime_id": "hyper-voice",
+      "file": "moves/hyper-voice.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 305,
+      "slug": "poison-fang",
+      "name": "Poison Fang",
+      "sheet_row": 209,
+      "runtime_id": "poison-fang",
+      "file": "moves/poison-fang.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 306,
+      "slug": "crush-claw",
+      "name": "Crush Claw",
+      "sheet_row": 210,
+      "runtime_id": "crush-claw",
+      "file": "moves/crush-claw.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 307,
+      "slug": "blast-burn",
+      "name": "Blast Burn",
+      "sheet_row": 211,
+      "runtime_id": "blast-burn",
+      "file": "moves/blast-burn.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 308,
+      "slug": "hydro-cannon",
+      "name": "Hydro Cannon",
+      "sheet_row": 212,
+      "runtime_id": "hydro-cannon",
+      "file": "moves/hydro-cannon.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 309,
+      "slug": "meteor-mash",
+      "name": "Meteor Mash",
+      "sheet_row": 213,
+      "runtime_id": "meteor-mash",
+      "file": "moves/meteor-mash.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 310,
+      "slug": "astonish",
+      "name": "Astonish",
+      "sheet_row": 214,
+      "runtime_id": "astonish",
+      "file": "moves/astonish.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 311,
+      "slug": "weather-ball",
+      "name": "Weather Ball",
+      "sheet_row": 215,
+      "runtime_id": "weather-ball",
+      "file": "moves/weather-ball.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 313,
+      "slug": "fake-tears",
+      "name": "Fake Tears",
+      "sheet_row": 216,
+      "runtime_id": "fake-tears",
+      "file": "moves/fake-tears.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 314,
+      "slug": "air-cutter",
+      "name": "Air Cutter",
+      "sheet_row": 217,
+      "runtime_id": "air-cutter",
+      "file": "moves/air-cutter.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 315,
+      "slug": "overheat",
+      "name": "Overheat",
+      "sheet_row": 218,
+      "runtime_id": "overheat",
+      "file": "moves/overheat.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 317,
+      "slug": "rock-tomb",
+      "name": "Rock Tomb",
+      "sheet_row": 219,
+      "runtime_id": "rock-tomb",
+      "file": "moves/rock-tomb.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 318,
+      "slug": "silver-wind",
+      "name": "Silver Wind",
+      "sheet_row": 220,
+      "runtime_id": "silver-wind",
+      "file": "moves/silver-wind.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 319,
+      "slug": "metal-sound",
+      "name": "Metal Sound",
+      "sheet_row": 221,
+      "runtime_id": "metal-sound",
+      "file": "moves/metal-sound.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 320,
+      "slug": "grass-whistle",
+      "name": "Grass Whistle",
+      "sheet_row": 222,
+      "runtime_id": "grass-whistle",
+      "file": "moves/grass-whistle.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 321,
+      "slug": "tickle",
+      "name": "Tickle",
+      "sheet_row": 223,
+      "runtime_id": "tickle",
+      "file": "moves/tickle.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 322,
+      "slug": "cosmic-power",
+      "name": "Cosmic Power",
+      "sheet_row": 224,
+      "runtime_id": "cosmic-power",
+      "file": "moves/cosmic-power.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 323,
+      "slug": "water-spout",
+      "name": "Water Spout",
+      "sheet_row": 225,
+      "runtime_id": "water-spout",
+      "file": "moves/water-spout.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 324,
+      "slug": "signal-beam",
+      "name": "Signal Beam",
+      "sheet_row": 226,
+      "runtime_id": "signal-beam",
+      "file": "moves/signal-beam.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 325,
+      "slug": "shadow-punch",
+      "name": "Shadow Punch",
+      "sheet_row": 227,
+      "runtime_id": "shadow-punch",
+      "file": "moves/shadow-punch.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 326,
+      "slug": "extrasensory",
+      "name": "Extrasensory",
+      "sheet_row": 228,
+      "runtime_id": "extrasensory",
+      "file": "moves/extrasensory.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 327,
+      "slug": "sky-uppercut",
+      "name": "Sky Uppercut",
+      "sheet_row": 229,
+      "runtime_id": "sky-uppercut",
+      "file": "moves/sky-uppercut.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 329,
+      "slug": "sheer-cold",
+      "name": "Sheer Cold",
+      "sheet_row": 230,
+      "runtime_id": "sheer-cold",
+      "file": "moves/sheer-cold.lua",
+      "status": "partial",
+      "limitations": [
+        "Ice immunity and reduced accuracy for non-Ice users work; an AlwaysHit rule cannot be inspected to bypass the extra accuracy adjustment."
+      ]
+    },
+    {
+      "id": 330,
+      "slug": "muddy-water",
+      "name": "Muddy Water",
+      "sheet_row": 231,
+      "runtime_id": "muddy-water",
+      "file": "moves/muddy-water.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 331,
+      "slug": "bullet-seed",
+      "name": "Bullet Seed",
+      "sheet_row": 232,
+      "runtime_id": "bullet-seed",
+      "file": "moves/bullet-seed.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 332,
+      "slug": "aerial-ace",
+      "name": "Aerial Ace",
+      "sheet_row": 233,
+      "runtime_id": "aerial-ace",
+      "file": "moves/aerial-ace.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 333,
+      "slug": "icicle-spear",
+      "name": "Icicle Spear",
+      "sheet_row": 234,
+      "runtime_id": "icicle-spear",
+      "file": "moves/icicle-spear.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 334,
+      "slug": "iron-defense",
+      "name": "Iron Defense",
+      "sheet_row": 235,
+      "runtime_id": "iron-defense",
+      "file": "moves/iron-defense.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 336,
+      "slug": "howl",
+      "name": "Howl",
+      "sheet_row": 236,
+      "runtime_id": "howl",
+      "file": "moves/howl.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 337,
+      "slug": "dragon-claw",
+      "name": "Dragon Claw",
+      "sheet_row": 237,
+      "runtime_id": "dragon-claw",
+      "file": "moves/dragon-claw.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 338,
+      "slug": "frenzy-plant",
+      "name": "Frenzy Plant",
+      "sheet_row": 238,
+      "runtime_id": "frenzy-plant",
+      "file": "moves/frenzy-plant.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 339,
+      "slug": "bulk-up",
+      "name": "Bulk Up",
+      "sheet_row": 239,
+      "runtime_id": "bulk-up",
+      "file": "moves/bulk-up.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 340,
+      "slug": "bounce",
+      "name": "Bounce",
+      "sheet_row": 240,
+      "runtime_id": "bounce",
+      "file": "moves/bounce.lua",
+      "status": "partial",
+      "limitations": [
+        "Gravity is respected when present, but Gravity itself is outside this sheet catalog."
+      ]
+    },
+    {
+      "id": 341,
+      "slug": "mud-shot",
+      "name": "Mud Shot",
+      "sheet_row": 241,
+      "runtime_id": "mud-shot",
+      "file": "moves/mud-shot.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 342,
+      "slug": "poison-tail",
+      "name": "Poison Tail",
+      "sheet_row": 242,
+      "runtime_id": "poison-tail",
+      "file": "moves/poison-tail.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 343,
+      "slug": "covet",
+      "name": "Covet",
+      "sheet_row": 243,
+      "runtime_id": "covet",
+      "file": "moves/covet.lua",
+      "status": "partial",
+      "limitations": [
+        "Species-bound unremovable items require the host item/ability rules; ordinary items and Sticky Hold are handled."
+      ]
+    },
+    {
+      "id": 344,
+      "slug": "volt-tackle",
+      "name": "Volt Tackle",
+      "sheet_row": 244,
+      "runtime_id": "volt-tackle",
+      "file": "moves/volt-tackle.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 345,
+      "slug": "magical-leaf",
+      "name": "Magical Leaf",
+      "sheet_row": 245,
+      "runtime_id": "magical-leaf",
+      "file": "moves/magical-leaf.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 347,
+      "slug": "calm-mind",
+      "name": "Calm Mind",
+      "sheet_row": 246,
+      "runtime_id": "calm_mind",
+      "file": "moves/calm-mind.lua",
+      "status": "existing",
+      "limitations": [
+        "Existing move parameters and behavior preserved."
+      ]
+    },
+    {
+      "id": 348,
+      "slug": "leaf-blade",
+      "name": "Leaf Blade",
+      "sheet_row": 247,
+      "runtime_id": "leaf-blade",
+      "file": "moves/leaf-blade.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 349,
+      "slug": "dragon-dance",
+      "name": "Dragon Dance",
+      "sheet_row": 248,
+      "runtime_id": "dragon-dance",
+      "file": "moves/dragon-dance.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 350,
+      "slug": "rock-blast",
+      "name": "Rock Blast",
+      "sheet_row": 249,
+      "runtime_id": "rock-blast",
+      "file": "moves/rock-blast.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 351,
+      "slug": "shock-wave",
+      "name": "Shock Wave",
+      "sheet_row": 250,
+      "runtime_id": "shock-wave",
+      "file": "moves/shock-wave.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 352,
+      "slug": "water-pulse",
+      "name": "Water Pulse",
+      "sheet_row": 251,
+      "runtime_id": "water-pulse",
+      "file": "moves/water-pulse.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 354,
+      "slug": "psycho-boost",
+      "name": "Psycho Boost",
+      "sheet_row": 252,
+      "runtime_id": "psycho-boost",
+      "file": "moves/psycho-boost.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 355,
+      "slug": "roost",
+      "name": "Roost",
+      "sheet_row": 253,
+      "runtime_id": "roost",
+      "file": "moves/roost.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 358,
+      "slug": "wake-up-slap",
+      "name": "Wake-Up Slap",
+      "sheet_row": 254,
+      "runtime_id": "wake-up-slap",
+      "file": "moves/wake-up-slap.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 359,
+      "slug": "hammer-arm",
+      "name": "Hammer Arm",
+      "sheet_row": 255,
+      "runtime_id": "hammer-arm",
+      "file": "moves/hammer-arm.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 362,
+      "slug": "brine",
+      "name": "Brine",
+      "sheet_row": 256,
+      "runtime_id": "brine",
+      "file": "moves/brine.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 364,
+      "slug": "feint",
+      "name": "Feint",
+      "sheet_row": 257,
+      "runtime_id": "feint",
+      "file": "moves/feint.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 365,
+      "slug": "pluck",
+      "name": "Pluck",
+      "sheet_row": 258,
+      "runtime_id": "pluck",
+      "file": "moves/pluck.lua",
+      "status": "partial",
+      "limitations": [
+        "Berry removal and consumption history are recorded, but berry activation and resistance-berry timing require an item engine."
+      ]
+    },
+    {
+      "id": 369,
+      "slug": "u-turn",
+      "name": "U-turn",
+      "sheet_row": 259,
+      "runtime_id": "u-turn",
+      "file": "moves/u-turn.lua",
+      "status": "partial",
+      "limitations": [
+        "Switching, bench selection and switch interception are not implemented; only the on-field damage/stat effect runs."
+      ]
+    },
+    {
+      "id": 370,
+      "slug": "close-combat",
+      "name": "Close Combat",
+      "sheet_row": 260,
+      "runtime_id": "close-combat",
+      "file": "moves/close-combat.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 371,
+      "slug": "payback",
+      "name": "Payback",
+      "sheet_row": 261,
+      "runtime_id": "payback",
+      "file": "moves/payback.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 372,
+      "slug": "assurance",
+      "name": "Assurance",
+      "sheet_row": 262,
+      "runtime_id": "assurance",
+      "file": "moves/assurance.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 387,
+      "slug": "last-resort",
+      "name": "Last Resort",
+      "sheet_row": 263,
+      "runtime_id": "last-resort",
+      "file": "moves/last-resort.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 389,
+      "slug": "sucker-punch",
+      "name": "Sucker Punch",
+      "sheet_row": 264,
+      "runtime_id": "sucker-punch",
+      "file": "moves/sucker-punch.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 394,
+      "slug": "flare-blitz",
+      "name": "Flare Blitz",
+      "sheet_row": 265,
+      "runtime_id": "flare-blitz",
+      "file": "moves/flare-blitz.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 395,
+      "slug": "force-palm",
+      "name": "Force Palm",
+      "sheet_row": 266,
+      "runtime_id": "force-palm",
+      "file": "moves/force-palm.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 396,
+      "slug": "aura-sphere",
+      "name": "Aura Sphere",
+      "sheet_row": 267,
+      "runtime_id": "aura-sphere",
+      "file": "moves/aura-sphere.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 397,
+      "slug": "rock-polish",
+      "name": "Rock Polish",
+      "sheet_row": 268,
+      "runtime_id": "rock-polish",
+      "file": "moves/rock-polish.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 398,
+      "slug": "poison-jab",
+      "name": "Poison Jab",
+      "sheet_row": 269,
+      "runtime_id": "poison-jab",
+      "file": "moves/poison-jab.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 399,
+      "slug": "dark-pulse",
+      "name": "Dark Pulse",
+      "sheet_row": 270,
+      "runtime_id": "dark-pulse",
+      "file": "moves/dark-pulse.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 400,
+      "slug": "night-slash",
+      "name": "Night Slash",
+      "sheet_row": 271,
+      "runtime_id": "night-slash",
+      "file": "moves/night-slash.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 401,
+      "slug": "aqua-tail",
+      "name": "Aqua Tail",
+      "sheet_row": 272,
+      "runtime_id": "aqua-tail",
+      "file": "moves/aqua-tail.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 402,
+      "slug": "seed-bomb",
+      "name": "Seed Bomb",
+      "sheet_row": 273,
+      "runtime_id": "seed-bomb",
+      "file": "moves/seed-bomb.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 403,
+      "slug": "air-slash",
+      "name": "Air Slash",
+      "sheet_row": 274,
+      "runtime_id": "air-slash",
+      "file": "moves/air-slash.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 404,
+      "slug": "x-scissor",
+      "name": "X-Scissor",
+      "sheet_row": 275,
+      "runtime_id": "x-scissor",
+      "file": "moves/x-scissor.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 405,
+      "slug": "bug-buzz",
+      "name": "Bug Buzz",
+      "sheet_row": 276,
+      "runtime_id": "bug-buzz",
+      "file": "moves/bug-buzz.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 406,
+      "slug": "dragon-pulse",
+      "name": "Dragon Pulse",
+      "sheet_row": 277,
+      "runtime_id": "dragon-pulse",
+      "file": "moves/dragon-pulse.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 407,
+      "slug": "dragon-rush",
+      "name": "Dragon Rush",
+      "sheet_row": 278,
+      "runtime_id": "dragon-rush",
+      "file": "moves/dragon-rush.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 408,
+      "slug": "power-gem",
+      "name": "Power Gem",
+      "sheet_row": 279,
+      "runtime_id": "power-gem",
+      "file": "moves/power-gem.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 409,
+      "slug": "drain-punch",
+      "name": "Drain Punch",
+      "sheet_row": 280,
+      "runtime_id": "drain-punch",
+      "file": "moves/drain-punch.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 410,
+      "slug": "vacuum-wave",
+      "name": "Vacuum Wave",
+      "sheet_row": 281,
+      "runtime_id": "vacuum-wave",
+      "file": "moves/vacuum-wave.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 411,
+      "slug": "focus-blast",
+      "name": "Focus Blast",
+      "sheet_row": 282,
+      "runtime_id": "focus-blast",
+      "file": "moves/focus-blast.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 412,
+      "slug": "energy-ball",
+      "name": "Energy Ball",
+      "sheet_row": 283,
+      "runtime_id": "energy-ball",
+      "file": "moves/energy-ball.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 413,
+      "slug": "brave-bird",
+      "name": "Brave Bird",
+      "sheet_row": 284,
+      "runtime_id": "brave-bird",
+      "file": "moves/brave-bird.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 414,
+      "slug": "earth-power",
+      "name": "Earth Power",
+      "sheet_row": 285,
+      "runtime_id": "earth-power",
+      "file": "moves/earth-power.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 416,
+      "slug": "giga-impact",
+      "name": "Giga Impact",
+      "sheet_row": 286,
+      "runtime_id": "giga-impact",
+      "file": "moves/giga-impact.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 417,
+      "slug": "nasty-plot",
+      "name": "Nasty Plot",
+      "sheet_row": 287,
+      "runtime_id": "nasty-plot",
+      "file": "moves/nasty-plot.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 418,
+      "slug": "bullet-punch",
+      "name": "Bullet Punch",
+      "sheet_row": 288,
+      "runtime_id": "bullet-punch",
+      "file": "moves/bullet-punch.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 419,
+      "slug": "avalanche",
+      "name": "Avalanche",
+      "sheet_row": 289,
+      "runtime_id": "avalanche",
+      "file": "moves/avalanche.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 420,
+      "slug": "ice-shard",
+      "name": "Ice Shard",
+      "sheet_row": 290,
+      "runtime_id": "ice-shard",
+      "file": "moves/ice-shard.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 421,
+      "slug": "shadow-claw",
+      "name": "Shadow Claw",
+      "sheet_row": 291,
+      "runtime_id": "shadow_claw",
+      "file": "moves/shadow-claw.lua",
+      "status": "existing",
+      "limitations": [
+        "Existing move parameters and behavior preserved."
+      ]
+    },
+    {
+      "id": 422,
+      "slug": "thunder-fang",
+      "name": "Thunder Fang",
+      "sheet_row": 292,
+      "runtime_id": "thunder-fang",
+      "file": "moves/thunder-fang.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 423,
+      "slug": "ice-fang",
+      "name": "Ice Fang",
+      "sheet_row": 293,
+      "runtime_id": "ice-fang",
+      "file": "moves/ice-fang.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 424,
+      "slug": "fire-fang",
+      "name": "Fire Fang",
+      "sheet_row": 294,
+      "runtime_id": "fire-fang",
+      "file": "moves/fire-fang.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 425,
+      "slug": "shadow-sneak",
+      "name": "Shadow Sneak",
+      "sheet_row": 295,
+      "runtime_id": "shadow-sneak",
+      "file": "moves/shadow-sneak.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 426,
+      "slug": "mud-bomb",
+      "name": "Mud Bomb",
+      "sheet_row": 296,
+      "runtime_id": "mud-bomb",
+      "file": "moves/mud-bomb.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 427,
+      "slug": "psycho-cut",
+      "name": "Psycho Cut",
+      "sheet_row": 297,
+      "runtime_id": "psycho-cut",
+      "file": "moves/psycho-cut.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 428,
+      "slug": "zen-headbutt",
+      "name": "Zen Headbutt",
+      "sheet_row": 298,
+      "runtime_id": "zen-headbutt",
+      "file": "moves/zen-headbutt.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 429,
+      "slug": "mirror-shot",
+      "name": "Mirror Shot",
+      "sheet_row": 299,
+      "runtime_id": "mirror-shot",
+      "file": "moves/mirror-shot.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 430,
+      "slug": "flash-cannon",
+      "name": "Flash Cannon",
+      "sheet_row": 300,
+      "runtime_id": "flash-cannon",
+      "file": "moves/flash-cannon.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 431,
+      "slug": "rock-climb",
+      "name": "Rock Climb",
+      "sheet_row": 301,
+      "runtime_id": "rock-climb",
+      "file": "moves/rock-climb.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 434,
+      "slug": "draco-meteor",
+      "name": "Draco Meteor",
+      "sheet_row": 302,
+      "runtime_id": "draco-meteor",
+      "file": "moves/draco-meteor.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 435,
+      "slug": "discharge",
+      "name": "Discharge",
+      "sheet_row": 303,
+      "runtime_id": "discharge",
+      "file": "moves/discharge.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 436,
+      "slug": "lava-plume",
+      "name": "Lava Plume",
+      "sheet_row": 304,
+      "runtime_id": "lava-plume",
+      "file": "moves/lava-plume.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 437,
+      "slug": "leaf-storm",
+      "name": "Leaf Storm",
+      "sheet_row": 305,
+      "runtime_id": "leaf-storm",
+      "file": "moves/leaf-storm.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 438,
+      "slug": "power-whip",
+      "name": "Power Whip",
+      "sheet_row": 306,
+      "runtime_id": "power-whip",
+      "file": "moves/power-whip.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 439,
+      "slug": "rock-wrecker",
+      "name": "Rock Wrecker",
+      "sheet_row": 307,
+      "runtime_id": "rock-wrecker",
+      "file": "moves/rock-wrecker.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 440,
+      "slug": "cross-poison",
+      "name": "Cross Poison",
+      "sheet_row": 308,
+      "runtime_id": "cross-poison",
+      "file": "moves/cross-poison.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 441,
+      "slug": "gunk-shot",
+      "name": "Gunk Shot",
+      "sheet_row": 309,
+      "runtime_id": "gunk-shot",
+      "file": "moves/gunk-shot.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 442,
+      "slug": "iron-head",
+      "name": "Iron Head",
+      "sheet_row": 310,
+      "runtime_id": "iron-head",
+      "file": "moves/iron-head.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 443,
+      "slug": "magnet-bomb",
+      "name": "Magnet Bomb",
+      "sheet_row": 311,
+      "runtime_id": "magnet-bomb",
+      "file": "moves/magnet-bomb.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 444,
+      "slug": "stone-edge",
+      "name": "Stone Edge",
+      "sheet_row": 312,
+      "runtime_id": "stone-edge",
+      "file": "moves/stone-edge.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 445,
+      "slug": "captivate",
+      "name": "Captivate",
+      "sheet_row": 313,
+      "runtime_id": "captivate",
+      "file": "moves/captivate.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 448,
+      "slug": "chatter",
+      "name": "Chatter",
+      "sheet_row": 314,
+      "runtime_id": "chatter",
+      "file": "moves/chatter.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 449,
+      "slug": "judgment",
+      "name": "Judgment",
+      "sheet_row": 315,
+      "runtime_id": "judgment",
+      "file": "moves/judgment.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 450,
+      "slug": "bug-bite",
+      "name": "Bug Bite",
+      "sheet_row": 316,
+      "runtime_id": "bug-bite",
+      "file": "moves/bug-bite.lua",
+      "status": "partial",
+      "limitations": [
+        "Berry removal and consumption history are recorded, but berry activation and resistance-berry timing require an item engine."
+      ]
+    },
+    {
+      "id": 451,
+      "slug": "charge-beam",
+      "name": "Charge Beam",
+      "sheet_row": 317,
+      "runtime_id": "charge-beam",
+      "file": "moves/charge-beam.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 452,
+      "slug": "wood-hammer",
+      "name": "Wood Hammer",
+      "sheet_row": 318,
+      "runtime_id": "wood-hammer",
+      "file": "moves/wood-hammer.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 453,
+      "slug": "aqua-jet",
+      "name": "Aqua Jet",
+      "sheet_row": 319,
+      "runtime_id": "aqua-jet",
+      "file": "moves/aqua-jet.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 454,
+      "slug": "attack-order",
+      "name": "Attack Order",
+      "sheet_row": 320,
+      "runtime_id": "attack-order",
+      "file": "moves/attack-order.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 455,
+      "slug": "defend-order",
+      "name": "Defend Order",
+      "sheet_row": 321,
+      "runtime_id": "defend-order",
+      "file": "moves/defend-order.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 456,
+      "slug": "heal-order",
+      "name": "Heal Order",
+      "sheet_row": 322,
+      "runtime_id": "heal-order",
+      "file": "moves/heal-order.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 457,
+      "slug": "head-smash",
+      "name": "Head Smash",
+      "sheet_row": 323,
+      "runtime_id": "head-smash",
+      "file": "moves/head-smash.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 458,
+      "slug": "double-hit",
+      "name": "Double Hit",
+      "sheet_row": 324,
+      "runtime_id": "double-hit",
+      "file": "moves/double-hit.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 459,
+      "slug": "roar-of-time",
+      "name": "Roar of Time",
+      "sheet_row": 325,
+      "runtime_id": "roar-of-time",
+      "file": "moves/roar-of-time.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 460,
+      "slug": "spacial-rend",
+      "name": "Spacial Rend",
+      "sheet_row": 326,
+      "runtime_id": "spacial-rend",
+      "file": "moves/spacial-rend.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 464,
+      "slug": "dark-void",
+      "name": "Dark Void",
+      "sheet_row": 327,
+      "runtime_id": "dark-void",
+      "file": "moves/dark-void.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 465,
+      "slug": "seed-flare",
+      "name": "Seed Flare",
+      "sheet_row": 328,
+      "runtime_id": "seed-flare",
+      "file": "moves/seed-flare.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 466,
+      "slug": "ominous-wind",
+      "name": "Ominous Wind",
+      "sheet_row": 329,
+      "runtime_id": "ominous-wind",
+      "file": "moves/ominous-wind.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 467,
+      "slug": "shadow-force",
+      "name": "Shadow Force",
+      "sheet_row": 330,
+      "runtime_id": "shadow-force",
+      "file": "moves/shadow-force.lua",
+      "status": "partial",
+      "limitations": [
+        "Power Herb item activation is not available; normal charge and weather shortcuts are implemented."
+      ]
+    },
+    {
+      "id": 468,
+      "slug": "hone-claws",
+      "name": "Hone Claws",
+      "sheet_row": 331,
+      "runtime_id": "hone-claws",
+      "file": "moves/hone-claws.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 473,
+      "slug": "psyshock",
+      "name": "Psyshock",
+      "sheet_row": 332,
+      "runtime_id": "psyshock",
+      "file": "moves/psyshock.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 474,
+      "slug": "venoshock",
+      "name": "Venoshock",
+      "sheet_row": 333,
+      "runtime_id": "venoshock",
+      "file": "moves/venoshock.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 475,
+      "slug": "autotomize",
+      "name": "Autotomize",
+      "sheet_row": 334,
+      "runtime_id": "autotomize",
+      "file": "moves/autotomize.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 479,
+      "slug": "smack-down",
+      "name": "Smack Down",
+      "sheet_row": 335,
+      "runtime_id": "smack-down",
+      "file": "moves/smack-down.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 480,
+      "slug": "storm-throw",
+      "name": "Storm Throw",
+      "sheet_row": 336,
+      "runtime_id": "storm_throw",
+      "file": "moves/storm-throw.lua",
+      "status": "existing",
+      "limitations": [
+        "Existing move parameters and behavior preserved."
+      ]
+    },
+    {
+      "id": 481,
+      "slug": "flame-burst",
+      "name": "Flame Burst",
+      "sheet_row": 337,
+      "runtime_id": "flame-burst",
+      "file": "moves/flame-burst.lua",
+      "status": "partial",
+      "limitations": [
+        "The engine has no adjacency/position model; splash damage reaches all other active Pokemon on the target side."
+      ]
+    },
+    {
+      "id": 482,
+      "slug": "sludge-wave",
+      "name": "Sludge Wave",
+      "sheet_row": 338,
+      "runtime_id": "sludge-wave",
+      "file": "moves/sludge-wave.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 483,
+      "slug": "quiver-dance",
+      "name": "Quiver Dance",
+      "sheet_row": 339,
+      "runtime_id": "quiver-dance",
+      "file": "moves/quiver-dance.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 485,
+      "slug": "synchronoise",
+      "name": "Synchronoise",
+      "sheet_row": 340,
+      "runtime_id": "synchronoise",
+      "file": "moves/synchronoise.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 488,
+      "slug": "flame-charge",
+      "name": "Flame Charge",
+      "sheet_row": 341,
+      "runtime_id": "flame-charge",
+      "file": "moves/flame-charge.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 489,
+      "slug": "coil",
+      "name": "Coil",
+      "sheet_row": 342,
+      "runtime_id": "coil",
+      "file": "moves/coil.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 490,
+      "slug": "low-sweep",
+      "name": "Low Sweep",
+      "sheet_row": 343,
+      "runtime_id": "low-sweep",
+      "file": "moves/low-sweep.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 491,
+      "slug": "acid-spray",
+      "name": "Acid Spray",
+      "sheet_row": 344,
+      "runtime_id": "acid-spray",
+      "file": "moves/acid-spray.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 492,
+      "slug": "foul-play",
+      "name": "Foul Play",
+      "sheet_row": 345,
+      "runtime_id": "foul-play",
+      "file": "moves/foul-play.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 496,
+      "slug": "round",
+      "name": "Round",
+      "sheet_row": 346,
+      "runtime_id": "round",
+      "file": "moves/round.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 497,
+      "slug": "echoed-voice",
+      "name": "Echoed Voice",
+      "sheet_row": 347,
+      "runtime_id": "echoed-voice",
+      "file": "moves/echoed-voice.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 498,
+      "slug": "chip-away",
+      "name": "Chip Away",
+      "sheet_row": 348,
+      "runtime_id": "chip-away",
+      "file": "moves/chip-away.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 499,
+      "slug": "clear-smog",
+      "name": "Clear Smog",
+      "sheet_row": 349,
+      "runtime_id": "clear-smog",
+      "file": "moves/clear-smog.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 500,
+      "slug": "stored-power",
+      "name": "Stored Power",
+      "sheet_row": 350,
+      "runtime_id": "stored-power",
+      "file": "moves/stored-power.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 503,
+      "slug": "scald",
+      "name": "Scald",
+      "sheet_row": 351,
+      "runtime_id": "scald",
+      "file": "moves/scald.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 505,
+      "slug": "heal-pulse",
+      "name": "Heal Pulse",
+      "sheet_row": 352,
+      "runtime_id": "heal-pulse",
+      "file": "moves/heal-pulse.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 506,
+      "slug": "hex",
+      "name": "Hex",
+      "sheet_row": 353,
+      "runtime_id": "hex",
+      "file": "moves/hex.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 507,
+      "slug": "sky-drop",
+      "name": "Sky Drop",
+      "sheet_row": 354,
+      "runtime_id": "sky-drop",
+      "file": "moves/sky-drop.lua",
+      "status": "partial",
+      "limitations": [
+        "Unavailable: the Lua API cannot carry, hide or disable another Pokemon across turns."
+      ]
+    },
+    {
+      "id": 508,
+      "slug": "shift-gear",
+      "name": "Shift Gear",
+      "sheet_row": 355,
+      "runtime_id": "shift-gear",
+      "file": "moves/shift-gear.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 509,
+      "slug": "circle-throw",
+      "name": "Circle Throw",
+      "sheet_row": 356,
+      "runtime_id": "circle-throw",
+      "file": "moves/circle-throw.lua",
+      "status": "partial",
+      "limitations": [
+        "Switching, bench selection and switch interception are not implemented; only the on-field damage/stat effect runs."
+      ]
+    },
+    {
+      "id": 510,
+      "slug": "incinerate",
+      "name": "Incinerate",
+      "sheet_row": 357,
+      "runtime_id": "incinerate",
+      "file": "moves/incinerate.lua",
+      "status": "partial",
+      "limitations": [
+        "Removing berries/gems works, but pre-hit item activation timing requires an item engine."
+      ]
+    },
+    {
+      "id": 512,
+      "slug": "acrobatics",
+      "name": "Acrobatics",
+      "sheet_row": 358,
+      "runtime_id": "acrobatics",
+      "file": "moves/acrobatics.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 514,
+      "slug": "retaliate",
+      "name": "Retaliate",
+      "sheet_row": 359,
+      "runtime_id": "retaliate",
+      "file": "moves/retaliate.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 517,
+      "slug": "inferno",
+      "name": "Inferno",
+      "sheet_row": 360,
+      "runtime_id": "inferno",
+      "file": "moves/inferno.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 518,
+      "slug": "water-pledge",
+      "name": "Water Pledge",
+      "sheet_row": 361,
+      "runtime_id": "water-pledge",
+      "file": "moves/water-pledge.lua",
+      "status": "partial",
+      "limitations": [
+        "The example implements side-effect combinations only. Combined 150-power attacks, forced STAB and cross-move queue promotion need engine support."
+      ]
+    },
+    {
+      "id": 519,
+      "slug": "fire-pledge",
+      "name": "Fire Pledge",
+      "sheet_row": 362,
+      "runtime_id": "fire-pledge",
+      "file": "moves/fire-pledge.lua",
+      "status": "partial",
+      "limitations": [
+        "The example implements side-effect combinations only. Combined 150-power attacks, forced STAB and cross-move queue promotion need engine support."
+      ]
+    },
+    {
+      "id": 520,
+      "slug": "grass-pledge",
+      "name": "Grass Pledge",
+      "sheet_row": 363,
+      "runtime_id": "grass-pledge",
+      "file": "moves/grass-pledge.lua",
+      "status": "partial",
+      "limitations": [
+        "The example implements side-effect combinations only. Combined 150-power attacks, forced STAB and cross-move queue promotion need engine support."
+      ]
+    },
+    {
+      "id": 521,
+      "slug": "volt-switch",
+      "name": "Volt Switch",
+      "sheet_row": 364,
+      "runtime_id": "volt-switch",
+      "file": "moves/volt-switch.lua",
+      "status": "partial",
+      "limitations": [
+        "Switching, bench selection and switch interception are not implemented; only the on-field damage/stat effect runs."
+      ]
+    },
+    {
+      "id": 522,
+      "slug": "struggle-bug",
+      "name": "Struggle Bug",
+      "sheet_row": 365,
+      "runtime_id": "struggle-bug",
+      "file": "moves/struggle-bug.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 523,
+      "slug": "bulldoze",
+      "name": "Bulldoze",
+      "sheet_row": 366,
+      "runtime_id": "bulldoze",
+      "file": "moves/bulldoze.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 524,
+      "slug": "frost-breath",
+      "name": "Frost Breath",
+      "sheet_row": 367,
+      "runtime_id": "frost-breath",
+      "file": "moves/frost-breath.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 525,
+      "slug": "dragon-tail",
+      "name": "Dragon Tail",
+      "sheet_row": 368,
+      "runtime_id": "dragon-tail",
+      "file": "moves/dragon-tail.lua",
+      "status": "partial",
+      "limitations": [
+        "Switching, bench selection and switch interception are not implemented; only the on-field damage/stat effect runs."
+      ]
+    },
+    {
+      "id": 526,
+      "slug": "work-up",
+      "name": "Work Up",
+      "sheet_row": 369,
+      "runtime_id": "work-up",
+      "file": "moves/work-up.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 527,
+      "slug": "electroweb",
+      "name": "Electroweb",
+      "sheet_row": 370,
+      "runtime_id": "electroweb",
+      "file": "moves/electroweb.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 528,
+      "slug": "wild-charge",
+      "name": "Wild Charge",
+      "sheet_row": 371,
+      "runtime_id": "wild-charge",
+      "file": "moves/wild-charge.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 529,
+      "slug": "drill-run",
+      "name": "Drill Run",
+      "sheet_row": 372,
+      "runtime_id": "drill-run",
+      "file": "moves/drill-run.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 530,
+      "slug": "dual-chop",
+      "name": "Dual Chop",
+      "sheet_row": 373,
+      "runtime_id": "dual-chop",
+      "file": "moves/dual-chop.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 531,
+      "slug": "heart-stamp",
+      "name": "Heart Stamp",
+      "sheet_row": 374,
+      "runtime_id": "heart-stamp",
+      "file": "moves/heart-stamp.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 532,
+      "slug": "horn-leech",
+      "name": "Horn Leech",
+      "sheet_row": 375,
+      "runtime_id": "horn-leech",
+      "file": "moves/horn-leech.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 533,
+      "slug": "sacred-sword",
+      "name": "Sacred Sword",
+      "sheet_row": 376,
+      "runtime_id": "sacred-sword",
+      "file": "moves/sacred-sword.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 534,
+      "slug": "razor-shell",
+      "name": "Razor Shell",
+      "sheet_row": 377,
+      "runtime_id": "razor-shell",
+      "file": "moves/razor-shell.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 536,
+      "slug": "leaf-tornado",
+      "name": "Leaf Tornado",
+      "sheet_row": 378,
+      "runtime_id": "leaf-tornado",
+      "file": "moves/leaf-tornado.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 537,
+      "slug": "steamroller",
+      "name": "Steamroller",
+      "sheet_row": 379,
+      "runtime_id": "steamroller",
+      "file": "moves/steamroller.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 538,
+      "slug": "cotton-guard",
+      "name": "Cotton Guard",
+      "sheet_row": 380,
+      "runtime_id": "cotton-guard",
+      "file": "moves/cotton-guard.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 539,
+      "slug": "night-daze",
+      "name": "Night Daze",
+      "sheet_row": 381,
+      "runtime_id": "night-daze",
+      "file": "moves/night-daze.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 540,
+      "slug": "psystrike",
+      "name": "Psystrike",
+      "sheet_row": 382,
+      "runtime_id": "psystrike",
+      "file": "moves/psystrike.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 541,
+      "slug": "tail-slap",
+      "name": "Tail Slap",
+      "sheet_row": 383,
+      "runtime_id": "tail-slap",
+      "file": "moves/tail-slap.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 542,
+      "slug": "hurricane",
+      "name": "Hurricane",
+      "sheet_row": 384,
+      "runtime_id": "hurricane",
+      "file": "moves/hurricane.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 543,
+      "slug": "head-charge",
+      "name": "Head Charge",
+      "sheet_row": 385,
+      "runtime_id": "head-charge",
+      "file": "moves/head-charge.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 544,
+      "slug": "gear-grind",
+      "name": "Gear Grind",
+      "sheet_row": 386,
+      "runtime_id": "gear-grind",
+      "file": "moves/gear-grind.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 545,
+      "slug": "searing-shot",
+      "name": "Searing Shot",
+      "sheet_row": 387,
+      "runtime_id": "searing-shot",
+      "file": "moves/searing-shot.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 546,
+      "slug": "techno-blast",
+      "name": "Techno Blast",
+      "sheet_row": 388,
+      "runtime_id": "techno-blast",
+      "file": "moves/techno-blast.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 547,
+      "slug": "relic-song",
+      "name": "Relic Song",
+      "sheet_row": 389,
+      "runtime_id": "relic-song",
+      "file": "moves/relic-song.lua",
+      "status": "partial",
+      "limitations": [
+        "Damage and sleep work; Meloetta form/stat transformation needs host or engine form support."
+      ]
+    },
+    {
+      "id": 548,
+      "slug": "secret-sword",
+      "name": "Secret Sword",
+      "sheet_row": 390,
+      "runtime_id": "secret-sword",
+      "file": "moves/secret-sword.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 549,
+      "slug": "glaciate",
+      "name": "Glaciate",
+      "sheet_row": 391,
+      "runtime_id": "glaciate",
+      "file": "moves/glaciate.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 550,
+      "slug": "bolt-strike",
+      "name": "Bolt Strike",
+      "sheet_row": 392,
+      "runtime_id": "bolt-strike",
+      "file": "moves/bolt-strike.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 551,
+      "slug": "blue-flare",
+      "name": "Blue Flare",
+      "sheet_row": 393,
+      "runtime_id": "blue-flare",
+      "file": "moves/blue-flare.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 552,
+      "slug": "fiery-dance",
+      "name": "Fiery Dance",
+      "sheet_row": 394,
+      "runtime_id": "fiery-dance",
+      "file": "moves/fiery-dance.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 553,
+      "slug": "freeze-shock",
+      "name": "Freeze Shock",
+      "sheet_row": 395,
+      "runtime_id": "freeze-shock",
+      "file": "moves/freeze-shock.lua",
+      "status": "partial",
+      "limitations": [
+        "Power Herb item activation is not available; normal charge and weather shortcuts are implemented."
+      ]
+    },
+    {
+      "id": 554,
+      "slug": "ice-burn",
+      "name": "Ice Burn",
+      "sheet_row": 396,
+      "runtime_id": "ice-burn",
+      "file": "moves/ice-burn.lua",
+      "status": "partial",
+      "limitations": [
+        "Power Herb item activation is not available; normal charge and weather shortcuts are implemented."
+      ]
+    },
+    {
+      "id": 555,
+      "slug": "snarl",
+      "name": "Snarl",
+      "sheet_row": 397,
+      "runtime_id": "snarl",
+      "file": "moves/snarl.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 556,
+      "slug": "icicle-crash",
+      "name": "Icicle Crash",
+      "sheet_row": 398,
+      "runtime_id": "icicle-crash",
+      "file": "moves/icicle-crash.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 557,
+      "slug": "v-create",
+      "name": "V-create",
+      "sheet_row": 399,
+      "runtime_id": "v-create",
+      "file": "moves/v-create.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 558,
+      "slug": "fusion-flare",
+      "name": "Fusion Flare",
+      "sheet_row": 400,
+      "runtime_id": "fusion-flare",
+      "file": "moves/fusion-flare.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 559,
+      "slug": "fusion-bolt",
+      "name": "Fusion Bolt",
+      "sheet_row": 401,
+      "runtime_id": "fusion-bolt",
+      "file": "moves/fusion-bolt.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 560,
+      "slug": "flying-press",
+      "name": "Flying Press",
+      "sheet_row": 402,
+      "runtime_id": "flying-press",
+      "file": "moves/flying-press.lua",
+      "status": "partial",
+      "limitations": [
+        "Gravity is respected when present, but Gravity itself is outside this sheet catalog."
+      ]
+    },
+    {
+      "id": 562,
+      "slug": "belch",
+      "name": "Belch",
+      "sheet_row": 403,
+      "runtime_id": "belch",
+      "file": "moves/belch.lua",
+      "status": "partial",
+      "limitations": [
+        "Fails on execution until the ate_berry mark is set. Pre-selection legality and automatic held-berry consumption require engine/host support."
+      ]
+    },
+    {
+      "id": 563,
+      "slug": "rototiller",
+      "name": "Rototiller",
+      "sheet_row": 404,
+      "runtime_id": "rototiller",
+      "file": "moves/rototiller.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 565,
+      "slug": "fell-stinger",
+      "name": "Fell Stinger",
+      "sheet_row": 405,
+      "runtime_id": "fell-stinger",
+      "file": "moves/fell-stinger.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 566,
+      "slug": "phantom-force",
+      "name": "Phantom Force",
+      "sheet_row": 406,
+      "runtime_id": "phantom-force",
+      "file": "moves/phantom-force.lua",
+      "status": "partial",
+      "limitations": [
+        "Power Herb item activation is not available; normal charge and weather shortcuts are implemented."
+      ]
+    },
+    {
+      "id": 568,
+      "slug": "noble-roar",
+      "name": "Noble Roar",
+      "sheet_row": 407,
+      "runtime_id": "noble-roar",
+      "file": "moves/noble-roar.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 570,
+      "slug": "parabolic-charge",
+      "name": "Parabolic Charge",
+      "sheet_row": 408,
+      "runtime_id": "parabolic-charge",
+      "file": "moves/parabolic-charge.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 572,
+      "slug": "petal-blizzard",
+      "name": "Petal Blizzard",
+      "sheet_row": 409,
+      "runtime_id": "petal-blizzard",
+      "file": "moves/petal-blizzard.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 573,
+      "slug": "freeze-dry",
+      "name": "Freeze-Dry",
+      "sheet_row": 410,
+      "runtime_id": "freeze-dry",
+      "file": "moves/freeze-dry.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 574,
+      "slug": "disarming-voice",
+      "name": "Disarming Voice",
+      "sheet_row": 411,
+      "runtime_id": "disarming-voice",
+      "file": "moves/disarming-voice.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 575,
+      "slug": "parting-shot",
+      "name": "Parting Shot",
+      "sheet_row": 412,
+      "runtime_id": "parting-shot",
+      "file": "moves/parting-shot.lua",
+      "status": "partial",
+      "limitations": [
+        "Switching, bench selection and switch interception are not implemented; only the on-field damage/stat effect runs."
+      ]
+    },
+    {
+      "id": 577,
+      "slug": "draining-kiss",
+      "name": "Draining Kiss",
+      "sheet_row": 413,
+      "runtime_id": "draining_kiss",
+      "file": "moves/draining-kiss.lua",
+      "status": "existing",
+      "limitations": [
+        "Existing move parameters and behavior preserved."
+      ]
+    },
+    {
+      "id": 583,
+      "slug": "play-rough",
+      "name": "Play Rough",
+      "sheet_row": 414,
+      "runtime_id": "play-rough",
+      "file": "moves/play-rough.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 584,
+      "slug": "fairy-wind",
+      "name": "Fairy Wind",
+      "sheet_row": 415,
+      "runtime_id": "fairy-wind",
+      "file": "moves/fairy-wind.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 585,
+      "slug": "moonblast",
+      "name": "Moonblast",
+      "sheet_row": 416,
+      "runtime_id": "moonblast",
+      "file": "moves/moonblast.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 586,
+      "slug": "boomburst",
+      "name": "Boomburst",
+      "sheet_row": 417,
+      "runtime_id": "boomburst",
+      "file": "moves/boomburst.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 589,
+      "slug": "play-nice",
+      "name": "Play Nice",
+      "sheet_row": 418,
+      "runtime_id": "play-nice",
+      "file": "moves/play-nice.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 590,
+      "slug": "confide",
+      "name": "Confide",
+      "sheet_row": 419,
+      "runtime_id": "confide",
+      "file": "moves/confide.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 591,
+      "slug": "diamond-storm",
+      "name": "Diamond Storm",
+      "sheet_row": 420,
+      "runtime_id": "diamond-storm",
+      "file": "moves/diamond-storm.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 592,
+      "slug": "steam-eruption",
+      "name": "Steam Eruption",
+      "sheet_row": 421,
+      "runtime_id": "steam-eruption",
+      "file": "moves/steam-eruption.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 593,
+      "slug": "hyperspace-hole",
+      "name": "Hyperspace Hole",
+      "sheet_row": 422,
+      "runtime_id": "hyperspace-hole",
+      "file": "moves/hyperspace-hole.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 594,
+      "slug": "water-shuriken",
+      "name": "Water Shuriken",
+      "sheet_row": 423,
+      "runtime_id": "water-shuriken",
+      "file": "moves/water-shuriken.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 595,
+      "slug": "mystical-fire",
+      "name": "Mystical Fire",
+      "sheet_row": 424,
+      "runtime_id": "mystical-fire",
+      "file": "moves/mystical-fire.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 597,
+      "slug": "aromatic-mist",
+      "name": "Aromatic Mist",
+      "sheet_row": 425,
+      "runtime_id": "aromatic-mist",
+      "file": "moves/aromatic-mist.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 598,
+      "slug": "eerie-impulse",
+      "name": "Eerie Impulse",
+      "sheet_row": 426,
+      "runtime_id": "eerie-impulse",
+      "file": "moves/eerie-impulse.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 599,
+      "slug": "venom-drench",
+      "name": "Venom Drench",
+      "sheet_row": 427,
+      "runtime_id": "venom-drench",
+      "file": "moves/venom-drench.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 601,
+      "slug": "geomancy",
+      "name": "Geomancy",
+      "sheet_row": 428,
+      "runtime_id": "geomancy",
+      "file": "moves/geomancy.lua",
+      "status": "partial",
+      "limitations": [
+        "Power Herb item activation is not available; normal charge and weather shortcuts are implemented."
+      ]
+    },
+    {
+      "id": 602,
+      "slug": "magnetic-flux",
+      "name": "Magnetic Flux",
+      "sheet_row": 429,
+      "runtime_id": "magnetic-flux",
+      "file": "moves/magnetic-flux.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 605,
+      "slug": "dazzling-gleam",
+      "name": "Dazzling Gleam",
+      "sheet_row": 430,
+      "runtime_id": "dazzling-gleam",
+      "file": "moves/dazzling-gleam.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 608,
+      "slug": "baby-doll-eyes",
+      "name": "Baby-Doll Eyes",
+      "sheet_row": 431,
+      "runtime_id": "baby-doll-eyes",
+      "file": "moves/baby-doll-eyes.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 609,
+      "slug": "nuzzle",
+      "name": "Nuzzle",
+      "sheet_row": 432,
+      "runtime_id": "nuzzle",
+      "file": "moves/nuzzle.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 610,
+      "slug": "hold-back",
+      "name": "Hold Back",
+      "sheet_row": 433,
+      "runtime_id": "hold-back",
+      "file": "moves/hold-back.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 612,
+      "slug": "power-up-punch",
+      "name": "Power-Up Punch",
+      "sheet_row": 434,
+      "runtime_id": "power-up-punch",
+      "file": "moves/power-up-punch.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 613,
+      "slug": "oblivion-wing",
+      "name": "Oblivion Wing",
+      "sheet_row": 435,
+      "runtime_id": "oblivion-wing",
+      "file": "moves/oblivion-wing.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 614,
+      "slug": "thousand-arrows",
+      "name": "Thousand Arrows",
+      "sheet_row": 436,
+      "runtime_id": "thousand-arrows",
+      "file": "moves/thousand-arrows.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 615,
+      "slug": "thousand-waves",
+      "name": "Thousand Waves",
+      "sheet_row": 437,
+      "runtime_id": "thousand-waves",
+      "file": "moves/thousand-waves.lua",
+      "status": "partial",
+      "limitations": [
+        "Trapping is recorded as a Trapped rule for the host; the engine has no switching or bench."
+      ]
+    },
+    {
+      "id": 616,
+      "slug": "lands-wrath",
+      "name": "Land’s Wrath",
+      "sheet_row": 438,
+      "runtime_id": "lands-wrath",
+      "file": "moves/lands-wrath.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 617,
+      "slug": "light-of-ruin",
+      "name": "Light of Ruin",
+      "sheet_row": 439,
+      "runtime_id": "light-of-ruin",
+      "file": "moves/light-of-ruin.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 618,
+      "slug": "origin-pulse",
+      "name": "Origin Pulse",
+      "sheet_row": 440,
+      "runtime_id": "origin-pulse",
+      "file": "moves/origin-pulse.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 619,
+      "slug": "precipice-blades",
+      "name": "Precipice Blades",
+      "sheet_row": 441,
+      "runtime_id": "precipice-blades",
+      "file": "moves/precipice-blades.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 620,
+      "slug": "dragon-ascent",
+      "name": "Dragon Ascent",
+      "sheet_row": 442,
+      "runtime_id": "dragon-ascent",
+      "file": "moves/dragon-ascent.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 621,
+      "slug": "hyperspace-fury",
+      "name": "Hyperspace Fury",
+      "sheet_row": 443,
+      "runtime_id": "hyperspace-fury",
+      "file": "moves/hyperspace-fury.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 658,
+      "slug": "catastropika",
+      "name": "Catastropika",
+      "sheet_row": 444,
+      "runtime_id": "catastropika",
+      "file": "moves/catastropika.lua",
+      "status": "partial",
+      "limitations": [
+        "Z-Move activation, species/item eligibility, once-per-battle limits and partial Protect damage require the host."
+      ]
+    },
+    {
+      "id": 659,
+      "slug": "shore-up",
+      "name": "Shore Up",
+      "sheet_row": 445,
+      "runtime_id": "shore-up",
+      "file": "moves/shore-up.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 660,
+      "slug": "first-impression",
+      "name": "First Impression",
+      "sheet_row": 446,
+      "runtime_id": "first-impression",
+      "file": "moves/first-impression.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 662,
+      "slug": "spirit-shackle",
+      "name": "Spirit Shackle",
+      "sheet_row": 447,
+      "runtime_id": "spirit-shackle",
+      "file": "moves/spirit-shackle.lua",
+      "status": "partial",
+      "limitations": [
+        "Trapping is recorded as a Trapped rule for the host; the engine has no switching or bench."
+      ]
+    },
+    {
+      "id": 663,
+      "slug": "darkest-lariat",
+      "name": "Darkest Lariat",
+      "sheet_row": 448,
+      "runtime_id": "darkest-lariat",
+      "file": "moves/darkest-lariat.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 664,
+      "slug": "sparkling-aria",
+      "name": "Sparkling Aria",
+      "sheet_row": 449,
+      "runtime_id": "sparkling-aria",
+      "file": "moves/sparkling-aria.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 665,
+      "slug": "ice-hammer",
+      "name": "Ice Hammer",
+      "sheet_row": 450,
+      "runtime_id": "ice-hammer",
+      "file": "moves/ice-hammer.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 666,
+      "slug": "floral-healing",
+      "name": "Floral Healing",
+      "sheet_row": 451,
+      "runtime_id": "floral-healing",
+      "file": "moves/floral-healing.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 667,
+      "slug": "high-horsepower",
+      "name": "High Horsepower",
+      "sheet_row": 452,
+      "runtime_id": "high-horsepower",
+      "file": "moves/high-horsepower.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 669,
+      "slug": "solar-blade",
+      "name": "Solar Blade",
+      "sheet_row": 453,
+      "runtime_id": "solar-blade",
+      "file": "moves/solar-blade.lua",
+      "status": "partial",
+      "limitations": [
+        "Power Herb item activation is not available; normal charge and weather shortcuts are implemented."
+      ]
+    },
+    {
+      "id": 670,
+      "slug": "leafage",
+      "name": "Leafage",
+      "sheet_row": 454,
+      "runtime_id": "leafage",
+      "file": "moves/leafage.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 674,
+      "slug": "gear-up",
+      "name": "Gear Up",
+      "sheet_row": 455,
+      "runtime_id": "gear-up",
+      "file": "moves/gear-up.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 676,
+      "slug": "pollen-puff",
+      "name": "Pollen Puff",
+      "sheet_row": 456,
+      "runtime_id": "pollen-puff",
+      "file": "moves/pollen-puff.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 677,
+      "slug": "anchor-shot",
+      "name": "Anchor Shot",
+      "sheet_row": 457,
+      "runtime_id": "anchor-shot",
+      "file": "moves/anchor-shot.lua",
+      "status": "partial",
+      "limitations": [
+        "Trapping is recorded as a Trapped rule for the host; the engine has no switching or bench."
+      ]
+    },
+    {
+      "id": 679,
+      "slug": "lunge",
+      "name": "Lunge",
+      "sheet_row": 458,
+      "runtime_id": "lunge",
+      "file": "moves/lunge.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 680,
+      "slug": "fire-lash",
+      "name": "Fire Lash",
+      "sheet_row": 459,
+      "runtime_id": "fire-lash",
+      "file": "moves/fire-lash.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 681,
+      "slug": "power-trip",
+      "name": "Power Trip",
+      "sheet_row": 460,
+      "runtime_id": "power-trip",
+      "file": "moves/power-trip.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 682,
+      "slug": "burn-up",
+      "name": "Burn Up",
+      "sheet_row": 461,
+      "runtime_id": "burn-up",
+      "file": "moves/burn-up.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 684,
+      "slug": "smart-strike",
+      "name": "Smart Strike",
+      "sheet_row": 462,
+      "runtime_id": "smart-strike",
+      "file": "moves/smart-strike.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 686,
+      "slug": "revelation-dance",
+      "name": "Revelation Dance",
+      "sheet_row": 463,
+      "runtime_id": "revelation-dance",
+      "file": "moves/revelation-dance.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 687,
+      "slug": "core-enforcer",
+      "name": "Core Enforcer",
+      "sheet_row": 464,
+      "runtime_id": "core-enforcer",
+      "file": "moves/core-enforcer.lua",
+      "status": "partial",
+      "limitations": [
+        "Ability suppression is recorded, but ability execution and the unsuppressible-ability registry require engine or host support."
+      ]
+    },
+    {
+      "id": 688,
+      "slug": "trop-kick",
+      "name": "Trop Kick",
+      "sheet_row": 465,
+      "runtime_id": "trop-kick",
+      "file": "moves/trop-kick.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 690,
+      "slug": "beak-blast",
+      "name": "Beak Blast",
+      "sheet_row": 466,
+      "runtime_id": "beak-blast",
+      "file": "moves/beak-blast.lua",
+      "status": "partial",
+      "limitations": [
+        "Hit reactions run only for damaging hits; contact moves stopped by immunity and other non-damaging contact require a broader contact hook."
+      ]
+    },
+    {
+      "id": 691,
+      "slug": "clanging-scales",
+      "name": "Clanging Scales",
+      "sheet_row": 467,
+      "runtime_id": "clanging-scales",
+      "file": "moves/clanging-scales.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 692,
+      "slug": "dragon-hammer",
+      "name": "Dragon Hammer",
+      "sheet_row": 468,
+      "runtime_id": "dragon-hammer",
+      "file": "moves/dragon-hammer.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 693,
+      "slug": "brutal-swing",
+      "name": "Brutal Swing",
+      "sheet_row": 469,
+      "runtime_id": "brutal-swing",
+      "file": "moves/brutal-swing.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 695,
+      "slug": "sinister-arrow-raid",
+      "name": "Sinister Arrow Raid",
+      "sheet_row": 470,
+      "runtime_id": "sinister-arrow-raid",
+      "file": "moves/sinister-arrow-raid.lua",
+      "status": "partial",
+      "limitations": [
+        "Z-Move activation, species/item eligibility, once-per-battle limits and partial Protect damage require the host."
+      ]
+    },
+    {
+      "id": 696,
+      "slug": "malicious-moonsault",
+      "name": "Malicious Moonsault",
+      "sheet_row": 471,
+      "runtime_id": "malicious-moonsault",
+      "file": "moves/malicious-moonsault.lua",
+      "status": "partial",
+      "limitations": [
+        "Z-Move activation, species/item eligibility, once-per-battle limits and partial Protect damage require the host."
+      ]
+    },
+    {
+      "id": 697,
+      "slug": "oceanic-operetta",
+      "name": "Oceanic Operetta",
+      "sheet_row": 472,
+      "runtime_id": "oceanic-operetta",
+      "file": "moves/oceanic-operetta.lua",
+      "status": "partial",
+      "limitations": [
+        "Z-Move activation, species/item eligibility, once-per-battle limits and partial Protect damage require the host."
+      ]
+    },
+    {
+      "id": 699,
+      "slug": "soul-stealing-7-star-strike",
+      "name": "Soul-Stealing 7-Star Strike",
+      "sheet_row": 473,
+      "runtime_id": "soul-stealing-7-star-strike",
+      "file": "moves/soul-stealing-7-star-strike.lua",
+      "status": "partial",
+      "limitations": [
+        "Z-Move activation, species/item eligibility, once-per-battle limits and partial Protect damage require the host."
+      ]
+    },
+    {
+      "id": 700,
+      "slug": "stoked-sparksurfer",
+      "name": "Stoked Sparksurfer",
+      "sheet_row": 474,
+      "runtime_id": "stoked-sparksurfer",
+      "file": "moves/stoked-sparksurfer.lua",
+      "status": "partial",
+      "limitations": [
+        "Z-Move activation, species/item eligibility, once-per-battle limits and partial Protect damage require the host."
+      ]
+    },
+    {
+      "id": 701,
+      "slug": "pulverizing-pancake",
+      "name": "Pulverizing Pancake",
+      "sheet_row": 475,
+      "runtime_id": "pulverizing-pancake",
+      "file": "moves/pulverizing-pancake.lua",
+      "status": "partial",
+      "limitations": [
+        "Z-Move activation, species/item eligibility, once-per-battle limits and partial Protect damage require the host."
+      ]
+    },
+    {
+      "id": 702,
+      "slug": "extreme-evoboost",
+      "name": "Extreme Evoboost",
+      "sheet_row": 476,
+      "runtime_id": "extreme-evoboost",
+      "file": "moves/extreme-evoboost.lua",
+      "status": "partial",
+      "limitations": [
+        "Z-Move activation, species/item eligibility, once-per-battle limits and partial Protect damage require the host."
+      ]
+    },
+    {
+      "id": 703,
+      "slug": "genesis-supernova",
+      "name": "Genesis Supernova",
+      "sheet_row": 477,
+      "runtime_id": "genesis-supernova",
+      "file": "moves/genesis-supernova.lua",
+      "status": "partial",
+      "limitations": [
+        "Terrain is recorded, but grounded-only damage/status/healing rules and Psychic Terrain priority blocking require engine support.",
+        "Z-Move activation, species/item eligibility, once-per-battle limits and partial Protect damage require the host."
+      ]
+    },
+    {
+      "id": 704,
+      "slug": "shell-trap",
+      "name": "Shell Trap",
+      "sheet_row": 478,
+      "runtime_id": "shell-trap",
+      "file": "moves/shell-trap.lua",
+      "status": "partial",
+      "limitations": [
+        "The trap records opposing physical hits, but reprioritizing the user immediately after the triggering attacker requires an ordering hook."
+      ]
+    },
+    {
+      "id": 705,
+      "slug": "fleur-cannon",
+      "name": "Fleur Cannon",
+      "sheet_row": 479,
+      "runtime_id": "fleur-cannon",
+      "file": "moves/fleur-cannon.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 706,
+      "slug": "psychic-fangs",
+      "name": "Psychic Fangs",
+      "sheet_row": 480,
+      "runtime_id": "psychic-fangs",
+      "file": "moves/psychic-fangs.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 707,
+      "slug": "stomping-tantrum",
+      "name": "Stomping Tantrum",
+      "sheet_row": 481,
+      "runtime_id": "stomping-tantrum",
+      "file": "moves/stomping-tantrum.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 708,
+      "slug": "shadow-bone",
+      "name": "Shadow Bone",
+      "sheet_row": 482,
+      "runtime_id": "shadow-bone",
+      "file": "moves/shadow-bone.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 709,
+      "slug": "accelerock",
+      "name": "Accelerock",
+      "sheet_row": 483,
+      "runtime_id": "accelerock",
+      "file": "moves/accelerock.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 710,
+      "slug": "liquidation",
+      "name": "Liquidation",
+      "sheet_row": 484,
+      "runtime_id": "liquidation",
+      "file": "moves/liquidation.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 711,
+      "slug": "prismatic-laser",
+      "name": "Prismatic Laser",
+      "sheet_row": 485,
+      "runtime_id": "prismatic-laser",
+      "file": "moves/prismatic-laser.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 712,
+      "slug": "spectral-thief",
+      "name": "Spectral Thief",
+      "sheet_row": 486,
+      "runtime_id": "spectral-thief",
+      "file": "moves/spectral-thief.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 713,
+      "slug": "sunsteel-strike",
+      "name": "Sunsteel Strike",
+      "sheet_row": 487,
+      "runtime_id": "sunsteel-strike",
+      "file": "moves/sunsteel-strike.lua",
+      "status": "partial",
+      "limitations": [
+        "The engine does not execute abilities; explicit ability-bypass semantics require an ability engine."
+      ]
+    },
+    {
+      "id": 714,
+      "slug": "moongeist-beam",
+      "name": "Moongeist Beam",
+      "sheet_row": 488,
+      "runtime_id": "moongeist-beam",
+      "file": "moves/moongeist-beam.lua",
+      "status": "partial",
+      "limitations": [
+        "The engine does not execute abilities; explicit ability-bypass semantics require an ability engine."
+      ]
+    },
+    {
+      "id": 715,
+      "slug": "tearful-look",
+      "name": "Tearful Look",
+      "sheet_row": 489,
+      "runtime_id": "tearful-look",
+      "file": "moves/tearful-look.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 716,
+      "slug": "zing-zap",
+      "name": "Zing Zap",
+      "sheet_row": 490,
+      "runtime_id": "zing-zap",
+      "file": "moves/zing-zap.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 718,
+      "slug": "multi-attack",
+      "name": "Multi-Attack",
+      "sheet_row": 491,
+      "runtime_id": "multi-attack",
+      "file": "moves/multi-attack.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 719,
+      "slug": "10-000-000-volt-thunderbolt",
+      "name": "10,000,000 Volt Thunderbolt",
+      "sheet_row": 492,
+      "runtime_id": "10-000-000-volt-thunderbolt",
+      "file": "moves/10-000-000-volt-thunderbolt.lua",
+      "status": "partial",
+      "limitations": [
+        "Z-Move activation, species/item eligibility, once-per-battle limits and partial Protect damage require the host.",
+        "The damage API supports one increased critical-hit stage, not this move's higher critical-hit ratio."
+      ]
+    },
+    {
+      "id": 720,
+      "slug": "mind-blown",
+      "name": "Mind Blown",
+      "sheet_row": 493,
+      "runtime_id": "mind-blown",
+      "file": "moves/mind-blown.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 721,
+      "slug": "plasma-fists",
+      "name": "Plasma Fists",
+      "sheet_row": 494,
+      "runtime_id": "plasma-fists",
+      "file": "moves/plasma-fists.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 722,
+      "slug": "photon-geyser",
+      "name": "Photon Geyser",
+      "sheet_row": 495,
+      "runtime_id": "photon-geyser",
+      "file": "moves/photon-geyser.lua",
+      "status": "partial",
+      "limitations": [
+        "The engine does not execute abilities; explicit ability-bypass semantics require an ability engine."
+      ]
+    },
+    {
+      "id": 723,
+      "slug": "light-that-burns-the-sky",
+      "name": "Light That Burns the Sky",
+      "sheet_row": 496,
+      "runtime_id": "light-that-burns-the-sky",
+      "file": "moves/light-that-burns-the-sky.lua",
+      "status": "partial",
+      "limitations": [
+        "Z-Move activation, species/item eligibility, once-per-battle limits and partial Protect damage require the host.",
+        "The engine does not execute abilities; explicit ability-bypass semantics require an ability engine."
+      ]
+    },
+    {
+      "id": 724,
+      "slug": "searing-sunraze-smash",
+      "name": "Searing Sunraze Smash",
+      "sheet_row": 497,
+      "runtime_id": "searing-sunraze-smash",
+      "file": "moves/searing-sunraze-smash.lua",
+      "status": "partial",
+      "limitations": [
+        "Z-Move activation, species/item eligibility, once-per-battle limits and partial Protect damage require the host.",
+        "The engine does not execute abilities; explicit ability-bypass semantics require an ability engine."
+      ]
+    },
+    {
+      "id": 725,
+      "slug": "menacing-moonraze-maelstrom",
+      "name": "Menacing Moonraze Maelstrom",
+      "sheet_row": 498,
+      "runtime_id": "menacing-moonraze-maelstrom",
+      "file": "moves/menacing-moonraze-maelstrom.lua",
+      "status": "partial",
+      "limitations": [
+        "Z-Move activation, species/item eligibility, once-per-battle limits and partial Protect damage require the host.",
+        "The engine does not execute abilities; explicit ability-bypass semantics require an ability engine."
+      ]
+    },
+    {
+      "id": 726,
+      "slug": "lets-snuggle-forever",
+      "name": "Let’s Snuggle Forever",
+      "sheet_row": 499,
+      "runtime_id": "lets-snuggle-forever",
+      "file": "moves/lets-snuggle-forever.lua",
+      "status": "partial",
+      "limitations": [
+        "Z-Move activation, species/item eligibility, once-per-battle limits and partial Protect damage require the host."
+      ]
+    },
+    {
+      "id": 727,
+      "slug": "splintered-stormshards",
+      "name": "Splintered Stormshards",
+      "sheet_row": 500,
+      "runtime_id": "splintered-stormshards",
+      "file": "moves/splintered-stormshards.lua",
+      "status": "partial",
+      "limitations": [
+        "Z-Move activation, species/item eligibility, once-per-battle limits and partial Protect damage require the host."
+      ]
+    },
+    {
+      "id": 728,
+      "slug": "clangorous-soulblaze",
+      "name": "Clangorous Soulblaze",
+      "sheet_row": 501,
+      "runtime_id": "clangorous-soulblaze",
+      "file": "moves/clangorous-soulblaze.lua",
+      "status": "partial",
+      "limitations": [
+        "Z-Move activation, species/item eligibility, once-per-battle limits and partial Protect damage require the host."
+      ]
+    },
+    {
+      "id": 729,
+      "slug": "zippy-zap",
+      "name": "Zippy Zap",
+      "sheet_row": 502,
+      "runtime_id": "zippy-zap",
+      "file": "moves/zippy-zap.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 730,
+      "slug": "splishy-splash",
+      "name": "Splishy Splash",
+      "sheet_row": 503,
+      "runtime_id": "splishy-splash",
+      "file": "moves/splishy-splash.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 731,
+      "slug": "floaty-fall",
+      "name": "Floaty Fall",
+      "sheet_row": 504,
+      "runtime_id": "floaty-fall",
+      "file": "moves/floaty-fall.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 733,
+      "slug": "bouncy-bubble",
+      "name": "Bouncy Bubble",
+      "sheet_row": 505,
+      "runtime_id": "bouncy-bubble",
+      "file": "moves/bouncy-bubble.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 734,
+      "slug": "buzzy-buzz",
+      "name": "Buzzy Buzz",
+      "sheet_row": 506,
+      "runtime_id": "buzzy-buzz",
+      "file": "moves/buzzy-buzz.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 735,
+      "slug": "sizzly-slide",
+      "name": "Sizzly Slide",
+      "sheet_row": 507,
+      "runtime_id": "sizzly-slide",
+      "file": "moves/sizzly-slide.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 736,
+      "slug": "glitzy-glow",
+      "name": "Glitzy Glow",
+      "sheet_row": 508,
+      "runtime_id": "glitzy-glow",
+      "file": "moves/glitzy-glow.lua",
+      "status": "partial",
+      "limitations": [
+        "The screen uses a 1/2 multiplier; its 2/3 spread-battle factor requires a conditional damage rule."
+      ]
+    },
+    {
+      "id": 737,
+      "slug": "baddy-bad",
+      "name": "Baddy Bad",
+      "sheet_row": 509,
+      "runtime_id": "baddy-bad",
+      "file": "moves/baddy-bad.lua",
+      "status": "partial",
+      "limitations": [
+        "The screen uses a 1/2 multiplier; its 2/3 spread-battle factor requires a conditional damage rule."
+      ]
+    },
+    {
+      "id": 739,
+      "slug": "freezy-frost",
+      "name": "Freezy Frost",
+      "sheet_row": 510,
+      "runtime_id": "freezy-frost",
+      "file": "moves/freezy-frost.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 740,
+      "slug": "sparkly-swirl",
+      "name": "Sparkly Swirl",
+      "sheet_row": 511,
+      "runtime_id": "sparkly-swirl",
+      "file": "moves/sparkly-swirl.lua",
+      "status": "partial",
+      "limitations": [
+        "Cures active teammates; the engine has no benched party members to cure."
+      ]
+    },
+    {
+      "id": 742,
+      "slug": "double-iron-bash",
+      "name": "Double Iron Bash",
+      "sheet_row": 512,
+      "runtime_id": "double-iron-bash",
+      "file": "moves/double-iron-bash.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 744,
+      "slug": "dynamax-cannon",
+      "name": "Dynamax Cannon",
+      "sheet_row": 513,
+      "runtime_id": "dynamax-cannon",
+      "file": "moves/dynamax-cannon.lua",
+      "status": "partial",
+      "limitations": [
+        "Dynamax state is not exposed by the Lua API, so damage cannot double against a Dynamaxed target."
+      ]
+    },
+    {
+      "id": 745,
+      "slug": "snipe-shot",
+      "name": "Snipe Shot",
+      "sheet_row": 514,
+      "runtime_id": "snipe-shot",
+      "file": "moves/snipe-shot.lua",
+      "status": "partial",
+      "limitations": [
+        "The engine has no redirection mechanic; targeting already goes directly to the selected opponent."
+      ]
+    },
+    {
+      "id": 746,
+      "slug": "jaw-lock",
+      "name": "Jaw Lock",
+      "sheet_row": 515,
+      "runtime_id": "jaw-lock",
+      "file": "moves/jaw-lock.lua",
+      "status": "partial",
+      "limitations": [
+        "Trapping is recorded as a Trapped rule for the host; the engine has no switching or bench."
+      ]
+    },
+    {
+      "id": 747,
+      "slug": "stuff-cheeks",
+      "name": "Stuff Cheeks",
+      "sheet_row": 516,
+      "runtime_id": "stuff-cheeks",
+      "file": "moves/stuff-cheeks.lua",
+      "status": "partial",
+      "limitations": [
+        "Unavailable: held berries are identifiers only; their activation effects cannot be executed by Lua."
+      ]
+    },
+    {
+      "id": 748,
+      "slug": "no-retreat",
+      "name": "No Retreat",
+      "sheet_row": 517,
+      "runtime_id": "no-retreat",
+      "file": "moves/no-retreat.lua",
+      "status": "partial",
+      "limitations": [
+        "Trapping is recorded as a Trapped rule for the host; the engine has no switching or bench."
+      ]
+    },
+    {
+      "id": 757,
+      "slug": "max-flare",
+      "name": "Max Flare",
+      "sheet_row": 518,
+      "runtime_id": "max-flare",
+      "file": "moves/max-flare.lua",
+      "status": "partial",
+      "limitations": [
+        "Dynamax eligibility, power derived from the underlying move, and partial Protect damage are unsupported; this file uses the supplied JSON power."
+      ]
+    },
+    {
+      "id": 758,
+      "slug": "max-flutterby",
+      "name": "Max Flutterby",
+      "sheet_row": 519,
+      "runtime_id": "max-flutterby",
+      "file": "moves/max-flutterby.lua",
+      "status": "partial",
+      "limitations": [
+        "Dynamax eligibility, power derived from the underlying move, and partial Protect damage are unsupported; this file uses the supplied JSON power."
+      ]
+    },
+    {
+      "id": 759,
+      "slug": "max-lightning",
+      "name": "Max Lightning",
+      "sheet_row": 520,
+      "runtime_id": "max-lightning",
+      "file": "moves/max-lightning.lua",
+      "status": "partial",
+      "limitations": [
+        "Terrain is recorded, but grounded-only damage/status/healing rules and Psychic Terrain priority blocking require engine support.",
+        "Dynamax eligibility, power derived from the underlying move, and partial Protect damage are unsupported; this file uses the supplied JSON power."
+      ]
+    },
+    {
+      "id": 760,
+      "slug": "max-strike",
+      "name": "Max Strike",
+      "sheet_row": 521,
+      "runtime_id": "max-strike",
+      "file": "moves/max-strike.lua",
+      "status": "partial",
+      "limitations": [
+        "Dynamax eligibility, power derived from the underlying move, and partial Protect damage are unsupported; this file uses the supplied JSON power."
+      ]
+    },
+    {
+      "id": 761,
+      "slug": "max-knuckle",
+      "name": "Max Knuckle",
+      "sheet_row": 522,
+      "runtime_id": "max-knuckle",
+      "file": "moves/max-knuckle.lua",
+      "status": "partial",
+      "limitations": [
+        "Dynamax eligibility, power derived from the underlying move, and partial Protect damage are unsupported; this file uses the supplied JSON power."
+      ]
+    },
+    {
+      "id": 762,
+      "slug": "max-phantasm",
+      "name": "Max Phantasm",
+      "sheet_row": 523,
+      "runtime_id": "max-phantasm",
+      "file": "moves/max-phantasm.lua",
+      "status": "partial",
+      "limitations": [
+        "Dynamax eligibility, power derived from the underlying move, and partial Protect damage are unsupported; this file uses the supplied JSON power."
+      ]
+    },
+    {
+      "id": 763,
+      "slug": "max-hailstorm",
+      "name": "Max Hailstorm",
+      "sheet_row": 524,
+      "runtime_id": "max-hailstorm",
+      "file": "moves/max-hailstorm.lua",
+      "status": "partial",
+      "limitations": [
+        "Dynamax eligibility, power derived from the underlying move, and partial Protect damage are unsupported; this file uses the supplied JSON power."
+      ]
+    },
+    {
+      "id": 764,
+      "slug": "max-ooze",
+      "name": "Max Ooze",
+      "sheet_row": 525,
+      "runtime_id": "max-ooze",
+      "file": "moves/max-ooze.lua",
+      "status": "partial",
+      "limitations": [
+        "Dynamax eligibility, power derived from the underlying move, and partial Protect damage are unsupported; this file uses the supplied JSON power."
+      ]
+    },
+    {
+      "id": 765,
+      "slug": "max-geyser",
+      "name": "Max Geyser",
+      "sheet_row": 526,
+      "runtime_id": "max-geyser",
+      "file": "moves/max-geyser.lua",
+      "status": "partial",
+      "limitations": [
+        "Dynamax eligibility, power derived from the underlying move, and partial Protect damage are unsupported; this file uses the supplied JSON power."
+      ]
+    },
+    {
+      "id": 766,
+      "slug": "max-airstream",
+      "name": "Max Airstream",
+      "sheet_row": 527,
+      "runtime_id": "max-airstream",
+      "file": "moves/max-airstream.lua",
+      "status": "partial",
+      "limitations": [
+        "Dynamax eligibility, power derived from the underlying move, and partial Protect damage are unsupported; this file uses the supplied JSON power."
+      ]
+    },
+    {
+      "id": 767,
+      "slug": "max-starfall",
+      "name": "Max Starfall",
+      "sheet_row": 528,
+      "runtime_id": "max-starfall",
+      "file": "moves/max-starfall.lua",
+      "status": "partial",
+      "limitations": [
+        "Terrain is recorded, but grounded-only damage/status/healing rules and Psychic Terrain priority blocking require engine support.",
+        "Dynamax eligibility, power derived from the underlying move, and partial Protect damage are unsupported; this file uses the supplied JSON power."
+      ]
+    },
+    {
+      "id": 768,
+      "slug": "max-wyrmwind",
+      "name": "Max Wyrmwind",
+      "sheet_row": 529,
+      "runtime_id": "max-wyrmwind",
+      "file": "moves/max-wyrmwind.lua",
+      "status": "partial",
+      "limitations": [
+        "Dynamax eligibility, power derived from the underlying move, and partial Protect damage are unsupported; this file uses the supplied JSON power."
+      ]
+    },
+    {
+      "id": 769,
+      "slug": "max-mindstorm",
+      "name": "Max Mindstorm",
+      "sheet_row": 530,
+      "runtime_id": "max-mindstorm",
+      "file": "moves/max-mindstorm.lua",
+      "status": "partial",
+      "limitations": [
+        "Terrain is recorded, but grounded-only damage/status/healing rules and Psychic Terrain priority blocking require engine support.",
+        "Dynamax eligibility, power derived from the underlying move, and partial Protect damage are unsupported; this file uses the supplied JSON power."
+      ]
+    },
+    {
+      "id": 770,
+      "slug": "max-rockfall",
+      "name": "Max Rockfall",
+      "sheet_row": 531,
+      "runtime_id": "max-rockfall",
+      "file": "moves/max-rockfall.lua",
+      "status": "partial",
+      "limitations": [
+        "Dynamax eligibility, power derived from the underlying move, and partial Protect damage are unsupported; this file uses the supplied JSON power."
+      ]
+    },
+    {
+      "id": 771,
+      "slug": "max-quake",
+      "name": "Max Quake",
+      "sheet_row": 532,
+      "runtime_id": "max-quake",
+      "file": "moves/max-quake.lua",
+      "status": "partial",
+      "limitations": [
+        "Dynamax eligibility, power derived from the underlying move, and partial Protect damage are unsupported; this file uses the supplied JSON power."
+      ]
+    },
+    {
+      "id": 772,
+      "slug": "max-darkness",
+      "name": "Max Darkness",
+      "sheet_row": 533,
+      "runtime_id": "max-darkness",
+      "file": "moves/max-darkness.lua",
+      "status": "partial",
+      "limitations": [
+        "Dynamax eligibility, power derived from the underlying move, and partial Protect damage are unsupported; this file uses the supplied JSON power."
+      ]
+    },
+    {
+      "id": 773,
+      "slug": "max-overgrowth",
+      "name": "Max Overgrowth",
+      "sheet_row": 534,
+      "runtime_id": "max-overgrowth",
+      "file": "moves/max-overgrowth.lua",
+      "status": "partial",
+      "limitations": [
+        "Terrain is recorded, but grounded-only damage/status/healing rules and Psychic Terrain priority blocking require engine support.",
+        "Dynamax eligibility, power derived from the underlying move, and partial Protect damage are unsupported; this file uses the supplied JSON power."
+      ]
+    },
+    {
+      "id": 774,
+      "slug": "max-steelspike",
+      "name": "Max Steelspike",
+      "sheet_row": 535,
+      "runtime_id": "max-steelspike",
+      "file": "moves/max-steelspike.lua",
+      "status": "partial",
+      "limitations": [
+        "Dynamax eligibility, power derived from the underlying move, and partial Protect damage are unsupported; this file uses the supplied JSON power."
+      ]
+    },
+    {
+      "id": 778,
+      "slug": "drum-beating",
+      "name": "Drum Beating",
+      "sheet_row": 536,
+      "runtime_id": "drum-beating",
+      "file": "moves/drum-beating.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 780,
+      "slug": "pyro-ball",
+      "name": "Pyro Ball",
+      "sheet_row": 537,
+      "runtime_id": "pyro-ball",
+      "file": "moves/pyro-ball.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 784,
+      "slug": "breaking-swipe",
+      "name": "Breaking Swipe",
+      "sheet_row": 538,
+      "runtime_id": "breaking-swipe",
+      "file": "moves/breaking-swipe.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 785,
+      "slug": "branch-poke",
+      "name": "Branch Poke",
+      "sheet_row": 539,
+      "runtime_id": "branch-poke",
+      "file": "moves/branch-poke.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 788,
+      "slug": "grav-apple",
+      "name": "Grav Apple",
+      "sheet_row": 540,
+      "runtime_id": "grav-apple",
+      "file": "moves/grav-apple.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 789,
+      "slug": "spirit-break",
+      "name": "Spirit Break",
+      "sheet_row": 541,
+      "runtime_id": "spirit-break",
+      "file": "moves/spirit-break.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 790,
+      "slug": "strange-steam",
+      "name": "Strange Steam",
+      "sheet_row": 542,
+      "runtime_id": "strange-steam",
+      "file": "moves/strange-steam.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 793,
+      "slug": "false-surrender",
+      "name": "False Surrender",
+      "sheet_row": 543,
+      "runtime_id": "false-surrender",
+      "file": "moves/false-surrender.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 794,
+      "slug": "meteor-assault",
+      "name": "Meteor Assault",
+      "sheet_row": 544,
+      "runtime_id": "meteor-assault",
+      "file": "moves/meteor-assault.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 795,
+      "slug": "eternabeam",
+      "name": "Eternabeam",
+      "sheet_row": 545,
+      "runtime_id": "eternabeam",
+      "file": "moves/eternabeam.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 796,
+      "slug": "steel-beam",
+      "name": "Steel Beam",
+      "sheet_row": 546,
+      "runtime_id": "steel-beam",
+      "file": "moves/steel-beam.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 797,
+      "slug": "expanding-force",
+      "name": "Expanding Force",
+      "sheet_row": 547,
+      "runtime_id": "expanding-force",
+      "file": "moves/expanding-force.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 798,
+      "slug": "steel-roller",
+      "name": "Steel Roller",
+      "sheet_row": 548,
+      "runtime_id": "steel-roller",
+      "file": "moves/steel-roller.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 799,
+      "slug": "scale-shot",
+      "name": "Scale Shot",
+      "sheet_row": 549,
+      "runtime_id": "scale-shot",
+      "file": "moves/scale-shot.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 800,
+      "slug": "meteor-beam",
+      "name": "Meteor Beam",
+      "sheet_row": 550,
+      "runtime_id": "meteor-beam",
+      "file": "moves/meteor-beam.lua",
+      "status": "partial",
+      "limitations": [
+        "Power Herb item activation is not available; normal charge and weather shortcuts are implemented."
+      ]
+    },
+    {
+      "id": 801,
+      "slug": "shell-side-arm",
+      "name": "Shell Side Arm",
+      "sheet_row": 551,
+      "runtime_id": "shell-side-arm",
+      "file": "moves/shell-side-arm.lua",
+      "status": "partial",
+      "limitations": [
+        "Damage category is selected from current stats. Dynamically adding contact for the physical hit is not exposed by the damage API."
+      ]
+    },
+    {
+      "id": 802,
+      "slug": "misty-explosion",
+      "name": "Misty Explosion",
+      "sheet_row": 552,
+      "runtime_id": "misty-explosion",
+      "file": "moves/misty-explosion.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 803,
+      "slug": "grassy-glide",
+      "name": "Grassy Glide",
+      "sheet_row": 553,
+      "runtime_id": "grassy-glide",
+      "file": "moves/grassy-glide.lua",
+      "status": "partial",
+      "limitations": [
+        "Terrain-dependent action priority requires an engine ordering hook; the JSON priority is used."
+      ]
+    },
+    {
+      "id": 804,
+      "slug": "rising-voltage",
+      "name": "Rising Voltage",
+      "sheet_row": 554,
+      "runtime_id": "rising-voltage",
+      "file": "moves/rising-voltage.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 805,
+      "slug": "terrain-pulse",
+      "name": "Terrain Pulse",
+      "sheet_row": 555,
+      "runtime_id": "terrain-pulse",
+      "file": "moves/terrain-pulse.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 806,
+      "slug": "skitter-smack",
+      "name": "Skitter Smack",
+      "sheet_row": 556,
+      "runtime_id": "skitter-smack",
+      "file": "moves/skitter-smack.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 807,
+      "slug": "burning-jealousy",
+      "name": "Burning Jealousy",
+      "sheet_row": 557,
+      "runtime_id": "burning-jealousy",
+      "file": "moves/burning-jealousy.lua",
+      "status": "partial",
+      "limitations": [
+        "The API does not expose whether targets raised any stat earlier this turn, so conditional burning is pending."
+      ]
+    },
+    {
+      "id": 808,
+      "slug": "lash-out",
+      "name": "Lash Out",
+      "sheet_row": 558,
+      "runtime_id": "lash-out",
+      "file": "moves/lash-out.lua",
+      "status": "partial",
+      "limitations": [
+        "The API does not expose whether any stat was lowered earlier this turn, so the conditional power doubling is pending."
+      ]
+    },
+    {
+      "id": 809,
+      "slug": "poltergeist",
+      "name": "Poltergeist",
+      "sheet_row": 559,
+      "runtime_id": "poltergeist",
+      "file": "moves/poltergeist.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 811,
+      "slug": "coaching",
+      "name": "Coaching",
+      "sheet_row": 560,
+      "runtime_id": "coaching",
+      "file": "moves/coaching.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 812,
+      "slug": "flip-turn",
+      "name": "Flip Turn",
+      "sheet_row": 561,
+      "runtime_id": "flip-turn",
+      "file": "moves/flip-turn.lua",
+      "status": "partial",
+      "limitations": [
+        "Switching, bench selection and switch interception are not implemented; only the on-field damage/stat effect runs."
+      ]
+    },
+    {
+      "id": 813,
+      "slug": "triple-axel",
+      "name": "Triple Axel",
+      "sheet_row": 562,
+      "runtime_id": "triple-axel",
+      "file": "moves/triple-axel.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 814,
+      "slug": "dual-wingbeat",
+      "name": "Dual Wingbeat",
+      "sheet_row": 563,
+      "runtime_id": "dual-wingbeat",
+      "file": "moves/dual-wingbeat.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 815,
+      "slug": "scorching-sands",
+      "name": "Scorching Sands",
+      "sheet_row": 564,
+      "runtime_id": "scorching-sands",
+      "file": "moves/scorching-sands.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 817,
+      "slug": "wicked-blow",
+      "name": "Wicked Blow",
+      "sheet_row": 565,
+      "runtime_id": "wicked-blow",
+      "file": "moves/wicked-blow.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 818,
+      "slug": "surging-strikes",
+      "name": "Surging Strikes",
+      "sheet_row": 566,
+      "runtime_id": "surging-strikes",
+      "file": "moves/surging-strikes.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 820,
+      "slug": "dragon-energy",
+      "name": "Dragon Energy",
+      "sheet_row": 567,
+      "runtime_id": "dragon-energy",
+      "file": "moves/dragon-energy.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 821,
+      "slug": "freezing-glare",
+      "name": "Freezing Glare",
+      "sheet_row": 568,
+      "runtime_id": "freezing-glare",
+      "file": "moves/freezing-glare.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 822,
+      "slug": "fiery-wrath",
+      "name": "Fiery Wrath",
+      "sheet_row": 569,
+      "runtime_id": "fiery-wrath",
+      "file": "moves/fiery-wrath.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 823,
+      "slug": "thunderous-kick",
+      "name": "Thunderous Kick",
+      "sheet_row": 570,
+      "runtime_id": "thunderous-kick",
+      "file": "moves/thunderous-kick.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 824,
+      "slug": "glacial-lance",
+      "name": "Glacial Lance",
+      "sheet_row": 571,
+      "runtime_id": "glacial-lance",
+      "file": "moves/glacial-lance.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 825,
+      "slug": "astral-barrage",
+      "name": "Astral Barrage",
+      "sheet_row": 572,
+      "runtime_id": "astral-barrage",
+      "file": "moves/astral-barrage.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
+      "id": 826,
+      "slug": "eerie-spell",
+      "name": "Eerie Spell",
+      "sheet_row": 573,
+      "runtime_id": "eerie-spell",
+      "file": "moves/eerie-spell.lua",
+      "status": "partial",
+      "limitations": [
+        "PP is read-only in Lua; reducing the last-used move by three PP requires a new engine operation."
+      ]
+    }
+  ]
+}

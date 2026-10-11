@@ -36,6 +36,8 @@ interface Build {
 const DEFAULT_SCALE = 0.85;
 /** The block reference has its own address, so the browser's Back button leaves it. */
 const REFERENCE_HASH = '#blocks';
+// The original runtime IDs remain compatible with saved projects; filenames use canonical slugs.
+const moveFilename = (id: string): string => `${id.replaceAll('_', '-')}.lua`;
 
 interface Blocked {
   title: string;
@@ -293,7 +295,8 @@ class App {
   }
 
   private freeId(wanted: string): string {
-    const taken = (id: string) => this.builtin.has(id) || this.project.docs.some((doc) => doc !== this.doc && doc.sheet.id === id);
+    const taken = (id: string) => [...this.builtin.keys()].some((other) => moveFilename(other) === moveFilename(id))
+      || this.project.docs.some((doc) => doc !== this.doc && moveFilename(doc.sheet.id) === moveFilename(id));
     if (!taken(wanted)) return wanted;
     for (let suffix = 2; ; suffix += 1) if (!taken(`${wanted}_${suffix}`)) return `${wanted}_${suffix}`;
   }
@@ -407,7 +410,7 @@ class App {
           h('div', { class: `menu-row${doc === this.doc ? ' current' : ''}` },
             h('button', { type: 'button', class: 'menu-open', onclick: () => { this.toggleMenu(false); if (doc !== this.doc) this.openDoc(doc); } },
               dot(doc.sheet.type), h('span', { class: 'menu-name' }, doc.sheet.name || 'Unnamed'),
-              h('span', { class: 'menu-meta' }, this.builtin.has(doc.sheet.id) ? 'edited built-in' : `${doc.sheet.id}.lua`),
+              h('span', { class: 'menu-meta' }, this.builtin.has(doc.sheet.id) ? 'edited built-in' : moveFilename(doc.sheet.id)),
             ),
             h('button', { type: 'button', class: 'icon-btn', 'aria-label': this.builtin.has(doc.sheet.id) ? `Reset ${doc.sheet.name} to the built-in version` : `Delete ${doc.sheet.name}`,
               title: this.builtin.has(doc.sheet.id) ? 'Reset to the built-in version' : 'Delete', onclick: () => this.deleteDoc(doc) }, icon(this.builtin.has(doc.sheet.id) ? 'restart' : 'trash', 15)),
@@ -423,7 +426,8 @@ class App {
               this.project.docs.push(doc);
               this.openDoc(doc);
             } },
-              dot(move.type), h('span', { class: 'menu-name' }, move.name), h('span', { class: 'menu-meta' }, `${move.type} · ${move.category}`),
+              dot(move.type), h('span', { class: 'menu-name' }, move.name),
+              h('span', { class: 'menu-meta' }, !canOpen(move) ? 'Lua file' : `${move.type} · ${move.category}`),
             ),
           ),
         ),
@@ -533,7 +537,7 @@ class App {
       h('span', null, sheet.name || 'Unnamed move'),
       icon('caret', 14),
     );
-    this.pathLabel.textContent = `moves/${sheet.id}.lua`;
+    this.pathLabel.textContent = `moves/${moveFilename(sheet.id)}`;
     this.savedLabel.textContent = this.saved ? 'Saved in this browser' : 'Could not save in this browser';
   }
 
@@ -542,7 +546,7 @@ class App {
     if (!generated) return;
     if (this.blocked && !window.confirm('This move has a problem and will not load in the game yet. Download it anyway?')) return;
     const url = URL.createObjectURL(new Blob([generated.lua], { type: 'text/plain' }));
-    const link = h('a', { href: url, download: `${this.doc.sheet.id}.lua` });
+    const link = h('a', { href: url, download: moveFilename(this.doc.sheet.id) });
     document.body.append(link);
     link.click();
     link.remove();
@@ -569,9 +573,9 @@ class App {
   private movesFor(text: string): Record<string, string> {
     const files = { ...BUILTIN_FILES };
     for (const other of this.project.docs) {
-      if (other !== this.doc && other.valid && other.lua) files[`${other.sheet.id}.lua`] = other.lua;
+      if (other !== this.doc && other.valid && other.lua) files[moveFilename(other.sheet.id)] = other.lua;
     }
-    files[`${this.doc.sheet.id}.lua`] = text;
+    files[moveFilename(this.doc.sheet.id)] = text;
     return files;
   }
 

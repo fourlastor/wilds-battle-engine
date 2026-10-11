@@ -182,7 +182,7 @@ mod tests {
     #[test]
     fn loads_original_and_scripted_moves() {
         let catalog = MoveCatalog::builtin().unwrap();
-        assert_eq!(catalog.len(), 42);
+        assert_eq!(catalog.len(), 581);
         let from_files =
             MoveCatalog::from_directory(concat!(env!("CARGO_MANIFEST_DIR"), "/../../moves"))
                 .unwrap();
@@ -286,17 +286,45 @@ mod tests {
 
     #[test]
     fn every_builtin_move_executes_a_turn() {
-        let ids: Vec<String> = MoveCatalog::builtin()
-            .unwrap()
-            .ids()
-            .map(str::to_owned)
-            .collect();
+        let catalog = MoveCatalog::builtin().unwrap();
+        let ids: Vec<String> = catalog.ids().map(str::to_owned).collect();
         for move_id in ids.into_iter().filter(|id| id != "struggle") {
-            let mut battle = one_on_one(31, &move_id, "splash");
-            pick(&mut battle, &move_id);
-            pick(&mut battle, "splash");
-            let result = battle.advance().unwrap();
-            assert!(!result.events.is_empty(), "{move_id}");
+            let mut battle = Battle::new(
+                31,
+                [
+                    vec![
+                        Pokemon::new("Ally", vec![move_id.clone()]),
+                        Pokemon::new("Partner", vec!["splash".into()]),
+                    ],
+                    vec![Pokemon::new("Foe", vec!["splash".into()])],
+                ],
+                catalog.clone(),
+            )
+            .unwrap();
+            let mut produced_events = false;
+            for _ in 0..20 {
+                let result = battle
+                    .advance()
+                    .unwrap_or_else(|error| panic!("{move_id}: {error}"));
+                produced_events |= !result.events.is_empty();
+                if battle.turn() > 2 {
+                    break;
+                }
+                let AdvanceStatus::Awaiting(prompt) = result.status else {
+                    break;
+                };
+                let choice = prompt
+                    .choices
+                    .first()
+                    .expect("a legal target including an ally");
+                battle
+                    .set_response(ActionSelection {
+                        prompt_id: prompt.id,
+                        choice_id: choice.id(),
+                    })
+                    .unwrap();
+            }
+            assert!(produced_events, "{move_id}");
         }
     }
 

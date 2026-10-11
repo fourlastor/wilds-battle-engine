@@ -1,4 +1,4 @@
-// Rebuilds every built-in move from blocks and checks that the generated Lua behaves exactly like
+// Rebuilds every block-editable built-in move and checks that the generated Lua behaves exactly like
 // the original file: same events, same final state, over many seeded battles in the real engine.
 // Run with: npm run test:blocks
 import { Blockly, engine, originals } from './headless.mjs';
@@ -8,6 +8,16 @@ const { blocksFromInfo, canOpen, sheetFromInfo } = await import('../src/blocks/l
 
 engine.setMoves(originals);
 const catalog = engine.catalog().filter((move) => move.id !== 'struggle');
+const editable = catalog.filter(canOpen);
+const luaOnly = catalog.filter((move) => !canOpen(move));
+// Keep the original authored block recipes covered as the Lua catalog grows.
+for (const id of ['charge', 'dream_eater', 'explosion', 'facade', 'false_swipe', 'hyper_beam',
+  'morning_sun', 'rage', 'snore', 'solar_beam', 'thrash', 'triple_kick']) {
+  if (!editable.some((move) => move.id === id)) throw new Error(`Missing block recipe: ${id}`);
+}
+// A battle loads only its moves and the fixture moves; unrelated files cannot affect these scenarios.
+const fixtureIds = ['tackle', 'splash', 'headbutt', 'sunny_day', 'sandstorm'];
+const filename = (id) => `${id.replaceAll('_', '-')}.lua`;
 
 const mon = (name, moves, extra = {}) => ({
   name, moves, level: 40, max_hp: 140, hp: 140, attack: 70, defense: 60, sp_attack: 75, sp_defense: 65, speed: 50, types: ['Normal'], ...extra,
@@ -72,12 +82,7 @@ let battles = 0;
 let crashed = 0;
 const workspace = new Blockly.Workspace();
 
-for (const info of catalog) {
-  if (!canOpen(info)) {
-    console.log(`FAIL ${info.id}: cannot be opened as blocks`);
-    failures += 1;
-    continue;
-  }
+for (const info of editable) {
   workspace.clear();
   Blockly.serialization.workspaces.load(blocksFromInfo(info), workspace);
   const sheet = sheetFromInfo(info);
@@ -99,14 +104,15 @@ for (const info of catalog) {
     generated.traced = generated.traced.replace(/= (\d+)/, (_, digits) => `= ${Number(digits) + 1}`);
   }
 
-  const file = `${info.id}.lua`;
+  const file = filename(info.id);
+  const baseline = Object.fromEntries([...fixtureIds, info.id].map((id) => [filename(id), originals[filename(id)]]));
   let problem = '';
   for (const [label, source] of [['generated', generated.lua], ['traced', generated.traced]]) {
-    const files = { ...originals, [file]: source };
+    const files = { ...baseline, [file]: source };
     for (const scenario of scenarios(info.id)) {
       for (let seed = 1; seed <= 8 && !problem; seed += 1) {
         battles += 1;
-        const expected = play(originals, scenario, info.id, seed);
+        const expected = play(baseline, scenario, info.id, seed);
         if (expected.some((entry) => entry.startsWith('create failed') || entry.startsWith('error:'))) crashed += 1;
         const actual = play(files, scenario, info.id, seed);
         const difference = firstDifference(expected, actual);
@@ -122,6 +128,7 @@ for (const info of catalog) {
   }
 }
 
-console.log(`\n${catalog.length - failures}/${catalog.length} built-in moves match their original files over ${battles} battles.`);
+console.log(`\n${editable.length - failures}/${editable.length} block-editable moves match their original files over ${battles} battles.`);
+console.log(`${luaOnly.length} Lua-only moves have no authored block recipe and are covered by the Rust catalog tests.`);
 if (crashed) console.log(`${crashed} of those battles stopped with an engine error in the original files too.`);
 process.exit(failures ? 1 : 0);

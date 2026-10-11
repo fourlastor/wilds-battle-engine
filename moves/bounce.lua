@@ -1,0 +1,39 @@
+-- Move 340: Bounce. Identity and parameters: pokemon_data/assets/moves/340.json.
+-- Behavior checked against PokeAPI; see catalog.json for scope and limitations.
+-- INCOMPLETE: Gravity is respected when present, but Gravity itself is outside this sheet catalog.
+
+local function two_turns(place, message, strike)
+  return function(ctx)
+    if ctx.turn == 1 then
+      ctx:message(ctx.user.name .. message)
+      if place then ctx:hide(place) end
+      ctx:force_move(2, TargetPolicy.SameTarget)
+      return
+    end
+    ctx:announce()
+    strike(ctx)
+  end
+end
+
+local function gravity(ctx)
+  return ctx.field.effects.gravity ~= nil
+end
+
+local move = {accuracy = 0.85, manual_announce = true, flags = {"contact"},
+    script = function(ctx)
+      if gravity(ctx) then return ctx:fail() end
+      two_turns(Hidden.Air, " sprang up!", function(inner)
+        if inner:damage(85).hit then inner:apply_status(inner.target, Status.Paralyzed, {chance = 0.3}) end
+      end)(ctx)
+    end}
+
+move.id = "bounce"
+move.name = "Bounce"
+move.type = Type.Flying
+move.category = Category.Physical
+move.pp = 5
+move.accuracy = 0.85
+move.priority = 0
+move.target = Target.Selected
+move.flags = {"incomplete"}
+return move

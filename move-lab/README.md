@@ -1,7 +1,7 @@
 # Move Lab
 
 A web page for making battle moves without writing code. You stack blocks, Move Lab writes the
-`moves/<id>.lua` file, and a test battle beside the blocks runs it in the real battle engine,
+`moves/<slug>.lua` file, and a test battle beside the blocks runs it in the real battle engine,
 compiled to WebAssembly.
 
 Move Lab is a separate project that happens to live in this repository. It depends on the engine
@@ -78,7 +78,11 @@ tooltips describe engine behaviour, so check them against `crates/wilds-battle-e
 when the engine changes.
 
 **Opening built-in moves.** Plain built-ins are converted to blocks from the engine's own
-description of them. The twelve scripted ones are rebuilt by hand in `src/blocks/library.ts`.
+description of them. Twelve original scripted moves are rebuilt by hand in
+`src/blocks/library.ts`. Other scripted moves appear as "Lua file" in the catalog
+and are edited in `moves/`; they can still participate in test battles. Filename
+slugs use hyphens, while existing runtime IDs retain underscores for saved-project
+compatibility. See [catalog scope and limitations](../moves/README.md).
 
 **The test battle.** `src/bench/bench.ts` drives a battle and builds the log. The copy of the move
 that runs in the test battle carries invisible marker messages (`ctx:message("\1…")`) before each
@@ -89,9 +93,11 @@ and repeats your choices, so only the edit changes the outcome.
 ## Checks
 
 - `npm run test:engine` loads the wasm engine in Node and plays a short battle.
-- `npm run test:blocks` rebuilds all 41 built-in moves from blocks and plays about 5,900 seeded
+- `npm run test:blocks` rebuilds all block-editable built-in moves (currently 310) and plays 44,640 seeded
   battles, comparing every event and the final state against the original Lua files, for both the
-  clean and the marked-up output. `PARITY_BREAK=tackle npm run test:blocks` proves the check bites.
+  clean and the marked-up output. It explicitly reports the 270 Lua-only definitions
+  without block recipes; the Rust catalog tests execute those files.
+  `PARITY_BREAK=tackle npm run test:blocks` proves the check bites.
 - `npm run test:reference` checks that every block of the palette is on the "All blocks" page with
   an explanation and a line, and plays short battles to confirm that the blocks do what their words
   say: who a block acts on, what waits for the move to get through, effects and their rules, marks,
