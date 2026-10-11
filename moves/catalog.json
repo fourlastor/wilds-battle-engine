@@ -3001,6 +3001,17 @@
       "limitations": []
     },
     {
+      "id": 366,
+      "slug": "tailwind",
+      "name": "Tailwind",
+      "sheet_row": null,
+      "runtime_id": "tailwind",
+      "file": "moves/tailwind.lua",
+      "status": "implemented",
+      "limitations": [],
+      "parameter_source": "https://pokeapi.co/api/v2/move/366/"
+    },
+    {
       "id": 369,
       "slug": "u-turn",
       "name": "U-turn",
@@ -6504,7 +6515,8 @@
       "block",
       "ingrain",
       "aqua-ring",
-      "safeguard"
+      "safeguard",
+      "tailwind"
     ]
   }
 }

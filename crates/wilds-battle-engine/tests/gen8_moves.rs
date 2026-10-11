@@ -1032,3 +1032,32 @@ fn safeguard_blocks_external_status_but_allows_rest() {
     });
     assert_eq!(b.participants(Side::Allies)[0].status, Some(Status::Asleep));
 }
+
+#[test]
+fn tailwind_doubles_team_speed_for_four_turns_without_refreshing() {
+    let mut user = mon("User", &["tailwind", "tackle"]);
+    user.speed = 80;
+    let mut foe = mon("Foe", &["tackle"]);
+    foe.speed = 120;
+    let mut b = game(user, vec![foe], 0.5);
+    turn(&mut b);
+    assert_eq!(b.side_conditions(Side::Allies)[0].turns_left, Some(3));
+    turn(&mut b);
+    assert!(b.participants(Side::Allies)[0].last_move_failed);
+    assert_eq!(b.side_conditions(Side::Allies)[0].turns_left, Some(2));
+    let events = turn_with(&mut b, |p| {
+        p.choices
+            .iter()
+            .find(|c| matches!(c,Choice::UseMove{move_id,..}if move_id=="tackle"))
+            .unwrap()
+            .id()
+    });
+    let first = events
+        .iter()
+        .find_map(|e| match e {
+            BattleEvent::Damage { target, .. } => Some(target.side),
+            _ => None,
+        })
+        .unwrap();
+    assert_eq!(first, Side::Foes);
+}
