@@ -20,6 +20,6 @@ move.pp = 5
 move.accuracy = 1
 move.priority = 0
 move.target = Target.AllOthers
-move.flags = {"bullet"}
+move.flags = {"bullet", "sheer_force"}
 move.base_power = 100
 return move

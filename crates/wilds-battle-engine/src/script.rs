@@ -1463,6 +1463,37 @@ impl Battle {
         let actor = frame.actor;
         let target = frame.target;
         let spec = frame.spec;
+        if self.sheer_force_applies(actor, &spec.id) {
+            let skipped = match &operation {
+                ScriptOperation::ChangeStat { .. } | ScriptOperation::ReducePp { .. } => {
+                    Some(Value::Integer(0))
+                }
+                ScriptOperation::Free { .. } | ScriptOperation::EndEffect { .. }
+                    if crate::items::item_key(&spec.id) == "rapidspin" =>
+                {
+                    Some(Value::Boolean(false))
+                }
+                ScriptOperation::CureStatus { .. }
+                    if crate::items::item_key(&spec.id) == "sparklingaria" =>
+                {
+                    Some(Value::Boolean(false))
+                }
+                ScriptOperation::ApplyStatus { .. }
+                | ScriptOperation::Confuse { .. }
+                | ScriptOperation::Flinch { .. }
+                | ScriptOperation::StartEffect { .. }
+                | ScriptOperation::EffectChance(_)
+                | ScriptOperation::ChangeForm { .. }
+                | ScriptOperation::RestoreForm { .. } => Some(Value::Boolean(false)),
+                ScriptOperation::FlinchTarget(_) | ScriptOperation::ChangeSelfStat { .. } => {
+                    Some(Value::Nil)
+                }
+                _ => None,
+            };
+            if let Some(value) = skipped {
+                return Ok(Flow::Continue(value));
+            }
+        }
         if spec.category != Category::Status {
             let secondary = match &operation {
                 ScriptOperation::ApplyStatus { who, .. }

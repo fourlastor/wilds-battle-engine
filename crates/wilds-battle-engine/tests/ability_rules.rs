@@ -4056,3 +4056,65 @@ fn stench_adds_ten_percent_flinch_with_immunities_and_no_duplicate_secondary() {
         assert_eq!(run("stench"), run(""));
     }
 }
+
+#[test]
+fn sheer_force_boosts_secondary_moves_and_suppresses_native_scripted_and_after_move_effects() {
+    check_power_ability("sheer-force", &["ember", "scald"], "tackle", 1.3, 1000);
+    for (move_id, stat) in [
+        ("flame-charge", wilds_battle_engine::Stat::Speed),
+        ("ancient_power", wilds_battle_engine::Stat::Attack),
+        ("diamond-storm", wilds_battle_engine::Stat::Defense),
+    ] {
+        let mut user = mon("User", &[move_id]);
+        user.ability = Some("sheer-force".into());
+        let mut battle = game(user, mon("Target", &["splash"]), 0.05);
+        turn(&mut battle, move_id, "splash");
+        assert_eq!(ally(&battle).stage(stat), 0, "{move_id}");
+    }
+    for id in ["ember", "scald", "throat-chop", "anchor-shot"] {
+        let mut user = mon("User", &[id]);
+        user.ability = Some("sheer-force".into());
+        let mut target = mon("Target", &["splash"]);
+        target.ability = Some("color-change".into());
+        target.item = Some("maranga-berry".into());
+        let mut battle = game(user, target, 0.05);
+        turn(&mut battle, id, "splash");
+        assert!(foe(&battle).status.is_none(), "{id}");
+        assert!(foe(&battle).conditions.is_empty(), "{id}");
+        assert_eq!(foe(&battle).types, [PokemonType::Normal]);
+        assert_eq!(foe(&battle).item.as_deref(), Some("maranga-berry"));
+    }
+    let mut user = mon("User", &["scald"]);
+    user.ability = Some("sheer-force".into());
+    let mut target = mon("Target", &["splash"]);
+    target.status = Some(Status::Frozen);
+    let mut battle = game(user, target, 0.5);
+    turn(&mut battle, "scald", "splash");
+    assert!(
+        foe(&battle).status.is_none(),
+        "Scald still thaws its target"
+    );
+}
+
+#[test]
+fn sheer_force_preserves_primary_effects_but_blocks_rapid_spin_cleanup_and_arias_cure() {
+    let mut user = mon("User", &["splash", "rapid-spin"]);
+    user.ability = Some("sheer-force".into());
+    let mut battle = game(user, mon("Target", &["spikes", "splash"]), 0.5);
+    turn(&mut battle, "splash", "spikes");
+    turn(&mut battle, "rapid-spin", "splash");
+    assert_eq!(ally(&battle).stage(wilds_battle_engine::Stat::Speed), 0);
+    assert!(
+        battle
+            .side_conditions(Side::Allies)
+            .iter()
+            .any(|c| c.name == "spikes")
+    );
+    let mut user = mon("User", &["sparkling-aria"]);
+    user.ability = Some("sheer-force".into());
+    let mut target = mon("Target", &["splash"]);
+    target.status = Some(Status::Burned);
+    let mut battle = game(user, target, 0.5);
+    turn(&mut battle, "sparkling-aria", "splash");
+    assert_eq!(foe(&battle).status, Some(Status::Burned));
+}

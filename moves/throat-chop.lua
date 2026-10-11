@@ -3,7 +3,7 @@ return {
   id = "throat-chop", name = "Throat Chop", type = Type.Dark,
   category = Category.Physical, pp = 15, accuracy = 1.0,
   priority = 0, target = Target.AnyOther,
-  flags = {"contact"},
+  flags = {"contact", "sheer_force"},
   script = function(ctx)
     local hit = ctx:damage(80)
     if hit.hit and not hit.substitute and not ctx.target.fainted then

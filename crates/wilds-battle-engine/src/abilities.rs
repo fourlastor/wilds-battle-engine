@@ -27,10 +27,18 @@ fn cannot_suppress(ability: &str) -> bool {
 }
 
 impl Battle {
+    pub(crate) fn sheer_force_applies(&self, actor: ParticipantId, move_id: &str) -> bool {
+        self.sheer_force_moves
+            .contains(&(actor, move_id.to_owned()))
+    }
+
     pub(crate) fn finish_ability_hits(&mut self, events: &mut Vec<BattleEvent>) {
         let hits = std::mem::take(&mut self.ability_hits);
         let mut seen = std::collections::BTreeSet::new();
         for (target, hit) in hits.iter().cloned().rev() {
+            if self.sheer_force_applies(hit.attacker, &hit.move_id) {
+                continue;
+            }
             if !seen.insert(target) {
                 continue;
             }
@@ -65,6 +73,9 @@ impl Battle {
         let mut hits = hits;
         hits.sort_by_key(|(target, _)| std::cmp::Reverse(self.action_speed(*target)));
         for (target, hit) in hits {
+            if self.sheer_force_applies(hit.attacker, &hit.move_id) {
+                continue;
+            }
             if target != hit.attacker
                 && hit.category != crate::moves::Category::Status
                 && item_key(&hit.move_id) != "fling"
@@ -1627,6 +1638,9 @@ impl Battle {
         target: ParticipantId,
         attack: &crate::engine::Attack,
     ) -> f32 {
+        if self.sheer_force_applies(actor, attack.move_id) {
+            return 5325.0 / 4096.0;
+        }
         if self.has_ability(actor, "analytic")
             && !self
                 .pending_actors

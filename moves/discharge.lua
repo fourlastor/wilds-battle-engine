@@ -20,5 +20,5 @@ move.pp = 15
 move.accuracy = 1
 move.priority = 0
 move.target = Target.AllOthers
-move.flags = {}
+move.flags = {"sheer_force"}
 return move

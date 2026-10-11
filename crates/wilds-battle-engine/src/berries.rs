@@ -389,6 +389,9 @@ impl Battle {
             if meta.defer_items {
                 self.berry_hit(actor, target, &meta, events);
             }
+            if self.sheer_force_applies(actor, &meta.move_id) {
+                continue;
+            }
             let Some(item) = self.get(target).item.as_deref().map(item_key) else {
                 continue;
             };

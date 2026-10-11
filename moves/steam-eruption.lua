@@ -18,7 +18,7 @@ move.pp = 5
 move.accuracy = 0.95
 move.priority = 0
 move.target = Target.Selected
-move.flags = {}
+move.flags = {"sheer_force"}
 move.usable_while_frozen = true
 move.base_power = 110
 return move

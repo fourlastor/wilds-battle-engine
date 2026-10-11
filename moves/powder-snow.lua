@@ -20,6 +20,6 @@ move.pp = 25
 move.accuracy = 1
 move.priority = 0
 move.target = Target.AllOpponents
-move.flags = {}
+move.flags = {"sheer_force"}
 move.base_power = 40
 return move

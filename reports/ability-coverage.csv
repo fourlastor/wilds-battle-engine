@@ -123,7 +123,7 @@ id,ability,status,verification
 122,flower-gift,IMPLEMENTED,ability_rules::flower_gift_changes_cherrim_and_boosts_allied_attack_and_special_defense_in_sun
 123,bad-dreams,IMPLEMENTED,Source inventory; existing tests only
 124,pickpocket,IMPLEMENTED,ability_rules::pickpocket_steals_on_contact_after_the_move_with_existing_item_restrictions
-125,sheer-force,MISSING,No native battle behavior
+125,sheer-force,IMPLEMENTED,ability_rules::sheer_force_boosts_secondary_moves_and_suppresses_native_scripted_and_after_move_effects
 126,contrary,IMPLEMENTED,Source inventory; existing tests only
 127,unnerve,IMPLEMENTED,Source inventory; existing tests only
 128,defiant,IMPLEMENTED,ability_rules::defiant_responds_to_opposing_stat_drops_and_intimidate

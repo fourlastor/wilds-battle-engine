@@ -14,5 +14,5 @@ move.pp = 5
 move.accuracy = 1
 move.priority = 0
 move.target = Target.Selected
-move.flags = {"bullet"}
+move.flags = {"bullet", "sheer_force"}
 return move

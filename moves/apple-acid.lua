@@ -1,5 +1,6 @@
 -- Move 787: identity and parameters from pokemon_data/assets/moves/787.json.
 return {
+  flags = {"sheer_force"},
   id = "apple-acid", name = "Apple Acid",
   type = Type.Grass, category = Category.Special,
   pp = 10, accuracy = 1, priority = 0, target = Target.Selected,

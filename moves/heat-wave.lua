@@ -20,6 +20,6 @@ move.pp = 10
 move.accuracy = 0.9
 move.priority = 0
 move.target = Target.AllOpponents
-move.flags = {"wind"}
+move.flags = {"wind", "sheer_force"}
 move.base_power = 95
 return move

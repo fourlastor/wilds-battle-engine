@@ -20,6 +20,6 @@ move.pp = 10
 move.accuracy = 0.9
 move.priority = 0
 move.target = Target.AllOpponents
-move.flags = {"flinch_secondary"}
+move.flags = {"flinch_secondary", "sheer_force"}
 move.base_power = 75
 return move

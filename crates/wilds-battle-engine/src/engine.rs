@@ -33,6 +33,7 @@ pub struct Battle {
     pub(crate) pending_faints: Vec<(ParticipantId, crate::model::AbilityState)>,
     pub(crate) item_hits: Vec<(ParticipantId, ParticipantId, HitMeta)>,
     pub(crate) ability_hits: Vec<(ParticipantId, HitInfo)>,
+    pub(crate) sheer_force_moves: std::collections::BTreeSet<(ParticipantId, String)>,
     pub(crate) hit_reactions: Vec<HitReaction>,
     pub(crate) reaction_hit: Option<HitInfo>,
     pub(crate) ignored_ability: Option<ParticipantId>,
@@ -73,7 +74,7 @@ pub(crate) struct HitReaction {
 /// What a hit was, for the Pokémon it lands on.
 #[derive(Clone)]
 pub(crate) struct HitMeta {
-    move_id: String,
+    pub(crate) move_id: String,
     pub(crate) category: Category,
     pub(crate) move_type: PokemonType,
     contact: bool,
@@ -260,6 +261,7 @@ impl Battle {
             active_gem: None,
             item_hits: Vec::new(),
             ability_hits: Vec::new(),
+            sheer_force_moves: std::collections::BTreeSet::new(),
             pending_knockouts: Vec::new(),
             pending_faints: Vec::new(),
             hit_reactions: Vec::new(),
@@ -1183,6 +1185,7 @@ impl Battle {
         let choice = &overridden;
         self.move_failed = false;
         self.current_move = None;
+        self.sheer_force_moves.clear();
         self.substitute_hits.clear();
         self.active_gem = None;
         self.expire_action_conditions(actor, Some(&choice.move_id));
@@ -1485,6 +1488,9 @@ impl Battle {
                 spec.category == Category::Status && self.has_ability(actor, "prankster");
         }
         self.current_move = Some(spec.id.clone());
+        if spec.has_flag("sheer_force") && self.has_ability(actor, "sheerforce") {
+            self.sheer_force_moves.insert((actor, spec.id.clone()));
+        }
         self.stance_before_move(actor, &spec, events);
         if Self::normalizable_move(&spec.id) {
             self.ability_prepare_type(
@@ -2106,6 +2112,14 @@ impl Battle {
         second_turn: bool,
         events: &mut Vec<BattleEvent>,
     ) -> Result<(), BattleError> {
+        if self.sheer_force_applies(actor, &spec.id)
+            && matches!(
+                effect,
+                Effect::Status { .. } | Effect::Stats { .. } | Effect::Confuse | Effect::Flinch(_)
+            )
+        {
+            return Ok(());
+        }
         if has_damage
             && actor != target
             && self.has_ability(target, "shielddust")

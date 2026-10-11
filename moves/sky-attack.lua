@@ -19,7 +19,7 @@ move.pp = 5
 move.accuracy = 0.9
 move.priority = 0
 move.target = Target.Selected
-move.flags = {"charge", "flinch_secondary"}
+move.flags = {"charge", "flinch_secondary", "sheer_force"}
 move.manual_announce = true
 move.base_power = 140
 return move

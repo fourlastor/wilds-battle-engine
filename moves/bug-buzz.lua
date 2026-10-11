@@ -14,5 +14,5 @@ move.pp = 10
 move.accuracy = 1
 move.priority = 0
 move.target = Target.Selected
-move.flags = {"sound"}
+move.flags = {"sound", "sheer_force"}
 return move

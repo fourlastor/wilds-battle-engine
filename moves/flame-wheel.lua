@@ -14,6 +14,6 @@ move.pp = 25
 move.accuracy = 1
 move.priority = 0
 move.target = Target.Selected
-move.flags = {"contact"}
+move.flags = {"contact", "sheer_force"}
 move.usable_while_frozen = true
 return move

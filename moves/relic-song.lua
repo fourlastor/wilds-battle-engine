@@ -27,6 +27,6 @@ move.pp = 10
 move.accuracy = 1
 move.priority = 0
 move.target = Target.AllOpponents
-move.flags = {"sound"}
+move.flags = {"sound", "sheer_force"}
 move.base_power = 75
 return move

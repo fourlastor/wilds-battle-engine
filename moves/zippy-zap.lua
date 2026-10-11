@@ -14,5 +14,5 @@ move.pp = 10
 move.accuracy = 1
 move.priority = 2
 move.target = Target.Selected
-move.flags = {"contact"}
+move.flags = {"contact", "sheer_force"}
 return move
