@@ -784,20 +784,20 @@ impl Battle {
                     self.get(who).name
                 )));
             }
-            if self.has_ability(who, "slowstart") && self.get(who).entered_turn < self.turn {
-                if let Some(counter) = self
+            if self.has_ability(who, "slowstart")
+                && self.get(who).entered_turn < self.turn
+                && let Some(counter) = self
                     .get_mut(who)
                     .conditions
                     .iter_mut()
                     .find(|c| c.name == "slow_start" && c.value > 0)
-                {
-                    counter.value = (counter.value - 1).max(0);
-                    if counter.value == 0 {
-                        events.push(BattleEvent::Message(format!(
-                            "{} got its act together!",
-                            self.get(who).name
-                        )));
-                    }
+            {
+                counter.value = (counter.value - 1).max(0);
+                if counter.value == 0 {
+                    events.push(BattleEvent::Message(format!(
+                        "{} got its act together!",
+                        self.get(who).name
+                    )));
                 }
             }
             if self.has_ability(who, "moody") {
