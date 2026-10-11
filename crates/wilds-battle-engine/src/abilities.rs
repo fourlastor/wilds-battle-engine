@@ -819,6 +819,15 @@ impl Battle {
         stat: crate::model::CombatStat,
     ) -> f32 {
         use crate::model::CombatStat::*;
+        if stat == Speed
+            && self.has_ability(who, "surgesurfer")
+            && self
+                .field_conditions
+                .iter()
+                .any(|c| c.name == "electric_terrain")
+        {
+            return 2.0;
+        }
         if stat == SpAttack
             && self.has_ability(who, "solarpower")
             && self.effective_weather() == Some(crate::model::WeatherKind::Sun)

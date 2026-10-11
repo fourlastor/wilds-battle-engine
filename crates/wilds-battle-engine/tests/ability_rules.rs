@@ -2781,3 +2781,27 @@ fn misty_surge_starts_five_turn_misty_terrain() {
 fn grassy_surge_starts_five_turn_grassy_terrain() {
     check_terrain_entry("grassy-surge", "grassy-terrain", "grassy_terrain");
 }
+
+#[test]
+fn surge_surfer_doubles_speed_during_electric_terrain_even_when_airborne() {
+    for (terrain, kind, suppressed, first) in [
+        ("electric-terrain", PokemonType::Normal, false, true),
+        ("electric-terrain", PokemonType::Flying, false, true),
+        ("grassy-terrain", PokemonType::Normal, false, false),
+        ("electric-terrain", PokemonType::Normal, true, false),
+    ] {
+        let mut user = mon("User", &[terrain, "tackle"]);
+        user.speed = 60;
+        user.types = vec![kind];
+        user.ability = Some("surge-surfer".into());
+        user.ability_suppressed = suppressed;
+        let mut target = mon("Target", &["splash", "tackle"]);
+        target.speed = 100;
+        let mut battle = game(user, target, 0.5);
+        turn(&mut battle, terrain, "splash");
+        assert_eq!(
+            first_move_is_user(&turn(&mut battle, "tackle", "tackle")),
+            first
+        );
+    }
+}
