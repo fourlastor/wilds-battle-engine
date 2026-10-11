@@ -1,5 +1,6 @@
 -- Move 754: identity and parameters from pokemon_data/assets/moves/754.json.
 return {
+  base_power = 85,
   id = "bolt-beak", name = "Bolt Beak",
   type = Type.Electric, category = Category.Physical,
   pp = 10, accuracy = 1, priority = 0, target = Target.Selected,

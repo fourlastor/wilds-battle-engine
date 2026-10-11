@@ -22,4 +22,5 @@ move.accuracy = 1
 move.priority = 0
 move.target = Target.Selected
 move.flags = {"charge", "contact", "slicing"}
+move.base_power = 125
 return move

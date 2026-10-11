@@ -15,4 +15,5 @@ move.accuracy = 0.95
 move.priority = 0
 move.target = Target.Selected
 move.flags = {"contact", "slicing"}
+move.base_power = 40
 return move

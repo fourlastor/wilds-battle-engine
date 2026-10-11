@@ -1,5 +1,6 @@
 -- Move 783: identity and parameters from pokemon_data/assets/moves/783.json.
 return {
+  base_power = 110,
   id = "aura-wheel", name = "Aura Wheel",
   type = Type.Electric, category = Category.Physical,
   pp = 10, accuracy = 1, priority = 0, target = Target.Selected,

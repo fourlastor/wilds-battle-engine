@@ -1,5 +1,6 @@
 -- Move 35. PokeAPI identity; Gen 8 behavior (see catalog.json).
 return {
+  base_power = 15,
   id = "wrap", name = "Wrap", type = Type.Normal,
   category = Category.Physical, pp = 20, accuracy = 0.9,
   priority = 0, target = Target.AnyOther,

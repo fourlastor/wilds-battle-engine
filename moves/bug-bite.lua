@@ -15,4 +15,5 @@ move.accuracy = 1
 move.priority = 0
 move.target = Target.Selected
 move.flags = {"item_effect_on_hit", "contact"}
+move.base_power = 60
 return move

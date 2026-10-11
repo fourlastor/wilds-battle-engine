@@ -103,6 +103,8 @@ pub struct MoveSpec {
     pub name: String,
     pub move_type: PokemonType,
     pub category: Category,
+    /// Nominal power for inspecting scripted moves (Forewarn); does not override scripted damage.
+    pub base_power: Option<u16>,
     pub pp: u8,
     pub target: Target,
     /// Use the normal target only while the user has this type; otherwise target the user.
@@ -1975,6 +1977,7 @@ fn parse_move(t: &Table) -> Result<MoveSpec, BattleError> {
         move_type,
         category,
         pp: t.get("pp")?,
+        base_power: t.get("base_power")?,
         target,
         target_user_unless_type: t
             .get::<Option<Value>>("target_user_unless_type")?

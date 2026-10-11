@@ -1,5 +1,6 @@
 -- Move 779. PokeAPI identity; Gen 8 behavior (see catalog.json).
 return {
+  base_power = 35,
   id = "snap-trap", name = "Snap Trap", type = Type.Grass,
   category = Category.Physical, pp = 15, accuracy = 1.0,
   priority = 0, target = Target.AnyOther,

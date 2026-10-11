@@ -1,5 +1,6 @@
 -- Move 353. PokeAPI identity; Gen 8 behavior (see catalog.json).
 return {
+  base_power = 140,
   id = "doom-desire", name = "Doom Desire", type = Type.Steel,
   category = Category.Special, pp = 5, accuracy = 1.0,
   priority = 0, target = Target.AnyOther,

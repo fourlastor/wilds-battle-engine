@@ -3990,3 +3990,19 @@ fn sword_shield_hail_does_not_apply_the_later_generations_snow_defense_boost() {
     };
     assert_eq!(run(true), run(false));
 }
+
+#[test]
+fn forewarn_reports_highest_nominal_power_including_scripted_and_special_moves() {
+    for (moves, expected) in [
+        (["tackle", "v-create", "fissure"], "V-create"),
+        (["tackle", "counter", "fissure"], "Fissure"),
+        (["tackle", "counter", "water-gun"], "Counter"),
+        (["tackle", "swords-dance", "water-gun"], "Tackle"),
+    ] {
+        let mut user = mon("User", &["splash"]);
+        user.ability = Some("forewarn".into());
+        let mut battle = game(user, mon("Target", &moves), 0.5);
+        let events = battle.advance().unwrap().events;
+        assert!(events.iter().any(|e| matches!(e, BattleEvent::Message(m) if m.contains("Forewarn") && m.contains(expected))), "{events:?}");
+    }
+}

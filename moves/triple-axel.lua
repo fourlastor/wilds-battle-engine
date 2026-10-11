@@ -16,4 +16,5 @@ move.accuracy = 0.9
 move.priority = 0
 move.target = Target.Selected
 move.flags = {"contact", "multi_accuracy"}
+move.base_power = 20
 return move

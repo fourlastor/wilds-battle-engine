@@ -14,4 +14,5 @@ move.accuracy = 0.9
 move.priority = 0
 move.target = Target.Selected
 move.flags = {}
+move.base_power = 150
 return move

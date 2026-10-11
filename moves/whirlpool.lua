@@ -1,5 +1,6 @@
 -- Move 250. PokeAPI identity; Gen 8 behavior (see catalog.json).
 return {
+  base_power = 35,
   id = "whirlpool", name = "Whirlpool", type = Type.Water,
   category = Category.Special, pp = 15, accuracy = 0.85,
   priority = 0, target = Target.AnyOther,

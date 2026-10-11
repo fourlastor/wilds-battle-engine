@@ -30,4 +30,5 @@ move.priority = 0
 move.target = Target.AllOpponents
 move.flags = {"hits_airborne"}
 move.hits_hidden = {Hidden.Air}
+move.base_power = 90
 return move

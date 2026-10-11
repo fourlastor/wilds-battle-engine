@@ -18,4 +18,5 @@ move.accuracy = 1
 move.priority = 0
 move.target = Target.AllOthers
 move.flags = {"sound"}
+move.base_power = 90
 return move

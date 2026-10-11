@@ -1,5 +1,6 @@
 -- Move 611. PokeAPI identity; Gen 8 behavior (see catalog.json).
 return {
+  base_power = 20,
   id = "infestation", name = "Infestation", type = Type.Bug,
   category = Category.Special, pp = 20, accuracy = 1.0,
   priority = 0, target = Target.AnyOther,

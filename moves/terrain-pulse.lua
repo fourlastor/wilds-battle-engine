@@ -25,4 +25,5 @@ move.accuracy = 1
 move.priority = 0
 move.target = Target.Selected
 move.flags = {"pulse"}
+move.base_power = 50
 return move

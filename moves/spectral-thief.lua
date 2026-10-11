@@ -17,4 +17,5 @@ move.accuracy = 1
 move.priority = 0
 move.target = Target.Selected
 move.flags = {"contact", "bypass_substitute"}
+move.base_power = 90
 return move

@@ -1,5 +1,6 @@
 -- Move 738. PokeAPI identity; Gen 8 behavior (see catalog.json).
 return {
+  base_power = 100,
   id = "sappy-seed", name = "Sappy Seed", type = Type.Grass,
   category = Category.Physical, pp = 10, accuracy = 0.9,
   priority = 0, target = Target.AnyOther,

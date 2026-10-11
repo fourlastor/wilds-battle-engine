@@ -16,4 +16,5 @@ move.priority = 0
 move.target = Target.Selected
 move.flags = {}
 move.usable_while_frozen = true
+move.base_power = 100
 return move

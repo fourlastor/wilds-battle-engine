@@ -22,4 +22,5 @@ move.priority = 0
 move.target = Target.Selected
 move.flags = {}
 move.hits_hidden = {Hidden.Air}
+move.base_power = 50
 return move

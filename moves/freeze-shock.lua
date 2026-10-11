@@ -21,4 +21,5 @@ move.priority = 0
 move.target = Target.Selected
 move.flags = {"charge"}
 move.manual_announce = true
+move.base_power = 140
 return move

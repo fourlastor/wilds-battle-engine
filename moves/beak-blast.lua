@@ -20,4 +20,5 @@ move.accuracy = 1
 move.priority = -3
 move.target = Target.Selected
 move.flags = {"bullet"}
+move.base_power = 100
 return move

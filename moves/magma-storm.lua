@@ -1,5 +1,6 @@
 -- Move 463. PokeAPI identity; Gen 8 behavior (see catalog.json).
 return {
+  base_power = 100,
   id = "magma-storm", name = "Magma Storm", type = Type.Fire,
   category = Category.Special, pp = 5, accuracy = 0.75,
   priority = 0, target = Target.AnyOther,

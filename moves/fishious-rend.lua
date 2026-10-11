@@ -1,5 +1,6 @@
 -- Move 755: identity and parameters from pokemon_data/assets/moves/755.json.
 return {
+  base_power = 85,
   id = "fishious-rend", name = "Fishious Rend",
   type = Type.Water, category = Category.Physical,
   pp = 10, accuracy = 1, priority = 0, target = Target.Selected,

@@ -23,4 +23,5 @@ move.accuracy = 1
 move.priority = -3
 move.target = Target.Selected
 move.flags = {"contact", "no_sleep_talk"}
+move.base_power = 150
 return move

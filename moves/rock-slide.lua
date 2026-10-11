@@ -21,4 +21,5 @@ move.accuracy = 0.9
 move.priority = 0
 move.target = Target.AllOpponents
 move.flags = {}
+move.base_power = 75
 return move

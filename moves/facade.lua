@@ -1,4 +1,5 @@
-return { flags={"contact", "ignore_burn"},
+return {
+  base_power = 70, flags={"contact", "ignore_burn"},
   id="facade", name="Facade", type=Type.Normal, category=Category.Physical, pp=20,
   script=function(ctx)
     local status = ctx.user.status

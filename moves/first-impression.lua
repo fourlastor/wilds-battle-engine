@@ -15,4 +15,5 @@ move.accuracy = 1
 move.priority = 2
 move.target = Target.Selected
 move.flags = {"contact"}
+move.base_power = 90
 return move

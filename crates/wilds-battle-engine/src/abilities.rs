@@ -859,6 +859,56 @@ impl Battle {
         self.update_ability_form(who, events);
         self.health_ability_form(who, true, events);
         self.restore_ice_face(who, events);
+        if self.has_ability(who, "forewarn") {
+            use crate::moves::{Accuracy, Category, Effect};
+            let mut best = 0;
+            let mut choices = Vec::new();
+            for foe in self.actors().into_iter().filter(|id| id.side != who.side) {
+                for id in &self.get(foe).moves {
+                    let spec = self.catalog.get(id).expect("validated move");
+                    let power = if spec.category == Category::Status {
+                        0
+                    } else if spec.accuracy == Accuracy::OneHitKnockout
+                        || spec.effects.contains(&Effect::OneHitKnockout)
+                    {
+                        150
+                    } else if matches!(
+                        item_key(id).as_str(),
+                        "counter" | "metalburst" | "mirrorcoat"
+                    ) {
+                        120
+                    } else {
+                        spec.base_power
+                            .or_else(|| {
+                                spec.effects.iter().find_map(|e| match e {
+                                    Effect::Damage { power, .. }
+                                    | Effect::MultiHit { power, .. }
+                                    | Effect::TwoTurn { power, .. }
+                                    | Effect::Consecutive { power, .. } => Some(*power),
+                                    _ => None,
+                                })
+                            })
+                            .filter(|p| *p > 1)
+                            .unwrap_or(80)
+                    };
+                    if power > best {
+                        choices.clear();
+                        best = power;
+                    }
+                    if power == best && power > 0 {
+                        choices.push((foe, spec.name.clone()));
+                    }
+                }
+            }
+            if !choices.is_empty() {
+                let (foe, name) = &choices[self.rng.index(choices.len())];
+                events.push(BattleEvent::Message(format!(
+                    "{}'s Forewarn identified {}'s {name}!",
+                    self.get(who).name,
+                    self.get(*foe).name
+                )));
+            }
+        }
         if self.has_ability(who, "truant") {
             self.end_condition(crate::model::Scope::Pokemon(who), "truant");
             if self.get(who).acted && self.get(who).entered_turn < self.turn {

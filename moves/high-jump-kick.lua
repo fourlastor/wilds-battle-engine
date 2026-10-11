@@ -19,4 +19,5 @@ move.accuracy = 0.9
 move.priority = 0
 move.target = Target.Selected
 move.flags = {"contact", "gravity", "crash_damage"}
+move.base_power = 130
 return move

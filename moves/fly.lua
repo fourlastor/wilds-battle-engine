@@ -28,4 +28,5 @@ move.accuracy = 0.95
 move.priority = 0
 move.target = Target.Selected
 move.flags = {"charge", "contact", "no_sleep_talk", "gravity"}
+move.base_power = 90
 return move

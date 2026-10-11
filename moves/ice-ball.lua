@@ -18,4 +18,5 @@ move.accuracy = 0.9
 move.priority = 0
 move.target = Target.Selected
 move.flags = {"contact", "bullet"}
+move.base_power = 30
 return move

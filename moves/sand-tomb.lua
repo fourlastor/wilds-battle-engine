@@ -1,5 +1,6 @@
 -- Move 328. PokeAPI identity; Gen 8 behavior (see catalog.json).
 return {
+  base_power = 35,
   id = "sand-tomb", name = "Sand Tomb", type = Type.Ground,
   category = Category.Physical, pp = 15, accuracy = 0.85,
   priority = 0, target = Target.AnyOther,

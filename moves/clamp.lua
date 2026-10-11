@@ -1,5 +1,6 @@
 -- Move 128. PokeAPI identity; Gen 8 behavior (see catalog.json).
 return {
+  base_power = 35,
   id = "clamp", name = "Clamp", type = Type.Water,
   category = Category.Physical, pp = 15, accuracy = 0.85,
   priority = 0, target = Target.AnyOther,
