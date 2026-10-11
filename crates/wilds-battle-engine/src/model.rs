@@ -204,6 +204,13 @@ pub enum Rule {
         move_type: Option<PokemonType>,
         priority: i8,
     },
+    /// Draws opposing single-target moves to a teammate, with optional powder immunity.
+    Attention {
+        to: ParticipantId,
+        priority: i8,
+        powder: bool,
+        allow_carried: bool,
+    },
     /// Adds to the priority of the holder's selected move, before turn actions begin.
     MovePriority {
         amount: i8,

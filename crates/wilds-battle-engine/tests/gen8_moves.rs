@@ -2662,3 +2662,62 @@ fn quash_fails_in_singles_and_cannot_reach_a_substitute_or_completed_action() {
         assert!(b.participants(Side::Allies)[0].last_move_failed);
     }
 }
+
+fn attention_game(
+    move_id: &str,
+    attack: &str,
+    attack_type: PokemonType,
+    ability: Option<&str>,
+) -> Battle {
+    let user = mon("User", &[move_id, "splash"]);
+    let partner = mon("Partner", &["splash"]);
+    let mut foe = mon("Foe", &[attack]);
+    foe.types = vec![attack_type];
+    foe.ability = ability.map(str::to_owned);
+    Battle::with_rng(
+        Fixed(0.5),
+        [vec![user, partner], vec![foe]],
+        MoveCatalog::builtin().unwrap(),
+    )
+    .unwrap()
+}
+fn attention_turn(b: &mut Battle, move_id: &str) {
+    turn_with(b, |p| {
+        p.choices
+            .iter()
+            .find(|c| {
+                matches!(c,Choice::UseMove{move_id:id,target,..} if
+            if p.actor.side==Side::Foes {target.index==1}
+            else if p.actor.index==0 {id==move_id} else {id=="splash"})
+            })
+            .unwrap()
+            .id()
+    });
+}
+
+#[test]
+fn follow_me_draws_opposing_attacks_for_one_turn_but_not_snipe_shot() {
+    for attack in ["tackle", "snipe-shot"] {
+        let mut b = attention_game("follow-me", attack, PokemonType::Normal, None);
+        attention_turn(&mut b, "follow-me");
+        assert_eq!(
+            b.participants(Side::Allies)[0].hp == 1000,
+            attack == "snipe-shot"
+        );
+        assert_eq!(
+            b.participants(Side::Allies)[1].hp == 1000,
+            attack != "snipe-shot"
+        );
+        let prior = b.participants(Side::Allies)[0].hp;
+        attention_turn(&mut b, "splash");
+        assert_eq!(b.participants(Side::Allies)[0].hp, prior);
+        assert!(b.participants(Side::Allies)[1].hp < 1000);
+    }
+    let mut b = game(
+        mon("User", &["follow-me"]),
+        vec![mon("Foe", &["splash"])],
+        0.5,
+    );
+    turn(&mut b);
+    assert!(b.participants(Side::Allies)[0].last_move_failed);
+}

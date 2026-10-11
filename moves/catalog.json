@@ -2415,6 +2415,17 @@
       "limitations": []
     },
     {
+      "id": 266,
+      "slug": "follow-me",
+      "name": "Follow Me",
+      "sheet_row": null,
+      "runtime_id": "follow-me",
+      "file": "moves/follow-me.lua",
+      "status": "implemented",
+      "limitations": [],
+      "parameter_source": "https://pokeapi.co/api/v2/move/266/"
+    },
+    {
       "id": 268,
       "slug": "charge",
       "name": "Charge",
@@ -7140,7 +7151,8 @@
       "forests-curse",
       "reflect-type",
       "after-you",
-      "quash"
+      "quash",
+      "follow-me"
     ]
   }
 }

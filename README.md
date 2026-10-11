@@ -1,9 +1,9 @@
 # Wilds battle engine
 
 `wilds-battle-engine` is the Rust battle simulation. Move definitions are loaded
-from Lua; `MoveCatalog::builtin()` embeds the 664 files under `moves/`,
+from Lua; `MoveCatalog::builtin()` embeds the 665 files under `moves/`,
 and `MoveCatalog::from_directory(path)` reads them from disk at runtime.
-Both catalogs also include the system move Struggle, for 665 moves in total.
+Both catalogs also include the system move Struggle, for 666 moves in total.
 The [move catalog](moves/README.md) includes 538 entries from the Saved moves sheet,
 plus support moves, additional local JSON moves and the original moves outside the sheet. Its manifest
 records the 34 excluded Z/Max Moves. Files use canonical slugs and source display
@@ -272,6 +272,7 @@ ctx:end_effect(ctx.target.team, "reflect")                  -- Brick Break
 | `AccuracyMultiplier` | `factor`; ordinary hit checks only, excludes OHKO and always-hit moves |
 | `StatMultiplier` | `stat`, `factor` |
 | `Redirect` | `to`, optional `type` and `priority` (-7 to 7). Redirects single-target moves to a living, adjacent teammate of the original target. Higher priority wins; later rules break ties. `ignore_redirection` moves bypass it. Use a shared condition group for mutually exclusive redirection effects. |
+| `Attention` | `to`, `priority` (default 1), optional `powder` and `allow_carried`. Draws opposing moves only; powder fails against Grass types and Overcoat. A carried user cannot draw attention unless allowed. |
 | `MovePriority` | `amount` (-7 to 7); adds to priority. Applied after turn-start hooks, retaining existing speed/tie ordering. |
 | `BlockMoves` | nonempty `flags` list, optional `message`; prevents selection and execution of matching moves |
 | `BlockStatus` | `statuses` (all if left out), `confusion`. Does not stop what a Pokémon does to itself. |

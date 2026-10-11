@@ -248,20 +248,34 @@ impl Battle {
         let move_type = self.converted_type(actor, spec.move_type);
         self.rules(target)
             .enumerate()
-            .filter_map(|(order, rule)| match rule {
-                Rule::Redirect {
-                    to,
-                    move_type: only_type,
-                    priority,
-                } if to.side == target.side
-                    && *to != actor
-                    && self.get(*to).hp > 0
-                    && self.adjacent(actor, *to)
-                    && only_type.is_none_or(|kind| kind == move_type) =>
-                {
-                    Some((*priority, order, *to))
-                }
-                _ => None,
+            .filter_map(|(order, rule)| {
+                let (to, priority) = match rule {
+                    Rule::Redirect {
+                        to,
+                        move_type: only_type,
+                        priority,
+                    } if only_type.is_none_or(|kind| kind == move_type) => (*to, *priority),
+                    Rule::Attention {
+                        to,
+                        priority,
+                        powder,
+                        allow_carried,
+                    } if actor.side != to.side
+                        && (*allow_carried || self.get(*to).carried_by.is_none())
+                        && (!powder
+                            || (!self.types_of(actor).contains(&PokemonType::Grass)
+                                && !self.has_ability(actor, "overcoat"))) =>
+                    {
+                        (*to, *priority)
+                    }
+                    _ => return None,
+                };
+                (to.side == target.side
+                    && to != actor
+                    && self.get(to).hp > 0
+                    && self.is_active(to)
+                    && self.adjacent(actor, to))
+                .then_some((priority, order, to))
             })
             .max_by_key(|(priority, order, _)| (*priority, *order))
             .map_or(target, |(_, _, to)| to)
