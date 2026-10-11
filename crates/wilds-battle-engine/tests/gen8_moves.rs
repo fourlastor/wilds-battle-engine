@@ -3141,3 +3141,75 @@ fn tar_shot_cannot_apply_either_effect_through_protect_or_substitute() {
         );
     }
 }
+
+#[test]
+fn magnitude_uses_the_seven_power_brackets_and_doubles_against_dig() {
+    for (roll, power) in [
+        (0, 10),
+        (4, 10),
+        (5, 30),
+        (14, 30),
+        (15, 50),
+        (34, 50),
+        (35, 70),
+        (64, 70),
+        (65, 90),
+        (84, 90),
+        (85, 110),
+        (94, 110),
+        (95, 150),
+        (99, 150),
+    ] {
+        let user = mon("User", &["magnitude"]);
+        let foe = mon("Foe", &["splash"]);
+        let expected = control_damage(power, "Ground", "Physical", user.clone(), foe.clone());
+        let mut b = Battle::with_rng(
+            Rolls(roll, 0.5),
+            [vec![user], vec![foe]],
+            MoveCatalog::builtin().unwrap(),
+        )
+        .unwrap();
+        turn(&mut b);
+        assert_eq!(
+            1000 - b.participants(Side::Foes)[0].hp,
+            expected,
+            "roll {roll}"
+        );
+    }
+    let user = mon("User", &["magnitude"]);
+    let mut foe = mon("Foe", &["dig"]);
+    foe.speed = 200;
+    let expected = control_damage(20, "Ground", "Physical", user.clone(), foe.clone());
+    let mut b = game(user, vec![foe], 0.5);
+    turn(&mut b);
+    assert_eq!(1000 - b.participants(Side::Foes)[0].hp, expected);
+}
+
+#[test]
+fn magnitude_hits_adjacent_allies_and_foes_but_not_distant_slots_or_flying_types() {
+    let mut user = mon("User", &["magnitude"]);
+    user.speed = 200;
+    let near = mon("Near", &["splash"]);
+    let far = mon("Far", &["splash"]);
+    let mut flying = mon("Flying", &["splash"]);
+    flying.types = vec![PokemonType::Flying];
+    let mut b = Battle::with_rng(
+        Fixed(0.5),
+        [
+            vec![user, near, far],
+            vec![
+                mon("DistantFoe", &["splash"]),
+                mon("NearFoe", &["splash"]),
+                flying,
+            ],
+        ],
+        MoveCatalog::builtin().unwrap(),
+    )
+    .unwrap();
+    turn(&mut b);
+    assert!(b.participants(Side::Allies)[1].hp < 1000);
+    assert_eq!(b.participants(Side::Allies)[2].hp, 1000);
+    assert_eq!(b.participants(Side::Foes)[0].hp, 1000);
+    assert!(b.participants(Side::Foes)[1].hp < 1000);
+    assert_eq!(b.participants(Side::Foes)[2].hp, 1000);
+}

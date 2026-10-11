@@ -2063,6 +2063,17 @@
       "limitations": []
     },
     {
+      "id": 222,
+      "slug": "magnitude",
+      "name": "Magnitude",
+      "sheet_row": null,
+      "runtime_id": "magnitude",
+      "file": "moves/magnitude.lua",
+      "status": "implemented",
+      "limitations": [],
+      "parameter_source": "https://pokeapi.co/api/v2/move/222/"
+    },
+    {
       "id": 223,
       "slug": "dynamic-punch",
       "name": "Dynamic Punch",
@@ -7284,7 +7295,8 @@
       "foresight",
       "odor-sleuth",
       "miracle-eye",
-      "tar-shot"
+      "tar-shot",
+      "magnitude"
     ]
   }
 }
