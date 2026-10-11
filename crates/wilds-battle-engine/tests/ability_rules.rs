@@ -3453,3 +3453,38 @@ fn pressure_deducts_pp_per_opposing_target_with_field_and_hazard_exceptions() {
     turn(&mut battle, "sleep-talk", "splash");
     assert_eq!(ally(&battle).move_pp["sleep-talk"], initial - 2);
 }
+
+#[test]
+fn unburden_doubles_speed_after_losing_an_item_until_reacquired_or_suppressed() {
+    for (item, hp, suppressed, first) in [
+        (None, 1000, false, false),
+        (Some("oran-berry"), 1000, false, false),
+        (Some("oran-berry"), 400, false, true),
+        (Some("oran-berry"), 400, true, false),
+    ] {
+        let mut user = mon("User", &["tackle"]);
+        user.ability = Some("unburden".into());
+        user.ability_suppressed = suppressed;
+        user.item = item.map(str::to_owned);
+        user.hp = hp;
+        user.speed = 75;
+        let mut target = mon("Target", &["tackle"]);
+        target.speed = 100;
+        let mut battle = game(user, target, 0.5);
+        assert_eq!(
+            first_move_is_user(&turn(&mut battle, "tackle", "tackle")),
+            first
+        );
+    }
+    let mut user = mon("User", &["tackle", "recycle"]);
+    user.ability = Some("unburden".into());
+    user.item = Some("oran-berry".into());
+    user.hp = 500;
+    user.speed = 75;
+    let mut target = mon("Target", &["splash", "tackle"]);
+    target.speed = 100;
+    let mut battle = game(user, target, 0.5);
+    turn(&mut battle, "recycle", "splash");
+    assert!(ally(&battle).item.is_some());
+    assert!(!first_move_is_user(&turn(&mut battle, "tackle", "tackle")));
+}

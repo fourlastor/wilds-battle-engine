@@ -499,7 +499,9 @@ impl Battle {
         pokemon.ability = state.id;
         pokemon.ability_rules = state.rules;
         pokemon.ability_bypassable = state.bypassable;
-        pokemon.conditions.retain(|c| c.name != "flash_fire");
+        pokemon
+            .conditions
+            .retain(|c| c.name != "flash_fire" && c.name != "unburden");
         events.push(BattleEvent::Message(format!(
             "{} acquired {}!",
             pokemon.name,
@@ -910,6 +912,7 @@ impl Battle {
         }
         let pokemon = self.get_mut(who);
         pokemon.ability_suppressed = true;
+        pokemon.conditions.retain(|c| c.name != "unburden");
         events.push(BattleEvent::Message(format!(
             "{}'s ability was suppressed!",
             pokemon.name
@@ -1055,6 +1058,17 @@ impl Battle {
         stat: crate::model::CombatStat,
     ) -> f32 {
         use crate::model::CombatStat::*;
+        if stat == Speed
+            && self.has_ability(who, "unburden")
+            && self.get(who).item.is_none()
+            && self
+                .get(who)
+                .conditions
+                .iter()
+                .any(|c| c.name == "unburden")
+        {
+            return 2.0;
+        }
         if stat == Attack && self.has_ability(who, "gorillatactics") {
             return 1.5;
         }

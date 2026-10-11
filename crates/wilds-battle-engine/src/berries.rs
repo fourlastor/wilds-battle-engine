@@ -122,6 +122,7 @@ impl Battle {
             return false;
         }
         self.get_mut(who).item = None;
+        self.ability_lost_item(who);
         self.berry_effect(who, item, false, events);
         true
     }

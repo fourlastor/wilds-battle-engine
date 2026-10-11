@@ -3,6 +3,11 @@ use crate::engine::Battle;
 use crate::model::{BattleEvent, ParticipantId};
 
 impl Battle {
+    pub(crate) fn ability_lost_item(&mut self, who: ParticipantId) {
+        if self.has_ability(who, "unburden") {
+            self.set_mark(crate::model::Scope::Pokemon(who), "unburden", 1, None);
+        }
+    }
     /// Whether the held item may provide its ordinary effects. Physical possession is separate.
     pub fn item_active(&self, who: ParticipantId) -> bool {
         let pokemon = self.get(who);
@@ -33,6 +38,7 @@ impl Battle {
         pokemon.recyclable_item = Some(item.clone());
         pokemon.last_consumed_item = Some(item.clone());
         pokemon.consumed_items.insert(item.clone());
+        self.ability_lost_item(who);
         Some(item)
     }
 
@@ -180,7 +186,9 @@ impl Battle {
         if sticky_hold || !self.item_removable(who) {
             return None;
         }
-        self.get_mut(who).item.take()
+        let item = self.get_mut(who).item.take();
+        self.ability_lost_item(who);
+        item
     }
 
     pub(crate) fn can_receive_item(&self, who: ParticipantId, item: &str) -> bool {
@@ -209,6 +217,12 @@ impl Battle {
         }
         let my_item = self.get_mut(source).item.take();
         let your_item = self.get_mut(target).item.take();
+        if my_item.is_some() {
+            self.ability_lost_item(source);
+        }
+        if your_item.is_some() {
+            self.ability_lost_item(target);
+        }
         self.get_mut(source).item = your_item;
         self.get_mut(target).item = my_item;
         true
