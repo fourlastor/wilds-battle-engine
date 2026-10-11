@@ -12,5 +12,5 @@ move.pp = 20
 move.accuracy = Accuracy.Always
 move.priority = 0
 move.target = Target.Ally
-move.flags = {}
+move.flags = {"bypass_substitute"}
 return move

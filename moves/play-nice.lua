@@ -13,5 +13,5 @@ move.pp = 20
 move.accuracy = Accuracy.Always
 move.priority = 0
 move.target = Target.Selected
-move.flags = {"reflectable"}
+move.flags = {"reflectable", "bypass_substitute"}
 return move

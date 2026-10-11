@@ -10,6 +10,7 @@ export interface Ref {
 export type EngineEvent =
   | { kind: 'message'; text: string }
   | { kind: 'damage'; target: Ref; amount: number; hp: number }
+  | { kind: 'substitute'; target: Ref; amount: number; hp: number }
   | { kind: 'heal'; target: Ref; amount: number; hp: number }
   | { kind: 'status'; target: Ref; status: string | null }
   | { kind: 'stat_change'; target: Ref; stat: string; stages: number }
@@ -63,6 +64,7 @@ export interface EngineMon {
   confused: boolean;
   bound: boolean;
   protected: boolean;
+  substitute_hp: number;
   recharging: boolean;
   hidden: boolean;
   carrying: Ref | null;

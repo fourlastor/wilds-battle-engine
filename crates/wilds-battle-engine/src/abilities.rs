@@ -56,7 +56,10 @@ impl Battle {
             self.get(who).name
         )));
         for target in self.actors() {
-            if target.side == who.side || !self.adjacent(who, target) {
+            if target.side == who.side
+                || !self.adjacent(who, target)
+                || self.get(target).substitute_hp > 0
+            {
                 continue;
             }
             let immune = (self.ability_stage_delta(target, -1) < 0

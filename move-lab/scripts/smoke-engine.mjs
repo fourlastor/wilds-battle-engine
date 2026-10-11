@@ -151,3 +151,20 @@ assert.ok(dropped.foes[0].hp < 1000);
 assert.equal(dropped.allies[0].move_pp['sky-drop'], 9);
 engine._wbe_destroy(carryBattle);
 console.log('ok: Sky Drop carries and releases both participants through wasm');
+
+const substituteBattle = withStrings([JSON.stringify({
+  allies: [{ name: 'Doll', max_hp: 400, speed: 200, moves: ['substitute'] }],
+  foes: [{ name: 'Attacker', max_hp: 400, speed: 50, moves: ['dragon_rage'] }],
+}), '/moves'], (json, dir) => engine._wbe_create(json, dir));
+assert.notEqual(substituteBattle, 0, lastError());
+for (let i = 0; i < 2; i++) {
+  const step = JSON.parse(text(engine._wbe_advance(substituteBattle)));
+  assert.ok(engine._wbe_respond(substituteBattle, BigInt(step.status.prompt_id), step.status.choices[0].id));
+}
+const doll = JSON.parse(text(engine._wbe_advance(substituteBattle)));
+assert.equal(doll.allies[0].hp, 300);
+assert.equal(doll.allies[0].substitute_hp, 60);
+assert.ok(doll.events.some(event => event.kind === 'substitute' && event.amount === 40 && event.hp === 60));
+assert.equal(JSON.parse(text(engine._mlab_state(substituteBattle))).allies[0].substitute_hp, 60);
+engine._wbe_destroy(substituteBattle);
+console.log('ok: Substitute HP and absorbed damage round-trip through wasm');

@@ -110,6 +110,7 @@ impl Battle {
         outgoing.confused_turns = None;
         outgoing.bound = None;
         outgoing.protected = false;
+        outgoing.substitute_hp = 0;
         outgoing.flinched = false;
         outgoing.locked_move = None;
         outgoing.script_continuation = None;

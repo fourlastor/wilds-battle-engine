@@ -211,6 +211,7 @@ pub(crate) enum ScriptOperation {
     EffectChance(f32),
     FaintUser,
     Recharge,
+    Substitute,
     Fail,
     ForceMove {
         total_turns: u8,
@@ -1008,6 +1009,7 @@ fn parse_op(name: &str, args: &[Value]) -> mlua::Result<ScriptOperation> {
             }
         }
         "reset_stats" => ScriptOperation::ResetStats { who: who(0)? },
+        "substitute" => ScriptOperation::Substitute,
         "add_hazard" => ScriptOperation::AddHazard {
             side: match scope_of(arg(0), name)? {
                 Scope::Side(side) => side,

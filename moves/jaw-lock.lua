@@ -3,7 +3,8 @@
 
 local move = {flags = {"contact"},
     script = function(ctx)
-      if not ctx:damage(80).hit or ctx.target.fainted or ctx.user.fainted then return end
+      local hit = ctx:damage(80)
+      if not hit.hit or hit.substitute or ctx.target.fainted or ctx.user.fainted then return end
       if not ctx.target.linked_trap then ctx:start_effect(ctx.target, "trapped", {rules = {{kind = Rule.Trapped, by = ctx.user}}}) end
       if not ctx.user.linked_trap then ctx:start_effect(ctx.user, "trapped", {rules = {{kind = Rule.Trapped, by = ctx.target}}}) end
     end}

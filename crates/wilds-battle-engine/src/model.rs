@@ -394,6 +394,8 @@ pub struct Pokemon {
     pub confused_turns: Option<u8>,
     pub bound: Option<Bound>,
     pub protected: bool,
+    /// Separate HP pool; zero means no substitute. Cleared on withdrawal or fainting.
+    pub substitute_hp: u16,
     pub flinched: bool,
     pub locked_move: Option<LockedMove>,
     pub script_continuation: Option<ScriptContinuation>,
@@ -479,6 +481,7 @@ impl Pokemon {
             confused_turns: None,
             bound: None,
             protected: false,
+            substitute_hp: 0,
             flinched: false,
             locked_move: None,
             script_continuation: None,
@@ -588,6 +591,11 @@ pub struct Weather {
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum BattleEvent {
+    Substitute {
+        target: ParticipantId,
+        amount: u16,
+        hp: u16,
+    },
     Switched {
         from: ParticipantId,
         to: ParticipantId,

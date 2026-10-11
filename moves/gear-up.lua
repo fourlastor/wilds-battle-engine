@@ -21,5 +21,5 @@ move.pp = 20
 move.accuracy = Accuracy.Always
 move.priority = 0
 move.target = Target.UserAndAllies
-move.flags = {"snatch"}
+move.flags = {"snatch", "bypass_substitute"}
 return move

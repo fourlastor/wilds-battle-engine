@@ -12,8 +12,8 @@ excluded while Z-Moves and Dynamax are outside the project scope. They are liste
 under `excluded_moves` in the manifest and have no loadable Lua files here.
 Dynamax Cannon remains an ordinary attack; its Dynamax-only bonus is out of scope.
 
-With six additional support moves and the nine original moves outside the sheet,
-the runtime catalog has 553 moves: 552 files here and Struggle in `src/system_moves.lua`
+With seven additional support moves and the nine original moves outside the sheet,
+the runtime catalog has 554 moves: 553 files here and Struggle in `src/system_moves.lua`
 inside the crate.
 The 22 original filenames containing underscores have been renamed with hyphens.
 
@@ -83,3 +83,6 @@ covered by the Rust runtime tests.
 Spikes, Toxic Spikes, Stealth Rock and Sticky Web are additional support moves.
 Their parameters come from the pinned Showdown reference because no local JSON
 definitions exist. Their side conditions activate on entry and Rapid Spin removes them.
+
+Substitute is an additional support move with parameters from the same pinned
+reference. Its HP pool, bypass flags and secondary-effect protection run in Rust.

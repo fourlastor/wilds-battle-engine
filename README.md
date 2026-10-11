@@ -401,3 +401,18 @@ side. Reflection spends only the original user's PP, cannot bounce recursively,
 and respects ability suppression and bypass. Spread status moves still affect
 unprotected teammates; reflected Parting Shot offers the reflector a pivot choice.
 Scripts should use `try_hit`/`reached` before targeted status effects, as with protection.
+
+Substitute costs one quarter of maximum HP and creates a separate HP pool. It
+cannot be created twice or when the user cannot afford the cost; creation releases
+binding. Each hit removes substitute HP without spilling into the owner's HP.
+Later hits can hit the owner after it breaks. Recoil and drain use the HP actually
+removed, while target secondary effects, contact reactions, theft, trapping and
+phazing do not pass through that hit. Residual damage still affects the owner.
+Sound moves, `bypass_substitute` moves and active Infiltrator bypass the pool.
+Switching and fainting clear it; Intimidate respects it.
+
+Lua exposes `pokemon.substitute_hp` and `ctx:substitute()`. Damage reports include
+`substitute`; `hit` still reports a successful attack on the doll, while `reached`
+reports whether it reached the owner. The C ABI and Move Lab state include
+`substitute_hp`, and `substitute` events carry the target, absorbed amount and
+remaining pool HP. Move Lab displays that pool separately from ordinary HP.

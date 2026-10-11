@@ -349,6 +349,12 @@ export class Bench {
         const target = mon(event.target);
         return { turn, kind: 'damage', text: target?.name ?? '?', amount: `−${event.amount}`, tone: 'down', tail: `${event.hp}/${target?.max_hp ?? '?'} HP`, blockId: null };
       }
+      case 'substitute': {
+        const target = mon(event.target);
+        return { turn, kind: 'message', text: `${target?.name ?? '?'}'s substitute`,
+          amount: event.amount ? `−${event.amount}` : undefined, tone: event.amount ? 'down' : undefined,
+          tail: `${event.hp} substitute HP`, blockId: null };
+      }
       case 'heal': {
         const target = mon(event.target);
         return { turn, kind: 'heal', text: target?.name ?? '?', amount: `+${event.amount}`, tone: 'up', tail: `${event.hp}/${target?.max_hp ?? '?'} HP`, blockId: null };

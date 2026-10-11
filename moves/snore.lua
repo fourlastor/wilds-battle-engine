@@ -1,4 +1,5 @@
 return {
+  flags={"sound"},
   id="snore", name="Snore", type=Type.Normal, category=Category.Special, pp=15,
   usable_while_asleep=true,
   script=function(ctx)

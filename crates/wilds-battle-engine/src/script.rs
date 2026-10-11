@@ -64,6 +64,7 @@ enum HitOutcome {
 #[derive(Default)]
 struct DamageReport {
     hit: bool,
+    substitute: bool,
     damage: u16,
     fainted: bool,
     critical: bool,
@@ -219,6 +220,7 @@ impl Battle {
                 .and_then(|id| Self::pokemon_table(run, id).cloned()),
         )?;
         table.raw_set("protected", pokemon.protected)?;
+        table.raw_set("substitute_hp", pokemon.substitute_hp)?;
         table.raw_set("flinched", pokemon.flinched)?;
         table.raw_set("recharging", pokemon.recharging)?;
         table.raw_set(
@@ -672,6 +674,15 @@ impl Battle {
             return HitOutcome::Fainted;
         }
         if frame.spec.category == crate::moves::Category::Status
+            && self.substitute_blocks_effect(actor, recipient, frame.spec)
+        {
+            events.push(BattleEvent::Message(format!(
+                "{} is protected by its substitute!",
+                self.get(recipient).name
+            )));
+            return HitOutcome::Protected;
+        }
+        if frame.spec.category == crate::moves::Category::Status
             && frame.spec.has_flag("sound")
             && recipient != actor
             && self.has_ability(recipient, "soundproof")
@@ -730,6 +741,8 @@ impl Battle {
             force_stab: options.force_stab,
             no_gem: frame.spec.has_flag("no_gem"),
             sound: frame.spec.has_flag("sound"),
+            bypass_substitute: frame.spec.has_flag("sound")
+                || frame.spec.has_flag("bypass_substitute"),
             bullet: frame.spec.has_flag("bullet"),
             contact: options.contact.unwrap_or(frame.spec.has_flag("contact")),
             consecutive_boost: 0,
@@ -791,10 +804,12 @@ impl Battle {
                 report.unreached.push(recipient);
                 continue;
             };
-            report.reached.push(recipient);
-            let actual = roll
-                .amount
-                .min(self.get(recipient).hp.saturating_sub(options.min_target_hp));
+            let actual = roll.amount.min(self.move_damage_limit(
+                actor,
+                recipient,
+                frame.spec,
+                options.min_target_hp,
+            ));
             let actual = self.damage_from_move(
                 actor,
                 recipient,
@@ -802,6 +817,13 @@ impl Battle {
                 &meta.clone().with_effectiveness(roll.effectiveness),
                 events,
             )?;
+            let absorbed = self.substitute_hits.contains(&recipient);
+            report.substitute |= absorbed;
+            if absorbed {
+                report.unreached.push(recipient);
+            } else {
+                report.reached.push(recipient);
+            }
             events.extend(details);
             report.hit = true;
             report.hits += 1;
@@ -876,12 +898,12 @@ impl Battle {
             }
             let mut hit_details = Vec::new();
             if let Some(roll) = self.calculate(actor, recipient, &attack, &mut hit_details) {
-                if report.hits == 0 {
-                    report.reached.push(recipient);
-                }
-                let actual = roll
-                    .amount
-                    .min(self.get(recipient).hp.saturating_sub(options.min_target_hp));
+                let actual = roll.amount.min(self.move_damage_limit(
+                    actor,
+                    recipient,
+                    frame.spec,
+                    options.min_target_hp,
+                ));
                 let actual = self.damage_from_move(
                     actor,
                     recipient,
@@ -889,6 +911,7 @@ impl Battle {
                     &meta.clone().with_effectiveness(roll.effectiveness),
                     events,
                 )?;
+                report.substitute |= self.substitute_hits.contains(&recipient);
                 self.update_berries(events);
                 report.damage = report.damage.saturating_add(actual);
                 report.hits += 1;
@@ -911,6 +934,13 @@ impl Battle {
         if report.hits > 0 {
             events.push(BattleEvent::Message(format!("Hit {} times!", report.hits)));
         }
+        if report.hits > 0 {
+            if self.substitute_hits.contains(&recipient) {
+                report.unreached.push(recipient);
+            } else {
+                report.reached.push(recipient);
+            }
+        }
         report.hit = report.hits > 0;
         report.fainted = self.get(recipient).hp == 0;
         frame.any_hit = true;
@@ -920,6 +950,7 @@ impl Battle {
     fn report_table(&self, report: &DamageReport) -> mlua::Result<Value> {
         let table = self.catalog.lua().create_table()?;
         table.raw_set("hit", report.hit)?;
+        table.raw_set("substitute", report.substitute)?;
         table.raw_set("damage", report.damage)?;
         table.raw_set("fainted", report.fainted)?;
         table.raw_set("critical", report.critical)?;
@@ -1067,6 +1098,61 @@ impl Battle {
         let actor = frame.actor;
         let target = frame.target;
         let spec = frame.spec;
+        // Keep protection through the secondary effects of the hit that broke the
+        // substitute. Indirect HP loss and field/side effects do not hit the doll.
+        let blocked = match &operation {
+            ScriptOperation::ApplyStatus { who, .. }
+            | ScriptOperation::Confuse { who, .. }
+            | ScriptOperation::Flinch { who, .. }
+            | ScriptOperation::Bind { who, .. }
+            | ScriptOperation::ForceSwitch { who }
+            | ScriptOperation::Carry { who }
+            | ScriptOperation::SuppressAbility { who }
+            | ScriptOperation::CureStatus { who, .. }
+            | ScriptOperation::ChangeForm { who, .. }
+            | ScriptOperation::RestoreForm { who }
+            | ScriptOperation::EatBerry { who, .. } => Some((*who, Value::Boolean(false))),
+            ScriptOperation::ChangeStat { who, .. }
+            | ScriptOperation::SetStage { who, .. }
+            | ScriptOperation::ReducePp { who, .. }
+            | ScriptOperation::Heal { who, .. } => Some((*who, Value::Integer(0))),
+            ScriptOperation::ResetStats { who }
+            | ScriptOperation::SetTypes { who, .. }
+            | ScriptOperation::SetWeight { who, .. }
+            | ScriptOperation::Unhide { who }
+            | ScriptOperation::TakeItem { who }
+            | ScriptOperation::GiveItem { who, .. }
+            | ScriptOperation::ConsumeItem { who } => Some((*who, Value::Nil)),
+            ScriptOperation::StealItem { from, .. } => Some((*from, Value::Nil)),
+            ScriptOperation::EatStolenBerry { from, .. } => Some((*from, Value::Boolean(false))),
+            ScriptOperation::StartEffect {
+                scope: Scope::Pokemon(who),
+                ..
+            }
+            | ScriptOperation::Mark {
+                scope: Scope::Pokemon(who),
+                ..
+            }
+            | ScriptOperation::Unmark {
+                scope: Scope::Pokemon(who),
+                ..
+            }
+            | ScriptOperation::EndEffect {
+                scope: Scope::Pokemon(who),
+                ..
+            }
+            | ScriptOperation::EndGroup {
+                scope: Scope::Pokemon(who),
+                ..
+            } => Some((*who, Value::Boolean(false))),
+            ScriptOperation::FlinchTarget(_) => Some((target, Value::Nil)),
+            _ => None,
+        };
+        if let Some((who, value)) = blocked
+            && self.substitute_blocks_effect(actor, who, spec)
+        {
+            return Ok(Flow::Continue(value));
+        }
         let value = match operation {
             ScriptOperation::WatchHitsUntilNextAction
             | ScriptOperation::WatchContactsUntilNextAction => {
@@ -1196,6 +1282,7 @@ impl Battle {
                 }
                 Value::Nil
             }
+            ScriptOperation::Substitute => Value::Boolean(self.create_substitute(actor, events)),
             ScriptOperation::Damage { power, options } => {
                 let report = self.op_damage(frame, power, &options, events)?;
                 self.report_table(&report)?
@@ -1243,11 +1330,17 @@ impl Battle {
                     report.immune = true;
                     report.unreached.push(who);
                 } else {
-                    report.reached.push(who);
-                    let mut actual = amount.min(self.get(who).hp.saturating_sub(min_target_hp));
+                    let mut actual =
+                        amount.min(self.move_damage_limit(actor, who, spec, min_target_hp));
                     if actual > 0 {
                         let meta = HitMeta::of(spec, spec.category, spec.move_type);
                         actual = self.damage_from_move(actor, who, actual, &meta, events)?;
+                    }
+                    report.substitute = self.substitute_hits.contains(&who);
+                    if report.substitute {
+                        report.unreached.push(who);
+                    } else {
+                        report.reached.push(who);
                     }
                     report.hit = true;
                     report.hits = 1;

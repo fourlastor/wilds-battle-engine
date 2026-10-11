@@ -2095,3 +2095,66 @@ fn contrary_reversal_precedes_external_stat_drop_protection() {
     assert_eq!(game.foe(0).stage(Stat::Attack), 1);
     assert_eq!(game.foe(0).stage(Stat::Defense), 0);
 }
+
+#[test]
+fn substitute_absorbs_a_breaking_hit_and_blocks_its_secondary_effects_in_both_apis() {
+    let script = test_move(
+        "",
+        "local hit = ctx:damage(200); ctx:message('doll ' .. tostring(hit.substitute) .. ' reached ' .. tostring(ctx:reached())); ctx:apply_status(ctx.target, Status.Paralyzed); ctx:change_stat(ctx.target, Stat.Defense, -1)",
+    );
+    let plain = "{id='plain', name='Plain', type=Type.Normal, category=Category.Physical, pp=10, effects={{kind=Effect.Damage, power=200},{kind=Effect.Status, status=Status.Paralyzed},{kind=Effect.Stats, stages={[Stat.Defense]=-1}}}}";
+    for (source, id) in [(script.as_str(), "test"), (plain, "plain")] {
+        let mut target = mon("Target", &["wait"]);
+        target.substitute_hp = 10;
+        let mut game = Game::new(&[source], vec![mon("User", &[id])], vec![target]);
+        let lines = game.turn(&[id, "wait"]);
+        assert_eq!(game.foe(0).hp, 400);
+        assert_eq!(game.foe(0).substitute_hp, 0);
+        assert_eq!(game.foe(0).status, None);
+        assert_eq!(game.foe(0).stage(Stat::Defense), 0);
+        assert_eq!(game.foe(0).last_hit, None);
+        if id == "test" {
+            assert!(said(&lines, "doll true reached false"));
+        }
+        game.turn(&[id, "wait"]);
+        assert!(game.foe(0).hp < 400);
+        assert_eq!(game.foe(0).status, Some(Status::Paralyzed));
+    }
+}
+
+#[test]
+fn substitute_damage_reports_drive_recoil_and_drain_without_capping_to_owner_hp() {
+    for (option, hp) in [("recoil", 190), ("drain", 210)] {
+        let script = test_move(
+            "",
+            &format!(
+                "local hit = ctx:damage(200, {{{option}=0.5}}); ctx:message('lost ' .. hit.damage)"
+            ),
+        );
+        let mut user = mon("User", &["test"]);
+        user.hp = 200;
+        let mut target = mon("Target", &["wait"]);
+        target.hp = 1;
+        target.substitute_hp = 20;
+        let mut game = Game::new(&[&script], vec![user], vec![target]);
+        let lines = game.turn(&["test", "wait"]);
+        assert_eq!(game.foe(0).hp, 1);
+        assert_eq!(game.ally(0).hp, hp);
+        assert!(said(&lines, "lost 20"));
+    }
+}
+
+#[test]
+fn later_hits_reach_the_owner_after_a_substitute_breaks() {
+    let script = test_move(
+        "",
+        "local hit = ctx:multi_hit(20, 2, 2); ctx:message('reached ' .. tostring(ctx:reached())); ctx:apply_status(ctx.target, Status.Paralyzed)",
+    );
+    let mut target = mon("Target", &["wait"]);
+    target.substitute_hp = 1;
+    let mut game = Game::new(&[&script], vec![mon("User", &["test"])], vec![target]);
+    let lines = game.turn(&["test", "wait"]);
+    assert!(game.foe(0).hp < 400);
+    assert_eq!(game.foe(0).status, Some(Status::Paralyzed));
+    assert!(said(&lines, "reached true"));
+}

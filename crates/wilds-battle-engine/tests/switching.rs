@@ -1436,3 +1436,165 @@ fn reflected_spread_status_does_not_shield_the_reflectors_teammate() {
     assert_eq!(b.participants(Side::Foes)[0].stage(Stat::Attack), 0);
     assert_eq!(b.participants(Side::Foes)[1].stage(Stat::Attack), -1);
 }
+
+#[test]
+fn substitute_costs_a_quarter_once_fails_without_enough_hp_and_clears_on_switch() {
+    for hp in [250, 251, 1000] {
+        let mut user = mon("User", &["substitute"]);
+        user.hp = hp;
+        let mut b = game(
+            vec![user, mon("Bench", &["splash"])],
+            vec![mon("Foe", &["splash"])],
+            [vec![0], vec![0]],
+        );
+        for _ in 0..2 {
+            pick(&mut b, id(Side::Allies, 0), "substitute");
+            pick(&mut b, id(Side::Foes, 0), "splash");
+            b.advance().unwrap();
+        }
+        assert_eq!(
+            b.participants(Side::Allies)[0].hp,
+            if hp > 250 { hp - 250 } else { hp }
+        );
+        assert_eq!(
+            b.participants(Side::Allies)[0].substitute_hp,
+            if hp > 250 { 250 } else { 0 }
+        );
+        switch(&mut b, id(Side::Allies, 0), 1);
+        pick(&mut b, id(Side::Foes, 0), "splash");
+        b.advance().unwrap();
+        assert_eq!(b.participants(Side::Allies)[0].substitute_hp, 0);
+    }
+}
+
+#[test]
+fn substitute_blocks_status_moves_but_sound_and_infiltrator_bypass_it() {
+    for (attack, infiltrator, affected) in [
+        ("toxic", false, false),
+        ("thunder-wave", false, false),
+        ("sing", false, true),
+        ("toxic", true, true),
+    ] {
+        let mut user = mon("User", &[attack]);
+        if infiltrator {
+            user.ability = Some("infiltrator".into());
+        }
+        let mut target = mon("Target", &["splash"]);
+        target.substitute_hp = 250;
+        let mut b = game(vec![user], vec![target], [vec![0], vec![0]]);
+        pick(&mut b, id(Side::Allies, 0), attack);
+        pick(&mut b, id(Side::Foes, 0), "splash");
+        b.advance().unwrap();
+        assert_eq!(
+            b.participants(Side::Foes)[0].status.is_some(),
+            affected,
+            "{attack}"
+        );
+        assert_eq!(b.participants(Side::Foes)[0].substitute_hp, 250);
+    }
+}
+
+#[test]
+fn substitute_blocks_trapping_theft_phazing_and_lifting_even_when_broken() {
+    for attack in ["jaw-lock", "thief", "dragon-tail", "sky-drop"] {
+        let mut target = mon("Target", &["splash"]);
+        target.substitute_hp = 1;
+        target.item = Some("power-herb".into());
+        let mut b = game(
+            vec![mon("User", &[attack])],
+            vec![target, mon("Bench", &["splash"])],
+            [vec![0], vec![0]],
+        );
+        pick(&mut b, id(Side::Allies, 0), attack);
+        pick(&mut b, id(Side::Foes, 0), "splash");
+        b.advance().unwrap();
+        assert_eq!(b.active_indices(Side::Foes), &[0], "{attack}");
+        assert_eq!(b.participants(Side::Foes)[0].hp, 1000, "{attack}");
+        assert_eq!(
+            b.participants(Side::Foes)[0].item.as_deref(),
+            Some("power-herb")
+        );
+        assert!(
+            !b.trapped(id(Side::Allies, 0)) && !b.trapped(id(Side::Foes, 0)),
+            "{attack}"
+        );
+        assert_eq!(b.participants(Side::Allies)[0].carrying, None);
+    }
+}
+
+#[test]
+fn sound_and_spectral_thief_damage_the_owner_without_damaging_substitute() {
+    use wilds_battle_engine::PokemonType;
+    for attack in ["hyper-voice", "spectral-thief"] {
+        let mut target = mon("Target", &["splash"]);
+        target.types = vec![PokemonType::Psychic];
+        target.substitute_hp = 250;
+        target.stages.insert(Stat::Attack, 2);
+        let mut b = game(
+            vec![mon("User", &[attack])],
+            vec![target],
+            [vec![0], vec![0]],
+        );
+        pick(&mut b, id(Side::Allies, 0), attack);
+        pick(&mut b, id(Side::Foes, 0), "splash");
+        b.advance().unwrap();
+        assert!(b.participants(Side::Foes)[0].hp < 1000);
+        assert_eq!(b.participants(Side::Foes)[0].substitute_hp, 250);
+        if attack == "spectral-thief" {
+            assert_eq!(b.participants(Side::Foes)[0].stage(Stat::Attack), 0);
+            assert_eq!(b.participants(Side::Allies)[0].stage(Stat::Attack), 2);
+        }
+    }
+}
+
+#[test]
+fn substitute_blocks_intimidate_but_not_residual_damage_and_fainting_clears_it() {
+    let mut lead = mon("Lead", &["splash"]);
+    lead.ability = Some("intimidate".into());
+    let mut target = mon("Target", &["splash"]);
+    target.substitute_hp = 250;
+    target.hp = 1;
+    target.status = Some(Status::Poisoned);
+    let mut b = game(vec![lead], vec![target], [vec![0], vec![0]]);
+    b.advance().unwrap();
+    assert_eq!(b.participants(Side::Foes)[0].stage(Stat::Attack), 0);
+    pick(&mut b, id(Side::Allies, 0), "splash");
+    pick(&mut b, id(Side::Foes, 0), "splash");
+    b.advance().unwrap();
+    assert_eq!(b.participants(Side::Foes)[0].hp, 0);
+    assert_eq!(b.participants(Side::Foes)[0].substitute_hp, 0);
+}
+
+#[test]
+fn substitute_prevents_defensive_berry_activation_until_a_hit_reaches_the_owner() {
+    for (attack, shield, consumed) in [("tackle", 250, false), ("double-hit", 1, true)] {
+        let mut target = mon("Target", &["splash"]);
+        target.item = Some("chilan-berry".into());
+        target.substitute_hp = shield;
+        let mut b = game(
+            vec![mon("User", &[attack])],
+            vec![target],
+            [vec![0], vec![0]],
+        );
+        pick(&mut b, id(Side::Allies, 0), attack);
+        pick(&mut b, id(Side::Foes, 0), "splash");
+        b.advance().unwrap();
+        assert_eq!(b.participants(Side::Foes)[0].item.is_none(), consumed);
+    }
+}
+
+#[test]
+fn a_substitute_prevents_beak_blast_contact_reactions() {
+    let mut defender = mon("Defender", &["beak-blast"]);
+    defender.substitute_hp = 250;
+    let mut b = game(
+        vec![mon("Attacker", &["tackle"])],
+        vec![defender],
+        [vec![0], vec![0]],
+    );
+    pick(&mut b, id(Side::Allies, 0), "tackle");
+    pick(&mut b, id(Side::Foes, 0), "beak-blast");
+    b.advance().unwrap();
+    assert!(b.participants(Side::Foes)[0].substitute_hp < 250);
+    assert_eq!(b.participants(Side::Allies)[0].status, None);
+}

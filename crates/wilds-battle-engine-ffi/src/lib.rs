@@ -387,6 +387,7 @@ fn snapshot(value: &Pokemon) -> Value {
         "attack":value.attack, "defense":value.defense, "sp_attack":value.sp_attack,
         "sp_defense":value.sp_defense, "speed":value.speed, "weight":value.weight,
         "hp":value.hp, "max_hp":value.max_hp,
+        "substitute_hp":value.substitute_hp,
         "status":value.status.map(|status| format!("{status:?}")),
         "moves":value.moves, "move_pp":value.move_pp,
         "types":value.types.iter().map(|kind| format!("{kind:?}")).collect::<Vec<_>>(),
@@ -405,6 +406,9 @@ fn event(value: &BattleEvent) -> Value {
         BattleEvent::Message(text) => json!({"kind":"message", "text":text}),
         BattleEvent::Damage { target, amount, hp } => {
             json!({"kind":"damage", "target":participant(*target), "amount":amount, "hp":hp})
+        }
+        BattleEvent::Substitute { target, amount, hp } => {
+            json!({"kind":"substitute", "target":participant(*target), "amount":amount, "hp":hp})
         }
         BattleEvent::Heal { target, amount, hp } => {
             json!({"kind":"heal", "target":participant(*target), "amount":amount, "hp":hp})

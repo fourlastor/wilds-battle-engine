@@ -33,6 +33,7 @@ pub struct Battle {
     pub(crate) ignored_ability: Option<ParticipantId>,
     pub(crate) ability_bypass: bool,
     pub(crate) reflecting: bool,
+    pub(crate) substitute_hits: std::collections::BTreeSet<ParticipantId>,
     pub(crate) side_conditions: [Vec<Condition>; 2],
     pub(crate) field_conditions: Vec<Condition>,
     pub(crate) last_faint_turn: [Option<u64>; 2],
@@ -62,6 +63,7 @@ pub(crate) struct HitMeta {
     pub(crate) category: Category,
     pub(crate) move_type: PokemonType,
     contact: bool,
+    bypass_substitute: bool,
     pub(crate) defer_items: bool,
     pub(crate) effectiveness: Option<f32>,
 }
@@ -72,6 +74,7 @@ impl HitMeta {
             category,
             move_type,
             contact: spec.has_flag("contact"),
+            bypass_substitute: spec.has_flag("sound") || spec.has_flag("bypass_substitute"),
             defer_items: spec.has_flag("item_effect_on_hit"),
             effectiveness: None,
         }
@@ -99,6 +102,7 @@ pub(crate) struct Attack<'a> {
     pub(crate) force_stab: bool,
     pub(crate) no_gem: bool,
     pub(crate) sound: bool,
+    pub(crate) bypass_substitute: bool,
     pub(crate) bullet: bool,
     pub(crate) contact: bool,
     pub(crate) consecutive_boost: u8,
@@ -248,6 +252,7 @@ impl Battle {
             ignored_ability: None,
             ability_bypass: false,
             reflecting: false,
+            substitute_hits: std::collections::BTreeSet::new(),
             side_conditions: [Vec::new(), Vec::new()],
             field_conditions: Vec::new(),
             last_faint_turn: [None, None],
@@ -893,9 +898,11 @@ impl Battle {
         events: &mut Vec<BattleEvent>,
     ) -> Result<(), BattleError> {
         self.move_failed = false;
+        self.substitute_hits.clear();
         self.active_gem = None;
         let result = self.perform_move(actor, choice, events);
         self.finish_item_hits(events);
+        self.substitute_hits.clear();
         self.ignored_ability = None;
         self.ability_bypass = false;
         let used = result?;
@@ -1465,6 +1472,28 @@ impl Battle {
         second_turn: bool,
         events: &mut Vec<BattleEvent>,
     ) -> Result<(), BattleError> {
+        if self.substitute_blocks_effect(actor, target, spec)
+            && matches!(
+                effect,
+                Effect::Stats {
+                    self_target: false,
+                    ..
+                } | Effect::Status { .. }
+                    | Effect::Confuse
+                    | Effect::Flinch(_)
+                    | Effect::Bind
+                    | Effect::Heal { .. }
+            )
+        {
+            if spec.category == Category::Status {
+                self.move_failed = true;
+                events.push(BattleEvent::Message(format!(
+                    "{} is protected by its substitute!",
+                    self.get(target).name
+                )));
+            }
+            return Ok(());
+        }
         match effect {
             Effect::Damage {
                 power,
@@ -1889,6 +1918,7 @@ impl Battle {
             force_stab: false,
             no_gem: spec.has_flag("no_gem"),
             sound: spec.has_flag("sound"),
+            bypass_substitute: spec.has_flag("sound") || spec.has_flag("bypass_substitute"),
             bullet: spec.has_flag("bullet"),
             contact: spec.has_flag("contact"),
             consecutive_boost,
@@ -2030,7 +2060,7 @@ impl Battle {
         if dealt != 1.0 || taken != 1.0 {
             damage *= dealt * taken;
         }
-        if !typeless {
+        if !typeless && !self.substitute_intercepts(actor, target, attack.bypass_substitute) {
             damage *= self.resistance_berry_factor(target, move_type, effectiveness, events);
         }
         damage *= self.rng.damage_roll();
@@ -2061,6 +2091,27 @@ impl Battle {
         let before = self.get(target).hp;
         if before == 0 {
             return Ok(0);
+        }
+        self.substitute_hits.remove(&target);
+        if self.substitute_intercepts(actor, target, meta.bypass_substitute) {
+            let lost = amount.min(self.get(target).substitute_hp);
+            self.get_mut(target).substitute_hp -= lost;
+            self.substitute_hits.insert(target);
+            events.push(BattleEvent::Substitute {
+                target,
+                amount: lost,
+                hp: self.get(target).substitute_hp,
+            });
+            events.push(BattleEvent::Message(format!(
+                "{}'s substitute {}!",
+                self.get(target).name,
+                if self.get(target).substitute_hp == 0 {
+                    "broke"
+                } else {
+                    "took the hit"
+                }
+            )));
+            return Ok(lost);
         }
         // Capture contact listeners before damage clears a fainted Pokémon's effects.
         let reactions: Vec<_> = self
@@ -2140,6 +2191,7 @@ impl Battle {
         let name = p.name.clone();
         events.push(BattleEvent::Damage { target, amount, hp });
         if was_alive && hp == 0 {
+            self.get_mut(target).substitute_hp = 0;
             self.release_carry(target, events);
             self.release_links(target);
             self.restore_form(target, events);

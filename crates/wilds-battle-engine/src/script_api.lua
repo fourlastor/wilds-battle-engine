@@ -146,6 +146,7 @@ return function(api, fields, roster)
   function ctx:flinch(who, options) return op("flinch", who, options) end
   function ctx:change_stat(who, stat, stages, options) return op("change_stat", who, stat, stages, options) end
   function ctx:reset_stats(who) return op("reset_stats", who) end
+  function ctx:substitute() return op("substitute") end
   function ctx:set_stage(who, stat, stage) return op("set_stage", who, stat, stage) end
   function ctx:bind(who, options) return op("bind", who, options) end
   function ctx:free(who) return op("free", who) end

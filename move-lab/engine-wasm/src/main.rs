@@ -120,6 +120,7 @@ fn pokemon(value: &Pokemon) -> Value {
         "level": value.level,
         "hp": value.hp,
         "max_hp": value.max_hp,
+        "substitute_hp": value.substitute_hp,
         "attack": value.attack,
         "defense": value.defense,
         "sp_attack": value.sp_attack,
