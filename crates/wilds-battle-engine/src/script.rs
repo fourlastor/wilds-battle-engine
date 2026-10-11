@@ -312,6 +312,13 @@ impl Battle {
             self.turn.saturating_sub(pokemon.entered_turn),
         )?;
         table.raw_set("last_move", pokemon.last_used.as_deref())?;
+        table.raw_set(
+            "last_move_type",
+            match pokemon.last_move_type {
+                Some(kind) => symbol(lua, "Type", &format!("{kind:?}"))?,
+                None => Value::Nil,
+            },
+        )?;
         table.raw_set("last_move_failed", pokemon.last_move_failed)?;
         table.raw_set("stats_raised_this_turn", pokemon.stats_raised_this_turn)?;
         table.raw_set("stats_lowered_this_turn", pokemon.stats_lowered_this_turn)?;
@@ -1323,6 +1330,16 @@ impl Battle {
             && self.substitute_blocks_effect(actor, who, spec)
         {
             return Ok(Flow::Continue(value));
+        }
+        if frame.hook == ScriptHook::Main {
+            let options = match &operation {
+                ScriptOperation::Damage { options, .. }
+                | ScriptOperation::MultiHit { options, .. } => Some(options),
+                _ => None,
+            };
+            if let Some(options) = options {
+                self.get_mut(actor).last_move_type = Some(self.attack(frame, 0, options).move_type);
+            }
         }
         let value = match operation {
             ScriptOperation::MoveInfo(id) => match self.catalog.get(&id) {

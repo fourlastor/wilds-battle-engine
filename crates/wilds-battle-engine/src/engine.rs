@@ -1213,6 +1213,7 @@ impl Battle {
             pokemon.last_used = Some(spec.id.clone());
             pokemon.moves_used.insert(spec.id.clone());
         }
+        self.get_mut(actor).last_move_type = Some(self.converted_type(actor, spec.move_type));
         if spec.effects.iter().any(|e| matches!(e, Effect::Protect))
             && !self.protection_check(actor)
         {

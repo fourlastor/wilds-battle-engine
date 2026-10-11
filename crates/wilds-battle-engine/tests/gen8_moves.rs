@@ -5014,3 +5014,33 @@ fn conversion_uses_the_first_moves_base_type_and_rejects_an_existing_type() {
         assert_eq!(b.participants(Side::Allies)[0].move_pp["conversion"], 29);
     }
 }
+
+#[test]
+fn conversion_two_uses_dynamic_move_type_and_can_copy_a_resistance_through_protection() {
+    let mut user = mon("User", &["splash", "conversion-2"]);
+    user.speed = 50;
+    let mut foe = mon("Foe", &["sunny_day", "weather-ball", "protect"]);
+    foe.substitute_hp = 100;
+    let mut b = game(user, vec![foe], 0.5);
+    turn(&mut b);
+    turn_with(&mut b, |p| choose_move(p, "conversion-2", "weather-ball"));
+    assert_eq!(b.participants(Side::Allies)[0].types, [PokemonType::Fire]);
+    assert_eq!(
+        b.participants(Side::Foes)[0].last_move_type,
+        Some(PokemonType::Fire)
+    );
+    turn_with(&mut b, |p| choose_move(p, "conversion-2", "protect"));
+    assert_eq!(b.participants(Side::Allies)[0].types, [PokemonType::Rock]);
+}
+
+#[test]
+fn conversion_two_fails_without_a_previous_move_and_excludes_existing_types() {
+    let mut user = mon("User", &["conversion-2"]);
+    user.speed = 200;
+    user.types = vec![PokemonType::Rock, PokemonType::Steel];
+    let mut b = game(user, vec![mon("Foe", &["splash"])], 0.5);
+    turn(&mut b);
+    assert!(b.participants(Side::Allies)[0].last_move_failed);
+    turn(&mut b);
+    assert_eq!(b.participants(Side::Allies)[0].types, [PokemonType::Ghost]);
+}
