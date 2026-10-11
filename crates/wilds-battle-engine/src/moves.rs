@@ -724,7 +724,14 @@ fn rule_of(value: &Value) -> mlua::Result<Rule> {
         RuleKind::DamageEachTurn => &["kind", "fraction", "except_types", "message"],
         RuleKind::HealEachTurn => &["kind", "fraction", "message"],
         RuleKind::DrainEachTurn => &["kind", "fraction", "to", "message"],
-        RuleKind::DamageTaken => &["kind", "factor", "category", "type", "not_on_crit"],
+        RuleKind::DamageTaken => &[
+            "kind",
+            "factor",
+            "category",
+            "type",
+            "not_on_crit",
+            "multi_battle_factor",
+        ],
         RuleKind::DamageDealt => &["kind", "factor", "category", "type"],
         RuleKind::StatMultiplier => &["kind", "stat", "factor"],
         RuleKind::BlockStatus => &["kind", "statuses", "confusion"],
@@ -745,10 +752,10 @@ fn rule_of(value: &Value) -> mlua::Result<Rule> {
             .get(key)?
             .ok_or_else(|| bad(format!("rule {kind:?} needs {key}")))
     };
-    let factor = || -> mlua::Result<f32> {
-        let factor = number_of(&required("factor")?, "rule option factor")?;
+    let factor = |key: &str| -> mlua::Result<f32> {
+        let factor = number_of(&required(key)?, &format!("rule option {key}"))?;
         if !(0.0..=16.0).contains(&factor) {
-            return Err(bad("rule option factor must be between 0 and 16"));
+            return Err(bad(format!("rule option {key} must be between 0 and 16")));
         }
         Ok(factor as f32)
     };
@@ -779,18 +786,24 @@ fn rule_of(value: &Value) -> mlua::Result<Rule> {
         RuleKind::DamageTaken => Rule::DamageTaken {
             category: category()?,
             move_type: options.pokemon_type("type")?,
-            factor: factor()?,
+            factor: factor("factor")?,
             not_on_crit: options.flag("not_on_crit")?,
+            multi_battle_factor: options
+                .get("multi_battle_factor")?
+                .map(|_| factor("multi_battle_factor"))
+                .transpose()?,
         },
         RuleKind::DamageDealt => Rule::DamageDealt {
             category: category()?,
             move_type: options.pokemon_type("type")?,
-            factor: factor()?,
+            factor: factor("factor")?,
         },
-        RuleKind::AccuracyMultiplier => Rule::AccuracyMultiplier { factor: factor()? },
+        RuleKind::AccuracyMultiplier => Rule::AccuracyMultiplier {
+            factor: factor("factor")?,
+        },
         RuleKind::StatMultiplier => Rule::StatMultiplier {
             stat: combat_stat_of(&required("stat")?, "rule option stat")?,
-            factor: factor()?,
+            factor: factor("factor")?,
         },
         RuleKind::BlockStatus => Rule::BlockStatus {
             statuses: options
@@ -812,7 +825,9 @@ fn rule_of(value: &Value) -> mlua::Result<Rule> {
         }
         RuleKind::BlockStatDrops => Rule::BlockStatDrops,
         RuleKind::BlockFlinch => Rule::BlockFlinch,
-        RuleKind::EffectChance => Rule::EffectChance { factor: factor()? },
+        RuleKind::EffectChance => Rule::EffectChance {
+            factor: factor("factor")?,
+        },
         RuleKind::MoveType => Rule::MoveType {
             from: type_of(&required("from")?, "rule option from")?,
             to: type_of(&required("to")?, "rule option to")?,

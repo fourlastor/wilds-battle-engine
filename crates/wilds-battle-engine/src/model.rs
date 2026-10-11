@@ -176,6 +176,8 @@ pub enum Rule {
         move_type: Option<PokemonType>,
         factor: f32,
         not_on_crit: bool,
+        /// Alternate factor for battles with multiple active positions on either side.
+        multi_battle_factor: Option<f32>,
     },
     /// Damage from the holder's moves is multiplied.
     DamageDealt {

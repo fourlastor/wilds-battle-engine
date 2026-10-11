@@ -5080,10 +5080,8 @@
       "sheet_row": 508,
       "runtime_id": "glitzy-glow",
       "file": "moves/glitzy-glow.lua",
-      "status": "partial",
-      "limitations": [
-        "The screen uses a 1/2 multiplier; its 2/3 spread-battle factor requires a conditional damage rule."
-      ]
+      "status": "implemented",
+      "limitations": []
     },
     {
       "id": 737,
@@ -5092,10 +5090,8 @@
       "sheet_row": 509,
       "runtime_id": "baddy-bad",
       "file": "moves/baddy-bad.lua",
-      "status": "partial",
-      "limitations": [
-        "The screen uses a 1/2 multiplier; its 2/3 spread-battle factor requires a conditional damage rule."
-      ]
+      "status": "implemented",
+      "limitations": []
     },
     {
       "id": 739,

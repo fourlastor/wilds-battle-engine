@@ -79,6 +79,37 @@ fn said(events: &[BattleEvent], text: &str) -> bool {
 }
 
 #[test]
+fn attack_screens_use_the_battle_format_and_critical_hits_bypass_them() {
+    for (screen, attack) in [("baddy-bad", "tackle"), ("glitzy-glow", "water-gun")] {
+        let damage = |with_screen: bool, multi: bool, critical: bool| {
+            let mut ally = mon("Ally", &[screen, "splash"]);
+            ally.speed = 200;
+            let mut allies = vec![ally];
+            if multi {
+                let mut fainted_partner = mon("Partner", &["splash"]);
+                fainted_partner.hp = 0;
+                allies.push(fainted_partner);
+            }
+            let mut game = Game::new(
+                allies,
+                vec![mon("Foe", &[attack])],
+                if critical { 0.0 } else { 0.5 },
+            );
+            game.turn(if with_screen { screen } else { "splash" }, attack);
+            1000 - game.ally().hp
+        };
+        let base = damage(false, false, false);
+        let single = damage(true, false, false);
+        let multi = damage(true, true, false);
+        assert!((single as i32 * 2 - base as i32).abs() <= 2, "{screen}");
+        assert!((multi as i32 * 3 - base as i32 * 2).abs() <= 3, "{screen}");
+        for multi in [false, true] {
+            assert_eq!(damage(true, multi, true), damage(false, multi, true));
+        }
+    }
+}
+
+#[test]
 fn shell_side_arm_makes_contact_only_for_its_physical_hit() {
     for physical in [true, false] {
         let mut ally = mon("Ally", &["shell-side-arm"]);

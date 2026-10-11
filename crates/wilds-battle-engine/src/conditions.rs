@@ -135,11 +135,20 @@ impl Battle {
                 move_type: only_type,
                 factor: by,
                 not_on_crit,
+                multi_battle_factor,
             } if only_category.is_none_or(|own| own == category)
                 && only_type.is_none_or(|own| own == move_type)
                 && !(*not_on_crit && critical) =>
             {
-                factor * by
+                // All roster entries are active positions in the current battle model.
+                // Fainting does not change the battle format.
+                let multi = self.sides.iter().any(|side| side.len() > 1);
+                factor
+                    * if multi {
+                        multi_battle_factor.unwrap_or(*by)
+                    } else {
+                        *by
+                    }
             }
             _ => factor,
         })
