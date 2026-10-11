@@ -1843,7 +1843,30 @@ impl Battle {
         delta: i8,
         events: &mut Vec<BattleEvent>,
     ) -> i8 {
+        self.change_stat_from_inner(actor, recipient, stat, delta, false, events)
+    }
+
+    fn change_stat_from_inner(
+        &mut self,
+        actor: ParticipantId,
+        recipient: ParticipantId,
+        stat: Stat,
+        delta: i8,
+        reflected: bool,
+        events: &mut Vec<BattleEvent>,
+    ) -> i8 {
         let delta = self.ability_stage_delta(recipient, delta);
+        if actor != recipient
+            && delta < 0
+            && !reflected
+            && self.get(recipient).stage(stat) > -6
+            && self.has_ability(recipient, "mirrorarmor")
+        {
+            if self.get(actor).hp > 0 {
+                self.change_stat_from_inner(recipient, actor, stat, delta, true, events);
+            }
+            return 0;
+        }
         if actor != recipient
             && delta < 0
             && (self.blocks_stat_drops_from(actor, recipient)

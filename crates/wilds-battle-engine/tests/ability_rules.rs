@@ -2293,3 +2293,31 @@ fn defiant_responds_to_opposing_stat_drops_and_intimidate() {
 fn competitive_responds_to_opposing_stat_drops_and_intimidate() {
     check_drop_response("competitive", wilds_battle_engine::Stat::SpAttack);
 }
+
+#[test]
+fn mirror_armor_reflects_stat_drops_once_and_respects_mold_breaker() {
+    use wilds_battle_engine::Stat;
+    for (ability, expected_user, expected_target) in [
+        ("", -1, 0),
+        ("mirror-armor", -1, 0),
+        ("contrary", 1, 0),
+        ("mold-breaker", 0, -1),
+    ] {
+        let mut user = mon("User", &["growl"]);
+        user.ability = Some(ability.into());
+        let mut target = mon("Target", &["splash"]);
+        target.ability = Some("mirror-armor".into());
+        let mut battle = game(user, target, 0.5);
+        turn(&mut battle, "growl", "splash");
+        assert_eq!(
+            ally(&battle).stage(Stat::Attack),
+            expected_user,
+            "{ability}"
+        );
+        assert_eq!(
+            foe(&battle).stage(Stat::Attack),
+            expected_target,
+            "{ability}"
+        );
+    }
+}
