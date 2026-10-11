@@ -743,6 +743,7 @@ fn rule_of(value: &Value) -> mlua::Result<Rule> {
         RuleKind::StatMultiplier => &["kind", "stat", "factor"],
         RuleKind::BlockStatus => &["kind", "statuses", "confusion"],
         RuleKind::BlockMoves => &["kind", "flags", "message"],
+        RuleKind::MovePriority => &["kind", "amount"],
         RuleKind::AccuracyMultiplier | RuleKind::EffectChance => &["kind", "factor"],
         RuleKind::MoveType => &["kind", "from", "to"],
         RuleKind::AlwaysHit => &["kind", "against"],
@@ -819,6 +820,9 @@ fn rule_of(value: &Value) -> mlua::Result<Rule> {
                 .map(AppliedStatus::battle_status)
                 .collect(),
             confusion: options.flag("confusion")?,
+        },
+        RuleKind::MovePriority => Rule::MovePriority {
+            amount: whole(&required("amount")?, "rule option amount", -7.0, 7.0)? as i8,
         },
         RuleKind::BlockMoves => {
             let flags = options.list("flags", name_of)?;

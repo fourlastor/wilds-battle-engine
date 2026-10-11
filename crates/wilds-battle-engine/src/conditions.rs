@@ -218,6 +218,13 @@ impl Battle {
             .unwrap_or(move_type)
     }
 
+    pub(crate) fn move_priority(&self, id: ParticipantId, base: i8) -> i8 {
+        self.rules(id).fold(base, |priority, rule| match rule {
+            Rule::MovePriority { amount } => priority.saturating_add(*amount),
+            _ => priority,
+        })
+    }
+
     pub(crate) fn move_block(&self, id: ParticipantId, spec: &MoveSpec) -> Option<&str> {
         self.rules(id).find_map(|rule| match rule {
             Rule::BlockMoves { flags, message } if flags.iter().any(|flag| spec.has_flag(flag)) => {

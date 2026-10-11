@@ -422,12 +422,13 @@ impl Battle {
             .into_iter()
             .map(|(actor, choice)| {
                 let priority = match &choice {
-                    SelectedAction::Move(choice) => {
+                    SelectedAction::Move(choice) => self.move_priority(
+                        actor,
                         self.catalog
                             .get(&choice.move_id)
                             .expect("validated choice")
-                            .priority
-                    }
+                            .priority,
+                    ),
                     SelectedAction::Recharge => 0,
                 };
                 let speed = self.stat_value(actor, CombatStat::Speed) as i32;
@@ -472,6 +473,20 @@ impl Battle {
                 )?;
             }
         }
+        // Turn-start hooks can establish conditional priority without consuming an action.
+        // Preserve the speed and tie rolls; priority changes never reroll ties.
+        for (actor, choice, priority, ..) in &mut ordered {
+            if let SelectedAction::Move(choice) = choice {
+                *priority = self.move_priority(
+                    *actor,
+                    self.catalog
+                        .get(&choice.move_id)
+                        .expect("validated choice")
+                        .priority,
+                );
+            }
+        }
+        ordered.sort_by(|a, b| b.2.cmp(&a.2).then(b.3.cmp(&a.3)).then(b.4.cmp(&a.4)));
         let mut next = 0;
         while next < ordered.len() {
             if self.winner.is_some() {

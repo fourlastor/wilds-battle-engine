@@ -257,6 +257,7 @@ ctx:end_effect(ctx.target.team, "reflect")                  -- Brick Break
 | `DamageTaken`, `DamageDealt` | `factor`, and optionally only for a `category` or `type`; `not_on_crit` and optional `multi_battle_factor` for damage taken (alternate factor when either side has multiple active positions) |
 | `AccuracyMultiplier` | `factor`; ordinary hit checks only, excludes OHKO and always-hit moves |
 | `StatMultiplier` | `stat`, `factor` |
+| `MovePriority` | `amount` (-7 to 7); adds to priority. Applied after turn-start hooks, retaining existing speed/tie ordering. |
 | `BlockMoves` | nonempty `flags` list, optional `message`; prevents selection and execution of matching moves |
 | `BlockStatus` | `statuses` (all if left out), `confusion`. Does not stop what a Pokémon does to itself. |
 | `BlockStatDrops`, `BlockFlinch`, `Grounded`, `Trapped`, `Endure` | |

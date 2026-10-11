@@ -239,7 +239,7 @@ impl Battle {
                     symbol(lua, "Category", &format!("{:?}", spec.category))?,
                 )?;
                 chosen.raw_set("damaging", spec.category != crate::moves::Category::Status)?;
-                chosen.raw_set("priority", spec.priority)?;
+                chosen.raw_set("priority", self.move_priority(id, spec.priority))?;
                 table.raw_set("selected_move", chosen)?;
             }
             None => table.raw_set("selected_move", Value::Nil)?,

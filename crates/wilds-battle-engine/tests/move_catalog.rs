@@ -79,6 +79,53 @@ fn said(events: &[BattleEvent], text: &str) -> bool {
 }
 
 #[test]
+fn grassy_glide_priority_depends_on_terrain_and_grounding_and_expires() {
+    let source = format!("return {{ (function() {} end)(), (function() {} end)(),
+        {{id='grass', name='Grass', type=Type.Grass, category=Category.Status, pp=40,
+          script=function(ctx) ctx:start_effect(ctx.field, 'grassy_terrain', {{turns=2, group='terrain'}}) end}},
+        {{id='wait', name='Wait', type=Type.Normal, category=Category.Status, pp=40, script=function(_) end}}
+    }}", include_str!("../../../moves/grassy-glide.lua"), include_str!("../../../moves/tackle.lua"));
+    for flying in [false, true] {
+        let mut ally = mon("Ally", &["grassy-glide", "grass"]);
+        if flying {
+            ally.types = vec![PokemonType::Flying];
+        }
+        let mut foe = mon("Foe", &["tackle", "wait"]);
+        foe.speed = 200;
+        let mut game = Game(
+            Battle::with_rng(
+                Fixed(0.5),
+                [vec![ally], vec![foe]],
+                MoveCatalog::from_lua(&source).unwrap(),
+            )
+            .unwrap(),
+        );
+        game.turn("grass", "wait");
+        let first_move = |events: Vec<BattleEvent>| {
+            events
+                .into_iter()
+                .find_map(|e| match e {
+                    BattleEvent::Message(text) if text.contains(" used ") => Some(text),
+                    _ => None,
+                })
+                .unwrap()
+        };
+        assert_eq!(
+            first_move(game.turn("grassy-glide", "tackle")),
+            if flying {
+                "Foe used Tackle!"
+            } else {
+                "Ally used Grassy Glide!"
+            }
+        );
+        assert_eq!(
+            first_move(game.turn("grassy-glide", "tackle")),
+            "Foe used Tackle!"
+        );
+    }
+}
+
+#[test]
 fn shell_trap_is_promoted_after_the_triggering_attacker_only_once() {
     let mut first = mon("First", &["tackle"]);
     first.speed = 300;

@@ -198,6 +198,10 @@ pub enum Rule {
         statuses: Vec<Status>,
         confusion: bool,
     },
+    /// Adds to the priority of the holder's selected move, before turn actions begin.
+    MovePriority {
+        amount: i8,
+    },
     /// Moves with any listed flag cannot be selected or executed by the holder.
     BlockMoves {
         flags: Vec<String>,

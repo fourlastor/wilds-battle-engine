@@ -5361,10 +5361,8 @@
       "sheet_row": 553,
       "runtime_id": "grassy-glide",
       "file": "moves/grassy-glide.lua",
-      "status": "partial",
-      "limitations": [
-        "Terrain-dependent action priority requires an engine ordering hook; the JSON priority is used."
-      ]
+      "status": "implemented",
+      "limitations": []
     },
     {
       "id": 804,
