@@ -701,3 +701,30 @@ fn check_knockout_boost(ability: &str, stat: wilds_battle_engine::Stat) {
 fn as_one_glastrier_gains_attack_for_each_move_knockout() {
     check_knockout_boost("as-one-glastrier", wilds_battle_engine::Stat::Attack);
 }
+
+#[test]
+fn as_one_spectrier_gains_sp_attack_after_all_spread_hits_resolve() {
+    check_knockout_boost("as-one-spectrier", wilds_battle_engine::Stat::SpAttack);
+    let run = |ability: &str| {
+        let mut user = mon("User", &["surf"]);
+        user.ability = Some(ability.into());
+        user.speed = 200;
+        let mut first = mon("First", &["splash"]);
+        first.hp = 1;
+        let second = mon("Second", &["splash"]);
+        let mut battle = Battle::with_rng(
+            Fixed(0.5),
+            [vec![user], vec![first, second]],
+            MoveCatalog::builtin().unwrap(),
+        )
+        .unwrap();
+        turn(&mut battle, "surf", "splash");
+        (
+            battle.participants(Side::Foes)[1].hp,
+            ally(&battle).stage(wilds_battle_engine::Stat::SpAttack),
+        )
+    };
+    let boosted = run("as-one-spectrier");
+    assert_eq!(boosted.1, 1);
+    assert_eq!(boosted.0, run("").0);
+}

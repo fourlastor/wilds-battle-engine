@@ -29,6 +29,7 @@ pub struct Battle {
     pub(crate) turn: u64,
     pub(crate) active_power_multiplier: f32,
     pub(crate) active_gem: Option<(ParticipantId, PokemonType)>,
+    pub(crate) pending_knockouts: Vec<ParticipantId>,
     pub(crate) item_hits: Vec<(ParticipantId, ParticipantId, HitMeta)>,
     pub(crate) hit_reactions: Vec<HitReaction>,
     pub(crate) reaction_hit: Option<HitInfo>,
@@ -252,6 +253,7 @@ impl Battle {
             active_power_multiplier: 1.0,
             active_gem: None,
             item_hits: Vec::new(),
+            pending_knockouts: Vec::new(),
             hit_reactions: Vec::new(),
             reaction_hit: None,
             ignored_ability: None,
@@ -1153,6 +1155,7 @@ impl Battle {
         self.expire_action_conditions(actor, Some(&choice.move_id));
         let result = self.perform_move(actor, choice, false, events);
         self.finish_item_hits(events);
+        self.finish_ability_knockouts(events);
         self.substitute_hits.clear();
         self.ignored_ability = None;
         self.ability_bypass = false;
@@ -2808,7 +2811,7 @@ impl Battle {
             self.damage(actor, self.get(actor).hp, events);
         }
         if lost > 0 && self.get(target).hp == 0 && actor != target {
-            self.ability_knockout(actor, events);
+            self.pending_knockouts.push(actor);
         }
         Ok(lost)
     }

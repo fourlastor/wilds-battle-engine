@@ -131,9 +131,15 @@ impl Battle {
         }
     }
 
-    pub(crate) fn ability_knockout(&mut self, actor: ParticipantId, events: &mut Vec<BattleEvent>) {
-        if self.has_ability(actor, "asoneglastrier") {
-            self.change_stat(actor, crate::model::Stat::Attack, 1, events);
+    pub(crate) fn finish_ability_knockouts(&mut self, events: &mut Vec<BattleEvent>) {
+        // All targets and recoil resolve before knockout rewards change attacking stats.
+        for actor in std::mem::take(&mut self.pending_knockouts) {
+            if self.has_ability(actor, "asoneglastrier") {
+                self.change_stat(actor, crate::model::Stat::Attack, 1, events);
+            }
+            if self.has_ability(actor, "asonespectrier") {
+                self.change_stat(actor, crate::model::Stat::SpAttack, 1, events);
+            }
         }
     }
 

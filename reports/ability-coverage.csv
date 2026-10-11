@@ -265,4 +265,4 @@ id,ability,status,verification
 264,chilling-neigh,MISSING,No native battle behavior
 265,grim-neigh,MISSING,No native battle behavior
 266,as-one-glastrier,IMPLEMENTED,ability_rules::as_one_glastrier_gains_attack_for_each_move_knockout
-267,as-one-spectrier,PARTIAL,Source inventory; existing tests only
+267,as-one-spectrier,IMPLEMENTED,ability_rules::as_one_spectrier_gains_sp_attack_after_all_spread_hits_resolve
