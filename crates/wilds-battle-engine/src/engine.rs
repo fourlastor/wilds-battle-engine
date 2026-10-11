@@ -14,6 +14,7 @@ pub struct Battle {
     pending_events: Vec<BattleEvent>,
     pub(crate) switching_target: Option<ParticipantId>,
     pub(crate) pivot: Option<ParticipantId>,
+    pub(crate) ability_exits: std::collections::VecDeque<ParticipantId>,
     pub(crate) baton_pass: Option<(ParticipantId, Vec<String>)>,
     pub(crate) forced_switches: Vec<(ParticipantId, ParticipantId)>,
     pub(crate) weather: Option<Weather>,
@@ -243,6 +244,7 @@ impl Battle {
             pending_events: Vec::new(),
             forced_switches: Vec::new(),
             pivot: None,
+            ability_exits: std::collections::VecDeque::new(),
             baton_pass: None,
             switching_target: None,
             sides,
@@ -536,6 +538,12 @@ impl Battle {
             }
         }
         self.resolve_outcome(&mut events);
+        if self.winner.is_none() && self.offer_ability_exit(&mut events)? {
+            return Ok(AdvanceResult {
+                events,
+                status: AdvanceStatus::Awaiting(self.pending.clone().expect("ability exit prompt")),
+            });
+        }
         if let Some(winner) = self.winner {
             return Ok(AdvanceResult {
                 events,
@@ -965,6 +973,7 @@ impl Battle {
             }
             let actor = entry.actor;
             let choice = entry.action;
+            let hp_before = self.active_hp();
             self.pending_actors = self
                 .turn_queue
                 .iter()
@@ -1004,10 +1013,15 @@ impl Battle {
                 }
             }
             self.update_berries(events);
+            let hp_cost = matches!(&choice, SelectedAction::Move(c) if matches!(crate::items::item_key(&c.move_id).as_str(), "substitute" | "bellydrum" | "curse" | "clangoroussoul"));
+            self.check_ability_exits(&hp_before, true, hp_cost.then_some(actor), events);
             self.get_mut(actor).acted = true;
             self.complete_slot(actor.side, self.position(actor).unwrap_or(entry.position));
             self.resolve_outcome(events);
             self.refresh_pending_speed();
+            if self.offer_ability_exit(events)? {
+                return Ok(());
+            }
             if !self.hurry.is_empty() {
                 // Only pending actions move; promoted actors retain their relative order.
                 let promoted = std::mem::take(&mut self.hurry);
@@ -1051,6 +1065,7 @@ impl Battle {
             }
         }
         self.baton_pass = None;
+        let residual_hp_before = self.active_hp();
         let order: Vec<_> = std::mem::take(&mut self.completed_slots)
             .into_iter()
             .map(|(side, pos)| ParticipantId {
@@ -1093,7 +1108,33 @@ impl Battle {
         }
         self.turn_queue.clear();
         self.resolving_turn = false;
+        self.check_ability_exits(&residual_hp_before, false, None, events);
         Ok(())
+    }
+
+    fn offer_ability_exit(&mut self, events: &mut Vec<BattleEvent>) -> Result<bool, BattleError> {
+        while let Some(who) = self.ability_exits.pop_front() {
+            if self.winner.is_some()
+                || !self.is_active(who)
+                || self.get(who).hp == 0
+                || self.bench(who.side).is_empty()
+            {
+                continue;
+            }
+            self.intercept_switch(who, events)?;
+            if self.get(who).hp == 0 || self.winner.is_some() {
+                continue;
+            }
+            let choices = self
+                .bench(who.side)
+                .into_iter()
+                .enumerate()
+                .map(|(id, to)| Choice::Switch { id: id as u32, to })
+                .collect();
+            self.make_prompt(who, choices, PromptReason::Pivot);
+            return Ok(true);
+        }
+        Ok(false)
     }
     fn check_sleep(&mut self, id: ParticipantId, events: &mut Vec<BattleEvent>) {
         if self.get(id).hp == 0 || self.get(id).status != Some(Status::Asleep) {

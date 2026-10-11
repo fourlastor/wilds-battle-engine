@@ -4147,3 +4147,107 @@ fn berserk_boosts_once_when_moves_cross_half_hp_and_precedes_single_hit_berry_he
         }
     }
 }
+
+fn check_exit_ability(ability: &str) {
+    use wilds_battle_engine::PromptReason;
+    for (move_id, attack_ability, hp, berry, poisoned, expected) in [
+        ("tackle", "", 530, false, false, true),
+        ("tackle", "", 500, false, false, false),
+        ("tackle", "", 530, true, false, false),
+        ("scald", "sheer-force", 530, false, false, false),
+        ("u-turn", "", 530, false, false, true),
+        ("splash", "", 530, false, true, true),
+    ] {
+        let mut user = mon("User", &[move_id]);
+        user.speed = 200;
+        user.ability = Some(attack_ability.into());
+        let mut target = mon("Target", &["splash"]);
+        target.speed = 10;
+        target.ability = Some(ability.into());
+        target.hp = hp;
+        target.item = berry.then(|| "sitrus-berry".into());
+        target.status = poisoned.then_some(Status::Poisoned);
+        let mut battle = Battle::with_rng(
+            Fixed(0.5),
+            [
+                vec![user, mon("Ally Bench", &["splash"])],
+                vec![target, mon("Foe Bench", &["splash"])],
+            ],
+            MoveCatalog::builtin().unwrap(),
+        )
+        .unwrap();
+        battle.set_active([vec![0], vec![0]]).unwrap();
+        let mut exited = false;
+        for _ in 0..12 {
+            let result = battle.advance().unwrap();
+            let AdvanceStatus::Awaiting(prompt) = result.status else {
+                panic!("unexpected end")
+            };
+            if prompt.reason == PromptReason::Action && battle.turn() > 0 {
+                break;
+            }
+            let choice = if prompt.reason == PromptReason::Pivot {
+                assert_eq!(
+                    prompt.actor.side,
+                    Side::Foes,
+                    "Exit should cancel U-turn's pivot"
+                );
+                exited = true;
+                prompt
+                    .choices
+                    .iter()
+                    .find(|c| matches!(c, Choice::Switch { .. }))
+                    .unwrap()
+            } else {
+                let wanted = if prompt.actor.side == Side::Allies {
+                    move_id
+                } else {
+                    "splash"
+                };
+                prompt
+                    .choices
+                    .iter()
+                    .find(|c| matches!(c, Choice::UseMove {move_id, ..} if move_id == wanted))
+                    .unwrap()
+            };
+            battle
+                .set_response(ActionSelection {
+                    prompt_id: prompt.id,
+                    choice_id: choice.id(),
+                })
+                .unwrap();
+        }
+        assert_eq!(
+            exited, expected,
+            "{ability} {move_id} hp={hp} berry={berry} poisoned={poisoned}"
+        );
+        assert_eq!(
+            battle.active_indices(Side::Foes),
+            if expected { &[1] } else { &[0] }
+        );
+        assert_eq!(battle.active_indices(Side::Allies), &[0]);
+    }
+    let mut user = mon("User", &["substitute"]);
+    user.ability = Some(ability.into());
+    user.hp = 600;
+    let mut battle = Battle::with_rng(
+        Fixed(0.5),
+        [
+            vec![user, mon("Bench", &["splash"])],
+            vec![mon("Target", &["splash"])],
+        ],
+        MoveCatalog::builtin().unwrap(),
+    )
+    .unwrap();
+    battle.set_active([vec![0], vec![0]]).unwrap();
+    turn(&mut battle, "substitute", "splash");
+    let AdvanceStatus::Awaiting(prompt) = battle.advance().unwrap().status else {
+        panic!("no prompt")
+    };
+    assert_eq!(prompt.reason, PromptReason::Action);
+}
+
+#[test]
+fn wimp_out_offers_a_switch_after_crossing_half_hp_with_berry_and_pivot_timing() {
+    check_exit_ability("wimp-out");
+}

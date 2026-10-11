@@ -166,10 +166,13 @@ impl Battle {
             self.receive_baton_pass(to, passed, events);
         }
         self.heal_replacement(to, events);
+        let hp_before = self.get(to).hp;
         self.entry_hazards(to, events);
         if !self.imposter_on_entry(to, events) {
             self.ability_on_entry(to, events);
         }
+        self.update_berries(events);
+        self.check_ability_exits(&[(to, hp_before)], false, None, events);
         self.ignored_ability = ignored;
         true
     }

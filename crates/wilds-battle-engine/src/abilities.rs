@@ -27,6 +27,54 @@ fn cannot_suppress(ability: &str) -> bool {
 }
 
 impl Battle {
+    pub(crate) fn active_hp(&self) -> Vec<(ParticipantId, u16)> {
+        self.actors()
+            .into_iter()
+            .map(|id| (id, self.get(id).hp))
+            .collect()
+    }
+
+    pub(crate) fn check_ability_exits(
+        &mut self,
+        before: &[(ParticipantId, u16)],
+        move_damage: bool,
+        hp_cost: Option<ParticipantId>,
+        events: &mut Vec<BattleEvent>,
+    ) {
+        for &(who, hp) in before {
+            if hp_cost == Some(who)
+                || !self.has_ability(who, "wimpout")
+                || hp <= self.get(who).max_hp / 2
+                || self.get(who).hp > self.get(who).max_hp / 2
+                || self.bench(who.side).is_empty()
+                || self.ability_exits.contains(&who)
+                || self
+                    .forced_switches
+                    .iter()
+                    .any(|(_, target)| *target == who)
+                || self.pivot == Some(who)
+            {
+                continue;
+            }
+            if move_damage
+                && self
+                    .get(who)
+                    .last_hit
+                    .as_ref()
+                    .is_some_and(|h| self.sheer_force_applies(h.attacker, &h.move_id))
+            {
+                continue;
+            }
+            self.pivot = None;
+            self.baton_pass = None;
+            self.ability_exits.push_back(who);
+            events.push(BattleEvent::Message(format!(
+                "{} must switch out because of its ability!",
+                self.get(who).name
+            )));
+        }
+    }
+
     pub(crate) fn berserk_waits_for_secondary(&self, who: ParticipantId) -> bool {
         self.has_ability(who, "berserk")
             && self.ability_hits.iter().any(|(target, hit)| {
