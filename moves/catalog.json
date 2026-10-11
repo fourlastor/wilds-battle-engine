@@ -1467,6 +1467,17 @@
       "limitations": []
     },
     {
+      "id": 144,
+      "slug": "transform",
+      "name": "Transform",
+      "sheet_row": null,
+      "runtime_id": "transform",
+      "file": "moves/transform.lua",
+      "status": "implemented",
+      "limitations": [],
+      "parameter_source": "https://pokeapi.co/api/v2/move/144/"
+    },
+    {
       "id": 145,
       "slug": "bubble",
       "name": "Bubble",
@@ -8184,7 +8195,8 @@
       "future-sight",
       "doom-desire",
       "snatch",
-      "instruct"
+      "instruct",
+      "transform"
     ]
   }
 }

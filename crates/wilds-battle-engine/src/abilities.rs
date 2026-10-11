@@ -61,7 +61,7 @@ impl Battle {
         true
     }
 
-    fn install_ability(
+    pub(crate) fn install_ability(
         &mut self,
         who: ParticipantId,
         state: crate::model::AbilityState,

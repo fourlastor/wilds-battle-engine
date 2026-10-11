@@ -233,3 +233,24 @@ assert.ok(beat.foes[0].hp < 1000);
 assert.equal(JSON.parse(text(engine._mlab_state(beatBattle))).allies[1].base_attack, 120);
 engine._wbe_destroy(beatBattle);
 console.log('ok: Beat Up reads party base Attack through wasm and hits once per eligible member');
+
+const transformBattle = withStrings([JSON.stringify({
+  allies: [{name: 'Ditto', species_id: 132, base_attack: 48, max_hp: 1000, moves: ['transform']}],
+  foes: [{name: 'Target', species_id: 6, attack: 173, max_hp: 1000, moves: ['splash', 'pound']}],
+}), '/moves'], (json, dir) => engine._wbe_create(json, dir));
+assert.notEqual(transformBattle, 0, lastError());
+for (let i = 0; i < 2; i++) {
+  const step = JSON.parse(text(engine._wbe_advance(transformBattle)));
+  assert.ok(engine._wbe_respond(transformBattle, BigInt(step.status.prompt_id), step.status.choices[0].id));
+}
+const transformed = JSON.parse(text(engine._wbe_advance(transformBattle)));
+for (const state of [transformed, JSON.parse(text(engine._mlab_state(transformBattle)))]) {
+  assert.equal(state.allies[0].transformed, true);
+  assert.equal(state.allies[0].species_id, 6);
+  assert.equal(state.allies[0].base_attack, 48);
+  assert.equal(state.allies[0].attack, 173);
+  assert.deepEqual(state.allies[0].moves, ['splash', 'pound']);
+  assert.equal(state.allies[0].move_pp.pound, 5);
+}
+engine._wbe_destroy(transformBattle);
+console.log('ok: Transform identity, stats, copied PP and original base Attack round-trip through both wasm snapshots');

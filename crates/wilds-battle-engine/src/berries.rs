@@ -238,13 +238,14 @@ impl Battle {
                     .find(|id| self.get(who).move_pp.get(*id) == Some(&0))
                     .or_else(|| {
                         moves.iter().find(|id| {
-                            self.get(who).move_pp.get(*id).is_some_and(|pp| {
-                                self.catalog.get(id).is_some_and(|spec| *pp < spec.pp)
-                            })
+                            self.get(who)
+                                .move_pp
+                                .get(*id)
+                                .is_some_and(|pp| self.max_pp(who, id).is_some_and(|max| *pp < max))
                         })
                     });
                 if let Some(id) = chosen {
-                    let max = self.catalog.get(id).expect("known move").pp;
+                    let max = self.max_pp(who, id).expect("known move");
                     let pp = self.get_mut(who).move_pp.get_mut(id).expect("known PP");
                     *pp = pp.saturating_add(10 * factor as u8).min(max);
                 }

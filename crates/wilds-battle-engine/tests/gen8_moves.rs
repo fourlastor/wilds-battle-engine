@@ -7308,3 +7308,234 @@ fn instructed_moves_still_check_sleep_and_do_not_spend_pp_when_asleep() {
         2
     );
 }
+
+#[test]
+fn transform_copies_battle_traits_with_five_pp_but_preserves_personal_state() {
+    use wilds_battle_engine::{Stat, Status};
+    let mut user = mon("Ditto", &["transform"]);
+    user.species_id = 132;
+    user.species = "ditto".into();
+    user.base_attack = Some(48);
+    user.hp = 800;
+    user.max_hp = 1200;
+    user.level = 50;
+    user.status = Some(Status::Poisoned);
+    user.item = Some("shed-shell".into());
+    user.substitute_hp = 40;
+    let mut foe = mon("Target", &["protect", "pound", "sketch"]);
+    foe.species_id = 6;
+    foe.species = "charizard".into();
+    foe.base_attack = Some(84);
+    foe.types = vec![PokemonType::Fire, PokemonType::Flying];
+    foe.added_type = Some(PokemonType::Ghost);
+    foe.attack = 173;
+    foe.defense = 165;
+    foe.sp_attack = 234;
+    foe.sp_defense = 178;
+    foe.speed = 123;
+    foe.weight = 90.5;
+    foe.ability = Some("simple".into());
+    foe.stages.insert(Stat::Attack, 2);
+    let mut b = game(user, vec![foe], 0.5);
+    turn(&mut b);
+    let p = &b.participants(Side::Allies)[0];
+    assert!(p.transformed());
+    assert_eq!(p.name, "Ditto");
+    assert_eq!(p.species_id, 6);
+    assert_eq!(p.species, "charizard");
+    assert_eq!(p.base_attack, Some(48));
+    assert_eq!((p.hp, p.max_hp, p.level), (650, 1200, 50));
+    assert_eq!(p.status, Some(Status::Poisoned));
+    assert_eq!(p.item.as_deref(), Some("shed-shell"));
+    assert_eq!(p.substitute_hp, 40);
+    assert_eq!(
+        (p.attack, p.defense, p.sp_attack, p.sp_defense, p.speed),
+        (173, 165, 234, 178, 123)
+    );
+    assert_eq!(p.weight, 90.5);
+    assert_eq!(p.types, [PokemonType::Fire, PokemonType::Flying]);
+    assert_eq!(p.added_type, Some(PokemonType::Ghost));
+    assert_eq!(p.stage(Stat::Attack), 2);
+    assert_eq!(p.ability.as_deref(), Some("simple"));
+    assert_eq!(p.moves, ["protect", "pound", "sketch"]);
+    assert_eq!(p.move_pp["protect"], 5);
+    assert_eq!(p.move_pp["pound"], 5);
+    assert_eq!(p.move_pp["sketch"], 1);
+}
+#[test]
+fn transform_restores_original_moves_including_a_prior_mimic_on_switch() {
+    let mut user = mon("Ditto", &["mimic", "transform", "splash"]);
+    user.species_id = 132;
+    user.attack = 61;
+    user.speed = 50;
+    user.ability = Some("limber".into());
+    let mut foe = mon("Foe", &["pound"]);
+    foe.ability = Some("huge-power".into());
+    let mut b = Battle::with_rng(
+        Fixed(0.5),
+        [vec![user, mon("Bench", &["splash"])], vec![foe]],
+        MoveCatalog::builtin().unwrap(),
+    )
+    .unwrap();
+    b.set_active([vec![0], vec![0]]).unwrap();
+    turn(&mut b);
+    assert_eq!(b.participants(Side::Allies)[0].moves[0], "pound");
+    turn_with(&mut b, |p| choose_move(p, "transform", "pound"));
+    assert!(b.participants(Side::Allies)[0].transformed());
+    turn_with(&mut b, |p| {
+        if p.actor.side == Side::Allies {
+            p.choices
+                .iter()
+                .find(|c| matches!(c, Choice::Switch { .. }))
+                .unwrap()
+                .id()
+        } else {
+            choose_move(p, "splash", "pound")
+        }
+    });
+    let p = &b.participants(Side::Allies)[0];
+    assert!(!p.transformed());
+    assert_eq!(p.species_id, 132);
+    assert_eq!(p.attack, 61);
+    assert_eq!(p.ability.as_deref(), Some("limber"));
+    assert_eq!(p.moves, ["mimic", "transform", "splash"]);
+    assert_eq!(p.move_pp["mimic"], 9);
+    assert_eq!(p.move_pp["transform"], 9);
+    assert_eq!(p.move_pp["splash"], 20);
+}
+#[test]
+fn transform_restores_original_identity_moves_and_ability_on_fainting() {
+    let mut user = mon("Ditto", &["transform"]);
+    user.hp = 100;
+    user.speed = 200;
+    user.species_id = 132;
+    user.ability = Some("limber".into());
+    let mut foe = mon("Foe", &["splash", "explosion"]);
+    foe.speed = 50;
+    foe.attack = 1000;
+    foe.species_id = 76;
+    foe.ability = Some("huge-power".into());
+    let mut b = game(user, vec![foe], 0.5);
+    turn(&mut b);
+    turn_with(&mut b, |p| choose_move(p, "splash", "explosion"));
+    let p = &b.participants(Side::Allies)[0];
+    assert_eq!(p.hp, 0);
+    assert!(!p.transformed());
+    assert_eq!(p.species_id, 132);
+    assert_eq!(p.attack, 100);
+    assert_eq!(p.ability.as_deref(), Some("limber"));
+    assert_eq!(p.moves, ["transform"]);
+    assert_eq!(p.move_pp["transform"], 9);
+}
+#[test]
+fn transform_fails_into_substitutes_and_for_either_already_transformed_participant() {
+    let mut foe = mon("Foe", &["splash"]);
+    foe.substitute_hp = 100;
+    let mut b = game(mon("Ditto", &["transform"]), vec![foe], 0.5);
+    turn(&mut b);
+    assert!(!b.participants(Side::Allies)[0].transformed());
+    assert!(b.participants(Side::Allies)[0].last_move_failed);
+    let mut user = mon("Fast", &["transform"]);
+    user.speed = 200;
+    let mut b = game(user, vec![mon("Slow", &["transform"])], 0.5);
+    turn(&mut b);
+    assert!(b.participants(Side::Allies)[0].transformed());
+    assert!(!b.participants(Side::Foes)[0].transformed());
+    assert!(b.participants(Side::Foes)[0].last_move_failed);
+    turn(&mut b);
+    assert!(b.participants(Side::Allies)[0].last_move_failed);
+}
+#[test]
+fn transform_blocks_copied_sketch_and_mimic_and_limits_leppa_recovery_to_five_pp() {
+    for id in ["mimic", "sketch"] {
+        let mut b = game(
+            mon("Ditto", &["transform"]),
+            vec![mon("Foe", &["splash", id])],
+            0.5,
+        );
+        turn(&mut b);
+        turn_with(&mut b, |p| choose_move(p, id, "splash"));
+        assert_eq!(b.participants(Side::Allies)[0].moves, ["splash", id]);
+        assert!(b.participants(Side::Allies)[0].last_move_failed);
+    }
+    let mut user = mon("Ditto", &["transform"]);
+    user.item = Some("leppa-berry".into());
+    let mut b = game(user, vec![mon("Foe", &["splash", "pound"])], 0.5);
+    turn(&mut b);
+    for _ in 0..5 {
+        turn_with(&mut b, |p| choose_move(p, "pound", "splash"));
+    }
+    assert_eq!(b.participants(Side::Allies)[0].move_pp["pound"], 5);
+    assert_eq!(b.participants(Side::Allies)[0].item, None);
+}
+#[test]
+fn transform_copies_focus_energy_and_activates_the_copied_ability() {
+    let mut user = mon("Ditto", &["splash", "transform"]);
+    user.speed = 50;
+    user.stages.insert(wilds_battle_engine::Stat::Attack, 4);
+    let mut foe = mon("Foe", &["focus-energy", "splash"]);
+    foe.ability = Some("intimidate".into());
+    let mut b = game(user, vec![foe], 0.5);
+    turn(&mut b);
+    turn_with(&mut b, |p| choose_move(p, "transform", "splash"));
+    assert!(
+        b.participants(Side::Allies)[0]
+            .conditions
+            .iter()
+            .any(|c| c.name == "focus_energy")
+    );
+    assert_eq!(
+        b.participants(Side::Allies)[0].stage(wilds_battle_engine::Stat::Attack),
+        0
+    );
+    assert_eq!(
+        b.participants(Side::Foes)[0].stage(wilds_battle_engine::Stat::Attack),
+        -1
+    );
+}
+#[test]
+fn transform_keeps_roosted_flying_types_and_copied_relic_song_cannot_change_forms() {
+    let mut foe = mon("Meloetta", &["roost", "relic-song", "splash"]);
+    foe.species_id = 648;
+    foe.hp = 500;
+    foe.speed = 200;
+    foe.types = vec![PokemonType::Normal, PokemonType::Flying];
+    foe.forms.insert(
+        "meloetta-pirouette".into(),
+        wilds_battle_engine::PokemonForm {
+            attack: 300,
+            defense: 200,
+            sp_attack: 80,
+            sp_defense: 80,
+            speed: 250,
+            types: vec![PokemonType::Normal, PokemonType::Fighting],
+            weight: 6.5,
+        },
+    );
+    let mut b = game(mon("Ditto", &["transform"]), vec![foe], 0.5);
+    turn(&mut b);
+    assert_eq!(
+        b.participants(Side::Allies)[0].types,
+        [PokemonType::Normal, PokemonType::Flying]
+    );
+    turn_with(&mut b, |p| choose_move(p, "relic-song", "splash"));
+    assert_eq!(b.participants(Side::Allies)[0].form, None);
+    assert_eq!(b.participants(Side::Allies)[0].attack, 100);
+}
+#[test]
+fn transforming_into_mega_gengar_ends_existing_telekinesis() {
+    let mut user = mon("Ditto", &["transform"]);
+    user.speed = 50;
+    let mut foe = mon("Gengar", &["telekinesis"]);
+    foe.species_id = 94;
+    foe.form = Some("gengar-mega".into());
+    let mut b = game(user, vec![foe], 0.5);
+    turn(&mut b);
+    assert!(b.participants(Side::Allies)[0].transformed());
+    assert!(
+        !b.participants(Side::Allies)[0]
+            .conditions
+            .iter()
+            .any(|c| c.name == "telekinesis")
+    );
+}

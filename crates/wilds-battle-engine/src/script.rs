@@ -123,6 +123,7 @@ impl Battle {
         table.raw_set("species", pokemon.species.as_str())?;
         table.raw_set("species_id", pokemon.species_id)?;
         table.raw_set("base_attack", pokemon.base_attack)?;
+        table.raw_set("transformed", pokemon.transformed())?;
         table.raw_set("form", pokemon.form.as_deref())?;
         table.raw_set("level", pokemon.level)?;
         table.raw_set("hp", pokemon.hp)?;
@@ -1442,6 +1443,9 @@ impl Battle {
                 frame.any_hit |= success;
                 frame.failed |= !success;
                 Value::Boolean(success)
+            }
+            ScriptOperation::Transform { who, target } => {
+                Value::Boolean(self.transform(who, target, events))
             }
             ScriptOperation::Instruct(who) => Value::Boolean(self.instruct(who)),
             ScriptOperation::MoveIds => {

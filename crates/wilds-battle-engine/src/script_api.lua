@@ -119,6 +119,7 @@ return function(api, fields, roster)
   end
 
   function ctx:call_move(id, target) return op("call_move", id, target) end
+  function ctx:transform(who, target) return op("transform", who, target) end
   function ctx:instruct(who) return op("instruct", who) end
   function ctx:move_ids() return op("move_ids") end
   function ctx:schedule_heal(who, amount, delay) return op("schedule_heal", who, amount, delay) end

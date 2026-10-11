@@ -213,6 +213,10 @@ pub(crate) enum ScriptOperation {
     MoveInfo(String),
     MoveIds,
     Instruct(ParticipantId),
+    Transform {
+        who: ParticipantId,
+        target: ParticipantId,
+    },
     CallMove {
         id: String,
         target: Option<ParticipantId>,
@@ -1415,6 +1419,10 @@ fn parse_op(name: &str, args: &[Value]) -> mlua::Result<ScriptOperation> {
         },
         "move_ids" => ScriptOperation::MoveIds,
         "instruct" => ScriptOperation::Instruct(who(0)?),
+        "transform" => ScriptOperation::Transform {
+            who: who(0)?,
+            target: who(1)?,
+        },
         "schedule_heal" => ScriptOperation::ScheduleHeal {
             who: who(0)?,
             amount: floored(arg(1), "schedule_heal amount")?,

@@ -1,9 +1,9 @@
 # Wilds battle engine
 
 `wilds-battle-engine` is the Rust battle simulation. Move definitions are loaded
-from Lua; `MoveCatalog::builtin()` embeds the 751 files under `moves/`,
+from Lua; `MoveCatalog::builtin()` embeds the 752 files under `moves/`,
 and `MoveCatalog::from_directory(path)` reads them from disk at runtime.
-Both catalogs also include the system move Struggle, for 752 moves in total.
+Both catalogs also include the system move Struggle, for 753 moves in total.
 The [move catalog](moves/README.md) includes 538 entries from the Saved moves sheet,
 plus support moves, additional local JSON moves and the original moves outside the sheet. Its manifest
 records the 34 excluded Z/Max Moves. Files use canonical slugs and source display
@@ -214,6 +214,7 @@ before turn-start hooks; capped changes and resetting stages do not trigger them
 | `ctx:adjacent(a, b)` | Whether two Pokémon occupy neighboring field slots. `who.position` is its zero-based slot from its trainer's perspective; opposing rows face each other. Fainting does not collapse slots. |
 | `ctx:item_removable(who)` | Checks species-bound items independently of Sticky Hold, for damage bonuses such as Knock Off. Removal and atomic theft enforce both restrictions; fainted or suppressed Sticky Hold does not protect an item. |
 | `ctx:eat_berry(who, forced)`, `ctx:eat_stolen_berry(from, to)` | Apply berry consumption effects and record history. Forced eating bypasses Unnerve and Klutz; stealing a berry respects removal restrictions and preserves the eater's own item. |
+| `ctx:transform(who, target)` | Copies battle identity, non-HP stats, types, stages, ability and learned moves (at most five PP each). Preserves personal HP, level, status, item and original species base Attack. Restores originals on withdrawal or fainting. `who.transformed` and both FFI/WASM snapshots expose the state. |
 | `ctx:replace_move(who, old, new, permanent)` | Replaces a learned slot with base PP. Temporary replacements restore the original slot and its spent PP on withdrawal; permanent replacements persist in the battle roster for the host to save. |
 | `ctx:receive_berry(who, item)` | Applies an external berry's eating effect, preserving the recipient's held item and Recycle slot, for Fling. |
 | `ctx:change_form(who, id)`, `ctx:restore_form(who)` | Apply a host-supplied form or restore the original one; return whether it changed. HP, status, stages, and PP are preserved. |

@@ -98,6 +98,7 @@ impl Battle {
                 }
             }
         }
+        self.restore_transform(from, events);
         self.restore_form(from, events);
         let outgoing = self.get_mut(from);
         if let Some((form, base)) = outgoing.battle_base_form.clone() {

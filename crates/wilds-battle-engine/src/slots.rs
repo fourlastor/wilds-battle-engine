@@ -92,9 +92,8 @@ impl Battle {
         for effect in std::mem::take(&mut self.replacement_heals) {
             let p = self.get(who);
             let pp_missing = p.moves.iter().any(|id| {
-                self.catalog
-                    .get(id)
-                    .is_some_and(|spec| p.move_pp.get(id).copied().unwrap_or(0) < spec.pp)
+                self.max_pp(who, id)
+                    .is_some_and(|max| p.move_pp.get(id).copied().unwrap_or(0) < max)
             });
             if effect.side != who.side
                 || effect.position != position
@@ -111,7 +110,7 @@ impl Battle {
                     .get(who)
                     .moves
                     .iter()
-                    .filter_map(|id| self.catalog.get(id).map(|spec| (id.clone(), spec.pp)))
+                    .filter_map(|id| self.max_pp(who, id).map(|max| (id.clone(), max)))
                     .collect();
                 self.get_mut(who).move_pp.extend(pp);
             }

@@ -15,7 +15,7 @@ impl Battle {
         };
         let pp = spec.pp;
         let p = self.get_mut(who);
-        if p.hp == 0 || p.moves.iter().any(|id| id == new) {
+        if p.hp == 0 || p.transformed() || p.moves.iter().any(|id| id == new) {
             return false;
         }
         let Some(slot) = p.moves.iter().position(|id| id == old) else {

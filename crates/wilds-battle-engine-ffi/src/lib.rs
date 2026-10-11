@@ -386,7 +386,7 @@ pub fn conditions(values: &[Condition]) -> Value {
         .collect()
 }
 fn snapshot(value: &Pokemon) -> Value {
-    json!({"name":value.name, "species_id":value.species_id, "base_attack":value.base_attack, "form":value.form,
+    json!({"name":value.name, "species_id":value.species_id, "base_attack":value.base_attack, "transformed": value.transformed(), "form":value.form,
         "attack":value.attack, "defense":value.defense, "sp_attack":value.sp_attack,
         "sp_defense":value.sp_defense, "speed":value.speed, "weight":value.weight,
         "hp":value.hp, "max_hp":value.max_hp,
