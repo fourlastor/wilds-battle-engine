@@ -382,7 +382,8 @@ impl Battle {
         let absorbs = (kind == crate::model::PokemonType::Electric
             && self.has_ability(target, "voltabsorb"))
             || (kind == crate::model::PokemonType::Water
-                && self.has_ability(target, "waterabsorb"));
+                && self.has_ability(target, "waterabsorb"))
+            || (kind == crate::model::PokemonType::Fire && self.has_ability(target, "flashfire"));
         absorbs && self.ability_blocks_damage(actor, target, kind, 2.0, false, false, true, events)
     }
 

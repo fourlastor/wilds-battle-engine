@@ -118,3 +118,28 @@ fn water_absorb_catches_soak_without_changing_types() {
         );
     }
 }
+
+#[test]
+fn flash_fire_activates_from_will_o_wisp_and_boosts_fire_damage() {
+    let run = |activate, suppressed, breaker: bool| {
+        let mut user = mon("User", &["will-o-wisp", "splash"]);
+        user.speed = 200;
+        user.ability = breaker.then(|| "mold-breaker".into());
+        let mut target = mon("Target", &["ember"]);
+        target.ability = Some("flash-fire".into());
+        target.ability_suppressed = suppressed;
+        let mut battle = game(user, target, 0.5);
+        turn(
+            &mut battle,
+            if activate { "will-o-wisp" } else { "splash" },
+            "ember",
+        );
+        (1000 - ally(&battle).hp, foe(&battle).status)
+    };
+    let base = run(false, false, false).0;
+    let boosted = run(true, false, false);
+    assert_eq!(boosted.1, None);
+    assert!(boosted.0 > base);
+    assert_eq!(run(true, true, false).1, Some(Status::Burned));
+    assert_eq!(run(true, false, true).1, Some(Status::Burned));
+}
