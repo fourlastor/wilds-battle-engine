@@ -153,6 +153,11 @@ pub enum Scope {
 /// A rule on a side applies to every Pokémon of that side, one on the field to everyone.
 #[derive(Clone, Debug, PartialEq)]
 pub enum Rule {
+    /// Status protection for grounded Pokemon, including self-inflicted status.
+    BlockGroundedStatus {
+        statuses: Vec<Status>,
+        confusion: bool,
+    },
     /// Ordinary incoming attacks cannot miss; does not affect OHKO checks or hiding.
     IncomingAlwaysHit,
     /// Floats above the ground unless another rule grounds the holder.
@@ -271,6 +276,7 @@ pub enum Rule {
     BasePower {
         move_type: Option<PokemonType>,
         factor: f32,
+        grounded_only: bool,
     },
     /// Stats cannot be lowered by others.
     BlockStatDrops,

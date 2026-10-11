@@ -1148,6 +1148,7 @@ impl Battle {
             self.converted_type(actor, move_type),
             &self.types_of(who),
         ) || (who != actor && self.blocks_status(who, status))
+            || self.blocks_grounded_status(who, status)
             || (status == Status::Asleep
                 && (self.has_ability(who, "insomnia") || self.has_ability(who, "vitalspirit")))
             || self.has_ability(who, "comatose")

@@ -289,6 +289,10 @@ impl Battle {
         })
     }
 
+    pub(crate) fn blocks_grounded_status(&self, id: ParticipantId, status: Status) -> bool {
+        self.on_ground(id) && self.rules(id).any(|r| matches!(r, Rule::BlockGroundedStatus { statuses, .. } if statuses.is_empty() || statuses.contains(&status)))
+    }
+
     pub(crate) fn blocks_status(&self, id: ParticipantId, status: Status) -> bool {
         self.rules(id).any(|rule| {
             matches!(rule, Rule::BlockStatus { statuses, .. }
@@ -297,6 +301,19 @@ impl Battle {
     }
 
     pub(crate) fn blocks_confusion(&self, id: ParticipantId) -> bool {
+        if self.on_ground(id)
+            && self.rules(id).any(|r| {
+                matches!(
+                    r,
+                    Rule::BlockGroundedStatus {
+                        confusion: true,
+                        ..
+                    }
+                )
+            })
+        {
+            return true;
+        }
         self.rules(id).any(|rule| {
             matches!(
                 rule,
@@ -491,7 +508,12 @@ impl Battle {
             Rule::BasePower {
                 move_type,
                 factor: by,
-            } if move_type.is_none_or(|own| own == kind) => factor * by,
+                grounded_only,
+            } if move_type.is_none_or(|own| own == kind)
+                && (!grounded_only || self.on_ground(id)) =>
+            {
+                factor * by
+            }
             _ => factor,
         })
     }

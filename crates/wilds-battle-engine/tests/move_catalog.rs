@@ -1737,7 +1737,7 @@ fn catalog_tracks_included_and_excluded_moves_with_canonical_names() {
     let manifest: serde_json::Value =
         serde_json::from_str(include_str!("../../../moves/catalog.json")).unwrap();
     let entries = manifest["moves"].as_array().unwrap();
-    assert_eq!(entries.len(), 697);
+    assert_eq!(entries.len(), 698);
     let excluded = manifest["excluded_moves"].as_array().unwrap();
     assert_eq!(excluded.len(), 34);
     assert_eq!(
@@ -1750,7 +1750,7 @@ fn catalog_tracks_included_and_excluded_moves_with_canonical_names() {
     );
     let builtin = MoveCatalog::builtin().unwrap();
     let disk = MoveCatalog::from_directory(root.join("moves")).unwrap();
-    assert_eq!(builtin.len(), 706);
+    assert_eq!(builtin.len(), 707);
     assert_eq!(builtin.len(), disk.len());
     let mut ids = HashSet::new();
     let mut slugs = HashSet::new();
@@ -1799,7 +1799,7 @@ fn catalog_tracks_included_and_excluded_moves_with_canonical_names() {
         .map(Result::unwrap)
         .filter(|entry| entry.path().extension().is_some_and(|ext| ext == "lua"))
         .collect();
-    assert_eq!(files.len(), 705);
+    assert_eq!(files.len(), 706);
     assert!(
         files
             .iter()

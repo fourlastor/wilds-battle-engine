@@ -1320,6 +1320,25 @@ impl Battle {
             self.interrupt_script(actor, target, &spec, events)?;
             return Ok(true);
         }
+        // Rest cannot restore HP if sleep itself is prevented (for example by terrain).
+        if spec.effects.iter().any(|e| {
+            matches!(
+                e,
+                Effect::Status {
+                    status: crate::model::AppliedStatus::RestSleep,
+                    ..
+                }
+            )
+        }) && self.status_immune_to(actor, actor, Status::Asleep, spec.move_type)
+        {
+            events.push(BattleEvent::Message(format!(
+                "{user_name} used {}!",
+                spec.name
+            )));
+            events.push(BattleEvent::Message("But it failed!".into()));
+            self.move_failed = true;
+            return Ok(true);
+        }
         if target_kind == Target::Ally && (target == actor || !self.adjacent(actor, target)) {
             events.push(BattleEvent::Message(format!(
                 "{user_name} used {}!",

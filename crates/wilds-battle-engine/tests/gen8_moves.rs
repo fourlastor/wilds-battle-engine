@@ -4662,3 +4662,69 @@ fn telekinesis_grants_ground_immunity_but_fails_on_grounded_species_and_protect(
     turn(&mut b);
     assert!(b.participants(Side::Foes)[0].conditions.is_empty());
 }
+
+#[test]
+fn electric_terrain_boosts_grounded_electric_power_and_defog_removes_it() {
+    for flying in [false, true] {
+        let mut user = mon("User", &["electric-terrain", "thunder_shock"]);
+        user.types = vec![PokemonType::Electric];
+        if flying {
+            user.types.push(PokemonType::Flying);
+        }
+        let foe = mon("Foe", &["splash", "defog"]);
+        let expected = control_damage(
+            if flying { 40 } else { 52 },
+            "Electric",
+            "Special",
+            user.clone(),
+            foe.clone(),
+        );
+        let mut b = game(user, vec![foe], 0.5);
+        turn(&mut b);
+        turn_with(&mut b, |p| choose_move(p, "thunder_shock", "splash"));
+        assert_eq!(1000 - b.participants(Side::Foes)[0].hp, expected);
+        turn_with(&mut b, |p| choose_move(p, "electric-terrain", "defog"));
+        assert!(
+            !b.field_conditions()
+                .iter()
+                .any(|c| c.name == "electric_terrain")
+        );
+    }
+}
+
+#[test]
+fn electric_terrain_prevents_sleep_and_rest_only_on_grounded_pokemon_and_expires() {
+    use wilds_battle_engine::Status;
+    for flying in [false, true] {
+        let mut user = mon("User", &["electric-terrain", "splash"]);
+        user.speed = 200;
+        let mut foe = mon("Foe", &["rest", "splash"]);
+        foe.hp = 600;
+        if flying {
+            foe.types = vec![PokemonType::Flying];
+        }
+        let mut b = game(user, vec![foe], 0.5);
+        turn(&mut b);
+        assert_eq!(
+            b.participants(Side::Foes)[0].status,
+            if flying { Some(Status::Asleep) } else { None }
+        );
+        assert_eq!(
+            b.participants(Side::Foes)[0].hp,
+            if flying { 1000 } else { 600 }
+        );
+        for _ in 0..4 {
+            turn_with(&mut b, |p| choose_move(p, "splash", "splash"));
+        }
+        assert!(
+            !b.field_conditions()
+                .iter()
+                .any(|c| c.name == "electric_terrain")
+        );
+    }
+    let mut user = mon("User", &["electric-terrain"]);
+    user.speed = 200;
+    let mut b = game(user, vec![mon("Foe", &["spore"])], 0.5);
+    turn(&mut b);
+    assert_eq!(b.participants(Side::Allies)[0].status, None);
+}

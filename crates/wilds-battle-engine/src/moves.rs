@@ -837,10 +837,10 @@ fn rule_of(value: &Value) -> mlua::Result<Rule> {
             "screen",
             "unless_side_effect",
         ],
-        RuleKind::BasePower => &["kind", "type", "factor"],
+        RuleKind::BasePower => &["kind", "type", "factor", "grounded_only"],
         RuleKind::DamageDealt => &["kind", "factor", "category", "type"],
         RuleKind::StatMultiplier => &["kind", "stat", "factor"],
-        RuleKind::BlockStatus => &["kind", "statuses", "confusion"],
+        RuleKind::BlockGroundedStatus | RuleKind::BlockStatus => &["kind", "statuses", "confusion"],
         RuleKind::BlockMoves => &["kind", "flags", "message"],
         RuleKind::IncomingAlwaysHit
         | RuleKind::Airborne
@@ -958,6 +958,7 @@ fn rule_of(value: &Value) -> mlua::Result<Rule> {
         RuleKind::BasePower => Rule::BasePower {
             move_type: options.pokemon_type("type")?,
             factor: factor("factor")?,
+            grounded_only: options.flag("grounded_only")?,
         },
         RuleKind::DamageDealt => Rule::DamageDealt {
             category: category()?,
@@ -970,6 +971,14 @@ fn rule_of(value: &Value) -> mlua::Result<Rule> {
         RuleKind::StatMultiplier => Rule::StatMultiplier {
             stat: combat_stat_of(&required("stat")?, "rule option stat")?,
             factor: factor("factor")?,
+        },
+        RuleKind::BlockGroundedStatus => Rule::BlockGroundedStatus {
+            statuses: options
+                .list("statuses", status_of)?
+                .into_iter()
+                .map(AppliedStatus::battle_status)
+                .collect(),
+            confusion: options.flag("confusion")?,
         },
         RuleKind::BlockStatus => Rule::BlockStatus {
             statuses: options
