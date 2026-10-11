@@ -4348,6 +4348,17 @@
       "limitations": []
     },
     {
+      "id": 495,
+      "slug": "after-you",
+      "name": "After You",
+      "sheet_row": null,
+      "runtime_id": "after-you",
+      "file": "moves/after-you.lua",
+      "status": "implemented",
+      "limitations": [],
+      "parameter_source": "https://pokeapi.co/api/v2/move/495/"
+    },
+    {
       "id": 496,
       "slug": "round",
       "name": "Round",
@@ -7116,7 +7127,8 @@
       "magic-powder",
       "trick-or-treat",
       "forests-curse",
-      "reflect-type"
+      "reflect-type",
+      "after-you"
     ]
   }
 }

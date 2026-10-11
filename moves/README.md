@@ -18,8 +18,8 @@ otherwise Electric. The host supplies its current form; automatic Hunger Switch
 form changes remain part of the unfinished ability catalog.
 
 With seven additional support moves, 14 further moves from the local JSON data,
-95 further Gen 1–8 moves and the nine original moves outside the sheet,
-the runtime catalog has 663 moves: 662 files here and Struggle in
+96 further Gen 1–8 moves and the nine original moves outside the sheet,
+the runtime catalog has 664 moves: 663 files here and Struggle in
 `src/system_moves.lua` inside the crate.
 The 22 original filenames containing underscores have been renamed with hyphens.
 

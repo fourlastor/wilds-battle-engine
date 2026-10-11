@@ -473,6 +473,10 @@ impl Battle {
         )?;
         ctx.raw_set("everyone", list(self.actors())?)?;
         ctx.raw_set(
+            "active_per_side",
+            self.active.iter().map(Vec::len).max().unwrap_or(1),
+        )?;
+        ctx.raw_set(
             "pending",
             list(
                 self.pending_actors

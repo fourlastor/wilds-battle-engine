@@ -2565,3 +2565,58 @@ fn reflect_type_fails_for_immutable_users_protect_and_typeless_targets() {
         assert!(b.participants(Side::Allies)[0].last_move_failed);
     }
 }
+
+fn used_names(events: &[BattleEvent]) -> Vec<&str> {
+    events
+        .iter()
+        .filter_map(|e| match e {
+            BattleEvent::Message(m) if m.contains(" used ") => m.split(" used ").next(),
+            _ => None,
+        })
+        .collect()
+}
+
+#[test]
+fn after_you_promotes_a_pending_ally_immediately_through_substitute() {
+    let mut user = mon("User", &["after-you"]);
+    user.speed = 300;
+    let mut ally = mon("Slow", &["splash"]);
+    ally.speed = 10;
+    ally.substitute_hp = 50;
+    let mut foe = mon("Foe", &["splash"]);
+    foe.speed = 200;
+    let mut b = Battle::with_rng(
+        Fixed(0.5),
+        [vec![user, ally], vec![foe]],
+        MoveCatalog::builtin().unwrap(),
+    )
+    .unwrap();
+    let events = turn_with(&mut b, |p| {
+        if p.actor.side == Side::Allies && p.actor.index == 0 {
+            p.choices.iter().find(|c| matches!(c,Choice::UseMove{target,..} if target.side==Side::Allies && target.index==1)).unwrap().id()
+        } else {
+            p.choices[0].id()
+        }
+    });
+    assert_eq!(used_names(&events), ["User", "Slow", "Foe"]);
+}
+
+#[test]
+fn after_you_fails_in_singles_and_when_the_target_has_already_moved() {
+    let mut b = game(
+        mon("User", &["after-you"]),
+        vec![mon("Foe", &["splash"])],
+        0.5,
+    );
+    turn(&mut b);
+    assert!(b.participants(Side::Allies)[0].last_move_failed);
+    let mut user = mon("User", &["after-you"]);
+    user.speed = 10;
+    let mut b = game(
+        user,
+        vec![mon("Foe", &["splash"]), mon("Other", &["splash"])],
+        0.5,
+    );
+    turn(&mut b);
+    assert!(b.participants(Side::Allies)[0].last_move_failed);
+}
