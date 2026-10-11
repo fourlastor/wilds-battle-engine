@@ -188,6 +188,9 @@ pub(crate) enum HpAmount {
 
 #[derive(Clone, Debug, PartialEq)]
 pub(crate) enum ScriptOperation {
+    SwapSideEffects {
+        names: Vec<String>,
+    },
     SwapPositions {
         a: ParticipantId,
         b: ParticipantId,
@@ -1079,6 +1082,16 @@ fn parse_op(name: &str, args: &[Value]) -> mlua::Result<ScriptOperation> {
             a: who(0)?,
             b: who(1)?,
         },
+        "swap_side_effects" => {
+            let Value::Table(table) = arg(0) else {
+                return Err(bad("swap_side_effects requires a list of names"));
+            };
+            let names = table
+                .sequence_values::<Value>()
+                .map(|v| name_of(&v?, "side effect name"))
+                .collect::<mlua::Result<Vec<_>>>()?;
+            ScriptOperation::SwapSideEffects { names }
+        }
         "check_protection" => ScriptOperation::CheckProtection,
         "succeed" => ScriptOperation::Succeed,
         "redirect_target" => ScriptOperation::RedirectTarget { who: who(0)? },

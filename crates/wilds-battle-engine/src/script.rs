@@ -1430,6 +1430,9 @@ impl Battle {
             ScriptOperation::SwapPositions { a, b } => {
                 Value::Boolean(self.swap_positions(a, b, events))
             }
+            ScriptOperation::SwapSideEffects { names } => {
+                Value::Boolean(self.swap_side_effects(&names))
+            }
             ScriptOperation::CheckProtection => Value::Boolean(self.protection_check(actor)),
             ScriptOperation::Succeed => {
                 frame.any_hit = true;

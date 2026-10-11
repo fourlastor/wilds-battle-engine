@@ -4363,3 +4363,40 @@ fn powder_uses_weather_balls_actual_type_and_expires_after_the_turn() {
     assert!(b.participants(Side::Allies)[0].hp < 1000);
     assert_eq!(b.participants(Side::Foes)[0].hp, 750);
 }
+
+#[test]
+fn court_change_exchanges_screens_and_hazard_layers_without_resetting_durations() {
+    let mut b = game(
+        mon("User", &["reflect", "spikes", "court-change"]),
+        vec![mon("Foe", &["light-screen", "spikes", "splash"])],
+        0.5,
+    );
+    turn(&mut b);
+    turn_with(&mut b, |p| choose_move(p, "spikes", "spikes"));
+    turn_with(&mut b, |p| choose_move(p, "spikes", "splash"));
+    turn_with(&mut b, |p| choose_move(p, "court-change", "splash"));
+    let a = b.side_conditions(Side::Allies);
+    let f = b.side_conditions(Side::Foes);
+    assert_eq!(a.iter().find(|c| c.name == "spikes").unwrap().value, 2);
+    assert_eq!(f.iter().find(|c| c.name == "spikes").unwrap().value, 1);
+    assert_eq!(
+        a.iter()
+            .find(|c| c.name == "light_screen")
+            .unwrap()
+            .turns_left,
+        Some(1)
+    );
+    assert_eq!(
+        f.iter().find(|c| c.name == "reflect").unwrap().turns_left,
+        Some(1)
+    );
+    assert!(!a.iter().any(|c| c.name == "reflect"));
+    assert!(!f.iter().any(|c| c.name == "light_screen"));
+    let mut b = game(
+        mon("User", &["court-change"]),
+        vec![mon("Foe", &["splash"])],
+        0.5,
+    );
+    turn(&mut b);
+    assert!(b.participants(Side::Allies)[0].last_move_failed);
+}

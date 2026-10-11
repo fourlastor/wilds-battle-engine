@@ -6614,6 +6614,17 @@
       "limitations": []
     },
     {
+      "id": 756,
+      "slug": "court-change",
+      "name": "Court Change",
+      "sheet_row": null,
+      "runtime_id": "court-change",
+      "file": "moves/court-change.lua",
+      "status": "implemented",
+      "limitations": [],
+      "parameter_source": "https://pokeapi.co/api/v2/move/756/"
+    },
+    {
       "id": 775,
       "slug": "clangorous-soul",
       "name": "Clangorous Soul",
@@ -7560,7 +7571,8 @@
       "ion-deluge",
       "electrify",
       "magic-coat",
-      "powder"
+      "powder",
+      "court-change"
     ]
   }
 }

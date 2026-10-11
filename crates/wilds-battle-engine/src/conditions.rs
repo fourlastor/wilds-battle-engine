@@ -136,6 +136,22 @@ impl Battle {
         true
     }
 
+    pub(crate) fn swap_side_effects(&mut self, names: &[String]) -> bool {
+        let mut swapped = [Vec::new(), Vec::new()];
+        for side in Side::ALL {
+            let (take, keep) = std::mem::take(&mut self.side_conditions[side.index()])
+                .into_iter()
+                .partition(|c| names.contains(&c.name));
+            swapped[side.index()] = take;
+            self.side_conditions[side.index()] = keep;
+        }
+        let changed = swapped.iter().any(|v| !v.is_empty());
+        for side in Side::ALL {
+            self.side_conditions[side.index()].append(&mut swapped[side.opposite().index()]);
+        }
+        changed
+    }
+
     pub(crate) fn action_speed(&self, id: ParticipantId) -> i32 {
         let speed = (self.stat_value(id, CombatStat::Speed) as i32).clamp(0, 10000);
         let speed = if self

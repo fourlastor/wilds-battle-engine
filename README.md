@@ -1,9 +1,9 @@
 # Wilds battle engine
 
 `wilds-battle-engine` is the Rust battle simulation. Move definitions are loaded
-from Lua; `MoveCatalog::builtin()` embeds the 699 files under `moves/`,
+from Lua; `MoveCatalog::builtin()` embeds the 700 files under `moves/`,
 and `MoveCatalog::from_directory(path)` reads them from disk at runtime.
-Both catalogs also include the system move Struggle, for 700 moves in total.
+Both catalogs also include the system move Struggle, for 701 moves in total.
 The [move catalog](moves/README.md) includes 538 entries from the Saved moves sheet,
 plus support moves, additional local JSON moves and the original moves outside the sheet. Its manifest
 records the 34 excluded Z/Max Moves. Files use canonical slugs and source display
@@ -224,6 +224,7 @@ before turn-start hooks; capped changes and resetting stages do not trigger them
 | `ctx:steal_boosts(from, to)`, `ctx:steal_item(from, to)`, `ctx:lose_type(who, Type.X)` | Shorthands built from the calls above. |
 | `ctx:opposite_genders(a, b)`, `ctx:share_type(a, b)`, `ctx:type_number(0..15)` | `type_number` uses Hidden Power's order. |
 | `who:raised_stages()`, `who:used_all_other_moves(id)` | Read-only helpers on a Pokémon. |
+| `ctx:swap_side_effects(names)` | Exchanges the named side conditions, preserving their durations, counters and rules. Returns whether any existed. |
 | `ctx:swap_positions(a, b)` | Swaps two active teammates without withdrawing or resetting them. Pending attacks keep targeting their chosen slots; emits `PositionsSwapped` / `swap_positions`. |
 | `ctx:set_payout_multiplier(factor)` | Sets a persistent side multiplier without stacking. `Battle::payout` includes it for Pay Day; `Battle::payout_multiplier` and JSON `payout_multiplier` let the host apply it to trainer prizes. |
 | `ctx:add_payout(amount)` | Money for the user's side, read by the host with `Battle::payout`. |
