@@ -3749,6 +3749,17 @@
       "limitations": []
     },
     {
+      "id": 484,
+      "slug": "heavy-slam",
+      "name": "Heavy Slam",
+      "sheet_row": null,
+      "runtime_id": "heavy-slam",
+      "file": "moves/heavy-slam.lua",
+      "status": "implemented",
+      "limitations": [],
+      "parameter_source": "https://pokeapi.co/api/v2/move/484/"
+    },
+    {
       "id": 485,
       "slug": "synchronoise",
       "name": "Synchronoise",
@@ -6264,7 +6275,8 @@
       "frustration",
       "pika-papow",
       "veevee-volley",
-      "grass-knot"
+      "grass-knot",
+      "heavy-slam"
     ]
   }
 }

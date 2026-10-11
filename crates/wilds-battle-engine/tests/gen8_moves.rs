@@ -575,3 +575,39 @@ fn grass_knot_obeys_all_weight_brackets() {
         );
     }
 }
+
+#[test]
+fn heavy_slam_uses_relative_weight() {
+    for (weight, power) in [
+        (19.9, 40),
+        (20.0, 60),
+        (29.9, 60),
+        (30.0, 80),
+        (39.9, 80),
+        (40.0, 100),
+        (49.9, 100),
+        (50.0, 120),
+    ] {
+        let mut user = mon("User", &["heavy-slam"]);
+        user.weight = weight;
+        let mut foe = mon("Foe", &["splash"]);
+        foe.weight = 10.0;
+        let expected = control_damage(power, "Steel", "Physical", user.clone(), foe.clone());
+        let mut b = game(user, vec![foe], 0.5);
+        turn(&mut b);
+        assert_eq!(
+            1000 - b.participants(Side::Foes)[0].hp,
+            expected,
+            "weight {weight}"
+        );
+    }
+    let mut user = mon("User", &["heavy-slam"]);
+    user.weight = 50.0;
+    user.speed = 1;
+    let mut foe = mon("Foe", &["minimize"]);
+    foe.weight = 10.0;
+    let expected = control_damage(240, "Steel", "Physical", user.clone(), foe.clone());
+    let mut b = game(user, vec![foe], 0.5);
+    turn(&mut b);
+    assert_eq!(1000 - b.participants(Side::Foes)[0].hp, expected);
+}
