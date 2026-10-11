@@ -1524,3 +1524,27 @@ fn mind_reader_locks_on_for_one_turn_and_releases_when_target_switches() {
 fn lock_on_locks_on_for_one_turn_and_releases_when_target_switches() {
     check_lock_on("lock-on");
 }
+
+#[test]
+fn belly_drum_pays_half_max_hp_and_raises_attack_from_any_stage() {
+    use wilds_battle_engine::Stat;
+    for (hp, stage, ability, expected_hp, expected_stage) in [
+        (1000, -6, None, 500, 6),
+        (501, 0, None, 1, 6),
+        (500, 0, None, 500, 0),
+        (1000, 6, None, 1000, 6),
+        (1000, 3, Some("contrary"), 500, -6),
+        (1000, -6, Some("simple"), 500, 6),
+    ] {
+        let mut user = mon("User", &["belly-drum"]);
+        user.hp = hp;
+        user.stages.insert(Stat::Attack, stage);
+        user.ability = ability.map(str::to_owned);
+        let mut b = game(user, vec![mon("Foe", &["splash"])], 0.5);
+        turn(&mut b);
+        let p = &b.participants(Side::Allies)[0];
+        assert_eq!(p.hp, expected_hp);
+        assert_eq!(p.stage(Stat::Attack), expected_stage);
+        assert_eq!(p.last_move_failed, expected_hp == hp);
+    }
+}

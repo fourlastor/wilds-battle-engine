@@ -1745,6 +1745,17 @@
       "limitations": []
     },
     {
+      "id": 187,
+      "slug": "belly-drum",
+      "name": "Belly Drum",
+      "sheet_row": null,
+      "runtime_id": "belly-drum",
+      "file": "moves/belly-drum.lua",
+      "status": "implemented",
+      "limitations": [],
+      "parameter_source": "https://pokeapi.co/api/v2/move/187/"
+    },
+    {
       "id": 188,
       "slug": "sludge-bomb",
       "name": "Sludge Bomb",
@@ -6732,7 +6743,8 @@
       "lucky-chant",
       "psych-up",
       "mind-reader",
-      "lock-on"
+      "lock-on",
+      "belly-drum"
     ]
   }
 }

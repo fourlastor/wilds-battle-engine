@@ -1,9 +1,9 @@
 # Wilds battle engine
 
 `wilds-battle-engine` is the Rust battle simulation. Move definitions are loaded
-from Lua; `MoveCatalog::builtin()` embeds the 630 files under `moves/`,
+from Lua; `MoveCatalog::builtin()` embeds the 631 files under `moves/`,
 and `MoveCatalog::from_directory(path)` reads them from disk at runtime.
-Both catalogs also include the system move Struggle, for 631 moves in total.
+Both catalogs also include the system move Struggle, for 632 moves in total.
 The [move catalog](moves/README.md) includes 538 entries from the Saved moves sheet,
 plus support moves, additional local JSON moves and the original moves outside the sheet. Its manifest
 records the 34 excluded Z/Max Moves. Files use canonical slugs and source display
@@ -201,7 +201,7 @@ before turn-start hooks; capped changes and resetting stages do not trigger them
 | `ctx:hurt(who, amount)`, `ctx:heal(who, amount)` | `amount` is HP or `{fraction = 1/8}` of max HP. Returns the HP that changed. |
 | `ctx:apply_status(who, Status.X, {chance, replace, announce_failure})`, `ctx:cure_status(who, Status.X)` | True if it took. |
 | `ctx:confuse(who, {chance})`, `ctx:flinch(who, {chance})` | |
-| `ctx:change_stat(who, Stat.X, stages, {chance})`, `ctx:reset_stats(who)` | `change_stat` returns how far the stage really moved. |
+| `ctx:change_stat(who, Stat.X, stages, {chance})`, `ctx:reset_stats(who)` | `change_stat` accepts nonzero changes from -12 to +12, applies abilities, clamps the final stage to -6…+6 and returns how far it moved. |
 | `ctx:protect(who)`, `ctx:break_protect(who)`, `ctx:bind(who, {min_turns, max_turns})`, `ctx:free(who)` | A Pokémon that protects itself with the same move turn after turn succeeds a third as often each time, as with `Effect.Protect`. |
 | `ctx:hide(Hidden.X)`, `ctx:unhide(who)` | The user hides until it next acts. `unhide` also calls off what the Pokémon was doing. |
 | `ctx:set_weather(Weather.X, turns)`, `ctx:clear_weather()` | `Sun`, `Sandstorm`, `Rain`, `Hail`. |

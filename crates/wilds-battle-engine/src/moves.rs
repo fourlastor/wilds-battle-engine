@@ -1003,9 +1003,10 @@ fn parse_op(name: &str, args: &[Value]) -> mlua::Result<ScriptOperation> {
             chance: chance_only(1)?,
         },
         "change_stat" => {
-            let stages = whole(arg(2), "stat change", -6.0, 6.0)? as i8;
+            // A full swing from -6 to +6 is needed by moves such as Belly Drum.
+            let stages = whole(arg(2), "stat change", -12.0, 12.0)? as i8;
             if stages == 0 {
-                return Err(bad("stat change must be nonzero and within -6..=6"));
+                return Err(bad("stat change must be nonzero and within -12..=12"));
             }
             ScriptOperation::ChangeStat {
                 who: who(0)?,
