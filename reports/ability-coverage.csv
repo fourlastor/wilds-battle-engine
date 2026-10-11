@@ -111,7 +111,7 @@ id,ability,status,verification
 110,tinted-lens,MISSING,No native battle behavior
 111,filter,IMPLEMENTED,Source inventory; existing tests only
 112,slow-start,MISSING,No native battle behavior
-113,scrappy,PARTIAL,Source inventory; existing tests only
+113,scrappy,IMPLEMENTED,ability_rules::scrappy_bypasses_ghost_immunity_for_normal_fighting_and_fixed_damage
 114,storm-drain,IMPLEMENTED,ability_rules::storm_drain_redirects_damage_and_status_but_not_mold_breaker
 115,ice-body,MISSING,No native battle behavior
 116,solid-rock,IMPLEMENTED,Source inventory; existing tests only

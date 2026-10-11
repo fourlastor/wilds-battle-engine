@@ -2336,18 +2336,51 @@ impl Battle {
         type_chart::multiplier(move_type, &self.defending_types(target, move_type))
             * self.effectiveness_factor(target, move_type)
     }
+    pub(crate) fn move_defending_types(
+        &self,
+        actor: ParticipantId,
+        target: ParticipantId,
+        kind: PokemonType,
+    ) -> Vec<PokemonType> {
+        let mut types = self.defending_types(target, kind);
+        if matches!(kind, PokemonType::Normal | PokemonType::Fighting)
+            && self.has_ability(actor, "scrappy")
+        {
+            types.retain(|t| *t != PokemonType::Ghost);
+        }
+        types
+    }
+    pub(crate) fn move_effectiveness(
+        &self,
+        actor: ParticipantId,
+        target: ParticipantId,
+        kind: PokemonType,
+    ) -> f32 {
+        if kind == PokemonType::Ground && self.floats_by_effect(target) {
+            return 0.0;
+        }
+        type_chart::multiplier(kind, &self.move_defending_types(actor, target, kind))
+            * self.effectiveness_factor(target, kind)
+    }
     /// How well a hit does against a Pokémon's types, with the hit's own exceptions.
-    pub(crate) fn matchup(&self, target: ParticipantId, attack: &Attack) -> f32 {
+    pub(crate) fn matchup(
+        &self,
+        actor: ParticipantId,
+        target: ParticipantId,
+        attack: &Attack,
+    ) -> f32 {
         let against = |move_type: PokemonType, exceptions: &[(PokemonType, f32)]| -> f32 {
             if exceptions.is_empty() {
                 return if attack.hits_airborne {
-                    type_chart::multiplier(move_type, &self.defending_types(target, move_type))
-                        * self.effectiveness_factor(target, move_type)
+                    type_chart::multiplier(
+                        move_type,
+                        &self.move_defending_types(actor, target, move_type),
+                    ) * self.effectiveness_factor(target, move_type)
                 } else {
-                    self.effectiveness(target, move_type)
+                    self.move_effectiveness(actor, target, move_type)
                 };
             }
-            self.defending_types(target, move_type)
+            self.move_defending_types(actor, target, move_type)
                 .iter()
                 .map(|defender| {
                     exceptions
@@ -2385,7 +2418,7 @@ impl Battle {
         if self.ability_bypass {
             self.ignored_ability = Some(target);
         }
-        let effectiveness = self.effectiveness(target, spec.move_type);
+        let effectiveness = self.move_effectiveness(actor, target, spec.move_type);
         if self.ability_blocks_damage(
             actor,
             target,
@@ -2491,7 +2524,7 @@ impl Battle {
         let effectiveness = if typeless {
             1.0
         } else {
-            self.matchup(target, attack)
+            self.matchup(actor, target, attack)
         };
         if !typeless
             && self.ability_blocks_damage(

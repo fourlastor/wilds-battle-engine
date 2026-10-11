@@ -1042,7 +1042,7 @@ impl Battle {
             if self.ability_bypass {
                 self.ignored_ability = Some(target);
             }
-            let effectiveness = self.matchup(target, &attack);
+            let effectiveness = self.matchup(actor, target, &attack);
             if effectiveness == 0.0 {
                 self.immune_message(target, events);
                 report.immune = true;
@@ -1758,7 +1758,7 @@ impl Battle {
                     self.ignored_ability = Some(who);
                 }
                 let move_type = self.converted_type(actor, spec.move_type);
-                let effectiveness = self.effectiveness(who, move_type);
+                let effectiveness = self.move_effectiveness(actor, who, move_type);
                 if self.get(who).hp == 0 {
                     report.missed = true;
                 } else if !typeless
@@ -1846,7 +1846,7 @@ impl Battle {
                 if self.hit_outcome(frame, who, &HitOptions::default(), events) == HitOutcome::Hit {
                     let options = DamageOptions::default();
                     let attack = self.attack(frame, 0, &options);
-                    let effectiveness = self.matchup(who, &attack);
+                    let effectiveness = self.matchup(actor, who, &attack);
                     if effectiveness == 0.0 {
                         self.immune_message(who, events);
                     } else if !self.ability_blocks_damage(

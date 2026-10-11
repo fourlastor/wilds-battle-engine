@@ -476,3 +476,23 @@ fn long_reach_removes_contact_for_hit_reactions_and_fluffy() {
         ability_damage("tackle", "", "fluffy", false) < ability_damage("tackle", "", "", false)
     );
 }
+
+#[test]
+fn scrappy_bypasses_ghost_immunity_for_normal_fighting_and_fixed_damage() {
+    for move_id in ["tackle", "brick-break", "seismic-toss", "ember"] {
+        for suppressed in [false, true] {
+            let mut user = mon("User", &[move_id]);
+            user.ability = Some("scrappy".into());
+            user.ability_suppressed = suppressed;
+            let mut target = mon("Target", &["splash"]);
+            target.types = vec![PokemonType::Ghost];
+            let mut battle = game(user, target, 0.5);
+            turn(&mut battle, move_id, "splash");
+            assert_eq!(
+                foe(&battle).hp < 1000,
+                !suppressed || move_id == "ember",
+                "{move_id}"
+            );
+        }
+    }
+}
