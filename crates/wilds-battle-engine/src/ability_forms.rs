@@ -4,6 +4,41 @@ use crate::items::item_key;
 use crate::model::{BattleEvent, ParticipantId, WeatherKind};
 
 impl Battle {
+    pub(crate) fn residual_ability_forms(&mut self, events: &mut Vec<BattleEvent>) {
+        for who in self.actors() {
+            self.health_ability_form(who, false, events);
+        }
+    }
+
+    pub(crate) fn health_ability_form(
+        &mut self,
+        who: ParticipantId,
+        entry: bool,
+        events: &mut Vec<BattleEvent>,
+    ) {
+        if self.get(who).transformed() {
+            return;
+        }
+        if !entry && self.has_ability(who, "zenmode") && self.species_is(who, 555, "darmanitan") {
+            let galar = self
+                .get(who)
+                .form
+                .as_deref()
+                .is_some_and(|f| f.contains("galar"));
+            let (base, zen) = if galar {
+                ("darmanitan-galar-standard", "darmanitan-galar-zen")
+            } else {
+                ("darmanitan-standard", "darmanitan-zen")
+            };
+            let form = if self.get(who).hp <= self.get(who).max_hp / 2 {
+                zen
+            } else {
+                base
+            };
+            self.ability_form(who, form, base, events);
+        }
+    }
+
     pub(crate) fn species_is(&self, who: ParticipantId, id: u32, name: &str) -> bool {
         self.get(who).species_id == id || item_key(&self.get(who).species) == name
     }

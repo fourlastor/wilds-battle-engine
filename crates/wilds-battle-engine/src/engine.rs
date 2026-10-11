@@ -1082,6 +1082,7 @@ impl Battle {
             self.ability_residual(events);
             self.residual_berries(events);
             self.update_berries(events);
+            self.residual_ability_forms(events);
             self.resolve_outcome(events);
         }
         for pokemon in self.sides.iter_mut().flatten() {

@@ -3786,3 +3786,31 @@ fn flower_gift_changes_cherrim_and_boosts_allied_attack_and_special_defense_in_s
     assert_eq!(run(true, false, true).1, base.1);
     assert_eq!(run(false, false, false), run(false, true, false));
 }
+
+#[test]
+fn zen_mode_changes_at_turn_end_at_half_hp_and_supports_galar_forms() {
+    for galar in [false, true] {
+        let mut user = mon("User", &["splash", "recover"]);
+        user.species_id = 555;
+        user.ability = Some("zen-mode".into());
+        user.hp = 500;
+        let (base, zen) = if galar {
+            ("darmanitan-galar-standard", "darmanitan-galar-zen")
+        } else {
+            ("darmanitan-standard", "darmanitan-zen")
+        };
+        user.form = Some(base.into());
+        add_form(&mut user, zen, PokemonType::Fire);
+        user.forms.get_mut(zen).unwrap().sp_attack = 321;
+        let old_spa = user.sp_attack;
+        let mut battle = game(user, mon("Target", &["splash"]), 0.5);
+        battle.advance().unwrap();
+        assert_eq!(ally(&battle).form.as_deref(), Some(base));
+        turn(&mut battle, "splash", "splash");
+        assert_eq!(ally(&battle).form.as_deref(), Some(zen));
+        assert_eq!(ally(&battle).sp_attack, 321);
+        turn(&mut battle, "recover", "splash");
+        assert_eq!(ally(&battle).form.as_deref(), Some(base));
+        assert_eq!(ally(&battle).sp_attack, old_spa);
+    }
+}
