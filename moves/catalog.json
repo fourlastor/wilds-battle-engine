@@ -818,6 +818,17 @@
       "limitations": []
     },
     {
+      "id": 83,
+      "slug": "fire-spin",
+      "name": "Fire Spin",
+      "sheet_row": null,
+      "runtime_id": "fire-spin",
+      "file": "moves/fire-spin.lua",
+      "status": "implemented",
+      "limitations": [],
+      "parameter_source": "https://pokeapi.co/api/v2/move/83/"
+    },
+    {
       "id": 84,
       "slug": "thunder-shock",
       "name": "Thunder Shock",
@@ -6048,7 +6059,8 @@
       "roar",
       "mist",
       "low-kick",
-      "leech-seed"
+      "leech-seed",
+      "fire-spin"
     ]
   }
 }

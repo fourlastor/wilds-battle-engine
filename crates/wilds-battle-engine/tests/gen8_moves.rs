@@ -241,3 +241,31 @@ fn leech_seed_drains_one_eighth_and_heals_its_source_but_respects_grass_and_subs
         }
     }
 }
+
+fn check_partial_trap(move_id: &str, power: u16, kind: &str, category: &str) {
+    for (response, sub, dice, binds) in [
+        ("splash", 0, 0.5, true),
+        ("protect", 0, 0.5, false),
+        ("splash", 500, 0.5, false),
+    ] {
+        let user = mon("User", &[move_id]);
+        let mut foe = mon("Foe", &[response]);
+        foe.substitute_hp = sub;
+        let expected = control_damage(power, kind, category, user.clone(), foe.clone());
+        let mut b = game(user, vec![foe], dice);
+        turn(&mut b);
+        let foe = &b.participants(Side::Foes)[0];
+        assert_eq!(foe.bound.is_some(), binds, "{move_id}");
+        if binds {
+            assert_eq!(1000 - foe.hp, expected + 125, "{move_id}");
+            assert!((2..=4).contains(&foe.bound.as_ref().unwrap().turns_left));
+        } else {
+            assert_eq!(foe.hp, 1000);
+        }
+    }
+}
+
+#[test]
+fn fire_spin_damages_and_binds_only_after_a_reaching_hit() {
+    check_partial_trap("fire-spin", 35, "Fire", "Special");
+}
