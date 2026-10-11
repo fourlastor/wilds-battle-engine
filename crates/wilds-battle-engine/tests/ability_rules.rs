@@ -1919,3 +1919,25 @@ fn poison_point_has_thirty_percent_contact_poison_with_type_immunity() {
     check_contact_status("poison-point", Status::Poisoned, PokemonType::Poison);
     check_contact_status("poison-point", Status::Poisoned, PokemonType::Steel);
 }
+
+#[test]
+fn effect_spore_uses_gen8_distribution_and_powder_immunities() {
+    for (dice, kind, ability, expected) in [
+        (0.1, PokemonType::Normal, "", Some(Status::Asleep)),
+        (0.15, PokemonType::Normal, "", Some(Status::Paralyzed)),
+        (0.25, PokemonType::Normal, "", Some(Status::Poisoned)),
+        (0.4, PokemonType::Normal, "", None),
+        (0.1, PokemonType::Grass, "", None),
+        (0.1, PokemonType::Normal, "overcoat", None),
+        (0.1, PokemonType::Normal, "long-reach", None),
+    ] {
+        let mut user = mon("User", &["tackle"]);
+        user.types = vec![kind];
+        user.ability = Some(ability.into());
+        let mut target = mon("Target", &["splash"]);
+        target.ability = Some("effect-spore".into());
+        let mut battle = game(user, target, dice);
+        turn(&mut battle, "tackle", "splash");
+        assert_eq!(ally(&battle).status, expected, "{dice}/{kind:?}/{ability}");
+    }
+}

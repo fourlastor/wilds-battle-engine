@@ -25,7 +25,7 @@ id,ability,status,verification
 24,rough-skin,IMPLEMENTED,ability_rules::rough_skin_reacts_to_contact_even_on_faint_but_not_substitutes
 25,wonder-guard,IMPLEMENTED,Source inventory; existing tests only
 26,levitate,IMPLEMENTED,Source inventory; existing tests only
-27,effect-spore,MISSING,No native battle behavior
+27,effect-spore,IMPLEMENTED,ability_rules::effect_spore_uses_gen8_distribution_and_powder_immunities
 28,synchronize,IMPLEMENTED,Source inventory; existing tests only
 29,clear-body,IMPLEMENTED,Source inventory; existing tests only
 30,natural-cure,IMPLEMENTED,Source inventory; existing tests only

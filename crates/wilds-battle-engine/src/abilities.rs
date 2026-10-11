@@ -64,6 +64,35 @@ impl Battle {
                 events,
             );
         }
+        if ability == "effectspore"
+            && hit.contact
+            && !self
+                .types_of(hit.attacker)
+                .contains(&crate::model::PokemonType::Grass)
+            && !self.has_ability(hit.attacker, "overcoat")
+        {
+            let roll = self.rng.fraction();
+            let status = if roll < 0.11 {
+                Some(crate::model::AppliedStatus::Asleep)
+            } else if roll < 0.21 {
+                Some(crate::model::AppliedStatus::Paralyzed)
+            } else if roll < 0.3 {
+                Some(crate::model::AppliedStatus::Poisoned)
+            } else {
+                None
+            };
+            if let Some(status) = status {
+                self.inflict_status(
+                    target,
+                    hit.attacker,
+                    status,
+                    false,
+                    crate::model::PokemonType::None,
+                    false,
+                    events,
+                );
+            }
+        }
     }
 
     /// Weather keeps its timer while its battle effects are suppressed.
