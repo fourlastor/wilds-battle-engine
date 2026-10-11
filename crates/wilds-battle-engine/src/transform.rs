@@ -48,7 +48,9 @@ impl Battle {
         target: ParticipantId,
         events: &mut Vec<BattleEvent>,
     ) -> bool {
-        if who == target
+        if self.get(who).illusion.is_some()
+            || self.get(target).illusion.is_some()
+            || who == target
             || !self.is_active(who)
             || !self.is_active(target)
             || self.get(who).hp == 0
@@ -120,7 +122,8 @@ impl Battle {
         });
         events.push(BattleEvent::Message(format!(
             "{} transformed into {}!",
-            p.name, source.name
+            p.display_name(),
+            source.name
         )));
         self.install_ability(who, ability, events);
         self.ability_on_entry(who, events);

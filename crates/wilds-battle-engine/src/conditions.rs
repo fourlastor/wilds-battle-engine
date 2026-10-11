@@ -141,7 +141,10 @@ impl Battle {
             return false;
         };
         if let Some(message) = message {
-            events.push(BattleEvent::Message(named(&message, &self.get(actor).name)));
+            events.push(BattleEvent::Message(named(
+                &message,
+                self.get(actor).display_name(),
+            )));
         }
         if !self.has_ability(actor, "magicguard") {
             let damage = (f32::from(self.get(actor).max_hp) * fraction)
@@ -982,7 +985,7 @@ impl Battle {
                 if self.get(id).hp == 0 {
                     break;
                 }
-                let name = self.get(id).name.clone();
+                let name = self.get(id).display_name().to_owned();
                 let max_hp = self.get(id).max_hp;
                 let share = |fraction: f32| ((f32::from(max_hp) * fraction).floor() as u16).max(1);
                 match rule {
@@ -1060,7 +1063,7 @@ impl Battle {
         let mut perish = Vec::new();
         for scope in scopes {
             let name = match scope {
-                Scope::Pokemon(id) => self.get(id).name.clone(),
+                Scope::Pokemon(id) => self.get(id).display_name().to_owned(),
                 _ => String::new(),
             };
             if let Scope::Pokemon(id) = scope {

@@ -532,3 +532,11 @@ Both faint reactions exclude delayed attacks and residual damage.
 `Battle::item_active` and Lua `who.item_active` expose activation separately from
 physical possession. Suppression covers berries, gems, Power Herb, Shed Shell and
 item-dependent move types; forced berry eating still works.
+
+Illusion keeps real battle traits intact and exposes a separate `Pokemon.illusion`
+appearance (nickname, species, form and gender). Use `display_name()` for messages
+and the appearance for visuals. JSON snapshots expose `display_name` and `illusion`;
+`kind: "appearance"` events announce disguise changes and reveals. Snapshots are
+full host state, not a filtered opponent view: the host controls information access.
+Party identifiers stay stable while an internal party order tracks switches for
+Illusion's last-healthy-member selection.

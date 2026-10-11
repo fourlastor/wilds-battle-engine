@@ -98,7 +98,7 @@ impl Battle {
         } else if !self.has_ability(who, "magicguard") {
             events.push(BattleEvent::Message(format!(
                 "{} is hurt by poison!",
-                self.get(who).name
+                self.get(who).display_name()
             )));
             self.damage(who, amount, events);
         }
@@ -108,6 +108,9 @@ impl Battle {
         self.refresh_neutralizing_gas(events);
         self.refresh_extreme_weather(events);
         for who in self.actors() {
+            if !self.has_ability(who, "illusion") {
+                self.end_illusion(who, events);
+            }
             self.try_trace(who, events);
             self.update_ability_form(who, events);
             if self.has_ability(who, "oblivious") {
@@ -180,7 +183,7 @@ impl Battle {
         if self.get(who).hp > 0 && self.cure_status(who, Some(Status::Frozen), events) {
             events.push(BattleEvent::Message(format!(
                 "{} thawed out!",
-                self.get(who).name
+                self.get(who).display_name()
             )));
         }
     }

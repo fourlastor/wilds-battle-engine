@@ -10,6 +10,7 @@ use crate::type_chart;
 pub struct Battle {
     pub(crate) catalog: MoveCatalog,
     pub(crate) sides: [Vec<Pokemon>; 2],
+    pub(crate) party_order: [Vec<usize>; 2],
     pub(crate) active: [Vec<usize>; 2],
     pending_events: Vec<BattleEvent>,
     pub(crate) switching_target: Option<ParticipantId>,
@@ -218,7 +219,7 @@ impl Battle {
             if pokemon.moves.is_empty() {
                 return Err(BattleError::InvalidSetup(format!(
                     "{} has no moves",
-                    pokemon.name
+                    pokemon.display_name()
                 )));
             }
             for id in &pokemon.moves {
@@ -238,9 +239,10 @@ impl Battle {
                 pokemon.move_pp.entry(id.clone()).or_insert(spec.pp);
             }
         }
-        let active = std::array::from_fn(|side| (0..sides[side].len()).collect());
+        let active: [Vec<usize>; 2] = std::array::from_fn(|side| (0..sides[side].len()).collect());
         Ok(Self {
             catalog,
+            party_order: active.clone(),
             active,
             pending_events: Vec::new(),
             forced_switches: Vec::new(),
@@ -532,6 +534,9 @@ impl Battle {
         if !self.entry_abilities_started {
             self.entry_abilities_started = true;
             self.refresh_neutralizing_gas(&mut events);
+            for who in self.actors() {
+                self.start_illusion(who, &mut events);
+            }
             let mut entrants = self.actors();
             entrants.sort_by_key(|&id| std::cmp::Reverse(self.action_speed(id)));
             for who in entrants {
@@ -735,7 +740,7 @@ impl Battle {
                     && self.custap_priority(actor, events);
                 let quick_draw = matches!(&choice, SelectedAction::Move(choice) if self.catalog.get(&choice.move_id).is_some_and(|spec| spec.category != Category::Status))
                     && self.has_ability(actor, "quickdraw") && self.rng.chance(0.3);
-                if quick_draw { events.push(BattleEvent::Message(format!("{}'s Quick Draw activated!", self.get(actor).name))); }
+                if quick_draw { events.push(BattleEvent::Message(format!("{}'s Quick Draw activated!", self.get(actor).display_name()))); }
                 let speed = self.action_speed(actor);
                 let fractional_priority = if custap || quick_draw {
                     1
@@ -864,8 +869,8 @@ impl Battle {
         events.push(BattleEvent::PositionsSwapped { a, b });
         events.push(BattleEvent::Message(format!(
             "{} switched places with {}!",
-            self.get(a).name,
-            self.get(b).name
+            self.get(a).display_name(),
+            self.get(b).display_name()
         )));
         true
     }
@@ -1010,7 +1015,7 @@ impl Battle {
                     if self.get(actor).hp > 0 {
                         events.push(BattleEvent::Message(format!(
                             "{} must recharge!",
-                            self.get(actor).name
+                            self.get(actor).display_name()
                         )));
                     }
                 }
@@ -1147,7 +1152,7 @@ impl Battle {
             self.get_mut(id).status_turns = self.get(id).status_turns.saturating_sub(1);
         }
         if self.get(id).status_turns == 0 {
-            let name = self.get(id).name.clone();
+            let name = self.get(id).display_name().to_owned();
             self.get_mut(id).status = None;
             self.remove_expired_status_conditions(id);
             events.push(BattleEvent::Status {
@@ -1388,7 +1393,7 @@ impl Battle {
         } {
             events.push(BattleEvent::Message(crate::conditions::named(
                 message,
-                &self.get(actor).name,
+                self.get(actor).display_name(),
             )));
             self.clear_consecutive(actor);
             self.interrupt_script(actor, choice.target, &spec, events)?;
@@ -1414,7 +1419,7 @@ impl Battle {
                 })
                 .map_or(1.0, |boost| boost.multiplier);
         }
-        let user_name = self.get(actor).name.clone();
+        let user_name = self.get(actor).display_name().to_owned();
         let forced_script = self
             .get(actor)
             .script_continuation
@@ -1617,7 +1622,7 @@ impl Battle {
             target = redirected;
             events.push(BattleEvent::Message(format!(
                 "{} drew in the move!",
-                self.get(target).name
+                self.get(target).display_name()
             )));
         }
         self.ability_bypass = spec.has_flag("ignore_ability")
@@ -1646,7 +1651,7 @@ impl Battle {
             )));
             events.push(BattleEvent::Message(format!(
                 "{} snatched {}!",
-                self.get(snatcher).name,
+                self.get(snatcher).display_name(),
                 spec.name
             )));
             self.snatching = true;
@@ -1835,7 +1840,7 @@ impl Battle {
         if !first_charge && self.priority_blocked(actor, target, &spec) {
             events.push(BattleEvent::Message(format!(
                 "{} is protected from priority moves!",
-                self.get(target).name
+                self.get(target).display_name()
             )));
             self.move_failed = true;
             return Ok(true);
@@ -1843,7 +1848,7 @@ impl Battle {
         if !first_charge && self.guard_hit(actor, target, &spec, &Default::default(), events) {
             events.push(BattleEvent::Message(format!(
                 "{} was protected!",
-                self.get(target).name
+                self.get(target).display_name()
             )));
             self.move_failed = true;
             return Ok(true);
@@ -1865,7 +1870,7 @@ impl Battle {
         {
             events.push(BattleEvent::Message(format!(
                 "{} protected itself!",
-                self.get(target).name
+                self.get(target).display_name()
             )));
             self.move_failed = true;
             return Ok(true);
@@ -1880,7 +1885,7 @@ impl Battle {
         {
             events.push(BattleEvent::Message(format!(
                 "{} avoided the attack!",
-                self.get(target).name
+                self.get(target).display_name()
             )));
             self.move_failed = true;
             return Ok(true);
@@ -2010,7 +2015,7 @@ impl Battle {
         {
             events.push(BattleEvent::Message(format!(
                 "{}'s stats were not lowered!",
-                self.get(recipient).name
+                self.get(recipient).display_name()
             )));
             return 0;
         }
@@ -2048,7 +2053,7 @@ impl Battle {
         };
         events.push(BattleEvent::Message(format!(
             "{}'s {} {tail}",
-            self.get(recipient).name,
+            self.get(recipient).display_name(),
             stat.description()
         )));
         if change != 0 {
@@ -2214,7 +2219,7 @@ impl Battle {
                 self.move_failed = true;
                 events.push(BattleEvent::Message(format!(
                     "{} is protected by its substitute!",
-                    self.get(target).name
+                    self.get(target).display_name()
                 )));
             }
             return Ok(());
@@ -2262,7 +2267,7 @@ impl Battle {
                         self.damage(actor, recoil, events);
                         events.push(BattleEvent::Message(format!(
                             "{} was damaged by the recoil!",
-                            self.get(actor).name
+                            self.get(actor).display_name()
                         )));
                     }
                     if let Some(fraction) = drain
@@ -2276,7 +2281,7 @@ impl Battle {
                         );
                         events.push(BattleEvent::Message(format!(
                             "{} had its energy drained!",
-                            self.get(target).name
+                            self.get(target).display_name()
                         )));
                     }
                 }
@@ -2388,7 +2393,7 @@ impl Battle {
                 {
                     events.push(BattleEvent::Message(format!(
                         "{} was already confused!",
-                        self.get(target).name
+                        self.get(target).display_name()
                     )));
                 }
             }
@@ -2412,8 +2417,8 @@ impl Battle {
                     });
                     events.push(BattleEvent::Message(format!(
                         "{} was squeezed by {}!",
-                        self.get(target).name,
-                        self.get(actor).name
+                        self.get(target).display_name(),
+                        self.get(actor).display_name()
                     )));
                 }
             }
@@ -2422,7 +2427,7 @@ impl Battle {
                     self.get_mut(target).protected = true;
                     events.push(BattleEvent::Message(format!(
                         "{} protected itself!",
-                        self.get(target).name
+                        self.get(target).display_name()
                     )));
                 }
             }
@@ -2438,7 +2443,7 @@ impl Battle {
                 if !hide_message {
                     events.push(BattleEvent::Message(format!(
                         "{} regained health!",
-                        self.get(target).name
+                        self.get(target).display_name()
                     )));
                 }
             }
@@ -2467,7 +2472,7 @@ impl Battle {
                     self.get_mut(actor).semi_invulnerable = *semi_invulnerable;
                     self.get_mut(actor).hidden_kind = *hidden;
                     events.push(BattleEvent::Message(
-                        charge_message.replace("{0}", &self.get(actor).name),
+                        charge_message.replace("{0}", self.get(actor).display_name()),
                     ));
                 } else {
                     let mut details = Vec::new();
@@ -2555,7 +2560,7 @@ impl Battle {
                         self.get_mut(actor).confused_turns = Some(self.rng.range(1, 4));
                         events.push(BattleEvent::Message(format!(
                             "{} became confused!",
-                            self.get(actor).name
+                            self.get(actor).display_name()
                         )));
                     }
                 }
@@ -2678,7 +2683,7 @@ impl Battle {
         self.move_failed = true;
         events.push(BattleEvent::Message(format!(
             "It doesn't affect {}...",
-            self.get(target).name
+            self.get(target).display_name()
         )));
     }
     fn direct_damage(
@@ -3002,7 +3007,7 @@ impl Battle {
             });
             events.push(BattleEvent::Message(format!(
                 "{}'s substitute {}!",
-                self.get(target).name,
+                self.get(target).display_name(),
                 if self.get(target).substitute_hp == 0 {
                     "broke"
                 } else {
@@ -3061,7 +3066,7 @@ impl Battle {
             amount = before - 1;
             events.push(BattleEvent::Message(format!(
                 "{} endured the hit!",
-                self.get(target).name
+                self.get(target).display_name()
             )));
         }
         let gulp = self.gulp_missile_payload(target);
@@ -3069,6 +3074,9 @@ impl Battle {
             self.damage(target, amount, events);
         }
         let lost = before - self.get(target).hp;
+        if lost > 0 {
+            self.end_illusion(target, events);
+        }
         if lost > 0 && meta.move_type == PokemonType::Fire && meta.category != Category::Status {
             self.thaw(target, events);
         }
@@ -3144,14 +3152,14 @@ impl Battle {
             *pp = 0;
             events.push(BattleEvent::Message(format!(
                 "{} lost all PP for {} due to Grudge!",
-                self.get(actor).name,
+                self.get(actor).display_name(),
                 move_id
             )));
         }
         if faint_attacker && self.get(target).hp == 0 && self.get(actor).hp > 0 {
             events.push(BattleEvent::Message(format!(
                 "{} took its attacker down with it!",
-                self.get(target).name
+                self.get(target).display_name()
             )));
             self.damage(actor, self.get(actor).hp, events);
         }
@@ -3190,9 +3198,10 @@ impl Battle {
             p.hurt_this_turn = true;
         }
         let hp = p.hp;
-        let name = p.name.clone();
+        let name = p.display_name().to_owned();
         events.push(BattleEvent::Damage { target, amount, hp });
         if was_alive && hp == 0 {
+            self.end_illusion(target, events);
             self.pending_faints
                 .push((target, self.ability_state(target)));
             if self
@@ -3265,7 +3274,7 @@ impl Battle {
         if let Some((amount, cause)) = dot {
             events.push(BattleEvent::Message(format!(
                 "{} is hurt by {}!",
-                p.name,
+                p.display_name(),
                 if cause == Status::Burned {
                     "its burn"
                 } else {
@@ -3282,13 +3291,15 @@ impl Battle {
                 self.get_mut(id).bound = None;
                 events.push(BattleEvent::Message(format!(
                     "{} was freed from {}!",
-                    p.name, bound.source
+                    p.display_name(),
+                    bound.source
                 )));
             } else {
                 self.get_mut(id).bound.as_mut().unwrap().turns_left -= 1;
                 events.push(BattleEvent::Message(format!(
                     "{} is hurt by {}!",
-                    p.name, bound.source
+                    p.display_name(),
+                    bound.source
                 )));
                 self.indirect_damage(id, fractional(p.max_hp, 8, 1), events);
             }
@@ -3337,7 +3348,7 @@ impl Battle {
             }
             events.push(BattleEvent::Message(format!(
                 "{} is buffeted by the {name}!",
-                p.name
+                p.display_name()
             )));
             self.indirect_damage(*id, fractional(p.max_hp, 16, 1), events);
         }
@@ -3435,7 +3446,7 @@ impl Battle {
         }
         events.push(BattleEvent::Message(format!(
             "{} bounced back {}!",
-            self.get(reflector).name,
+            self.get(reflector).display_name(),
             spec.name
         )));
         let ignored = self.ignored_ability.take();
@@ -3449,7 +3460,7 @@ impl Battle {
                 if !self.hit_check(reflector, actor, spec, false) {
                     events.push(BattleEvent::Message(format!(
                         "{}'s attack missed!",
-                        self.get(reflector).name
+                        self.get(reflector).display_name()
                     )));
                 } else if !self.get(actor).protected && self.get(actor).hidden().is_none() {
                     for effect in &spec.effects {

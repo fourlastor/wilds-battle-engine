@@ -178,7 +178,7 @@ impl Battle {
             self.get_mut(who).added_type = None;
             events.push(BattleEvent::Message(format!(
                 "{} changed type with Mimicry!",
-                self.get(who).name
+                self.get(who).display_name()
             )));
         }
     }

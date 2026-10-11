@@ -537,8 +537,19 @@ pub(crate) struct AbilityState {
     pub bypassable: Option<bool>,
 }
 
+/// Visual identity used by Illusion; combat always uses the real Pokémon fields.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct PokemonAppearance {
+    pub name: String,
+    pub species_id: u32,
+    pub species: String,
+    pub form: Option<String>,
+    pub gender: Gender,
+}
+
 #[derive(Clone, Debug)]
 pub struct Pokemon {
+    pub illusion: Option<PokemonAppearance>,
     pub species_id: u32,
     /// Species base Attack of the original party member, for Beat Up; independent of battle stats.
     pub base_attack: Option<u16>,
@@ -644,6 +655,7 @@ pub struct Pokemon {
 impl Pokemon {
     pub fn new(name: impl Into<String>, moves: Vec<String>) -> Self {
         Self {
+            illusion: None,
             species_id: 0,
             base_attack: None,
             form: None,
@@ -830,6 +842,10 @@ pub enum BattleEvent {
         target: ParticipantId,
         stat: Stat,
         stages: i8,
+    },
+    AppearanceChanged {
+        target: ParticipantId,
+        illusion: Option<PokemonAppearance>,
     },
     FormChanged {
         target: ParticipantId,

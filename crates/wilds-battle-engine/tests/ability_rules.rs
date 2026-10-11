@@ -4663,3 +4663,98 @@ fn neutralizing_gas_ends_extreme_weather_and_does_not_work_when_transformed() {
         wilds_battle_engine::WeatherKind::Sun
     );
 }
+
+fn illusion_battle(foe_moves: &[&str]) -> Battle {
+    let mut user = mon("Zoroark", &["splash", "substitute"]);
+    user.ability = Some("illusion".into());
+    user.species_id = 571;
+    user.types = vec![PokemonType::Dark];
+    let mut disguise = mon("Pikachu", &["splash"]);
+    disguise.species_id = 25;
+    disguise.types = vec![PokemonType::Electric];
+    let mut fainted = mon("Fainted", &["splash"]);
+    fainted.hp = 0;
+    let mut battle = Battle::with_rng(
+        Fixed(0.5),
+        [
+            vec![user, disguise, fainted],
+            vec![mon("Target", foe_moves)],
+        ],
+        MoveCatalog::builtin().unwrap(),
+    )
+    .unwrap();
+    battle.set_active([vec![0], vec![0]]).unwrap();
+    battle
+}
+
+#[test]
+fn illusion_exposes_apparent_identity_without_changing_real_traits_or_indirect_damage_rules() {
+    let mut battle =
+        illusion_battle(&["psychic", "toxic", "tackle", "snarl", "transform", "splash"]);
+    let events = turn(&mut battle, "splash", "psychic");
+    assert_eq!(ally(&battle).display_name(), "Pikachu");
+    assert_eq!(ally(&battle).name, "Zoroark");
+    assert_eq!(ally(&battle).species_id, 571);
+    assert_eq!(ally(&battle).types, [PokemonType::Dark]);
+    assert_eq!(ally(&battle).hp, 1000); // Psychic still meets the real Dark immunity.
+    assert_eq!(ally(&battle).illusion.as_ref().unwrap().species_id, 25);
+    assert!(
+        events
+            .iter()
+            .any(|e| matches!(e, BattleEvent::Message(m) if m == "Pikachu used Splash!"))
+    );
+    assert!(events.iter().any(|e| matches!(
+        e,
+        BattleEvent::AppearanceChanged {
+            illusion: Some(_),
+            ..
+        }
+    )));
+    turn(&mut battle, "splash", "transform");
+    assert!(!foe(&battle).transformed());
+    turn(&mut battle, "splash", "toxic");
+    assert!(ally(&battle).hp < 1000);
+    assert!(ally(&battle).illusion.is_some());
+    turn(&mut battle, "substitute", "tackle");
+    assert!(ally(&battle).substitute_hp > 0);
+    assert!(ally(&battle).illusion.is_some());
+    let events = turn(&mut battle, "splash", "snarl");
+    assert!(ally(&battle).illusion.is_none());
+    assert_eq!(ally(&battle).display_name(), "Zoroark");
+    assert!(
+        events
+            .iter()
+            .any(|e| matches!(e, BattleEvent::AppearanceChanged { illusion: None, .. }))
+    );
+}
+
+#[test]
+fn illusion_breaks_on_suppression_and_restarts_only_on_entry_with_current_party_order() {
+    let mut battle = illusion_battle(&["gastro-acid", "splash"]);
+    turn(&mut battle, "splash", "gastro-acid");
+    assert!(ally(&battle).illusion.is_none());
+    turn(&mut battle, "switch:1", "splash");
+    // Returning to the field swaps Zoroark back to the front and clears Gastro Acid.
+    let result = battle.advance().unwrap();
+    let AdvanceStatus::Awaiting(prompt) = result.status else {
+        panic!("prompt");
+    };
+    let choice = prompt
+        .choices
+        .iter()
+        .find(|c| matches!(c, Choice::Switch { to, .. } if to.index == 0))
+        .unwrap();
+    battle
+        .set_response(ActionSelection {
+            prompt_id: prompt.id,
+            choice_id: choice.id(),
+        })
+        .unwrap();
+    turn(&mut battle, "splash", "splash");
+    assert_eq!(ally(&battle).display_name(), "Pikachu");
+    let mut solo = mon("Solo", &["splash"]);
+    solo.ability = Some("illusion".into());
+    let mut battle = game(solo, mon("Target", &["splash"]), 0.5);
+    turn(&mut battle, "splash", "splash");
+    assert!(ally(&battle).illusion.is_none());
+}

@@ -119,7 +119,7 @@ impl Battle {
         table: &Table,
     ) -> mlua::Result<()> {
         let pokemon: &Pokemon = self.get(id);
-        table.raw_set("name", pokemon.name.as_str())?;
+        table.raw_set("name", pokemon.display_name())?;
         table.raw_set("species", pokemon.species.as_str())?;
         table.raw_set("species_id", pokemon.species_id)?;
         table.raw_set("base_attack", pokemon.base_attack)?;
@@ -759,7 +759,7 @@ impl Battle {
         if self.priority_blocked(actor, recipient, frame.spec) {
             events.push(BattleEvent::Message(format!(
                 "{} is protected from priority moves!",
-                self.get(recipient).name
+                self.get(recipient).display_name()
             )));
             return HitOutcome::Protected;
         }
@@ -777,7 +777,7 @@ impl Battle {
         {
             events.push(BattleEvent::Message(format!(
                 "{} is protected by its substitute!",
-                self.get(recipient).name
+                self.get(recipient).display_name()
             )));
             return HitOutcome::Protected;
         }
@@ -788,7 +788,7 @@ impl Battle {
         {
             events.push(BattleEvent::Message(format!(
                 "{} is protected by its ability!",
-                self.get(recipient).name
+                self.get(recipient).display_name()
             )));
             return HitOutcome::Protected;
         }
@@ -800,7 +800,7 @@ impl Battle {
         {
             events.push(BattleEvent::Message(format!(
                 "{} protected itself!",
-                self.get(recipient).name
+                self.get(recipient).display_name()
             )));
             return HitOutcome::Protected;
         }
@@ -810,7 +810,7 @@ impl Battle {
         {
             events.push(BattleEvent::Message(format!(
                 "{} avoided the attack!",
-                self.get(recipient).name
+                self.get(recipient).display_name()
             )));
             return HitOutcome::Hidden;
         }
@@ -841,7 +841,7 @@ impl Battle {
         if !hit {
             events.push(BattleEvent::Message(format!(
                 "{}'s attack missed!",
-                self.get(actor).name
+                self.get(actor).display_name()
             )));
             return HitOutcome::Missed;
         }
@@ -1028,7 +1028,7 @@ impl Battle {
                 self.damage(actor, recoil, events);
                 events.push(BattleEvent::Message(format!(
                     "{} was damaged by the recoil!",
-                    self.get(actor).name
+                    self.get(actor).display_name()
                 )));
             }
             if let Some(fraction) = options.drain {
@@ -1042,7 +1042,7 @@ impl Battle {
                 }
                 events.push(BattleEvent::Message(format!(
                     "{} had its energy drained!",
-                    self.get(recipient).name
+                    self.get(recipient).display_name()
                 )));
             }
         }
@@ -1358,7 +1358,7 @@ impl Battle {
     ) -> bool {
         let new_status = status.battle_status();
         let current = self.get(who).status;
-        let name = self.get(who).name.clone();
+        let name = self.get(who).display_name().to_owned();
         let immune = self.status_immune_to(actor, who, new_status, move_type, false);
         if self.get(who).hp > 0 && (current.is_none() || replace) && !immune {
             let turns = match status {
@@ -1452,7 +1452,7 @@ impl Battle {
         self.get_mut(who).confused_turns = Some(turns);
         events.push(BattleEvent::Message(format!(
             "{} became confused!",
-            self.get(who).name
+            self.get(who).display_name()
         )));
         true
     }
@@ -1681,7 +1681,7 @@ impl Battle {
                     self.heal(actor, amount, events);
                     events.push(BattleEvent::Message(format!(
                         "{} regained health!",
-                        self.get(actor).name
+                        self.get(actor).display_name()
                     )));
                 } else {
                     events.push(BattleEvent::Message("But it failed!".into()));
@@ -1731,7 +1731,7 @@ impl Battle {
             ScriptOperation::Announce => {
                 events.push(BattleEvent::Message(format!(
                     "{} used {}!",
-                    self.get(actor).name,
+                    self.get(actor).display_name(),
                     spec.name
                 )));
                 Value::Nil
@@ -1746,7 +1746,7 @@ impl Battle {
                 self.damage(actor, amount, events);
                 events.push(BattleEvent::Message(format!(
                     "{} was damaged by the recoil!",
-                    self.get(actor).name
+                    self.get(actor).display_name()
                 )));
                 Value::Nil
             }
@@ -2102,8 +2102,8 @@ impl Battle {
                     });
                     events.push(BattleEvent::Message(format!(
                         "{} was squeezed by {}!",
-                        self.get(who).name,
-                        self.get(actor).name
+                        self.get(who).display_name(),
+                        self.get(actor).display_name()
                     )));
                 }
                 Value::Boolean(bound)
@@ -2122,7 +2122,7 @@ impl Battle {
                     self.get_mut(who).protected = true;
                     events.push(BattleEvent::Message(format!(
                         "{} protected itself!",
-                        self.get(who).name
+                        self.get(who).display_name()
                     )));
                 }
                 Value::Boolean(protect)

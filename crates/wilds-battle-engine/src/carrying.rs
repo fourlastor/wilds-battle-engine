@@ -48,7 +48,7 @@ impl Battle {
         }
         events.push(BattleEvent::Message(format!(
             "{} was released!",
-            self.get(target).name
+            self.get(target).display_name()
         )));
         true
     }

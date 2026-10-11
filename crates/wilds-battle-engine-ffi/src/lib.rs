@@ -387,8 +387,12 @@ pub fn conditions(values: &[Condition]) -> Value {
         })
         .collect()
 }
+fn appearance(value: &wilds_battle_engine::PokemonAppearance) -> Value {
+    json!({"name":value.name, "species_id":value.species_id, "species":value.species,
+        "form":value.form, "gender":format!("{:?}", value.gender)})
+}
 fn snapshot(value: &Pokemon) -> Value {
-    json!({"name":value.name, "species_id":value.species_id, "base_attack":value.base_attack, "transformed": value.transformed(), "form":value.form,
+    json!({"name":value.name, "display_name":value.display_name(), "illusion":value.illusion.as_ref().map(appearance), "species_id":value.species_id, "base_attack":value.base_attack, "transformed": value.transformed(), "form":value.form,
         "attack":value.attack, "defense":value.defense, "sp_attack":value.sp_attack,
         "sp_defense":value.sp_defense, "speed":value.speed, "weight":value.weight,
         "hp":value.hp, "max_hp":value.max_hp,
@@ -435,6 +439,9 @@ fn event(value: &BattleEvent) -> Value {
         } => {
             json!({"kind":"stat_change", "target":participant(*target), "stat":format!("{stat:?}"), "stages":stages})
         }
+        BattleEvent::AppearanceChanged { target, illusion } => {
+            json!({"kind":"appearance", "target":participant(*target), "illusion":illusion.as_ref().map(appearance)})
+        }
         BattleEvent::FormChanged { target, form } => {
             json!({"kind":"form", "target":participant(*target), "form":form})
         }
@@ -449,6 +456,34 @@ fn event(value: &BattleEvent) -> Value {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn illusion_snapshot_and_events_keep_real_and_apparent_identity_separate() {
+        let mut p = Pokemon::new("Zoroark", vec!["splash".into()]);
+        p.species_id = 571;
+        let disguise = wilds_battle_engine::PokemonAppearance {
+            name: "Pikachu".into(),
+            species_id: 25,
+            species: "pikachu".into(),
+            form: None,
+            gender: wilds_battle_engine::Gender::Male,
+        };
+        p.illusion = Some(disguise.clone());
+        let state = snapshot(&p);
+        assert_eq!(state["name"], "Zoroark");
+        assert_eq!(state["species_id"], 571);
+        assert_eq!(state["display_name"], "Pikachu");
+        assert_eq!(state["illusion"]["species_id"], 25);
+        let value = event(&BattleEvent::AppearanceChanged {
+            target: ParticipantId {
+                side: Side::Allies,
+                index: 0,
+            },
+            illusion: Some(disguise),
+        });
+        assert_eq!(value["kind"], "appearance");
+        assert_eq!(value["illusion"]["name"], "Pikachu");
+    }
 
     #[test]
     fn setup_keeps_species_base_attack_separate_from_computed_attack() {

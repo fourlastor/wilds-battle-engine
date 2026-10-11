@@ -139,7 +139,7 @@ impl Battle {
             self.ability_exits.push_back(who);
             events.push(BattleEvent::Message(format!(
                 "{} must switch out because of its ability!",
-                self.get(who).name
+                self.get(who).display_name()
             )));
         }
     }
@@ -198,7 +198,7 @@ impl Battle {
             {
                 events.push(BattleEvent::Message(format!(
                     "{} stole {item} with Pickpocket!",
-                    self.get(target).name
+                    self.get(target).display_name()
                 )));
             }
             if hit.attacker != target
@@ -211,7 +211,7 @@ impl Battle {
                 self.get_mut(target).added_type = None;
                 events.push(BattleEvent::Message(format!(
                     "{} changed to the {:?} type!",
-                    self.get(target).name,
+                    self.get(target).display_name(),
                     hit.move_type
                 )));
             }
@@ -231,7 +231,7 @@ impl Battle {
             {
                 events.push(BattleEvent::Message(format!(
                     "{} stole {item} with Magician!",
-                    self.get(hit.attacker).name
+                    self.get(hit.attacker).display_name()
                 )));
             }
         }
@@ -280,7 +280,7 @@ impl Battle {
         self.get_mut(who).added_type = None;
         events.push(BattleEvent::Message(format!(
             "{} changed to the {kind:?} type!",
-            self.get(who).name
+            self.get(who).display_name()
         )));
     }
 
@@ -421,7 +421,7 @@ impl Battle {
         ) {
             events.push(BattleEvent::Message(format!(
                 "{}'s ability set {}!",
-                self.get(who).name,
+                self.get(who).display_name(),
                 name.replace('_', " ")
             )));
         }
@@ -785,7 +785,7 @@ impl Battle {
             .retain(|c| c.name != "flash_fire" && c.name != "unburden");
         events.push(BattleEvent::Message(format!(
             "{} acquired {}!",
-            pokemon.name,
+            pokemon.display_name(),
             pokemon.ability.as_deref().unwrap_or_default()
         )));
     }
@@ -943,7 +943,7 @@ impl Battle {
                     self.get_mut(who).item = self.get_mut(source).recyclable_item.take();
                     events.push(BattleEvent::Message(format!(
                         "{} found an item with Pickup!",
-                        self.get(who).name
+                        self.get(who).display_name()
                     )));
                 }
             }
@@ -960,7 +960,7 @@ impl Battle {
             {
                 events.push(BattleEvent::Message(format!(
                     "{} restored its berry with Harvest!",
-                    self.get(who).name
+                    self.get(who).display_name()
                 )));
             }
             if self.has_ability(who, "slowstart")
@@ -975,7 +975,7 @@ impl Battle {
                 if counter.value == 0 {
                     events.push(BattleEvent::Message(format!(
                         "{} got its act together!",
-                        self.get(who).name
+                        self.get(who).display_name()
                     )));
                 }
             }
@@ -1092,8 +1092,8 @@ impl Battle {
                 let (foe, name) = &choices[self.rng.index(choices.len())];
                 events.push(BattleEvent::Message(format!(
                     "{}'s Forewarn identified {}'s {name}!",
-                    self.get(who).name,
-                    self.get(*foe).name
+                    self.get(who).display_name(),
+                    self.get(*foe).display_name()
                 )));
             }
         }
@@ -1136,7 +1136,7 @@ impl Battle {
         {
             events.push(BattleEvent::Message(format!(
                 "{} shuddered with Anticipation!",
-                self.get(who).name
+                self.get(who).display_name()
             )));
         }
         if self.has_ability(who, "frisk") {
@@ -1146,8 +1146,8 @@ impl Battle {
                 {
                     events.push(BattleEvent::Message(format!(
                         "{}'s Frisk revealed {}'s {}!",
-                        self.get(who).name,
-                        self.get(foe).name,
+                        self.get(who).display_name(),
+                        self.get(foe).display_name(),
                         item
                     )));
                 }
@@ -1172,7 +1172,7 @@ impl Battle {
                     self.get_mut(ally).stages.clear();
                     events.push(BattleEvent::Message(format!(
                         "{}'s stat changes were removed by Curious Medicine!",
-                        self.get(ally).name
+                        self.get(ally).display_name()
                     )));
                 }
             }
@@ -1225,7 +1225,7 @@ impl Battle {
         }
         events.push(BattleEvent::Message(format!(
             "{}'s Intimidate activated!",
-            self.get(who).name
+            self.get(who).display_name()
         )));
         for target in self.actors() {
             if target.side == who.side
@@ -1253,7 +1253,7 @@ impl Battle {
             if immune {
                 events.push(BattleEvent::Message(format!(
                     "{} resisted Intimidate!",
-                    self.get(target).name
+                    self.get(target).display_name()
                 )));
                 continue;
             }
@@ -1294,7 +1294,7 @@ impl Battle {
         pokemon.conditions.retain(|c| c.name != "unburden");
         events.push(BattleEvent::Message(format!(
             "{}'s ability was suppressed!",
-            pokemon.name
+            pokemon.display_name()
         )));
         true
     }
@@ -1689,7 +1689,7 @@ impl Battle {
         }
         events.push(BattleEvent::Message(format!(
             "{}'s ability blocked the move!",
-            self.get(target).name
+            self.get(target).display_name()
         )));
         self.move_failed = true;
         if heal {

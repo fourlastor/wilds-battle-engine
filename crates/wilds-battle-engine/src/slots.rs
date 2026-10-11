@@ -178,7 +178,7 @@ impl Battle {
             }
             events.push(BattleEvent::Message(format!(
                 "{} took the {} attack!",
-                self.get(target).name,
+                self.get(target).display_name(),
                 effect.spec.name
             )));
             self.delayed_hit(effect.source, target, &effect.spec, effect.power, events)?;

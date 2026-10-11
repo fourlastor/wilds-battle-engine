@@ -101,7 +101,7 @@ impl Battle {
         }
         events.push(BattleEvent::Message(format!(
             "{} became fully charged due to its Power Herb!",
-            self.get(who).name
+            self.get(who).display_name()
         )));
         true
     }
@@ -316,7 +316,7 @@ impl Battle {
             self.active_gem = Some((actor, kind));
             events.push(BattleEvent::Message(format!(
                 "{} used its {item}!",
-                self.get(actor).name
+                self.get(actor).display_name()
             )));
             1.3
         } else {

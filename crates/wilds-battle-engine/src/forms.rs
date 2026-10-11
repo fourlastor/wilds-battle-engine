@@ -57,7 +57,7 @@ impl Battle {
         let Some(next) = pokemon.forms.get(form).cloned() else {
             events.push(BattleEvent::Message(format!(
                 "{} has no battle data for form {form}.",
-                pokemon.name
+                pokemon.display_name()
             )));
             return false;
         };
@@ -76,7 +76,7 @@ impl Battle {
         });
         events.push(BattleEvent::Message(format!(
             "{} changed form!",
-            pokemon.name
+            pokemon.display_name()
         )));
         true
     }
@@ -96,7 +96,7 @@ impl Battle {
         events.push(BattleEvent::FormChanged { target: who, form });
         events.push(BattleEvent::Message(format!(
             "{} returned to its original form!",
-            pokemon.name
+            pokemon.display_name()
         )));
         true
     }

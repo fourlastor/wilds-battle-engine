@@ -86,7 +86,7 @@ impl Battle {
                         self.end_condition(Scope::Side(who.side), hazard.name());
                         events.push(BattleEvent::Message(format!(
                             "{} absorbed the toxic spikes!",
-                            self.get(who).name
+                            self.get(who).display_name()
                         )));
                     } else if !self.types_of(who).contains(&PokemonType::Steel) {
                         self.inflict_status_with_cause(

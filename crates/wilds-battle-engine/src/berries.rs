@@ -181,7 +181,10 @@ impl Battle {
                 effect,
                 Berry::Resist(_) | Berry::Enigma | Berry::Reactive | Berry::Custap | Berry::Food
             );
-        events.push(BattleEvent::Message(format!("{} ate {item}!", p.name)));
+        events.push(BattleEvent::Message(format!(
+            "{} ate {item}!",
+            p.display_name()
+        )));
         let heal = match effect {
             Berry::Heal(amount) => amount,
             Berry::HealFraction(divisor) => (p.max_hp / divisor).max(1),

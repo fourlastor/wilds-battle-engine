@@ -23,7 +23,7 @@ impl Battle {
         });
         events.push(BattleEvent::Message(format!(
             "{} made a substitute!",
-            self.get(who).name
+            self.get(who).display_name()
         )));
         true
     }

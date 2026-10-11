@@ -7,6 +7,7 @@ mod conditions;
 mod engine;
 mod forms;
 mod hazards;
+mod illusion;
 mod items;
 mod lua_symbols;
 mod model;
@@ -25,8 +26,9 @@ pub use engine::Battle;
 pub use model::{
     ActionSelection, AdvanceResult, AdvanceStatus, AppliedStatus, BattleError, BattleEvent, Bound,
     Choice, CombatStat, Condition, ContinuationTarget, Gender, HiddenKind, HitInfo, LockedMove,
-    NextMovePowerBoost, ParticipantId, Pokemon, PokemonForm, PokemonType, Prompt, PromptReason,
-    Rule, Scope, ScriptContinuation, Side, Stat, Status, Weather, WeatherKind,
+    NextMovePowerBoost, ParticipantId, Pokemon, PokemonAppearance, PokemonForm, PokemonType,
+    Prompt, PromptReason, Rule, Scope, ScriptContinuation, Side, Stat, Status, Weather,
+    WeatherKind,
 };
 pub use moves::{Accuracy, Category, Effect, MoveCatalog, MoveSpec, Target};
 pub use rng::{BattleRng, SeededRng};

@@ -22,6 +22,16 @@ impl Battle {
                 ));
             }
         }
+        for side in Side::ALL {
+            self.party_order[side.index()] = active[side.index()]
+                .iter()
+                .copied()
+                .chain(
+                    (0..self.sides[side.index()].len())
+                        .filter(|i| !active[side.index()].contains(i)),
+                )
+                .collect();
+        }
         self.active = active;
         Ok(())
     }
@@ -101,6 +111,7 @@ impl Battle {
         }
         self.restore_transform(from, events);
         self.restore_form(from, events);
+        self.get_mut(from).illusion = None;
         let outgoing = self.get_mut(from);
         if let Some((form, base)) = outgoing.battle_base_form.clone() {
             base.apply(outgoing);
@@ -149,6 +160,11 @@ impl Battle {
         }
         self.hit_reactions.retain(|reaction| reaction.owner != from);
         self.active[from.side.index()][position] = to.index;
+        let order = &mut self.party_order[from.side.index()];
+        let a = order.iter().position(|i| *i == from.index).unwrap();
+        let b = order.iter().position(|i| *i == to.index).unwrap();
+        order.swap(a, b);
+        self.start_illusion(to, events);
         let turn = self.turn;
         let incoming = self.get_mut(to);
         incoming.entered_turn = turn;
@@ -157,8 +173,8 @@ impl Battle {
         events.push(BattleEvent::Switched { from, to, position });
         events.push(BattleEvent::Message(format!(
             "{} was replaced by {}!",
-            self.get(from).name,
-            self.get(to).name
+            self.get(from).display_name(),
+            self.get(to).display_name()
         )));
         // Move-scoped ability bypass must not leak into the incoming Pokémon's entry.
         let ignored = self.ignored_ability.take();
