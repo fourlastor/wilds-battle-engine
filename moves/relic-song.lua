@@ -10,7 +10,7 @@ local move = {script = function(ctx)
       ctx:apply_status(pokemon, Status.Asleep, {chance = 0.1})
     end
   end
-  if connected and not ctx.user.transformed and ctx.user.hp > 0 and (ctx.user.species_id == 648 or ctx.user.species:match("^meloetta")) then
+  if connected and ctx.last_hit and not ctx.user.transformed and ctx.user.hp > 0 and (ctx.user.species_id == 648 or ctx.user.species:match("^meloetta")) then
     if (ctx.user.form or ctx.user.species) == "meloetta-pirouette" then
       if not ctx:restore_form(ctx.user) then ctx:change_form(ctx.user, "meloetta-aria") end
     else

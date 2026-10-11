@@ -4,6 +4,6 @@ return {
   id = "dragon-darts", name = "Dragon Darts",
   type = Type.Dragon, category = Category.Physical,
   pp = 10, accuracy = 1, priority = 0, target = Target.Selected,
-  flags = {"smart_target", "multi_hit"},
+  flags = {"smart_target", "multi_hit", "no_parental_bond"},
   script = function(ctx) ctx:multi_hit(50, 2, 2) end,
 }

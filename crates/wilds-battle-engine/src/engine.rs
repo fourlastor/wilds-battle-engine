@@ -9,6 +9,7 @@ use crate::type_chart;
 
 pub struct Battle {
     pub(crate) catalog: MoveCatalog,
+    pub(crate) parental_hits: Vec<crate::parental_bond::ParentalHit>,
     pub(crate) sides: [Vec<Pokemon>; 2],
     pub(crate) party_order: [Vec<usize>; 2],
     pub(crate) active: [Vec<usize>; 2],
@@ -246,6 +247,7 @@ impl Battle {
         let active: [Vec<usize>; 2] = std::array::from_fn(|side| (0..sides[side].len()).collect());
         Ok(Self {
             catalog,
+            parental_hits: Vec::new(),
             party_order: active.clone(),
             active,
             pending_events: Vec::new(),
@@ -1852,7 +1854,15 @@ impl Battle {
                     spec.name
                 )));
             }
+            let parental = self.begin_parental_hit(actor, target, &spec)?;
             let mut hit = self.execute_script(actor, target, &spec, events, ScriptHook::Main)?;
+            if parental {
+                self.update_berries(events);
+                if self.next_parental_hit(actor, &spec.id) {
+                    hit |= self.execute_script(actor, target, &spec, events, ScriptHook::Main)?;
+                }
+                self.finish_parental_hit(events);
+            }
             let charging = spec.has_flag("charge")
                 && !spec.has_flag("no_power_herb")
                 && self
@@ -1984,32 +1994,45 @@ impl Battle {
                     | Effect::TwoTurn { .. }
             )
         });
-        let single_effect = spec.effects.len() == 1;
-        for effect in &spec.effects {
-            if self.get(actor).hp == 0 {
+        let parental = self.begin_parental_hit(actor, target, &spec)?;
+        loop {
+            let single_effect = spec.effects.len() == 1;
+            for effect in &spec.effects {
+                if self.get(actor).hp == 0 {
+                    break;
+                }
+                if self.get(target).hp == 0
+                    && !matches!(
+                        effect,
+                        Effect::Stats {
+                            self_target: true,
+                            ..
+                        } | Effect::Weather { .. }
+                    )
+                {
+                    continue;
+                }
+                self.apply_effect(
+                    actor,
+                    target,
+                    &spec,
+                    effect,
+                    has_damage,
+                    single_effect,
+                    second_turn,
+                    events,
+                )?;
+            }
+            if !parental {
                 break;
             }
-            if self.get(target).hp == 0
-                && !matches!(
-                    effect,
-                    Effect::Stats {
-                        self_target: true,
-                        ..
-                    } | Effect::Weather { .. }
-                )
-            {
-                continue;
+            self.update_berries(events);
+            if !self.next_parental_hit(actor, &spec.id) {
+                break;
             }
-            self.apply_effect(
-                actor,
-                target,
-                &spec,
-                effect,
-                has_damage,
-                single_effect,
-                second_turn,
-                events,
-            )?;
+        }
+        if parental {
+            self.finish_parental_hit(events);
         }
         let pokemon = self.get_mut(actor);
         pokemon.consecutive_count = if pokemon.last_move.as_deref() == Some(&spec.id) {
@@ -2340,17 +2363,8 @@ impl Battle {
                         events,
                     )?;
                     events.extend(details);
-                    if let Some(fraction) = recoil
-                        && amount > 0
-                        && !self.has_ability(actor, "magicguard")
-                        && !self.has_ability(actor, "rockhead")
-                    {
-                        let recoil = ((amount as f32 * fraction).floor() as u16).max(1);
-                        self.damage(actor, recoil, events);
-                        events.push(BattleEvent::Message(format!(
-                            "{} was damaged by the recoil!",
-                            self.get(actor).display_name()
-                        )));
+                    if let Some(fraction) = recoil {
+                        self.recoil_from_hit(actor, &spec.id, amount, *fraction, events);
                     }
                     if let Some(fraction) = drain
                         && amount > 0
@@ -2597,11 +2611,23 @@ impl Battle {
                 double_power,
             } => {
                 let previous = self.get(actor).locked_move.clone();
-                let (turns, max_turns) = if let Some(lock) = previous {
+                let prepared = self
+                    .parental_hit(actor, &spec.id)
+                    .and_then(|p| p.native_lock);
+                let (turns, max_turns) = if let Some(prepared) = prepared {
+                    prepared
+                } else if let Some(lock) = previous {
                     (lock.turns + 1, lock.max_turns)
                 } else {
                     (1, self.rng.range(*min, *max))
                 };
+                if let Some(p) = self
+                    .parental_hits
+                    .last_mut()
+                    .filter(|p| p.actor == actor && p.move_id == spec.id)
+                {
+                    p.native_lock = Some((turns, max_turns));
+                }
                 let boost = if *double_power { turns - 1 } else { 0 };
                 let mut details = Vec::new();
                 if let Some(roll) = self.calculate_damage(
@@ -2629,6 +2655,9 @@ impl Battle {
                     )?;
                 }
                 events.extend(details);
+                if self.parental_has_next(actor, &spec.id) {
+                    return Ok(());
+                }
                 if turns < max_turns {
                     self.get_mut(actor).locked_move = Some(LockedMove {
                         move_id: spec.id.clone(),
@@ -3025,6 +3054,12 @@ impl Battle {
                 damage *= 0.5;
             }
         }
+        if self
+            .parental_hit(actor, attack.move_id)
+            .is_some_and(|p| p.hit == 2)
+        {
+            damage *= 0.25;
+        }
         damage *= self.ability_damage_factor(actor, target, attack, effectiveness);
         damage *= effectiveness;
         if !typeless && (attack.force_stab || self.types_of(actor).contains(&move_type)) {
@@ -3082,6 +3117,14 @@ impl Battle {
             return Ok(0);
         }
         self.substitute_hits.remove(&target);
+        if let Some(p) = self
+            .parental_hits
+            .last_mut()
+            .filter(|p| p.actor == actor && p.move_id == meta.move_id)
+        {
+            p.connected = true;
+            p.target = target;
+        }
         if self.substitute_intercepts(actor, target, meta.bypass_substitute) {
             let lost = amount.min(self.get(target).substitute_hp);
             self.get_mut(target).substitute_hp -= lost;

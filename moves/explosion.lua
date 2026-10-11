@@ -1,4 +1,4 @@
-return {
+return {flags={"no_parental_bond"},
   base_power = 250, id="explosion", name="Explosion", type=Type.Normal, category=Category.Physical, pp=5, target=Target.AllOthers,
     script=function(ctx)
       ctx:faint_user()

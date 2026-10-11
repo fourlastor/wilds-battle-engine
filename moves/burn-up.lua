@@ -3,7 +3,7 @@
 
 local move = {usable_while_frozen = true,
     script = function(ctx)
-      if not ctx.user:has_type(Type.Fire) then return ctx:fail() end
+      if ctx.hit_index == 1 and not ctx.user:has_type(Type.Fire) then return ctx:fail() end
       ctx:damage(130)
       ctx:lose_type(ctx.user, Type.Fire)
       ctx:message(ctx.user.name .. " burned itself out!")

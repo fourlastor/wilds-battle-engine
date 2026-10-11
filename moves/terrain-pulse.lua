@@ -13,7 +13,8 @@ if grounded(ctx.user) then
   local terrains = {electric_terrain=Type.Electric, grassy_terrain=Type.Grass, misty_terrain=Type.Fairy, psychic_terrain=Type.Psychic}
   for terrain, value in pairs(terrains) do if ctx.field.effects[terrain] then kind = value end end
 end
-ctx:damage(kind and 100 or 50, {type = kind})
+if ctx.hit_index == 1 then ctx.move_state.kind = kind end
+ctx:damage(kind and 100 or 50, {type = ctx.move_state.kind})
 end}
 
 move.id = "terrain-pulse"

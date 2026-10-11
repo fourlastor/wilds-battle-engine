@@ -6,7 +6,8 @@ local kinds = {["fire-pledge"] = 1, ["water-pledge"] = 2, ["grass-pledge"] = 3}
 
 local move = {
   script = function(ctx)
-    local partner_kind = ctx.user.marks.pledge_partner
+    local partner_kind = ctx.move_state.partner_kind or ctx.user.marks.pledge_partner
+    ctx.move_state.partner_kind = partner_kind
     ctx:unmark(ctx.user, "pledge_partner")
     if not partner_kind then
       for _, partner in ipairs(ctx.pending) do

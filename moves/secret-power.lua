@@ -4,6 +4,7 @@
 local move = {
     script = function(ctx)
       local hit = ctx:damage(70)
+      if ctx.hit_count == 2 and ctx.hit_index == 1 then return end
       if not hit.hit or not ctx:effect_chance(0.3) then return end
       local terrain = ctx.field.effects
       if terrain.electric_terrain then return ctx:apply_status(ctx.target, Status.Paralyzed) end

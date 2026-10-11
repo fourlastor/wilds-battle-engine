@@ -8,6 +8,7 @@ return {
     local stored = ctx.user.marks.stockpile or 0
     if stored == 0 then return ctx:fail() end
     ctx:damage(stored * 100)
+    if not ctx.last_hit then return end
     for _, boost in ipairs({{"stockpile_defense", Stat.Defense}, {"stockpile_sp_defense", Stat.SpDefense}}) do
       local stages = ctx.user.marks[boost[1]] or 0
       if stages > 0 then ctx:change_stat(ctx.user, boost[2], -stages) end

@@ -153,6 +153,7 @@ impl Battle {
         self.has_ability(who, "berserk")
             && self.ability_hits.iter().any(|(target, hit)| {
                 *target == who
+                    && self.parental_hit(hit.attacker, &hit.move_id).is_none()
                     && !self.sheer_force_applies(hit.attacker, &hit.move_id)
                     && self.catalog.get(&hit.move_id).is_some_and(|spec| {
                         !spec.has_flag("multi_hit")

@@ -75,9 +75,10 @@ return {
   priority = 0, target = Target.AnyOther,
   flags = {},
   script = function(ctx)
-    local gift = gifts[(ctx.user.item or ""):gsub("[^%w]", ""):lower()]
-    if not gift or not ctx.user.item_active then ctx:fail(); return end
-    ctx:consume_item(ctx.user, false)
+    local gift = ctx.move_state.gift or gifts[(ctx.user.item or ""):gsub("[^%w]", ""):lower()]
+    if not gift or (ctx.hit_index == 1 and not ctx.user.item_active) then ctx:fail(); return end
+    ctx.move_state.gift = gift
+    if ctx.hit_index == 1 then ctx:consume_item(ctx.user, false) end
     ctx:damage(gift[1], {type=gift[2]})
   end,
 }

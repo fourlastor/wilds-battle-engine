@@ -3,7 +3,7 @@
 
 local move = {script = function(ctx)
 ctx:damage(150)
-ctx:hurt(ctx.user, math.ceil(ctx.user.max_hp / 2))
+if ctx.last_hit then ctx:hurt(ctx.user, math.ceil(ctx.user.max_hp / 2)) end
 end}
 
 move.id = "mind-blown"

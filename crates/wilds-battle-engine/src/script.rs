@@ -438,6 +438,14 @@ impl Battle {
     /// Rewrites everything a script can read, so that it shows the battle as it is now.
     fn refresh(&self, run: &Run, frame: &Frame) -> mlua::Result<()> {
         let lua = self.catalog.lua();
+        let parent = self.parental_hit(frame.actor, &frame.spec.id);
+        run.ctx.raw_set("hit_index", parent.map_or(1, |p| p.hit))?;
+        run.ctx
+            .raw_set("hit_count", if parent.is_some() { 2 } else { 1 })?;
+        run.ctx.raw_set(
+            "last_hit",
+            !self.parental_has_next(frame.actor, &frame.spec.id),
+        )?;
         for (id, table) in &run.pokemon {
             self.fill_pokemon(lua, run, frame, *id, table)?;
         }
@@ -576,6 +584,12 @@ impl Battle {
         let field = handle(Scope::Field)?;
         let fields = lua.create_table()?;
         let spec = frame.spec;
+        fields.raw_set(
+            "move_state",
+            self.parental_hit(frame.actor, &spec.id)
+                .map(|p| p.state.clone())
+                .unwrap_or(lua.create_table()?),
+        )?;
         fields.raw_set("field", field.clone())?;
         fields.raw_set("user_side", sides[frame.actor.side.index()].clone())?;
         fields.raw_set(
@@ -746,6 +760,12 @@ impl Battle {
         events: &mut Vec<BattleEvent>,
     ) -> HitOutcome {
         let actor = frame.actor;
+        if self
+            .parental_hit(actor, &frame.spec.id)
+            .is_some_and(|p| p.hit == 2)
+        {
+            return HitOutcome::Hit;
+        }
         if self.ability_bypass {
             self.ignored_ability = Some(recipient);
         }
@@ -1019,17 +1039,8 @@ impl Battle {
             report.fainted |= self.get(recipient).hp == 0;
             frame.any_hit = true;
             report.damage = report.damage.saturating_add(actual);
-            if let Some(fraction) = options.recoil
-                && actual > 0
-                && !self.has_ability(actor, "magicguard")
-                && !self.has_ability(actor, "rockhead")
-            {
-                let recoil = ((f32::from(actual) * fraction).floor() as u16).max(1);
-                self.damage(actor, recoil, events);
-                events.push(BattleEvent::Message(format!(
-                    "{} was damaged by the recoil!",
-                    self.get(actor).display_name()
-                )));
+            if let Some(fraction) = options.recoil {
+                self.recoil_from_hit(actor, &frame.spec.id, actual, fraction, events);
             }
             if let Some(fraction) = options.drain {
                 if actual > 0 {

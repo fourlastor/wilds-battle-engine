@@ -13,6 +13,7 @@ mod lua_symbols;
 mod model;
 mod move_slots;
 mod moves;
+mod parental_bond;
 mod rng;
 mod script;
 mod slots;

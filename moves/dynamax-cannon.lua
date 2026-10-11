@@ -14,6 +14,6 @@ move.pp = 5
 move.accuracy = 1
 move.priority = 0
 move.target = Target.Selected
-move.flags = {}
+move.flags = {"no_parental_bond"}
 move.base_power = 100
 return move

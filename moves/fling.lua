@@ -162,7 +162,7 @@ return {
   id = "fling", name = "Fling", type = Type.Dark,
   category = Category.Physical, pp = 10, accuracy = 1.0,
   priority = 0, target = Target.AnyOther,
-  flags = {},
+  flags = {"no_parental_bond"},
   script = function(ctx)
     local item = ctx.user.item
     local power = powers[(item or ""):gsub("[^%w]", ""):lower()]

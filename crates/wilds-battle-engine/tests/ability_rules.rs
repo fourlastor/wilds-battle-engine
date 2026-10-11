@@ -4832,3 +4832,232 @@ fn dancers_use_unmodified_speed_order_do_not_chain_and_do_not_lock_into_petal_da
     assert!(foe(&battle).locked_move.is_none());
     assert!(ally(&battle).hp < 1000);
 }
+
+#[test]
+fn parental_bond_hits_twice_with_quarter_second_damage_and_one_pp_payment() {
+    for move_id in ["tackle", "ice-beam", "hyper_beam"] {
+        let mut user = mon("User", &[move_id]);
+        user.ability = Some("parental-bond".into());
+        let mut battle = game(user, mon("Target", &["splash"]), 0.5);
+        let pp = ally(&battle).move_pp[move_id];
+        let events = turn(&mut battle, move_id, "splash");
+        let damage: Vec<_> = events
+            .iter()
+            .filter_map(|e| match e {
+                BattleEvent::Damage { target, amount, .. } if target.side == Side::Foes => {
+                    Some(*amount)
+                }
+                _ => None,
+            })
+            .collect();
+        assert_eq!(damage.len(), 2, "{move_id}");
+        assert!(
+            (i32::from(damage[1]) * 4 - i32::from(damage[0])).abs() <= 3,
+            "{move_id}: {damage:?}"
+        );
+        assert_eq!(ally(&battle).move_pp[move_id], pp - 1);
+        if move_id == "hyper_beam" {
+            assert!(ally(&battle).recharging);
+        }
+    }
+}
+
+#[test]
+fn parental_bond_applies_contact_and_secondary_effects_between_hits() {
+    use wilds_battle_engine::Stat;
+    let mut user = mon("User", &["power-up-punch", "tackle"]);
+    user.ability = Some("parental-bond".into());
+    let mut target = mon("Target", &["splash"]);
+    target.ability = Some("rough-skin".into());
+    let mut battle = game(user.clone(), target.clone(), 0.5);
+    turn(&mut battle, "power-up-punch", "splash");
+    assert_eq!(ally(&battle).stage(Stat::Attack), 2);
+    assert_eq!(ally(&battle).hp, 750);
+    target.ability = Some("mummy".into());
+    let mut battle = game(user.clone(), target.clone(), 0.5);
+    let events = turn(&mut battle, "tackle", "splash");
+    assert_eq!(ally(&battle).ability.as_deref(), Some("mummy"));
+    assert_eq!(
+        events
+            .iter()
+            .filter(
+                |e| matches!(e, BattleEvent::Damage { target, .. } if target.side == Side::Foes)
+            )
+            .count(),
+        2
+    );
+    user.hp = 100;
+    target.ability = Some("rough-skin".into());
+    let mut battle = game(user, target, 0.5);
+    let events = turn(&mut battle, "tackle", "splash");
+    assert_eq!(ally(&battle).hp, 0);
+    assert_eq!(
+        events
+            .iter()
+            .filter(
+                |e| matches!(e, BattleEvent::Damage { target, .. } if target.side == Side::Foes)
+            )
+            .count(),
+        1
+    );
+}
+
+#[test]
+fn parental_bond_breaks_substitutes_and_sturdy_and_keeps_fixed_damage_unscaled() {
+    let mut user = mon("User", &["seismic-toss", "super-fang"]);
+    user.ability = Some("parental-bond".into());
+    let mut target = mon("Target", &["splash"]);
+    target.substitute_hp = 1;
+    let mut battle = game(user.clone(), target, 0.5);
+    turn(&mut battle, "seismic-toss", "splash");
+    assert_eq!(foe(&battle).substitute_hp, 0);
+    assert_eq!(foe(&battle).hp, 900);
+    let mut battle = game(user.clone(), mon("Target", &["splash"]), 0.5);
+    turn(&mut battle, "super-fang", "splash");
+    assert_eq!(foe(&battle).hp, 250);
+    let mut target = mon("Target", &["splash"]);
+    target.hp = 100;
+    target.max_hp = 100;
+    target.ability = Some("sturdy".into());
+    let mut battle = game(user, target, 0.5);
+    turn(&mut battle, "seismic-toss", "splash");
+    assert_eq!(foe(&battle).hp, 0);
+}
+
+#[test]
+fn parental_bond_excludes_multihit_charge_and_spread_moves_but_allows_single_target_surf() {
+    for (move_id, expected) in [
+        ("double_kick", 2),
+        ("rollout", 1),
+        ("dynamax-cannon", 1),
+        ("surf", 2),
+    ] {
+        let mut user = mon("User", &[move_id]);
+        user.ability = Some("parental-bond".into());
+        let mut battle = game(user, mon("Target", &["splash"]), 0.5);
+        let events = turn(&mut battle, move_id, "splash");
+        assert_eq!(
+            events
+                .iter()
+                .filter(
+                    |e| matches!(e, BattleEvent::Damage { target, .. } if target.side == Side::Foes)
+                )
+                .count(),
+            expected,
+            "{move_id}"
+        );
+    }
+    let mut user = mon("User", &["surf"]);
+    user.ability = Some("parental-bond".into());
+    let mut battle = Battle::with_rng(
+        Fixed(0.5),
+        [
+            vec![user],
+            vec![mon("One", &["splash"]), mon("Two", &["splash"])],
+        ],
+        MoveCatalog::builtin().unwrap(),
+    )
+    .unwrap();
+    let events = turn(&mut battle, "surf", "splash");
+    assert_eq!(
+        events
+            .iter()
+            .filter(
+                |e| matches!(e, BattleEvent::Damage { target, .. } if target.side == Side::Foes)
+            )
+            .count(),
+        2
+    );
+    let mut user = mon("User", &["dive"]);
+    user.ability = Some("parental-bond".into());
+    let mut battle = game(user, mon("Target", &["splash"]), 0.5);
+    turn(&mut battle, "dive", "splash");
+    let events = turn(&mut battle, "dive", "splash");
+    assert_eq!(
+        events
+            .iter()
+            .filter(
+                |e| matches!(e, BattleEvent::Damage { target, .. } if target.side == Side::Foes)
+            )
+            .count(),
+        1
+    );
+}
+
+#[test]
+fn parental_bond_preserves_preparation_and_applies_move_cleanup_and_recoil_once() {
+    use wilds_battle_engine::Stat;
+    for move_id in [
+        "natural-gift",
+        "steel-beam",
+        "burn-up",
+        "clanging-scales",
+        "spit-up",
+        "double_edge",
+    ] {
+        let mut user = mon("User", &[move_id, "stockpile"]);
+        user.ability = Some("parental-bond".into());
+        if move_id == "natural-gift" {
+            user.item = Some("cheri-berry".into());
+        }
+        if move_id == "burn-up" {
+            user.types = vec![PokemonType::Fire];
+        }
+        let mut battle = game(user, mon("Target", &["splash"]), 0.5);
+        if move_id == "spit-up" {
+            turn(&mut battle, "stockpile", "splash");
+        }
+        let events = turn(&mut battle, move_id, "splash");
+        let hits: Vec<_> = events
+            .iter()
+            .filter_map(|e| match e {
+                BattleEvent::Damage { target, amount, .. } if target.side == Side::Foes => {
+                    Some(*amount)
+                }
+                _ => None,
+            })
+            .collect();
+        assert_eq!(hits.len(), 2, "{move_id}: {events:?}");
+        match move_id {
+            "natural-gift" => assert_eq!(ally(&battle).consumed_items.len(), 1),
+            "steel-beam" => assert_eq!(ally(&battle).hp, 500),
+            "burn-up" => assert!(!ally(&battle).types.contains(&PokemonType::Fire)),
+            "clanging-scales" => assert_eq!(ally(&battle).stage(Stat::Defense), -1),
+            "spit-up" => {
+                assert!(
+                    !ally(&battle)
+                        .conditions
+                        .iter()
+                        .any(|c| c.name == "stockpile")
+                );
+                assert_eq!(ally(&battle).stage(Stat::Defense), 0);
+                assert!((i32::from(hits[1]) * 4 - i32::from(hits[0])).abs() <= 3);
+            }
+            "double_edge" => assert_eq!(1000 - ally(&battle).hp, hits.iter().sum::<u16>() / 3),
+            _ => unreachable!(),
+        }
+    }
+}
+
+#[test]
+fn parental_bond_scripted_secondaries_repeat_and_secret_power_waits_for_second_hit() {
+    use wilds_battle_engine::Stat;
+    let mut user = mon("User", &["acid-spray", "secret-power"]);
+    user.ability = Some("parental-bond".into());
+    let mut battle = game(user.clone(), mon("Target", &["splash"]), 0.5);
+    turn(&mut battle, "acid-spray", "splash");
+    assert_eq!(foe(&battle).stage(Stat::SpDefense), -4);
+    let mut battle = game(user, mon("Target", &["splash"]), 0.1);
+    let events = turn(&mut battle, "secret-power", "splash");
+    let damage: Vec<_> = events
+        .iter()
+        .enumerate()
+        .filter_map(|(i, e)| {
+            matches!(e, BattleEvent::Damage { target, .. } if target.side == Side::Foes)
+                .then_some(i)
+        })
+        .collect();
+    let status = events.iter().position(|e| matches!(e, BattleEvent::Status { target, status: Some(Status::Paralyzed) } if target.side == Side::Foes)).unwrap();
+    assert_eq!(damage.len(), 2);
+    assert!(status > damage[1]);
+}

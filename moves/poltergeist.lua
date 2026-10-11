@@ -2,8 +2,8 @@
 -- Behavior checked against PokeAPI; see catalog.json for scope and limitations.
 
 local move = {script = function(ctx)
-if not ctx.target.item then return ctx:fail() end
-ctx:message(ctx.target.name .. " is about to be attacked by its " .. ctx.target.item .. "!")
+if ctx.hit_index == 1 and not ctx.target.item then return ctx:fail() end
+if ctx.hit_index == 1 then ctx:message(ctx.target.name .. " is about to be attacked by its " .. ctx.target.item .. "!") end
 ctx:damage(110)
 end}
 

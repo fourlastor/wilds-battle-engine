@@ -540,3 +540,10 @@ and the appearance for visuals. JSON snapshots expose `display_name` and `illusi
 full host state, not a filtered opponent view: the host controls information access.
 Party identifiers stay stable while an internal party order tracks switches for
 Illusion's last-healthy-member selection.
+
+Parental Bond prepares two separate hits for eligible attacks. Lua scripts expose
+`ctx.hit_index`, `ctx.hit_count`, and `ctx.last_hit` (updated after damage), plus
+`ctx.move_state`, a table shared across those hits. Put one-time preparation data
+in that table and use `last_hit` for end-of-move cleanup; ordinary moves have one
+hit. Existing multi-hit, charge, future and explicitly excluded moves do not use
+this path. Damage-based recoil is accumulated and applied after both hits.

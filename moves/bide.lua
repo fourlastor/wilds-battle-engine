@@ -25,9 +25,10 @@ return {
       ctx:message(ctx.user.name .. " is storing energy!")
       return
     end
-    local damage = ctx.user.marks.bide_damage or 0
-    local source = ctx.user.marks.bide_source
-    local side = ctx.user.marks.bide_side == 1 and "allies" or "foes"
+    local damage = ctx.move_state.damage or ctx.user.marks.bide_damage or 0
+    local source = ctx.move_state.source or ctx.user.marks.bide_source
+    local side = ctx.move_state.side or (ctx.user.marks.bide_side == 1 and "allies" or "foes")
+    ctx.move_state.damage, ctx.move_state.source, ctx.move_state.side = damage, source, side
     local target
     for _, pokemon in ipairs(ctx.everyone) do
       if pokemon.index == source and pokemon.side == side then target = pokemon; break end

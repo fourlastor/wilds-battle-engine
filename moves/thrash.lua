@@ -1,5 +1,5 @@
 local function end_thrash(ctx)
-  if ctx.total_turns and ctx.turn == ctx.total_turns then ctx:confuse_self() end
+  if ctx.last_hit and ctx.total_turns and ctx.turn == ctx.total_turns then ctx:confuse_self() end
   ctx:break_sequence()
 end
 
@@ -12,5 +12,5 @@ return {
       end
       local result = ctx:damage(120)
       if not result.hit then return end_thrash(ctx) end
-      if ctx.total_turns and ctx.turn == ctx.total_turns then ctx:confuse_self() end
+      if ctx.last_hit and ctx.total_turns and ctx.turn == ctx.total_turns then ctx:confuse_self() end
     end }

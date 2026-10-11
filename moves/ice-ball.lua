@@ -17,6 +17,6 @@ move.pp = 20
 move.accuracy = 0.9
 move.priority = 0
 move.target = Target.Selected
-move.flags = {"contact", "bullet"}
+move.flags = {"contact", "bullet", "no_parental_bond"}
 move.base_power = 30
 return move

@@ -4,7 +4,8 @@
 local move = {
     script = function(ctx)
       local kinds = {[Weather.Sun] = Type.Fire, [Weather.Rain] = Type.Water, [Weather.Hail] = Type.Ice, [Weather.Sandstorm] = Type.Rock}
-      local kind = ctx.weather and kinds[ctx.weather]
+      if ctx.hit_index == 1 then ctx.move_state.kind = ctx.weather and kinds[ctx.weather] end
+      local kind = ctx.move_state.kind
       ctx:damage(kind and 100 or 50, {type = kind})
     end}
 

@@ -9,7 +9,7 @@ local move = {script = function(ctx)
       connected = true
     end
   end
-  if connected then
+  if connected and ctx.last_hit then
     ctx:change_stat(ctx.user, Stat.Defense, -1)
   end
 end}
