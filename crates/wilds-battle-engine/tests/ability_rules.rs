@@ -2004,3 +2004,28 @@ fn gooey_lowers_contact_attackers_speed_with_stat_protection() {
 fn tangling_hair_lowers_contact_attackers_speed_with_stat_protection() {
     check_contact_speed_drop("tangling-hair");
 }
+
+fn check_hit_stat_boost(ability: &str, move_id: &str, stat: wilds_battle_engine::Stat, amount: i8) {
+    for suppressed in [false, true] {
+        let user = mon("User", &[move_id]);
+        let mut target = mon("Target", &["splash"]);
+        target.ability = Some(ability.into());
+        target.ability_suppressed = suppressed;
+        let mut battle = game(user, target, 0.5);
+        turn(&mut battle, move_id, "splash");
+        assert_eq!(
+            foe(&battle).stage(stat),
+            if suppressed { 0 } else { amount },
+            "{ability}/{move_id}/{suppressed}"
+        );
+    }
+}
+
+#[test]
+fn stamina_raises_defense_per_direct_hit() {
+    use wilds_battle_engine::Stat;
+    check_hit_stat_boost("stamina", "tackle", Stat::Defense, 1);
+    check_hit_stat_boost("stamina", "swift", Stat::Defense, 1);
+    check_hit_stat_boost("stamina", "double_kick", Stat::Defense, 2);
+    check_hit_stat_boost("stamina", "growl", Stat::Defense, 0);
+}

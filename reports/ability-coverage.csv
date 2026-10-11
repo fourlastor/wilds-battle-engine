@@ -190,7 +190,7 @@ id,ability,status,verification
 189,primordial-sea,MISSING,No native battle behavior
 190,desolate-land,MISSING,No native battle behavior
 191,delta-stream,MISSING,No native battle behavior
-192,stamina,MISSING,No native battle behavior
+192,stamina,IMPLEMENTED,ability_rules::stamina_raises_defense_per_direct_hit
 193,wimp-out,MISSING,No native battle behavior
 194,emergency-exit,MISSING,No native battle behavior
 195,water-compaction,MISSING,No native battle behavior
