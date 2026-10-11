@@ -1103,3 +1103,17 @@ fn rain_dance_sets_five_turn_weather_and_cannot_refresh_it() {
     assert!(b.participants(Side::Allies)[0].last_move_failed);
     assert_eq!(b.weather().unwrap().turns_left, 3);
 }
+
+#[test]
+fn hail_sets_five_turn_weather_and_cannot_refresh_it() {
+    let mut b = game(mon("User", &["hail"]), vec![mon("Foe", &["splash"])], 0.5);
+    turn(&mut b);
+    assert_eq!(
+        b.weather().unwrap().kind,
+        wilds_battle_engine::WeatherKind::Hail
+    );
+    assert_eq!(b.weather().unwrap().turns_left, 4);
+    turn(&mut b);
+    assert!(b.participants(Side::Allies)[0].last_move_failed);
+    assert_eq!(b.weather().unwrap().turns_left, 3);
+}

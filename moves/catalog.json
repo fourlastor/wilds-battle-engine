@@ -2208,6 +2208,17 @@
       "limitations": []
     },
     {
+      "id": 258,
+      "slug": "hail",
+      "name": "Hail",
+      "sheet_row": null,
+      "runtime_id": "hail",
+      "file": "moves/hail.lua",
+      "status": "implemented",
+      "limitations": [],
+      "parameter_source": "https://pokeapi.co/api/v2/move/258/"
+    },
+    {
       "id": 261,
       "slug": "will-o-wisp",
       "name": "Will-O-Wisp",
@@ -6540,7 +6551,8 @@
       "safeguard",
       "tailwind",
       "fairy-lock",
-      "rain-dance"
+      "rain-dance",
+      "hail"
     ]
   }
 }
