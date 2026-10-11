@@ -3749,3 +3749,40 @@ fn forecast_tracks_weather_and_suppression_using_host_supplied_forms() {
     assert_eq!(ally(&battle).types, [PokemonType::Normal]);
     assert!(ally(&battle).form.is_none());
 }
+
+#[test]
+fn flower_gift_changes_cherrim_and_boosts_allied_attack_and_special_defense_in_sun() {
+    let run = |sun, suppressed, breaker: bool| {
+        let user = mon("User", &["sunny_day", "splash", "tackle"]);
+        let mut cherrim = mon("Cherrim", &["splash"]);
+        cherrim.species_id = 421;
+        cherrim.ability = Some("flower-gift".into());
+        cherrim.ability_suppressed = suppressed;
+        add_form(&mut cherrim, "cherrim-sunshine", PokemonType::Grass);
+        let mut target = mon("Target", &["splash", "water-gun"]);
+        target.ability = breaker.then(|| "mold-breaker".into());
+        let mut battle = Battle::with_rng(
+            Fixed(0.5),
+            [vec![user, cherrim], vec![target]],
+            MoveCatalog::builtin().unwrap(),
+        )
+        .unwrap();
+        turn(
+            &mut battle,
+            if sun { "sunny_day" } else { "splash" },
+            "splash",
+        );
+        assert_eq!(
+            battle.participants(Side::Allies)[1].form.is_some(),
+            sun && !suppressed
+        );
+        turn(&mut battle, "tackle", "water-gun");
+        (1000 - foe(&battle).hp, 1000 - ally(&battle).hp)
+    };
+    let base = run(true, true, false);
+    let boosted = run(true, false, false);
+    assert!((f32::from(boosted.0) - f32::from(base.0) * 1.5).abs() <= 3.0);
+    assert!((f32::from(boosted.1) * 1.5 - f32::from(base.1)).abs() <= 3.0);
+    assert_eq!(run(true, false, true).1, base.1);
+    assert_eq!(run(false, false, false), run(false, true, false));
+}

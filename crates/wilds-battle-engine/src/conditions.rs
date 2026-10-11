@@ -189,7 +189,7 @@ impl Battle {
 
     pub(crate) fn stat_factor(&self, id: ParticipantId, stat: CombatStat) -> f32 {
         self.rules(id).fold(
-            self.ability_stat_factor(id, stat),
+            self.ability_stat_factor(id, stat) * self.team_ability_stat_factor(id, stat),
             |factor, rule| match rule {
                 Rule::StatMultiplier {
                     stat: own,

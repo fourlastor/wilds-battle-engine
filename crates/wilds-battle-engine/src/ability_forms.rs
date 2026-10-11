@@ -56,5 +56,43 @@ impl Battle {
             };
             self.ability_form(who, form, "castform", events);
         }
+        if self.species_is(who, 421, "cherrim")
+            && self
+                .get(who)
+                .ability
+                .as_deref()
+                .is_some_and(|id| item_key(id) == "flowergift")
+        {
+            let form = if self.has_ability(who, "flowergift")
+                && self.effective_weather() == Some(WeatherKind::Sun)
+            {
+                "cherrim-sunshine"
+            } else {
+                "cherrim-overcast"
+            };
+            self.ability_form(who, form, "cherrim-overcast", events);
+        }
+    }
+
+    pub(crate) fn team_ability_stat_factor(
+        &self,
+        who: ParticipantId,
+        stat: crate::model::CombatStat,
+    ) -> f32 {
+        use crate::model::CombatStat;
+        if !matches!(stat, CombatStat::Attack | CombatStat::SpDefense)
+            || (stat == CombatStat::SpDefense && self.ability_bypass)
+            || self.effective_weather() != Some(WeatherKind::Sun)
+        {
+            return 1.0;
+        }
+        self.actors()
+            .into_iter()
+            .filter(|&source| {
+                source.side == who.side
+                    && self.species_is(source, 421, "cherrim")
+                    && self.has_ability(source, "flowergift")
+            })
+            .fold(1.0, |factor, _| factor * 1.5)
     }
 }
