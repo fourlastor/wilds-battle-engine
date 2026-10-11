@@ -3018,3 +3018,37 @@ fn soul_heart_rewards_any_faint_including_allies_and_residual_damage() {
     turn(&mut battle, "splash", "splash");
     assert_eq!(ally(&battle).stage(Stat::SpAttack), 2);
 }
+
+fn check_ally_ability_inheritance(ability: &str) {
+    for inherited in ["intimidate", "multitype"] {
+        let mut user = mon("User", &["splash"]);
+        user.ability = Some(ability.into());
+        let mut partner = mon("Partner", &["splash"]);
+        partner.ability = Some(inherited.into());
+        partner.hp = 1;
+        partner.status = Some(Status::Poisoned);
+        let mut battle = Battle::with_rng(
+            Fixed(0.5),
+            [vec![user, partner], vec![mon("Target", &["splash"])]],
+            MoveCatalog::builtin().unwrap(),
+        )
+        .unwrap();
+        turn(&mut battle, "splash", "splash");
+        assert_eq!(
+            ally(&battle).ability.as_deref(),
+            Some(if inherited == "multitype" {
+                ability
+            } else {
+                inherited
+            })
+        );
+        if inherited == "intimidate" {
+            assert_eq!(foe(&battle).stage(wilds_battle_engine::Stat::Attack), -2);
+        }
+    }
+}
+
+#[test]
+fn receiver_inherits_eligible_fainted_ally_abilities_and_activates_them() {
+    check_ally_ability_inheritance("receiver");
+}

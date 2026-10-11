@@ -30,7 +30,7 @@ pub struct Battle {
     pub(crate) active_power_multiplier: f32,
     pub(crate) active_gem: Option<(ParticipantId, PokemonType)>,
     pub(crate) pending_knockouts: Vec<ParticipantId>,
-    pub(crate) pending_faints: Vec<ParticipantId>,
+    pub(crate) pending_faints: Vec<(ParticipantId, crate::model::AbilityState)>,
     pub(crate) item_hits: Vec<(ParticipantId, ParticipantId, HitMeta)>,
     pub(crate) hit_reactions: Vec<HitReaction>,
     pub(crate) reaction_hit: Option<HitInfo>,
@@ -2987,7 +2987,8 @@ impl Battle {
         let name = p.name.clone();
         events.push(BattleEvent::Damage { target, amount, hp });
         if was_alive && hp == 0 {
-            self.pending_faints.push(target);
+            self.pending_faints
+                .push((target, self.ability_state(target)));
             if self
                 .baton_pass
                 .as_ref()

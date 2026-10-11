@@ -496,10 +496,19 @@ impl Battle {
     }
 
     pub(crate) fn finish_ability_faints(&mut self, events: &mut Vec<BattleEvent>) {
-        for _ in std::mem::take(&mut self.pending_faints) {
+        for (fainted, ability) in std::mem::take(&mut self.pending_faints) {
             for who in self.actors() {
                 if self.has_ability(who, "soulheart") {
                     self.change_stat(who, crate::model::Stat::SpAttack, 1, events);
+                }
+                if who.side == fainted.side
+                    && self.has_ability(who, "receiver")
+                    && ability
+                        .id
+                        .as_deref()
+                        .is_some_and(|id| !ability_flag(&item_key(id), "noreceiver"))
+                {
+                    self.replace_ability(who, ability.clone(), events);
                 }
             }
         }
