@@ -805,3 +805,8 @@ fn strongjaw_boosts_matching_moves_only() {
 fn toughclaws_boosts_matching_moves_only() {
     check_power_ability("tough-claws", &["tackle", "bite"], "thunderbolt", 1.3, 1000);
 }
+
+#[test]
+fn technician_boosts_matching_moves_only() {
+    check_power_ability("technician", &["tackle", "swift"], "hyper_beam", 1.5, 1000);
+}

@@ -550,6 +550,9 @@ impl Battle {
         if self.has_ability(actor, "toughclaws") && (attack.contact) {
             return 1.3;
         }
+        if self.has_ability(actor, "technician") && (attack.power <= 60) {
+            return 1.5;
+        }
         if self.has_ability(actor, "normalize") && Self::normalizable_move(attack.move_id) {
             1.2
         } else {

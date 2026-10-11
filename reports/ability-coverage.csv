@@ -99,7 +99,7 @@ id,ability,status,verification
 98,magic-guard,IMPLEMENTED,ability_rules::magic_guard_blocks_indirect_damage_but_keeps_hp_costs_and_struggle_recoil
 99,no-guard,MISSING,No native battle behavior
 100,stall,MISSING,No native battle behavior
-101,technician,MISSING,No native battle behavior
+101,technician,IMPLEMENTED,ability_rules::technician_boosts_matching_moves_only
 102,leaf-guard,IMPLEMENTED,Source inventory; existing tests only
 103,klutz,IMPLEMENTED,Source inventory; existing tests only
 104,mold-breaker,IMPLEMENTED,Source inventory; existing tests only
