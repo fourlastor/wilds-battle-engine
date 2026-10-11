@@ -1941,3 +1941,31 @@ fn effect_spore_uses_gen8_distribution_and_powder_immunities() {
         assert_eq!(ally(&battle).status, expected, "{dice}/{kind:?}/{ability}");
     }
 }
+
+#[test]
+fn cute_charm_infatuates_only_opposite_gender_contact_attackers() {
+    use wilds_battle_engine::Gender;
+    for (gender, ability, dice, expected) in [
+        (Gender::Male, "", 0.2, true),
+        (Gender::Female, "", 0.2, false),
+        (Gender::Genderless, "", 0.2, false),
+        (Gender::Male, "oblivious", 0.2, false),
+        (Gender::Male, "aroma-veil", 0.2, false),
+        (Gender::Male, "long-reach", 0.2, false),
+        (Gender::Male, "", 0.4, false),
+    ] {
+        let mut user = mon("User", &["tackle"]);
+        user.gender = gender;
+        user.ability = Some(ability.into());
+        let mut target = mon("Target", &["splash"]);
+        target.gender = Gender::Female;
+        target.ability = Some("cute-charm".into());
+        let mut battle = game(user, target, dice);
+        turn(&mut battle, "tackle", "splash");
+        assert_eq!(
+            ally(&battle).conditions.iter().any(|c| c.name == "attract"),
+            expected,
+            "{gender:?}/{ability}/{dice}"
+        );
+    }
+}

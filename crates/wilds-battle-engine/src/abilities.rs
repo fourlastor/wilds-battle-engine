@@ -37,6 +37,20 @@ impl Battle {
         if hit.damage == 0 || hit.attacker == target {
             return;
         }
+        if ability == "cutecharm" && hit.contact && self.rng.chance(0.3) {
+            self.start_condition(
+                crate::model::Scope::Pokemon(hit.attacker),
+                crate::model::Condition {
+                    name: "attract".into(),
+                    value: 0,
+                    turns_left: None,
+                    rules: vec![crate::model::Rule::InfatuatedBy(target)],
+                    group: None,
+                    end_message: None,
+                },
+                false,
+            );
+        }
         if matches!(ability, "roughskin" | "ironbarbs") && hit.contact {
             self.indirect_damage(
                 hit.attacker,
