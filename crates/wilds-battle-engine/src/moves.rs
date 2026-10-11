@@ -418,6 +418,12 @@ pub(crate) enum ScriptOperation {
         from: ParticipantId,
         to: ParticipantId,
     },
+    ReplaceMove {
+        who: ParticipantId,
+        old: String,
+        new: String,
+        permanent: bool,
+    },
     ReceiveBerry {
         who: ParticipantId,
         item: String,
@@ -1407,6 +1413,16 @@ fn parse_op(name: &str, args: &[Value]) -> mlua::Result<ScriptOperation> {
         "eat_stolen_berry" => ScriptOperation::EatStolenBerry {
             from: who(0)?,
             to: who(1)?,
+        },
+        "replace_move" => ScriptOperation::ReplaceMove {
+            who: who(0)?,
+            old: name_of(arg(1), "replace_move old")?,
+            new: name_of(arg(2), "replace_move new")?,
+            permanent: match arg(3) {
+                Value::Nil => false,
+                Value::Boolean(value) => *value,
+                _ => return Err(bad("replace_move permanent must be a boolean")),
+            },
         },
         "receive_berry" => ScriptOperation::ReceiveBerry {
             who: who(0)?,

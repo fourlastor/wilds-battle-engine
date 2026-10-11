@@ -6099,3 +6099,91 @@ fn fling_rejects_bound_suppressed_and_unsupported_items() {
         assert!(b.participants(Side::Allies)[0].last_move_failed);
     }
 }
+
+#[test]
+fn mimic_replaces_its_slot_and_restores_only_that_slots_pp_on_switching() {
+    let mut user = mon("User", &["mimic", "splash"]);
+    user.speed = 50;
+    let mut b = Battle::with_rng(
+        Fixed(0.5),
+        [
+            vec![user, mon("Bench", &["splash"])],
+            vec![mon("Foe", &["pound"])],
+        ],
+        MoveCatalog::builtin().unwrap(),
+    )
+    .unwrap();
+    b.set_active([vec![0], vec![0]]).unwrap();
+    turn(&mut b);
+    let user = &b.participants(Side::Allies)[0];
+    assert_eq!(user.moves, ["pound", "splash"]);
+    assert_eq!(user.move_pp["pound"], 35);
+    turn_with(&mut b, |p| choose_move(p, "pound", "pound"));
+    assert_eq!(b.participants(Side::Allies)[0].move_pp["pound"], 34);
+    turn_with(&mut b, |p| choose_move(p, "splash", "pound"));
+    turn_with(&mut b, |p| {
+        if p.actor.side == Side::Allies {
+            p.choices
+                .iter()
+                .find(|c| matches!(c, Choice::Switch { .. }))
+                .unwrap()
+                .id()
+        } else {
+            choose_move(p, "splash", "pound")
+        }
+    });
+    let user = &b.participants(Side::Allies)[0];
+    assert_eq!(user.moves, ["mimic", "splash"]);
+    assert_eq!(user.move_pp["mimic"], 9);
+    assert_eq!(user.move_pp["splash"], 19);
+    assert!(!user.move_pp.contains_key("pound"));
+}
+#[test]
+fn mimic_fails_without_history_or_for_duplicate_and_forbidden_moves() {
+    for (speed, moves, response) in [
+        (200, vec!["mimic"], "pound"),
+        (50, vec!["mimic", "pound"], "pound"),
+        (50, vec!["mimic"], "chatter"),
+    ] {
+        let mut user = mon("User", &moves);
+        user.speed = speed;
+        let mut b = game(user, vec![mon("Foe", &[response])], 0.5);
+        turn(&mut b);
+        assert_eq!(b.participants(Side::Allies)[0].moves, moves);
+        assert!(b.participants(Side::Allies)[0].last_move_failed);
+    }
+}
+#[test]
+fn mimic_bypasses_substitute_but_respects_protect() {
+    for response in ["splash", "protect"] {
+        let mut user = mon("User", &["mimic"]);
+        user.speed = 50;
+        let mut foe = mon("Foe", &[response]);
+        foe.substitute_hp = 100;
+        let mut b = game(user, vec![foe], 0.5);
+        turn(&mut b);
+        assert_eq!(
+            b.participants(Side::Allies)[0].moves[0],
+            if response == "protect" {
+                "mimic"
+            } else {
+                "splash"
+            }
+        );
+    }
+}
+
+#[test]
+fn mimic_restores_its_slot_when_fainted() {
+    let mut user = mon("User", &["mimic"]);
+    user.speed = 50;
+    let foe = mon("Foe", &["pound"]);
+    user.hp = control_damage(40, "Normal", "Physical", foe.clone(), user.clone()) + 1;
+    let mut b = game(user, vec![foe], 0.5);
+    turn(&mut b);
+    assert_eq!(b.participants(Side::Allies)[0].moves, ["pound"]);
+    turn(&mut b);
+    assert_eq!(b.participants(Side::Allies)[0].hp, 0);
+    assert_eq!(b.participants(Side::Allies)[0].moves, ["mimic"]);
+    assert_eq!(b.participants(Side::Allies)[0].move_pp["mimic"], 9);
+}

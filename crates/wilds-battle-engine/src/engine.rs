@@ -2496,6 +2496,7 @@ impl Battle {
         let name = p.name.clone();
         events.push(BattleEvent::Damage { target, amount, hp });
         if was_alive && hp == 0 {
+            self.get_mut(target).restore_moves();
             self.get_mut(target).substitute_hp = 0;
             self.release_carry(target, events);
             self.release_links(target);

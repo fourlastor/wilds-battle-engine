@@ -1030,6 +1030,17 @@
       "parameter_source": "https://pokeapi.co/api/v2/move/100/"
     },
     {
+      "id": 102,
+      "slug": "mimic",
+      "name": "Mimic",
+      "sheet_row": null,
+      "runtime_id": "mimic",
+      "file": "moves/mimic.lua",
+      "status": "implemented",
+      "limitations": [],
+      "parameter_source": "https://pokeapi.co/api/v2/move/102/"
+    },
+    {
       "id": 103,
       "slug": "screech",
       "name": "Screech",
@@ -7968,7 +7979,8 @@
       "embargo",
       "magic-room",
       "natural-gift",
-      "fling"
+      "fling",
+      "mimic"
     ]
   }
 }

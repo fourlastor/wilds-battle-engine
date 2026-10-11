@@ -8,6 +8,7 @@ mod hazards;
 mod items;
 mod lua_symbols;
 mod model;
+mod move_slots;
 mod moves;
 mod rng;
 mod script;
@@ -190,7 +191,7 @@ mod tests {
     #[test]
     fn loads_original_and_scripted_moves() {
         let catalog = MoveCatalog::builtin().unwrap();
-        assert_eq!(catalog.len(), 734);
+        assert_eq!(catalog.len(), 735);
         let from_files =
             MoveCatalog::from_directory(concat!(env!("CARGO_MANIFEST_DIR"), "/../../moves"))
                 .unwrap();

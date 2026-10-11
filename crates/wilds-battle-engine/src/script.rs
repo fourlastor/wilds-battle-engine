@@ -1302,6 +1302,7 @@ impl Battle {
             | ScriptOperation::CureStatus { who, .. }
             | ScriptOperation::ChangeForm { who, .. }
             | ScriptOperation::RestoreForm { who }
+            | ScriptOperation::ReplaceMove { who, .. }
             | ScriptOperation::ReceiveBerry { who, .. }
             | ScriptOperation::EatBerry { who, .. } => Some((*who, Value::Boolean(false))),
             ScriptOperation::ChangeStat { who, .. }
@@ -1956,6 +1957,12 @@ impl Battle {
             ScriptOperation::EatStolenBerry { from, to } => {
                 Value::Boolean(self.eat_stolen_berry(from, to, events))
             }
+            ScriptOperation::ReplaceMove {
+                who,
+                old,
+                new,
+                permanent,
+            } => Value::Boolean(self.replace_move(who, &old, &new, permanent)),
             ScriptOperation::ReceiveBerry { who, item } => {
                 Value::Boolean(self.receive_berry(who, item, events))
             }

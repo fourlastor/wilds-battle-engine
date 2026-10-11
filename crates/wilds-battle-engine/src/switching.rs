@@ -104,6 +104,7 @@ impl Battle {
             base.apply(outgoing);
             outgoing.form = form;
         }
+        outgoing.restore_moves();
         outgoing.last_position = Some(position);
         outgoing.stages.clear();
         outgoing.conditions.clear();
