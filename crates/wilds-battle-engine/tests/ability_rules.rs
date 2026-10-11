@@ -1816,3 +1816,41 @@ fn queenly_majesty_protects_allies_from_priority_and_allows_mold_breaker() {
 fn dazzling_protects_allies_from_priority_and_allows_mold_breaker() {
     check_priority_protection("dazzling");
 }
+
+fn check_contact_damage(ability: &str) {
+    for (move_id, attacker_ability, suppressed, hp, expected_loss) in [
+        ("tackle", "", false, 1000, 125),
+        ("tackle", "", false, 1, 125),
+        ("tackle", "mold-breaker", false, 1000, 125),
+        ("tackle", "long-reach", false, 1000, 0),
+        ("tackle", "magic-guard", false, 1000, 0),
+        ("tackle", "", true, 1000, 0),
+        ("swift", "", false, 1000, 0),
+    ] {
+        let mut user = mon("User", &[move_id]);
+        user.ability = Some(attacker_ability.into());
+        let mut target = mon("Target", &["splash"]);
+        target.ability = Some(ability.into());
+        target.ability_suppressed = suppressed;
+        target.hp = hp;
+        let mut battle = game(user, target, 0.5);
+        turn(&mut battle, move_id, "splash");
+        assert_eq!(
+            1000 - ally(&battle).hp,
+            expected_loss,
+            "{ability}/{move_id}/{attacker_ability}/{suppressed}/{hp}"
+        );
+    }
+    let user = mon("User", &["tackle", "splash"]);
+    let mut target = mon("Target", &["substitute", "splash"]);
+    target.ability = Some(ability.into());
+    let mut battle = game(user, target, 0.5);
+    turn(&mut battle, "splash", "substitute");
+    turn(&mut battle, "tackle", "splash");
+    assert_eq!(ally(&battle).hp, 1000);
+}
+
+#[test]
+fn rough_skin_reacts_to_contact_even_on_faint_but_not_substitutes() {
+    check_contact_damage("rough-skin");
+}

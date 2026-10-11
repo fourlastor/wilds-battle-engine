@@ -22,7 +22,7 @@ id,ability,status,verification
 21,suction-cups,IMPLEMENTED,Source inventory; existing tests only
 22,intimidate,IMPLEMENTED,Source inventory; existing tests only
 23,shadow-tag,IMPLEMENTED,ability_rules::shadow_tag_blocks_voluntary_switches_except_ghosts_and_other_shadow_tag_users
-24,rough-skin,MISSING,No native battle behavior
+24,rough-skin,IMPLEMENTED,ability_rules::rough_skin_reacts_to_contact_even_on_faint_but_not_substitutes
 25,wonder-guard,IMPLEMENTED,Source inventory; existing tests only
 26,levitate,IMPLEMENTED,Source inventory; existing tests only
 27,effect-spore,MISSING,No native battle behavior

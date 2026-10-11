@@ -27,6 +27,25 @@ fn cannot_suppress(ability: &str) -> bool {
 }
 
 impl Battle {
+    pub(crate) fn ability_damaging_hit(
+        &mut self,
+        target: ParticipantId,
+        ability: &str,
+        hit: &crate::model::HitInfo,
+        events: &mut Vec<BattleEvent>,
+    ) {
+        if hit.damage == 0 || hit.attacker == target {
+            return;
+        }
+        if ability == "roughskin" && hit.contact {
+            self.indirect_damage(
+                hit.attacker,
+                (self.get(hit.attacker).max_hp / 8).max(1),
+                events,
+            );
+        }
+    }
+
     /// Weather keeps its timer while its battle effects are suppressed.
     pub(crate) fn effective_weather(&self) -> Option<crate::model::WeatherKind> {
         if self

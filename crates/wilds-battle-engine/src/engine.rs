@@ -2753,6 +2753,11 @@ impl Battle {
             .cloned()
             .collect();
         let mut amount = amount;
+        let hit_ability = if self.ability_active(target) {
+            crate::items::item_key(self.get(target).ability.as_deref().unwrap_or_default())
+        } else {
+            String::new()
+        };
         if amount >= before
             && (self.endures(target)
                 || (before == self.get(target).max_hp && self.has_ability(target, "sturdy")))
@@ -2796,6 +2801,7 @@ impl Battle {
             pokemon.damage_taken = pokemon.damage_taken.saturating_add(lost);
             pokemon.last_hit = Some(hit.clone());
         }
+        self.ability_damaging_hit(target, &hit_ability, &hit, events);
         for reaction in reactions {
             let triggers = if reaction.contact_only {
                 meta.contact
