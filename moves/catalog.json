@@ -4415,6 +4415,17 @@
       "parameter_source": "https://pokeapi.co/api/v2/move/471/"
     },
     {
+      "id": 472,
+      "slug": "wonder-room",
+      "name": "Wonder Room",
+      "sheet_row": null,
+      "runtime_id": "wonder-room",
+      "file": "moves/wonder-room.lua",
+      "status": "implemented",
+      "limitations": [],
+      "parameter_source": "https://pokeapi.co/api/v2/move/472/"
+    },
+    {
       "id": 473,
       "slug": "psyshock",
       "name": "Psyshock",
@@ -7488,7 +7499,8 @@
       "octolock",
       "yawn",
       "perish-song",
-      "trick-room"
+      "trick-room",
+      "wonder-room"
     ]
   }
 }

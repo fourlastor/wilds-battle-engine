@@ -135,9 +135,43 @@ impl Battle {
         )
     }
 
+    pub(crate) fn swapped_defensive_stat(&self, stat: CombatStat) -> CombatStat {
+        if self
+            .field_conditions
+            .iter()
+            .flat_map(|c| &c.rules)
+            .any(|r| matches!(r, Rule::SwapDefenses))
+        {
+            match stat {
+                CombatStat::Defense => CombatStat::SpDefense,
+                CombatStat::SpDefense => CombatStat::Defense,
+                other => other,
+            }
+        } else {
+            stat
+        }
+    }
+
+    pub(crate) fn battle_raw_stat(&self, id: ParticipantId, stat: CombatStat) -> f32 {
+        f32::from(self.get(id).raw_stat(self.swapped_defensive_stat(stat)))
+    }
+
+    pub(crate) fn battle_staged_stat(&self, id: ParticipantId, stat: CombatStat) -> f32 {
+        if self.swapped_defensive_stat(stat) == stat {
+            return self.get(id).effective_stat(stat);
+        }
+        let stage = f32::from(self.get(id).stage(stat.into()));
+        let factor = if stage >= 0.0 {
+            (stage + 2.0) / 2.0
+        } else {
+            2.0 / (2.0 - stage)
+        };
+        (self.battle_raw_stat(id, stat) * factor).trunc()
+    }
+
     /// A stat with its stages and any multipliers from effects.
     pub(crate) fn stat_value(&self, id: ParticipantId, stat: CombatStat) -> f32 {
-        let value = self.get(id).effective_stat(stat);
+        let value = self.battle_staged_stat(id, stat);
         let factor = self.stat_factor(id, stat);
         if factor == 1.0 {
             value

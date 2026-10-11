@@ -4109,3 +4109,46 @@ fn trick_room_updates_remaining_equal_priority_actions_without_changing_damage_s
         .collect();
     assert_eq!(users, ["Fast", "Slow", "Mid"]);
 }
+
+#[test]
+fn wonder_room_swaps_raw_defenses_without_swapping_boosts_and_toggles() {
+    use wilds_battle_engine::Stat;
+    let user = mon("User", &["wonder-room", "pound"]);
+    let mut foe = mon("Foe", &["splash"]);
+    foe.defense = 400;
+    foe.sp_defense = 100;
+    foe.change_stage(Stat::Defense, 2);
+    foe.change_stage(Stat::SpDefense, -1);
+    let normal = control_damage(40, "Normal", "Physical", user.clone(), foe.clone());
+    let mut swapped = foe.clone();
+    swapped.defense = 100;
+    swapped.sp_defense = 400;
+    let room = control_damage(40, "Normal", "Physical", user.clone(), swapped);
+    let mut b = game(user, vec![foe], 0.5);
+    turn(&mut b);
+    turn_with(&mut b, |p| choose_move(p, "pound", "splash"));
+    assert_eq!(1000 - b.participants(Side::Foes)[0].hp, room);
+    assert_eq!(b.participants(Side::Foes)[0].defense, 400);
+    turn(&mut b);
+    turn_with(&mut b, |p| choose_move(p, "pound", "splash"));
+    assert_eq!(1000 - b.participants(Side::Foes)[0].hp, room + normal);
+}
+
+#[test]
+fn wonder_room_body_press_uses_original_defense_with_special_defense_boosts() {
+    use wilds_battle_engine::Stat;
+    let mut user = mon("User", &["wonder-room", "body-press"]);
+    user.defense = 400;
+    user.sp_defense = 100;
+    user.change_stage(Stat::Defense, 2);
+    user.change_stage(Stat::SpDefense, -1);
+    let foe = mon("Foe", &["splash"]);
+    let mut equivalent = user.clone();
+    equivalent.attack = 400;
+    equivalent.change_stage(Stat::Attack, -1);
+    let expected = control_damage(80, "Fighting", "Physical", equivalent, foe.clone());
+    let mut b = game(user, vec![foe], 0.5);
+    turn(&mut b);
+    turn_with(&mut b, |p| choose_move(p, "body-press", "splash"));
+    assert_eq!(1000 - b.participants(Side::Foes)[0].hp, expected);
+}

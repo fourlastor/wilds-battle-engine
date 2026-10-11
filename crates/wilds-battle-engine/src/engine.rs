@@ -126,16 +126,6 @@ pub(crate) struct Roll {
     pub(crate) effectiveness: f32,
 }
 
-fn raw_stat(pokemon: &Pokemon, stat: CombatStat) -> f32 {
-    f32::from(match stat {
-        CombatStat::Attack => pokemon.attack,
-        CombatStat::Defense => pokemon.defense,
-        CombatStat::SpAttack => pokemon.sp_attack,
-        CombatStat::SpDefense => pokemon.sp_defense,
-        CombatStat::Speed => pokemon.speed,
-    })
-}
-
 #[derive(Clone)]
 enum SelectedAction {
     Move(MoveAction),
@@ -1121,7 +1111,7 @@ impl Battle {
                     ));
                     let p = self.get(actor).clone();
                     let attack = p.effective_stat(CombatStat::Attack);
-                    let defense = p.effective_stat(CombatStat::Defense).max(1.0);
+                    let defense = self.battle_staged_stat(actor, CombatStat::Defense).max(1.0);
                     let amount = (((2.0 * p.level as f32 * 0.2 + 2.0) * 40.0 * attack
                         / defense
                         / 50.0
@@ -2102,26 +2092,30 @@ impl Battle {
             _ => (CombatStat::SpAttack, CombatStat::SpDefense),
         };
         let category_attack_stat = atk_name;
-        let atk_name = attack.attack_stat.unwrap_or(atk_name);
+        let atk_name = attack
+            .attack_stat
+            .map(|stat| self.swapped_defensive_stat(stat))
+            .unwrap_or(atk_name);
         let def_name = attack.defense_stat.unwrap_or(def_name);
         let attack_value = if attack.attack_stat.is_some() {
             // An offensive-stat override changes the base stat and stages, not
             // the user's category-based modifiers (Body Press still uses ModifyAtk).
             let value = if crit && source.stage(atk_name.into()) < 0 {
-                raw_stat(&source, atk_name)
+                self.battle_raw_stat(attack.attack_from, atk_name)
             } else {
-                source.effective_stat(atk_name)
+                self.battle_staged_stat(attack.attack_from, atk_name)
             };
             (value * self.stat_factor(actor, category_attack_stat)).trunc()
         } else if crit && source.stage(atk_name.into()) < 0 {
-            raw_stat(&source, atk_name) * self.stat_factor(attack.attack_from, atk_name)
+            self.battle_raw_stat(attack.attack_from, atk_name)
+                * self.stat_factor(attack.attack_from, atk_name)
         } else {
             self.stat_value(attack.attack_from, atk_name)
         };
         let mut defense = if attack.ignore_stages {
-            (raw_stat(&defender, def_name) * self.stat_factor(target, def_name)).trunc()
+            (self.battle_raw_stat(target, def_name) * self.stat_factor(target, def_name)).trunc()
         } else if crit && defender.stage(def_name.into()) > 0 {
-            raw_stat(&defender, def_name) * self.stat_factor(target, def_name)
+            self.battle_raw_stat(target, def_name) * self.stat_factor(target, def_name)
         } else {
             self.stat_value(target, def_name)
         };
