@@ -3376,3 +3376,43 @@ fn quick_draw_acts_first_on_thirty_percent_of_attacks_within_priority() {
     let mut battle = game(user, target, 0.2);
     assert!(first_move_is_user(&turn(&mut battle, "tackle", "tackle")));
 }
+
+#[test]
+fn gorilla_tactics_boosts_attack_locks_moves_and_forces_struggle_without_pp() {
+    check_power_ability("gorilla-tactics", &["tackle"], "water-gun", 1.5, 1000);
+    let mut user = mon("User", &["tackle", "splash"]);
+    user.ability = Some("gorilla-tactics".into());
+    let mut battle = game(user, mon("Target", &["splash", "gastro-acid"]), 0.5);
+    turn(&mut battle, "tackle", "splash");
+    let AdvanceStatus::Awaiting(prompt) = battle.advance().unwrap().status else {
+        panic!("missing choice")
+    };
+    assert!(
+        !prompt
+            .choices
+            .iter()
+            .any(|c| matches!(c, Choice::UseMove { move_id, .. } if move_id == "splash"))
+    );
+    turn(&mut battle, "tackle", "gastro-acid");
+    let AdvanceStatus::Awaiting(prompt) = battle.advance().unwrap().status else {
+        panic!("missing choice")
+    };
+    assert!(
+        prompt
+            .choices
+            .iter()
+            .any(|c| matches!(c, Choice::UseMove { move_id, .. } if move_id == "splash"))
+    );
+    let mut user = mon("User", &["tackle", "splash"]);
+    user.ability = Some("gorilla-tactics".into());
+    user.move_pp.insert("tackle".into(), 1);
+    let mut battle = game(user, mon("Target", &["splash"]), 0.5);
+    turn(&mut battle, "tackle", "splash");
+    assert_eq!(ally(&battle).move_pp["tackle"], 0);
+    let events = turn(&mut battle, "struggle", "splash");
+    assert!(
+        events
+            .iter()
+            .any(|e| matches!(e, BattleEvent::Message(m) if m == "User used Struggle!"))
+    );
+}

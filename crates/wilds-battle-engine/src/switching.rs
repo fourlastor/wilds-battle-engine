@@ -110,6 +110,7 @@ impl Battle {
         outgoing.last_position = Some(position);
         outgoing.stages.clear();
         outgoing.conditions.clear();
+        outgoing.ability_move_lock = None;
         outgoing.confused_turns = None;
         outgoing.bound = None;
         outgoing.protected = false;

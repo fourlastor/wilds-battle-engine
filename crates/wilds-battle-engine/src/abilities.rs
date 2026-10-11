@@ -468,6 +468,7 @@ impl Battle {
         let original = self.ability_state(who);
         let pokemon = self.get_mut(who);
         pokemon.original_ability.get_or_insert(original);
+        pokemon.ability_move_lock = None;
         pokemon.ability = state.id;
         pokemon.ability_rules = state.rules;
         pokemon.ability_bypassable = state.bypassable;
@@ -1027,6 +1028,9 @@ impl Battle {
         stat: crate::model::CombatStat,
     ) -> f32 {
         use crate::model::CombatStat::*;
+        if stat == Attack && self.has_ability(who, "gorillatactics") {
+            return 1.5;
+        }
         if matches!(stat, Attack | Speed)
             && self.has_ability(who, "slowstart")
             && self

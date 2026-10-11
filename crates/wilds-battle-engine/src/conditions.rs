@@ -705,6 +705,16 @@ impl Battle {
 
     pub(crate) fn move_block(&self, id: ParticipantId, spec: &MoveSpec) -> Option<&str> {
         if spec.id != "struggle"
+            && self.has_ability(id, "gorillatactics")
+            && self
+                .get(id)
+                .ability_move_lock
+                .as_ref()
+                .is_some_and(|move_id| *move_id != spec.id)
+        {
+            return Some("{name} must repeat its move because of Gorilla Tactics!");
+        }
+        if spec.id != "struggle"
             && self
                 .only_move(id)
                 .is_some_and(|required| required != spec.id)

@@ -1607,6 +1607,11 @@ impl Battle {
         {
             *pp = pp.saturating_sub(1);
         }
+        if !called && !spec.auto_only && self.has_ability(actor, "gorillatactics") {
+            self.get_mut(actor)
+                .ability_move_lock
+                .get_or_insert(spec.id.clone());
+        }
         if matches!(
             crate::items::item_key(&spec.id).as_str(),
             "explosion" | "selfdestruct" | "mindblown" | "mistyexplosion"
