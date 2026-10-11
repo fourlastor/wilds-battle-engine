@@ -14,6 +14,9 @@ pub struct Battle {
     pub(crate) rng: Box<dyn BattleRng>,
     pending: Option<Prompt>,
     selections: Vec<(ParticipantId, SelectedAction)>,
+    turn_queue: std::collections::VecDeque<QueuedAction>,
+    completed_actors: Vec<ParticipantId>,
+    resolving_turn: bool,
     next_prompt_id: u64,
     pub(crate) winner: Option<Option<Side>>,
     pub(crate) turn: u64,
@@ -133,6 +136,22 @@ struct MoveAction {
     target: ParticipantId,
 }
 
+struct QueuedAction {
+    actor: ParticipantId,
+    action: SelectedAction,
+    priority: i8,
+    speed: i32,
+    tie: u64,
+}
+impl QueuedAction {
+    fn order(a: &Self, b: &Self) -> std::cmp::Ordering {
+        b.priority
+            .cmp(&a.priority)
+            .then(b.speed.cmp(&a.speed))
+            .then(b.tie.cmp(&a.tie))
+    }
+}
+
 impl Battle {
     pub fn new(
         seed: u64,
@@ -197,6 +216,9 @@ impl Battle {
             rng: Box::new(rng),
             pending: None,
             selections: Vec::new(),
+            turn_queue: std::collections::VecDeque::new(),
+            completed_actors: Vec::new(),
+            resolving_turn: false,
             next_prompt_id: 1,
             winner: None,
             turn: 0,
@@ -477,8 +499,18 @@ impl Battle {
         }
     }
     fn resolve_turn(&mut self) -> Result<Vec<BattleEvent>, BattleError> {
-        self.turn += 1;
         let mut events = Vec::new();
+        if !self.resolving_turn {
+            self.begin_turn(&mut events)?;
+        }
+        self.resume_turn(&mut events)?;
+        Ok(events)
+    }
+
+    fn begin_turn(&mut self, events: &mut Vec<BattleEvent>) -> Result<(), BattleError> {
+        self.turn += 1;
+        self.resolving_turn = true;
+        self.completed_actors.clear();
         let mut ordered: Vec<_> = std::mem::take(&mut self.selections)
             .into_iter()
             .map(|(actor, choice)| {
@@ -493,16 +525,22 @@ impl Battle {
                     SelectedAction::Recharge => 0,
                 };
                 let speed = if matches!(choice, SelectedAction::Move(_))
-                    && self.custap_priority(actor, &mut events)
+                    && self.custap_priority(actor, events)
                 {
                     i32::MAX
                 } else {
                     self.stat_value(actor, CombatStat::Speed) as i32
                 };
-                (actor, choice, priority, speed, self.rng.next_u64())
+                QueuedAction {
+                    actor,
+                    action: choice,
+                    priority,
+                    speed,
+                    tie: self.rng.next_u64(),
+                }
             })
             .collect();
-        ordered.sort_by(|a, b| b.2.cmp(&a.2).then(b.3.cmp(&a.3)).then(b.4.cmp(&a.4)));
+        ordered.sort_by(QueuedAction::order);
         for pokemon in self.sides.iter_mut().flatten() {
             pokemon.acted = false;
             pokemon.damage_taken = 0;
@@ -513,38 +551,33 @@ impl Battle {
         }
         self.turn_choices = ordered
             .iter()
-            .filter_map(|(actor, choice, ..)| match choice {
-                SelectedAction::Move(choice) => Some((*actor, choice.move_id.clone())),
+            .filter_map(|entry| match &entry.action {
+                SelectedAction::Move(choice) => Some((entry.actor, choice.move_id.clone())),
                 SelectedAction::Recharge => None,
             })
             .collect();
         self.hurry.clear();
         // Moves that get ready before anyone acts (Focus Punch, Beak Blast).
-        for (actor, choice, ..) in &ordered {
-            let SelectedAction::Move(choice) = choice else {
+        for entry in &ordered {
+            let actor = entry.actor;
+            let SelectedAction::Move(choice) = &entry.action else {
                 continue;
             };
             let spec = self.catalog.get(&choice.move_id).expect("validated choice");
             if spec.on_turn_start.is_some()
-                && self.get(*actor).hp > 0
-                && self.move_block(*actor, spec).is_none()
+                && self.get(actor).hp > 0
+                && self.move_block(actor, spec).is_none()
             {
                 let spec = spec.clone();
-                self.execute_script(
-                    *actor,
-                    choice.target,
-                    &spec,
-                    &mut events,
-                    ScriptHook::TurnStart,
-                )?;
+                self.execute_script(actor, choice.target, &spec, events, ScriptHook::TurnStart)?;
             }
         }
         // Turn-start hooks can establish conditional priority without consuming an action.
         // Preserve the speed and tie rolls; priority changes never reroll ties.
-        for (actor, choice, priority, ..) in &mut ordered {
-            if let SelectedAction::Move(choice) = choice {
-                *priority = self.move_priority(
-                    *actor,
+        for entry in &mut ordered {
+            if let SelectedAction::Move(choice) = &entry.action {
+                entry.priority = self.move_priority(
+                    entry.actor,
                     self.catalog
                         .get(&choice.move_id)
                         .expect("validated choice")
@@ -552,26 +585,30 @@ impl Battle {
                 );
             }
         }
-        ordered.sort_by(|a, b| b.2.cmp(&a.2).then(b.3.cmp(&a.3)).then(b.4.cmp(&a.4)));
-        let mut next = 0;
-        while next < ordered.len() {
+        ordered.sort_by(QueuedAction::order);
+        self.turn_queue = ordered.into();
+        Ok(())
+    }
+
+    fn resume_turn(&mut self, events: &mut Vec<BattleEvent>) -> Result<(), BattleError> {
+        while let Some(entry) = self.turn_queue.pop_front() {
             if self.winner.is_some() {
                 break;
             }
-            let actor = ordered[next].0;
-            let choice = ordered[next].1.clone();
-            next += 1;
-            self.pending_actors = ordered[next..]
+            let actor = entry.actor;
+            let choice = entry.action;
+            self.pending_actors = self
+                .turn_queue
                 .iter()
-                .filter_map(|(id, action, ..)| {
-                    matches!(action, SelectedAction::Move(_)).then_some(*id)
+                .filter_map(|entry| {
+                    matches!(entry.action, SelectedAction::Move(_)).then_some(entry.actor)
                 })
                 .collect();
             self.hit_reactions
                 .retain(|reaction| reaction.owner != actor);
-            self.check_sleep(actor, &mut events);
+            self.check_sleep(actor, events);
             match &choice {
-                SelectedAction::Move(choice) => self.execute_move(actor, choice, &mut events)?,
+                SelectedAction::Move(choice) => self.execute_move(actor, choice, events)?,
                 SelectedAction::Recharge => {
                     self.get_mut(actor).recharging = false;
                     if self.get(actor).hp > 0 {
@@ -582,46 +619,50 @@ impl Battle {
                     }
                 }
             }
-            self.update_berries(&mut events);
+            self.update_berries(events);
             self.get_mut(actor).acted = true;
-            self.resolve_outcome(&mut events);
+            self.completed_actors.push(actor);
+            self.resolve_outcome(events);
             if !self.hurry.is_empty() {
                 // Only pending actions move; promoted actors retain their relative order.
                 let promoted = std::mem::take(&mut self.hurry);
-                let (now, later): (Vec<_>, Vec<_>) = ordered
-                    .drain(next..)
-                    .partition(|entry| promoted.contains(&entry.0));
-                ordered.extend(now);
-                ordered.extend(later);
+                let (now, later): (std::collections::VecDeque<_>, std::collections::VecDeque<_>) =
+                    std::mem::take(&mut self.turn_queue)
+                        .into_iter()
+                        .partition(|entry| promoted.contains(&entry.actor));
+                self.turn_queue = now;
+                self.turn_queue.extend(later);
             }
         }
+        let order = std::mem::take(&mut self.completed_actors);
         if self.winner.is_none() {
-            for (actor, _, _, _, _) in &ordered {
-                self.post_turn_status(*actor, &mut events);
-                self.update_berries(&mut events);
-                self.resolve_outcome(&mut events);
+            for actor in &order {
+                self.post_turn_status(*actor, events);
+                self.update_berries(events);
+                self.resolve_outcome(events);
                 if self.winner.is_some() {
                     break;
                 }
             }
         }
         if self.winner.is_none() {
-            self.post_turn_weather(&ordered, &mut events);
-            self.update_berries(&mut events);
-            self.resolve_outcome(&mut events);
+            self.post_turn_weather(&order, events);
+            self.update_berries(events);
+            self.resolve_outcome(events);
         }
         if self.winner.is_none() {
-            let order: Vec<ParticipantId> = ordered.iter().map(|entry| entry.0).collect();
-            self.tick_conditions(&order, &mut events);
-            self.residual_berries(&mut events);
-            self.update_berries(&mut events);
-            self.resolve_outcome(&mut events);
+            self.tick_conditions(&order, events);
+            self.residual_berries(events);
+            self.update_berries(events);
+            self.resolve_outcome(events);
         }
         for pokemon in self.sides.iter_mut().flatten() {
             pokemon.protected = false;
             pokemon.flinched = false;
         }
-        Ok(events)
+        self.turn_queue.clear();
+        self.resolving_turn = false;
+        Ok(())
     }
     fn check_sleep(&mut self, id: ParticipantId, events: &mut Vec<BattleEvent>) {
         if self.get(id).hp == 0 || self.get(id).status != Some(Status::Asleep) {
@@ -1916,11 +1957,7 @@ impl Battle {
             }
         }
     }
-    fn post_turn_weather(
-        &mut self,
-        order: &[(ParticipantId, SelectedAction, i8, i32, u64)],
-        events: &mut Vec<BattleEvent>,
-    ) {
+    fn post_turn_weather(&mut self, order: &[ParticipantId], events: &mut Vec<BattleEvent>) {
         let Some(weather) = self.weather.clone() else {
             return;
         };
@@ -1941,7 +1978,7 @@ impl Battle {
             WeatherKind::Hail => (&[PokemonType::Ice], "hail"),
             WeatherKind::Sun | WeatherKind::Rain => return,
         };
-        for (id, _, _, _, _) in order {
+        for id in order {
             let p = self.get(*id).clone();
             if p.hp == 0 || p.types.iter().any(|kind| spared.contains(kind)) {
                 continue;
