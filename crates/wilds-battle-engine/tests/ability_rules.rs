@@ -2975,3 +2975,24 @@ fn perish_body_counts_down_both_contact_participants_and_ignores_soundproof() {
         assert_eq!(events.iter().filter(|event| matches!(event, BattleEvent::Message(m) if m.contains("perish count fell to 0"))).count(), if attacker_ability == "long-reach" { 0 } else { 2 });
     }
 }
+
+#[test]
+fn beast_boost_uses_highest_raw_stat_with_attack_first_ties() {
+    use wilds_battle_engine::Stat;
+    for (special_high, expected) in [(false, Stat::Attack), (true, Stat::SpDefense)] {
+        let mut user = mon("User", &["tackle"]);
+        user.ability = Some("beast-boost".into());
+        user.attack = 200;
+        user.defense = 200;
+        user.sp_attack = 100;
+        user.sp_defense = if special_high { 300 } else { 100 };
+        user.speed = 100;
+        user.stages.insert(Stat::Speed, 5);
+        let mut target = mon("Target", &["splash"]);
+        target.hp = 1;
+        let mut battle = game(user, target, 0.5);
+        turn(&mut battle, "tackle", "splash");
+        assert_eq!(ally(&battle).stage(expected), 1);
+        assert_eq!(ally(&battle).stage(Stat::Speed), 5);
+    }
+}

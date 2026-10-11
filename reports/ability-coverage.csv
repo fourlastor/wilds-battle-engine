@@ -222,7 +222,7 @@ id,ability,status,verification
 221,tangling-hair,IMPLEMENTED,ability_rules::tangling_hair_lowers_contact_attackers_speed_with_stat_protection
 222,receiver,MISSING,No native battle behavior
 223,power-of-alchemy,MISSING,No native battle behavior
-224,beast-boost,MISSING,No native battle behavior
+224,beast-boost,IMPLEMENTED,ability_rules::beast_boost_uses_highest_raw_stat_with_attack_first_ties
 225,rks-system,MISSING,No native battle behavior
 226,electric-surge,IMPLEMENTED,ability_rules::electric_surge_starts_five_turn_electric_terrain
 227,psychic-surge,IMPLEMENTED,ability_rules::psychic_surge_starts_five_turn_psychic_terrain
