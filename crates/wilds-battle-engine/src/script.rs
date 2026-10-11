@@ -6,7 +6,8 @@ use crate::model::{
     ParticipantId, Pokemon, Scope, ScriptContinuation, Side, Stat, Status, Weather,
 };
 use crate::moves::{
-    DamageOptions, HitOptions, HpAmount, MoveSpec, ScopeRef, ScriptHook, ScriptOperation, Target,
+    Accuracy, DamageOptions, HitOptions, HpAmount, MoveSpec, ScopeRef, ScriptHook, ScriptOperation,
+    Target,
 };
 use crate::type_chart;
 use mlua::thread::ThreadStatus;
@@ -635,7 +636,12 @@ impl Battle {
             )));
             return HitOutcome::Hidden;
         }
-        let hit = if options.never_miss || self.always_hits(actor, recipient) {
+        let ohko = options
+            .ohko_accuracy
+            .or_else(|| matches!(frame.spec.accuracy, Accuracy::OneHitKnockout).then_some(0.3));
+        let hit = if let Some(base) = ohko {
+            self.ohko_hit_check(actor, recipient, base, options.never_miss)
+        } else if options.never_miss || self.always_hits(actor, recipient) {
             true
         } else if let Some(value) = options.accuracy {
             self.hit_check_chance(actor, recipient, value, options.ignore_evasion)

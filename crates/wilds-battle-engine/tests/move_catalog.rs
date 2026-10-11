@@ -79,6 +79,45 @@ fn said(events: &[BattleEvent], text: &str) -> bool {
 }
 
 #[test]
+fn sheer_cold_uses_one_ohko_check_with_type_and_level_restrictions() {
+    for (ice_user, dice, level, target_ice, guaranteed, hits) in [
+        (false, 0.25, 100, false, false, false),
+        (true, 0.25, 100, false, false, true),
+        (false, 0.19, 100, false, false, true),
+        (false, 0.99, 100, false, true, true),
+        (true, 0.0, 99, false, true, false),
+        (true, 0.0, 100, true, true, false),
+    ] {
+        let mut ally = mon("Ally", &["sheer-cold"]);
+        ally.level = level;
+        if ice_user {
+            ally.types = vec![PokemonType::Ice];
+        }
+        if guaranteed {
+            ally.conditions.push(wilds_battle_engine::Condition {
+                name: "aim".into(),
+                value: 1,
+                turns_left: Some(2),
+                group: None,
+                end_message: None,
+                rules: vec![wilds_battle_engine::Rule::AlwaysHit { against: None }],
+            });
+        }
+        let mut foe = mon("Foe", &["splash"]);
+        if target_ice {
+            foe.types = vec![PokemonType::Ice];
+        }
+        let mut game = Game::new(vec![ally], vec![foe], dice);
+        game.turn("sheer-cold", "splash");
+        assert_eq!(
+            game.foe().hp == 0,
+            hits,
+            "ice={ice_user} dice={dice} level={level} immune={target_ice} guaranteed={guaranteed}"
+        );
+    }
+}
+
+#[test]
 fn attack_screens_use_the_battle_format_and_critical_hits_bypass_them() {
     for (screen, attack) in [("baddy-bad", "tackle"), ("glitzy-glow", "water-gun")] {
         let damage = |with_screen: bool, multi: bool, critical: bool| {

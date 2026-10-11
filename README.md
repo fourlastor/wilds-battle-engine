@@ -213,12 +213,14 @@ before turn-start hooks; capped changes and resetting stages do not trigger them
 | `ctx:add_payout(amount)` | Money for the user's side, read by the host with `Battle::payout`. |
 | `ctx:hurry()` | Everyone else who chose this move acts next (Round). |
 
-Damage options: `accuracy`, `never_miss`, `ignore_protect`, `ignore_evasion`,
+Damage options: `ohko_accuracy`, `accuracy`, `never_miss`, `ignore_protect`, `ignore_evasion`,
 `hits_hidden` (a list of `Hidden` values, or `true`), `drain`, `recoil`,
 `min_target_hp`, `typeless`, `high_crit`, `always_crit`, `target` (one Pokémon),
 `type`, `also_type`, `effective` (`{[Type.Water] = 2}` replaces the type chart
 against the listed types), `category`, `attack_from` (whose attacking stat is used),
-`attack_stat`, `defense_stat`, `ignore_stages`. `try_hit` takes the first five.
+`attack_stat`, `defense_stat`, `ignore_stages`. `try_hit` takes the first six. `ohko_accuracy` is an OHKO base probability plus
+1% per level above the target; lower-level users fail even with guaranteed hits.
+It ignores accuracy/evasion stages and ordinary accuracy multipliers.
 
 A damage call can set `contact = true` or `contact = false` for that hit. If omitted,
 contact follows the move's flags. This applies to multi-hit attacks too and controls

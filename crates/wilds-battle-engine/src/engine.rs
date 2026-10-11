@@ -821,10 +821,7 @@ impl Battle {
                 spec.name
             )));
         }
-        if !(first_charge
-            || self.always_hits(actor, target)
-            || self.hit_check(actor, target, &spec, false))
-        {
+        if !(first_charge || self.hit_check(actor, target, &spec, false)) {
             events.push(BattleEvent::Message(format!(
                 "{user_name}'s attack missed!"
             )));
@@ -965,18 +962,28 @@ impl Battle {
     ) -> bool {
         match spec.accuracy {
             Accuracy::Always => true,
-            Accuracy::OneHitKnockout => {
-                let user = self.get(actor);
-                let defender = self.get(target);
-                if user.level < defender.level {
-                    false
-                } else {
-                    self.rng
-                        .chance(0.3 + 0.01 * f32::from(user.level - defender.level))
-                }
+            Accuracy::OneHitKnockout => self.ohko_hit_check(actor, target, 0.3, false),
+            Accuracy::Chance(value) => {
+                self.always_hits(actor, target)
+                    || self.hit_check_chance(actor, target, value, ignore_evasion)
             }
-            Accuracy::Chance(value) => self.hit_check_chance(actor, target, value, ignore_evasion),
         }
+    }
+    pub(crate) fn ohko_hit_check(
+        &mut self,
+        actor: ParticipantId,
+        target: ParticipantId,
+        base: f32,
+        never_miss: bool,
+    ) -> bool {
+        let user_level = self.get(actor).level;
+        let target_level = self.get(target).level;
+        user_level >= target_level
+            && (never_miss
+                || self.always_hits(actor, target)
+                || self
+                    .rng
+                    .chance(base + 0.01 * f32::from(user_level - target_level)))
     }
     pub(crate) fn hit_check_chance(
         &mut self,

@@ -140,6 +140,8 @@ impl MoveSpec {
 #[derive(Clone, Debug, Default, PartialEq)]
 pub(crate) struct HitOptions {
     pub accuracy: Option<f32>,
+    /// Base OHKO probability before the level difference; ignores ordinary accuracy modifiers.
+    pub ohko_accuracy: Option<f32>,
     pub never_miss: bool,
     pub ignore_protect: bool,
     pub ignore_evasion: bool,
@@ -573,8 +575,9 @@ impl Options {
     }
 }
 
-const HIT_KEYS: [&str; 5] = [
+const HIT_KEYS: [&str; 6] = [
     "accuracy",
+    "ohko_accuracy",
     "never_miss",
     "ignore_protect",
     "ignore_evasion",
@@ -588,6 +591,7 @@ fn hit_options(options: &Options) -> mlua::Result<HitOptions> {
     };
     Ok(HitOptions {
         accuracy: options.fraction("accuracy")?,
+        ohko_accuracy: options.fraction("ohko_accuracy")?,
         never_miss: options.flag("never_miss")?,
         ignore_protect: options.flag("ignore_protect")?,
         ignore_evasion: options.flag("ignore_evasion")?,
@@ -602,6 +606,7 @@ fn damage_options(value: Option<&Value>) -> mlua::Result<DamageOptions> {
         "damage",
         &[
             "accuracy",
+            "ohko_accuracy",
             "never_miss",
             "ignore_protect",
             "ignore_evasion",

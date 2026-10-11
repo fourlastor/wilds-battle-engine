@@ -2377,10 +2377,8 @@
       "sheet_row": 230,
       "runtime_id": "sheer-cold",
       "file": "moves/sheer-cold.lua",
-      "status": "partial",
-      "limitations": [
-        "Ice immunity and reduced accuracy for non-Ice users work; an AlwaysHit rule cannot be inspected to bypass the extra accuracy adjustment."
-      ]
+      "status": "implemented",
+      "limitations": []
     },
     {
       "id": 330,
