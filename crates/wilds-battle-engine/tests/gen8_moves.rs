@@ -2938,3 +2938,51 @@ fn detect_fails_if_every_other_action_already_finished() {
     turn(&mut b);
     assert!(b.participants(Side::Allies)[0].last_move_failed);
 }
+
+#[test]
+fn endure_survives_multiple_direct_attacks_at_one_hp_but_not_poison() {
+    for poison in [false, true] {
+        let mut user = mon("User", &["endure"]);
+        user.hp = 50;
+        if poison {
+            user.status = Some(wilds_battle_engine::Status::Poisoned);
+        }
+        let mut b = game(
+            user,
+            vec![
+                mon("First", &["seismic-toss"]),
+                mon("Second", &["seismic-toss"]),
+            ],
+            0.5,
+        );
+        let events = turn(&mut b);
+        assert_eq!(
+            b.participants(Side::Allies)[0].hp,
+            if poison { 0 } else { 1 }
+        );
+        assert_eq!(
+            events
+                .iter()
+                .filter(|e| matches!(e,BattleEvent::Message(m) if m=="User endured the hit!"))
+                .count(),
+            2
+        );
+    }
+}
+
+#[test]
+fn endure_shares_protection_chance_and_does_not_block_status_moves() {
+    use wilds_battle_engine::Stat;
+    let mut b = game(
+        mon("User", &["protect", "endure"]),
+        vec![mon("Foe", &["growl"])],
+        0.5,
+    );
+    turn_with(&mut b, |p| choose_move(p, "protect", "growl"));
+    turn_with(&mut b, |p| choose_move(p, "endure", "growl"));
+    assert!(b.participants(Side::Allies)[0].last_move_failed);
+    assert_eq!(b.participants(Side::Allies)[0].stage(Stat::Attack), -1);
+    turn_with(&mut b, |p| choose_move(p, "endure", "growl"));
+    assert!(!b.participants(Side::Allies)[0].last_move_failed);
+    assert_eq!(b.participants(Side::Allies)[0].stage(Stat::Attack), -2);
+}

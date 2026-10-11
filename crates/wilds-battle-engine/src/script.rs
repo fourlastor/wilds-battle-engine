@@ -1396,6 +1396,7 @@ impl Battle {
                 frame.failed = true;
                 return Ok(Flow::Stop);
             }
+            ScriptOperation::CheckProtection => Value::Boolean(self.protection_check(actor)),
             ScriptOperation::Succeed => {
                 frame.any_hit = true;
                 Value::Nil

@@ -214,6 +214,7 @@ pub(crate) enum ScriptOperation {
     Substitute,
     Fail,
     Succeed,
+    CheckProtection,
     ForceMove {
         total_turns: u8,
         target_policy: ContinuationTarget,
@@ -994,6 +995,7 @@ fn parse_op(name: &str, args: &[Value]) -> mlua::Result<ScriptOperation> {
                 min_target_hp: options.whole("min_target_hp", 0.0, 65535.0)?.unwrap_or(0.0) as u16,
             }
         }
+        "check_protection" => ScriptOperation::CheckProtection,
         "succeed" => ScriptOperation::Succeed,
         "redirect_target" => ScriptOperation::RedirectTarget { who: who(0)? },
         "try_hit" => ScriptOperation::TryHit {

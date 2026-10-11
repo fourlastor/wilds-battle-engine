@@ -1891,6 +1891,17 @@
       "limitations": []
     },
     {
+      "id": 203,
+      "slug": "endure",
+      "name": "Endure",
+      "sheet_row": null,
+      "runtime_id": "endure",
+      "file": "moves/endure.lua",
+      "status": "implemented",
+      "limitations": [],
+      "parameter_source": "https://pokeapi.co/api/v2/move/203/"
+    },
+    {
       "id": 204,
       "slug": "charm",
       "name": "Charm",
@@ -7224,7 +7235,8 @@
       "trick",
       "switcheroo",
       "bestow",
-      "detect"
+      "detect",
+      "endure"
     ]
   }
 }

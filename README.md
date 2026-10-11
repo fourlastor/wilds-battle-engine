@@ -1,9 +1,9 @@
 # Wilds battle engine
 
 `wilds-battle-engine` is the Rust battle simulation. Move definitions are loaded
-from Lua; `MoveCatalog::builtin()` embeds the 671 files under `moves/`,
+from Lua; `MoveCatalog::builtin()` embeds the 672 files under `moves/`,
 and `MoveCatalog::from_directory(path)` reads them from disk at runtime.
-Both catalogs also include the system move Struggle, for 672 moves in total.
+Both catalogs also include the system move Struggle, for 673 moves in total.
 The [move catalog](moves/README.md) includes 538 entries from the Saved moves sheet,
 plus support moves, additional local JSON moves and the original moves outside the sheet. Its manifest
 records the 34 excluded Z/Max Moves. Files use canonical slugs and source display
@@ -214,6 +214,7 @@ before turn-start hooks; capped changes and resetting stages do not trigger them
 | `ctx:item_removable(who)` | Checks species-bound items independently of Sticky Hold, for damage bonuses such as Knock Off. Removal and atomic theft enforce both restrictions; fainted or suppressed Sticky Hold does not protect an item. |
 | `ctx:eat_berry(who, forced)`, `ctx:eat_stolen_berry(from, to)` | Apply berry consumption effects and record history. Forced eating bypasses Unnerve and Klutz; stealing a berry respects removal restrictions and preserves the eater's own item. |
 | `ctx:change_form(who, id)`, `ctx:restore_form(who)` | Apply a host-supplied form or restore the original one; return whether it changed. HP, status, stages, and PP are preserved. |
+| `ctx:check_protection()` | Rolls and records the shared consecutive protection chance without applying Protect, for Endure and other guards. |
 | `ctx:swap_items(a, b)` | Exchanges held items atomically; rejects an opposing Sticky Hold or species binding at either destination. Does not consume either item. |
 | `ctx:recycle_item(who)` | Restores the last consumed held item into an empty slot once. Stolen berries do not change which item can be recovered; consumption history persists. |
 | `ctx:consume_item(who)` | Removes a held item, records it in `who.consumed_items` and `who.last_consumed_item`, and returns its ID (or nil). Taking an item does not record consumption. |
