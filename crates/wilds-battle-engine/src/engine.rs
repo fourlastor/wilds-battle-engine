@@ -2644,7 +2644,11 @@ impl Battle {
         damage *= self.ability_damage_factor(actor, target, attack, effectiveness);
         damage *= effectiveness;
         if !typeless && (attack.force_stab || self.types_of(actor).contains(&move_type)) {
-            damage *= 1.5;
+            damage *= if self.has_ability(actor, "adaptability") {
+                2.0
+            } else {
+                1.5
+            };
         }
         if crit {
             damage *= 1.5;

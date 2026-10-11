@@ -1034,3 +1034,14 @@ fn thickfat_halves_fire_and_ice_damage_and_is_bypassable() {
         ability_damage("tackle", "", "", false)
     );
 }
+
+#[test]
+fn adaptability_increases_stab_to_double_without_boosting_other_types() {
+    let normal = ability_damage("tackle", "", "", false);
+    let boosted = ability_damage("tackle", "adaptability", "", false);
+    assert!((f32::from(boosted) - f32::from(normal) * 4.0 / 3.0).abs() <= 1.0);
+    assert_eq!(
+        ability_damage("water-gun", "adaptability", "", false),
+        ability_damage("water-gun", "", "", false)
+    );
+}
