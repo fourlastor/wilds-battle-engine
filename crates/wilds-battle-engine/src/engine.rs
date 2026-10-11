@@ -1820,7 +1820,8 @@ impl Battle {
         if actor != recipient
             && delta < 0
             && (self.blocks_stat_drops_from(actor, recipient)
-                || (stat == Stat::Attack && self.has_ability(recipient, "hypercutter")))
+                || (stat == Stat::Attack && self.has_ability(recipient, "hypercutter"))
+                || (stat == Stat::Accuracy && self.has_ability(recipient, "keeneye")))
         {
             events.push(BattleEvent::Message(format!(
                 "{}'s stats were not lowered!",
@@ -1928,9 +1929,10 @@ impl Battle {
         }
         let evasion = if ignore_evasion
             || (self.get(target).stage(Stat::Evasion) > 0
-                && self
-                    .rules(target)
-                    .any(|rule| matches!(rule, Rule::IgnoreEvasionBoost)))
+                && (self.has_ability(actor, "keeneye")
+                    || self
+                        .rules(target)
+                        .any(|rule| matches!(rule, Rule::IgnoreEvasionBoost))))
         {
             1.0
         } else {

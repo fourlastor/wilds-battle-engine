@@ -966,3 +966,29 @@ fn victory_star_boosts_self_and_allies_and_stacks() {
         assert_eq!(foe(&battle).hp < 1000, expected);
     }
 }
+
+#[test]
+fn keen_eye_blocks_accuracy_drops_and_ignores_positive_evasion() {
+    for breaker in [false, true] {
+        let mut user = mon("User", &["sand-attack"]);
+        user.ability = breaker.then(|| "mold-breaker".into());
+        let mut target = mon("Target", &["splash"]);
+        target.ability = Some("keen-eye".into());
+        let mut battle = game(user, target, 0.5);
+        turn(&mut battle, "sand-attack", "splash");
+        assert_eq!(
+            foe(&battle).stage(wilds_battle_engine::Stat::Accuracy),
+            if breaker { -1 } else { 0 }
+        );
+    }
+    for suppressed in [false, true] {
+        let mut user = mon("User", &["tackle"]);
+        user.ability = Some("keen-eye".into());
+        user.ability_suppressed = suppressed;
+        let mut target = mon("Target", &["splash"]);
+        target.stages.insert(wilds_battle_engine::Stat::Evasion, 6);
+        let mut battle = game(user, target, 0.5);
+        turn(&mut battle, "tackle", "splash");
+        assert_eq!(foe(&battle).hp < 1000, !suppressed);
+    }
+}
