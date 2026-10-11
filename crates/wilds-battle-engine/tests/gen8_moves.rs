@@ -37,7 +37,9 @@ fn turn_with(battle: &mut Battle, mut select: impl FnMut(&Prompt) -> u32) -> Vec
     for _ in 0..30 {
         let result = battle.advance().unwrap();
         events.extend(result.events);
-        if battle.turn() > start {
+        if battle.turn() > start
+            && matches!(&result.status, AdvanceStatus::Awaiting(p) if p.reason == wilds_battle_engine::PromptReason::Action)
+        {
             return events;
         }
         let AdvanceStatus::Awaiting(prompt) = result.status else {
@@ -298,4 +300,32 @@ fn snap_trap_damages_and_binds_only_after_a_reaching_hit() {
 #[test]
 fn thunder_cage_damages_and_binds_only_after_a_reaching_hit() {
     check_partial_trap("thunder-cage", 80, "Electric", "Special");
+}
+
+#[test]
+fn teleport_requests_a_replacement_after_attacks_and_fails_without_a_bench() {
+    let user = mon("User", &["teleport"]);
+    let mut b = Battle::with_rng(
+        Fixed(0.5),
+        [
+            vec![user.clone(), mon("Bench", &["splash"])],
+            vec![mon("Foe", &["tackle"])],
+        ],
+        MoveCatalog::builtin().unwrap(),
+    )
+    .unwrap();
+    b.set_active([vec![0], vec![0]]).unwrap();
+    turn_with(&mut b, |p| {
+        p.choices
+            .iter()
+            .find(|c| matches!(c, Choice::UseMove { .. }))
+            .unwrap_or(&p.choices[0])
+            .id()
+    });
+    assert_eq!(b.active_indices(Side::Allies), &[1]);
+    assert!(b.participants(Side::Allies)[0].hp < 1000);
+    assert_eq!(b.participants(Side::Allies)[1].hp, 1000);
+    let mut b = game(user, vec![mon("Foe", &["splash"])], 0.5);
+    turn(&mut b);
+    assert!(b.participants(Side::Allies)[0].last_move_failed);
 }
