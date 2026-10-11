@@ -1,9 +1,9 @@
 # Wilds battle engine
 
 `wilds-battle-engine` is the Rust battle simulation. Move definitions are loaded
-from Lua; `MoveCatalog::builtin()` embeds the 750 files under `moves/`,
+from Lua; `MoveCatalog::builtin()` embeds the 751 files under `moves/`,
 and `MoveCatalog::from_directory(path)` reads them from disk at runtime.
-Both catalogs also include the system move Struggle, for 751 moves in total.
+Both catalogs also include the system move Struggle, for 752 moves in total.
 The [move catalog](moves/README.md) includes 538 entries from the Saved moves sheet,
 plus support moves, additional local JSON moves and the original moves outside the sheet. Its manifest
 records the 34 excluded Z/Max Moves. Files use canonical slugs and source display
@@ -223,6 +223,7 @@ before turn-start hooks; capped changes and resetting stages do not trigger them
 | `ctx:consume_item(who, eaten)` | Removes a held item; pass false for `eaten` to spend a berry without enabling Belch. It records it in `who.consumed_items` and `who.last_consumed_item`, and returns its ID (or nil). Taking an item does not record consumption. |
 | `who.last_move_type` | Actual type of the last attempted move, including Weather Ball and other dynamic damage types; cleared on withdrawal. |
 | `who.team.roster` | The complete read-only party, including fainted members; `team.pokemon` continues to contain living members. |
+| `ctx:instruct(who)` | Queues an immediate extra action using the target's previous move and target slot. It spends PP, runs status checks and preserves the original pending action; turn-end effects still run once. Lua checks move eligibility. |
 | `ctx:call_move(id, target)` | Executes another catalog move immediately with its targeting, hit checks and effects, spending only the caller's PP. An omitted target is selected by the engine; nesting is bounded. |
 | `ctx:prepare_replacement_heal(who, restore_pp)` | Reserves full healing and status curing for a slot, with optional PP restoration. Requires a living bench member, activates before entry hazards, and remains pending through a healthy entrant. |
 | `Rule.Snatch {moves={...}}` | Steals the next eligible move or one flagged `snatch`, using the recipient's stats and side without spending their PP. The fastest waiting snatcher wins, and a stolen move cannot be stolen again. |

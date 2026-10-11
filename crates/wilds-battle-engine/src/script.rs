@@ -1443,6 +1443,7 @@ impl Battle {
                 frame.failed |= !success;
                 Value::Boolean(success)
             }
+            ScriptOperation::Instruct(who) => Value::Boolean(self.instruct(who)),
             ScriptOperation::MoveIds => {
                 let mut ids: Vec<_> = self.catalog.ids().collect();
                 ids.sort_unstable();

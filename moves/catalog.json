@@ -6651,6 +6651,17 @@
       "limitations": []
     },
     {
+      "id": 689,
+      "slug": "instruct",
+      "name": "Instruct",
+      "sheet_row": null,
+      "runtime_id": "instruct",
+      "file": "moves/instruct.lua",
+      "status": "implemented",
+      "limitations": [],
+      "parameter_source": "https://pokeapi.co/api/v2/move/689/"
+    },
+    {
       "id": 690,
       "slug": "beak-blast",
       "name": "Beak Blast",
@@ -8172,7 +8183,8 @@
       "lunar-dance",
       "future-sight",
       "doom-desire",
-      "snatch"
+      "snatch",
+      "instruct"
     ]
   }
 }

@@ -7219,3 +7219,92 @@ fn snatch_does_not_steal_geomancy() {
     assert_eq!(b.participants(Side::Allies)[0].stage(Stat::SpAttack), 0);
     assert_eq!(b.participants(Side::Foes)[0].stage(Stat::SpAttack), 2);
 }
+
+#[test]
+fn instruct_repeats_before_or_after_the_normal_action_with_pp_and_one_residual() {
+    for speed in [50, 200] {
+        let mut foe = mon("Foe", &["pound"]);
+        foe.speed = speed;
+        foe.status = Some(wilds_battle_engine::Status::Poisoned);
+        foe.substitute_hp = 100;
+        let mut b = game(mon("User", &["splash", "instruct"]), vec![foe], 0.5);
+        turn(&mut b);
+        let first_damage = 1000 - b.participants(Side::Allies)[0].hp;
+        let events = turn_with(&mut b, |p| choose_move(p, "instruct", "pound"));
+        assert_eq!(1000 - b.participants(Side::Allies)[0].hp, 3 * first_damage);
+        assert_eq!(b.participants(Side::Foes)[0].move_pp["pound"], 32);
+        assert_eq!(b.participants(Side::Foes)[0].hp, 750);
+        assert_eq!(
+            used_names(&events)
+                .iter()
+                .filter(|&&name| name == "Foe")
+                .count(),
+            2
+        );
+    }
+}
+#[test]
+fn instruct_reuses_the_previous_target_slot_in_doubles() {
+    let mut foe = mon("Foe", &["pound", "splash"]);
+    foe.speed = 50;
+    let mut b = Battle::with_rng(
+        Fixed(0.5),
+        [
+            vec![
+                mon("Instructor", &["splash", "instruct"]),
+                mon("Ally", &["splash"]),
+            ],
+            vec![foe],
+        ],
+        MoveCatalog::builtin().unwrap(),
+    )
+    .unwrap();
+    turn_with(&mut b, |p| {
+        p.choices.iter().find(|c| matches!(c, Choice::UseMove {move_id,target,..} if if p.actor.side == Side::Foes { move_id == "pound" && target.side == Side::Allies && target.index == 1 } else { move_id == "splash" })).unwrap().id()
+    });
+    let damage = 1000 - b.participants(Side::Allies)[1].hp;
+    turn_with(&mut b, |p| {
+        p.choices.iter().find(|c| matches!(c, Choice::UseMove {move_id,target,..} if if p.actor.side == Side::Allies && p.actor.index == 0 {move_id == "instruct" && target.side == Side::Foes} else {move_id == "splash"})).unwrap().id()
+    });
+    assert_eq!(b.participants(Side::Allies)[0].hp, 1000);
+    assert_eq!(1000 - b.participants(Side::Allies)[1].hp, 2 * damage);
+    assert_eq!(b.participants(Side::Foes)[0].move_pp["pound"], 33);
+    assert_eq!(b.participants(Side::Foes)[0].move_pp["splash"], 19);
+}
+#[test]
+fn instruct_checks_history_forbidden_moves_exhausted_pp_and_protect() {
+    for (last, pp, response) in [
+        (None, 35, "splash"),
+        (Some("instruct"), 15, "splash"),
+        (Some("solar_beam"), 10, "splash"),
+        (Some("pound"), 0, "splash"),
+        (Some("pound"), 35, "protect"),
+    ] {
+        let mut foe = mon("Foe", &["pound", "splash", "protect"]);
+        foe.speed = 50;
+        foe.last_used = last.map(str::to_owned);
+        foe.move_pp.insert("pound".into(), pp);
+        let mut b = game(mon("User", &["instruct"]), vec![foe], 0.5);
+        turn_with(&mut b, |p| choose_move(p, "instruct", response));
+        assert_eq!(b.participants(Side::Allies)[0].hp, 1000);
+        assert!(b.participants(Side::Allies)[0].last_move_failed);
+    }
+}
+#[test]
+fn instructed_moves_still_check_sleep_and_do_not_spend_pp_when_asleep() {
+    let mut foe = mon("Foe", &["pound", "rest"]);
+    foe.speed = 50;
+    foe.hp = 500;
+    let mut b = game(mon("User", &["splash", "instruct"]), vec![foe], 0.5);
+    turn_with(&mut b, |p| choose_move(p, "splash", "rest"));
+    let events = turn_with(&mut b, |p| choose_move(p, "instruct", "pound"));
+    assert_eq!(b.participants(Side::Foes)[0].move_pp["rest"], 4);
+    assert_eq!(b.participants(Side::Foes)[0].move_pp["pound"], 35);
+    assert_eq!(
+        events
+            .iter()
+            .filter(|e| matches!(e,BattleEvent::Message(s) if s.contains("fast asleep")))
+            .count(),
+        2
+    );
+}

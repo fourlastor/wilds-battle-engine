@@ -136,6 +136,7 @@ impl Battle {
         outgoing.stats_lowered_this_turn = false;
         outgoing.moves_used.clear();
         outgoing.last_used = None;
+        outgoing.last_move_target = None;
         outgoing.last_move_type = None;
         outgoing.last_move_failed = false;
         outgoing.streak_move = None;

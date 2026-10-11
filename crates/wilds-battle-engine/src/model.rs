@@ -594,6 +594,7 @@ pub struct Pokemon {
     pub moves_used: BTreeSet<String>,
     /// The move it last tried to use, whatever came of it.
     pub last_used: Option<String>,
+    pub(crate) last_move_target: Option<(Side, usize)>,
     /// The actual type of the last attempted move, including dynamic type changes.
     pub last_move_type: Option<PokemonType>,
     pub last_move_failed: bool,
@@ -673,6 +674,7 @@ impl Pokemon {
             last_hit: None,
             moves_used: BTreeSet::new(),
             last_used: None,
+            last_move_target: None,
             last_move_type: None,
             last_move_failed: false,
             streak_move: None,

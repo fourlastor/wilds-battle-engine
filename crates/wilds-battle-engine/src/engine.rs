@@ -874,6 +874,53 @@ impl Battle {
         self.turn_queue = queue;
     }
 
+    fn complete_slot(&mut self, side: Side, position: usize) {
+        if !self.completed_slots.contains(&(side, position)) {
+            self.completed_slots.push((side, position));
+        }
+    }
+
+    pub(crate) fn instruct(&mut self, actor: ParticipantId) -> bool {
+        let Some(position) = self.position(actor) else {
+            return false;
+        };
+        let pokemon = self.get(actor);
+        if pokemon.hp == 0 || pokemon.recharging {
+            return false;
+        }
+        let Some(id) = pokemon.last_used.clone() else {
+            return false;
+        };
+        if pokemon.move_pp.get(&id) == Some(&0) {
+            return false;
+        }
+        let Some(spec) = self.catalog.get(&id) else {
+            return false;
+        };
+        let (side, target_position) = pokemon.last_move_target.unwrap_or((actor.side, position));
+        let Some(&index) = self.active[side.index()].get(target_position) else {
+            return false;
+        };
+        let entry = QueuedAction {
+            actor,
+            position,
+            action: SelectedAction::Move(MoveAction {
+                forced: false,
+                move_id: id,
+                target: ParticipantId { side, index },
+                target_position,
+            }),
+            priority: spec.priority,
+            speed: self.action_speed(actor),
+            tie: 0,
+            custap: false,
+            promoted: true,
+            postponed: false,
+        };
+        self.turn_queue.push_front(entry);
+        true
+    }
+
     fn resume_turn(&mut self, events: &mut Vec<BattleEvent>) -> Result<(), BattleError> {
         self.refresh_pending_speed();
         while let Some(entry) = self.turn_queue.pop_front() {
@@ -892,7 +939,7 @@ impl Battle {
             self.hit_reactions
                 .retain(|reaction| reaction.owner != actor);
             if !self.is_active(actor) {
-                self.completed_slots.push((actor.side, entry.position));
+                self.complete_slot(actor.side, entry.position);
                 continue;
             }
             if !matches!(choice, SelectedAction::Switch(_)) && self.get(actor).carried_by.is_none()
@@ -921,8 +968,7 @@ impl Battle {
             }
             self.update_berries(events);
             self.get_mut(actor).acted = true;
-            self.completed_slots
-                .push((actor.side, self.position(actor).unwrap_or(entry.position)));
+            self.complete_slot(actor.side, self.position(actor).unwrap_or(entry.position));
             self.resolve_outcome(events);
             self.refresh_pending_speed();
             if !self.hurry.is_empty() {
@@ -1377,6 +1423,7 @@ impl Battle {
         if !called {
             let pokemon = self.get_mut(actor);
             pokemon.last_used = Some(spec.id.clone());
+            pokemon.last_move_target = Some((choice.target.side, choice.target_position));
             pokemon.moves_used.insert(spec.id.clone());
         }
         self.current_move = Some(spec.id.clone());
@@ -2859,8 +2906,7 @@ impl Battle {
             result?;
             self.update_berries(events);
             self.get_mut(entry.actor).acted = true;
-            self.completed_slots
-                .push((entry.actor.side, entry.position));
+            self.complete_slot(entry.actor.side, entry.position);
             self.resolve_outcome(events);
         }
         Ok(())
