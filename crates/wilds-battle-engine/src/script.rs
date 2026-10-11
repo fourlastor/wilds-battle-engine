@@ -1258,6 +1258,8 @@ impl Battle {
             || (status == Status::Asleep
                 && (self.has_ability(who, "insomnia") || self.has_ability(who, "vitalspirit")))
             || self.has_ability(who, "comatose")
+            || self.status_ability_immunity(who, status)
+            || (status == Status::Frozen && self.status_sun_active())
     }
 
     /// Gives `who` a status the way `Effect::Status` does. Returns whether it took.

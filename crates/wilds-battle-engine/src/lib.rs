@@ -14,6 +14,7 @@ mod moves;
 mod rng;
 mod script;
 mod slots;
+mod statuses;
 mod substitute;
 mod switching;
 mod transform;

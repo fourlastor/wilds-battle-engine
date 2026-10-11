@@ -17,6 +17,6 @@ move.pp = 5
 move.accuracy = 1
 move.priority = 0
 move.target = Target.Selected
-move.flags = {}
+move.flags = {"thaw_requires_fire"}
 move.usable_while_frozen = true
 return move

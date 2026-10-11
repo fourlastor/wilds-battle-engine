@@ -1331,24 +1331,15 @@ impl Battle {
             .script_continuation
             .as_ref()
             .is_some_and(|lock| lock.move_id == spec.id);
+        let self_thaw = spec.usable_while_frozen
+            && (!spec.has_flag("thaw_requires_fire")
+                || self.types_of(actor).contains(&PokemonType::Fire));
         if !called {
-            if self.get(actor).status == Some(Status::Frozen) && spec.usable_while_frozen {
-                self.get_mut(actor).status = None;
-                events.push(BattleEvent::Message(format!("{user_name} thawed out!")));
-                events.push(BattleEvent::Status {
-                    target: actor,
-                    status: None,
-                });
-            }
             let status = self.get(actor).status;
             match status {
+                Some(Status::Frozen) if self_thaw => {}
                 Some(Status::Frozen) if self.rng.chance(0.2) => {
-                    self.get_mut(actor).status = None;
-                    events.push(BattleEvent::Message(format!("{user_name} thawed out!")));
-                    events.push(BattleEvent::Status {
-                        target: actor,
-                        status: None,
-                    });
+                    self.thaw(actor, events);
                 }
                 Some(Status::Frozen) => {
                     events.push(BattleEvent::Message(format!(
@@ -1429,6 +1420,9 @@ impl Battle {
             self.move_failed = true;
             self.clear_consecutive(actor);
             return Ok(true);
+        }
+        if !called && self_thaw {
+            self.thaw(actor, events);
         }
         if !called {
             let pokemon = self.get_mut(actor);
@@ -2662,6 +2656,9 @@ impl Battle {
             self.damage(target, amount, events);
         }
         let lost = before - self.get(target).hp;
+        if lost > 0 && meta.move_type == PokemonType::Fire && meta.category != Category::Status {
+            self.thaw(target, events);
+        }
         self.item_hits.push((actor, target, meta.clone()));
         if !meta.defer_items {
             self.berry_hit(actor, target, meta, events);

@@ -58,6 +58,8 @@ Flying targets are carried without taking drop damage, targets at least 200 kg
 cannot be lifted, and Power Herb does not skip the carry turn.
 These definitions use the current engine's general damage, status and rounding rules;
 the coverage count does not imply full official battle parity.
+The [Sword/Shield status audit](status-rules.md) records status rules which
+supersede the original PokeWilds behavior and their regression coverage.
 
 Stockpile stores up to three charges and counts each successful Defense and Special
 Defense change, including stat-cap cases. Contrary and Simple modify both the

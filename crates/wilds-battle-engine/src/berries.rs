@@ -278,6 +278,7 @@ impl Battle {
     }
 
     pub(crate) fn update_berries(&mut self, events: &mut Vec<BattleEvent>) {
+        self.update_status_abilities(events);
         for who in self.actors() {
             let p = self.get(who);
             let Some(item) = p.item.as_deref() else {

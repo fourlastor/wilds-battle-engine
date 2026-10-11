@@ -6,6 +6,7 @@ local move = {effects = {
   {kind = Effect.Status, status = Status.Burned, chance = 0.1}
 }}
 
+move.usable_while_frozen = true
 move.id = "pyro-ball"
 move.name = "Pyro Ball"
 move.type = Type.Fire
