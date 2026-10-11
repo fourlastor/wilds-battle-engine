@@ -1363,6 +1363,10 @@ impl Battle {
                 frame.failed = true;
                 return Ok(Flow::Stop);
             }
+            ScriptOperation::Succeed => {
+                frame.any_hit = true;
+                Value::Nil
+            }
             ScriptOperation::FaintUser => {
                 let remaining = self.get(actor).hp;
                 self.damage(actor, remaining, events);

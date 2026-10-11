@@ -2078,3 +2078,26 @@ fn sappy_seed_can_be_reflected_by_magic_bounce() {
             .any(|c| c.name == "leech_seed")
     );
 }
+
+#[test]
+fn corrosive_gas_removes_adjacent_items_but_respects_protect_and_sticky_hold() {
+    let mut user = mon("User", &["corrosive-gas"]);
+    user.item = Some("power-herb".into());
+    let mut open = mon("Open", &["splash"]);
+    open.item = Some("power-herb".into());
+    let mut protected = mon("Protected", &["protect"]);
+    protected.item = Some("power-herb".into());
+    let mut b = game(user.clone(), vec![open, protected], 0.5);
+    turn(&mut b);
+    assert!(b.participants(Side::Foes)[0].item.is_none());
+    assert!(b.participants(Side::Foes)[1].item.is_some());
+    assert!(b.participants(Side::Allies)[0].item.is_some());
+    assert!(!b.participants(Side::Allies)[0].last_move_failed);
+    let mut sticky = mon("Sticky", &["splash"]);
+    sticky.ability = Some("sticky-hold".into());
+    sticky.item = Some("power-herb".into());
+    let mut b = game(user, vec![sticky], 0.5);
+    turn(&mut b);
+    assert!(b.participants(Side::Foes)[0].item.is_some());
+    assert!(b.participants(Side::Allies)[0].last_move_failed);
+}

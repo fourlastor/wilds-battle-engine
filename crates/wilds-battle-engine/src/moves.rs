@@ -213,6 +213,7 @@ pub(crate) enum ScriptOperation {
     Recharge,
     Substitute,
     Fail,
+    Succeed,
     ForceMove {
         total_turns: u8,
         target_policy: ContinuationTarget,
@@ -967,6 +968,7 @@ fn parse_op(name: &str, args: &[Value]) -> mlua::Result<ScriptOperation> {
                 min_target_hp: options.whole("min_target_hp", 0.0, 65535.0)?.unwrap_or(0.0) as u16,
             }
         }
+        "succeed" => ScriptOperation::Succeed,
         "redirect_target" => ScriptOperation::RedirectTarget { who: who(0)? },
         "try_hit" => ScriptOperation::TryHit {
             who: given(0).map(|value| pokemon_of(value, name)).transpose()?,

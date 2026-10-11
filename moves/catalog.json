@@ -6416,6 +6416,17 @@
       "limitations": []
     },
     {
+      "id": 810,
+      "slug": "corrosive-gas",
+      "name": "Corrosive Gas",
+      "sheet_row": null,
+      "runtime_id": "corrosive-gas",
+      "file": "moves/corrosive-gas.lua",
+      "status": "implemented",
+      "limitations": [],
+      "parameter_source": "https://pokeapi.co/api/v2/move/810/"
+    },
+    {
       "id": 811,
       "slug": "coaching",
       "name": "Coaching",
@@ -6960,7 +6971,8 @@
       "throat-chop",
       "flower-shield",
       "memento",
-      "sappy-seed"
+      "sappy-seed",
+      "corrosive-gas"
     ]
   }
 }
