@@ -2364,3 +2364,23 @@ fn wonder_skin_caps_status_accuracy_but_not_always_hit_moves() {
         assert_eq!(hit, expected, "{move_id}/{attacker_ability}/{dice}");
     }
 }
+
+#[test]
+fn poison_touch_poisons_contact_targets_and_respects_shield_dust() {
+    for (move_id, target_ability, dice, suppressed, expected) in [
+        ("tackle", "", 0.2, false, true),
+        ("tackle", "", 0.4, false, false),
+        ("swift", "", 0.2, false, false),
+        ("tackle", "shield-dust", 0.2, false, false),
+        ("tackle", "", 0.2, true, false),
+    ] {
+        let mut user = mon("User", &[move_id]);
+        user.ability = Some("poison-touch".into());
+        user.ability_suppressed = suppressed;
+        let mut target = mon("Target", &["splash"]);
+        target.ability = Some(target_ability.into());
+        let mut battle = game(user, target, dice);
+        turn(&mut battle, move_id, "splash");
+        assert_eq!(foe(&battle).status, expected.then_some(Status::Poisoned));
+    }
+}

@@ -203,6 +203,30 @@ impl Battle {
         }
     }
 
+    pub(crate) fn ability_attacking_hit(
+        &mut self,
+        target: ParticipantId,
+        hit: &crate::model::HitInfo,
+        events: &mut Vec<BattleEvent>,
+    ) {
+        if hit.damage > 0
+            && hit.contact
+            && self.has_ability(hit.attacker, "poisontouch")
+            && !self.has_ability(target, "shielddust")
+            && self.rng.chance(0.3)
+        {
+            self.inflict_status(
+                hit.attacker,
+                target,
+                crate::model::AppliedStatus::Poisoned,
+                false,
+                crate::model::PokemonType::None,
+                false,
+                events,
+            );
+        }
+    }
+
     /// Weather keeps its timer while its battle effects are suppressed.
     pub(crate) fn effective_weather(&self) -> Option<crate::model::WeatherKind> {
         if self

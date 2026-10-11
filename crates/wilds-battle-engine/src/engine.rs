@@ -2865,6 +2865,7 @@ impl Battle {
             self.change_stat(target, Stat::Attack, 12, events);
         }
         self.ability_damaging_hit(target, &hit_ability, &hit, events);
+        self.ability_attacking_hit(target, &hit, events);
         for reaction in reactions {
             let triggers = if reaction.contact_only {
                 meta.contact

@@ -141,7 +141,7 @@ id,ability,status,verification
 140,telepathy,IMPLEMENTED,Source inventory; existing tests only
 141,moody,MISSING,No native battle behavior
 142,overcoat,IMPLEMENTED,ability_rules::overcoat_prevents_sand_and_hail_damage_only_while_active
-143,poison-touch,MISSING,No native battle behavior
+143,poison-touch,IMPLEMENTED,ability_rules::poison_touch_poisons_contact_targets_and_respects_shield_dust
 144,regenerator,IMPLEMENTED,Source inventory; existing tests only
 145,big-pecks,IMPLEMENTED,ability_rules::big_pecks_blocks_external_defense_drops_only
 146,sand-rush,IMPLEMENTED,ability_rules::sand_rush_doubles_speed_and_prevents_sandstorm_damage
