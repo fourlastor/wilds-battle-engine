@@ -445,6 +445,7 @@ impl Battle {
     ) -> ParticipantId {
         if spec.has_flag("ignore_redirection")
             || self.has_ability(actor, "stalwart")
+            || self.has_ability(actor, "propellertail")
             || !matches!(
                 self.move_target_kind(actor, spec),
                 Target::Selected | Target::AnyOther | Target::UserOrAlly | Target::RandomOpponent

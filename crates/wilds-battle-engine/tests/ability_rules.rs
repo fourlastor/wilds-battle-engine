@@ -2868,3 +2868,8 @@ fn check_redirection_bypass(ability: &str) {
 fn stalwart_ignores_redirection_without_ignoring_type_absorption() {
     check_redirection_bypass("stalwart");
 }
+
+#[test]
+fn propeller_tail_ignores_redirection_without_ignoring_type_absorption() {
+    check_redirection_bypass("propeller-tail");
+}

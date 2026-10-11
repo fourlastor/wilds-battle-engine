@@ -237,7 +237,7 @@ id,ability,status,verification
 236,libero,MISSING,No native battle behavior
 237,ball-fetch,MISSING,No native battle behavior
 238,cotton-down,IMPLEMENTED,ability_rules::cotton_down_lowers_every_other_active_pokemons_speed
-239,propeller-tail,MISSING,No native battle behavior
+239,propeller-tail,IMPLEMENTED,ability_rules::propeller_tail_ignores_redirection_without_ignoring_type_absorption
 240,mirror-armor,IMPLEMENTED,ability_rules::mirror_armor_reflects_stat_drops_once_and_respects_mold_breaker
 241,gulp-missile,MISSING,No native battle behavior
 242,stalwart,IMPLEMENTED,ability_rules::stalwart_ignores_redirection_without_ignoring_type_absorption
