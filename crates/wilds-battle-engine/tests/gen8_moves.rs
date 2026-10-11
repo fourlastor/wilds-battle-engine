@@ -4270,3 +4270,49 @@ fn electrify_converts_pending_moves_including_dynamic_types_and_expires_after_th
         assert!(b.participants(Side::Allies)[0].last_move_failed);
     }
 }
+
+#[test]
+fn magic_coat_reflects_status_once_even_against_mold_breaker_and_expires() {
+    use wilds_battle_engine::Status;
+    for ability in [None, Some("mold-breaker"), Some("magic-bounce")] {
+        let mut foe = mon("Foe", &["toxic"]);
+        foe.ability = ability.map(str::to_owned);
+        let mut b = game(mon("User", &["magic-coat", "splash"]), vec![foe], 0.5);
+        turn(&mut b);
+        assert_eq!(b.participants(Side::Allies)[0].status, None);
+        assert_eq!(
+            b.participants(Side::Foes)[0].status,
+            Some(Status::BadlyPoisoned)
+        );
+        assert_eq!(b.participants(Side::Allies)[0].move_pp["magic-coat"], 14);
+        assert_eq!(b.participants(Side::Foes)[0].move_pp["toxic"], 9);
+        turn_with(&mut b, |p| choose_move(p, "splash", "toxic"));
+        assert_eq!(
+            b.participants(Side::Allies)[0].status,
+            Some(Status::BadlyPoisoned)
+        );
+    }
+}
+
+#[test]
+fn magic_coat_reflects_side_hazards_without_stopping_attacks() {
+    let mut b = game(
+        mon("User", &["magic-coat"]),
+        vec![mon("Foe", &["spikes"])],
+        0.5,
+    );
+    turn(&mut b);
+    assert!(b.side_conditions(Side::Allies).is_empty());
+    assert!(
+        b.side_conditions(Side::Foes)
+            .iter()
+            .any(|c| c.name == "spikes")
+    );
+    let mut b = game(
+        mon("User", &["magic-coat"]),
+        vec![mon("Foe", &["pound"])],
+        0.5,
+    );
+    turn(&mut b);
+    assert!(b.participants(Side::Allies)[0].hp < 1000);
+}

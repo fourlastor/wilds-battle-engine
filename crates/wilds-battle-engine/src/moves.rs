@@ -836,7 +836,8 @@ fn rule_of(value: &Value) -> mlua::Result<Rule> {
         RuleKind::StatMultiplier => &["kind", "stat", "factor"],
         RuleKind::BlockStatus => &["kind", "statuses", "confusion"],
         RuleKind::BlockMoves => &["kind", "flags", "message"],
-        RuleKind::SwapDefenses
+        RuleKind::ReflectMoves
+        | RuleKind::SwapDefenses
         | RuleKind::ReverseSpeed
         | RuleKind::FaintOnExpiry
         | RuleKind::NoRepeat
@@ -896,6 +897,7 @@ fn rule_of(value: &Value) -> mlua::Result<Rule> {
             stages: whole(&required("stages")?, "residual stages", -12.0, 12.0)? as i8,
             source: pokemon_of(&required("by")?, "residual source")?,
         },
+        RuleKind::ReflectMoves => Rule::ReflectMoves,
         RuleKind::SwapDefenses => Rule::SwapDefenses,
         RuleKind::ReverseSpeed => Rule::ReverseSpeed,
         RuleKind::FaintOnExpiry => Rule::FaintOnExpiry,

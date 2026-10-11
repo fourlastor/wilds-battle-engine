@@ -2602,6 +2602,17 @@
       "limitations": []
     },
     {
+      "id": 277,
+      "slug": "magic-coat",
+      "name": "Magic Coat",
+      "sheet_row": null,
+      "runtime_id": "magic-coat",
+      "file": "moves/magic-coat.lua",
+      "status": "implemented",
+      "limitations": [],
+      "parameter_source": "https://pokeapi.co/api/v2/move/277/"
+    },
+    {
       "id": 278,
       "slug": "recycle",
       "name": "Recycle",
@@ -7536,7 +7547,8 @@
       "wonder-room",
       "ally-switch",
       "ion-deluge",
-      "electrify"
+      "electrify",
+      "magic-coat"
     ]
   }
 }

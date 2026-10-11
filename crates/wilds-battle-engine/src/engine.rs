@@ -2558,7 +2558,10 @@ impl Battle {
         if self.reflecting
             || actor == reflector
             || !spec.has_flag("reflectable")
-            || !self.has_ability(reflector, "magicbounce")
+            || !(self.has_ability(reflector, "magicbounce")
+                || self
+                    .rules(reflector)
+                    .any(|r| matches!(r, Rule::ReflectMoves)))
             || self.get(reflector).hidden().is_some()
             || (self.get(reflector).protected && !spec.has_flag("hazard"))
         {
