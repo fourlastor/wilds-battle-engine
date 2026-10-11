@@ -294,3 +294,8 @@ fn infestation_damages_and_binds_only_after_a_reaching_hit() {
 fn snap_trap_damages_and_binds_only_after_a_reaching_hit() {
     check_partial_trap("snap-trap", 35, "Grass", "Physical");
 }
+
+#[test]
+fn thunder_cage_damages_and_binds_only_after_a_reaching_hit() {
+    check_partial_trap("thunder-cage", 80, "Electric", "Special");
+}
