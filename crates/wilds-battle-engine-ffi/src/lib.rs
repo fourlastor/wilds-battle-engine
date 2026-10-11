@@ -41,6 +41,7 @@ struct SetupPokemon {
     moves: Vec<String>,
     #[serde(default)]
     species_id: u32,
+    base_attack: Option<u16>,
     #[serde(default = "level")]
     level: u8,
     #[serde(default = "hundred")]
@@ -96,6 +97,7 @@ struct SetupForm {
 fn pokemon(config: SetupPokemon) -> Result<Pokemon, String> {
     let mut value = Pokemon::new(config.name, config.moves);
     value.species_id = config.species_id;
+    value.base_attack = config.base_attack;
     value.nature_down = config
         .nature_down
         .as_deref()
@@ -384,7 +386,7 @@ pub fn conditions(values: &[Condition]) -> Value {
         .collect()
 }
 fn snapshot(value: &Pokemon) -> Value {
-    json!({"name":value.name, "species_id":value.species_id, "form":value.form,
+    json!({"name":value.name, "species_id":value.species_id, "base_attack":value.base_attack, "form":value.form,
         "attack":value.attack, "defense":value.defense, "sp_attack":value.sp_attack,
         "sp_defense":value.sp_defense, "speed":value.speed, "weight":value.weight,
         "hp":value.hp, "max_hp":value.max_hp,
@@ -445,6 +447,18 @@ fn event(value: &BattleEvent) -> Value {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn setup_keeps_species_base_attack_separate_from_computed_attack() {
+        let config = serde_json::from_value(
+            json!({"name":"Party member", "moves":["beat-up"], "attack":300, "base_attack":55}),
+        )
+        .unwrap();
+        let value = pokemon(config).unwrap();
+        assert_eq!(value.attack, 300);
+        assert_eq!(value.base_attack, Some(55));
+        assert_eq!(snapshot(&value)["base_attack"], 55);
+    }
 
     #[test]
     fn c_api_exposes_bench_replacement_choices_and_switch_events() {

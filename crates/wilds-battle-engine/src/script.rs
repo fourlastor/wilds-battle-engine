@@ -122,6 +122,7 @@ impl Battle {
         table.raw_set("name", pokemon.name.as_str())?;
         table.raw_set("species", pokemon.species.as_str())?;
         table.raw_set("species_id", pokemon.species_id)?;
+        table.raw_set("base_attack", pokemon.base_attack)?;
         table.raw_set("form", pokemon.form.as_deref())?;
         table.raw_set("level", pokemon.level)?;
         table.raw_set("hp", pokemon.hp)?;
@@ -1076,10 +1077,19 @@ impl Battle {
             .with_contact(options.contact);
         let hits = self.rng.range(min, max);
         let mut details = Vec::new();
-        for _ in 0..hits {
+        for index in 0..hits {
             if self.get(actor).hp == 0 || self.get(recipient).hp == 0 {
                 break;
             }
+            let attack = self.attack(
+                frame,
+                options
+                    .powers
+                    .get(usize::from(index))
+                    .copied()
+                    .unwrap_or(power),
+                options,
+            );
             let mut hit_details = Vec::new();
             if let Some(roll) = self.calculate(actor, recipient, &attack, &mut hit_details) {
                 let actual = roll.amount.min(self.move_damage_limit(

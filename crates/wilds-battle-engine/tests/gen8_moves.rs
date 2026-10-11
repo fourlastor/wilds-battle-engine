@@ -6721,3 +6721,73 @@ fn encore_preserves_the_priority_of_the_originally_selected_action() {
     );
     assert_eq!(b.participants(Side::Foes)[0].move_pp["dragon-tail"], 10);
 }
+
+#[test]
+fn beat_up_uses_each_healthy_members_species_base_attack_and_the_users_battle_stats() {
+    use wilds_battle_engine::Status;
+    let mut user = mon("User", &["beat-up"]);
+    user.base_attack = Some(55);
+    user.attack = 200;
+    user.status = Some(Status::Paralyzed);
+    let mut healthy = mon("Healthy", &["splash"]);
+    healthy.base_attack = Some(120);
+    healthy.attack = 1;
+    let mut sick = mon("Sick", &["splash"]);
+    sick.status = Some(Status::Burned);
+    let mut fainted = mon("Fainted", &["splash"]);
+    fainted.hp = 0;
+    let foe = mon("Foe", &["splash"]);
+    let expected = control_damage(10, "Dark", "Physical", user.clone(), foe.clone())
+        + control_damage(17, "Dark", "Physical", user.clone(), foe.clone());
+    let mut b = Battle::with_rng(
+        Fixed(0.5),
+        [vec![user, healthy, sick, fainted], vec![foe]],
+        MoveCatalog::builtin().unwrap(),
+    )
+    .unwrap();
+    b.set_active([vec![0], vec![0]]).unwrap();
+    let events = turn(&mut b);
+    assert_eq!(1000 - b.participants(Side::Foes)[0].hp, expected);
+    assert!(
+        events
+            .iter()
+            .any(|e| matches!(e,BattleEvent::Message(text) if text=="Hit 2 times!"))
+    );
+}
+#[test]
+fn beat_up_breaks_a_substitute_and_continues_hitting_the_target() {
+    let mut user = mon("User", &["beat-up"]);
+    user.base_attack = Some(100);
+    let mut bench = mon("Bench", &["splash"]);
+    bench.base_attack = Some(100);
+    let mut foe = mon("Foe", &["splash"]);
+    foe.substitute_hp = 1;
+    let mut b = Battle::with_rng(
+        Fixed(0.5),
+        [vec![user, bench], vec![foe]],
+        MoveCatalog::builtin().unwrap(),
+    )
+    .unwrap();
+    b.set_active([vec![0], vec![0]]).unwrap();
+    turn(&mut b);
+    assert_eq!(b.participants(Side::Foes)[0].substitute_hp, 0);
+    assert!(b.participants(Side::Foes)[0].hp < 1000);
+}
+#[test]
+fn beat_up_fails_explicitly_without_base_stats_and_respects_protection() {
+    let mut b = game(
+        mon("User", &["beat-up"]),
+        vec![mon("Foe", &["splash"])],
+        0.5,
+    );
+    let events = turn(&mut b);
+    assert!(b.participants(Side::Allies)[0].last_move_failed);
+    assert!(events.iter().any(
+        |e| matches!(e,BattleEvent::Message(text) if text.contains("requires species base Attack"))
+    ));
+    let mut user = mon("User", &["beat-up"]);
+    user.base_attack = Some(100);
+    let mut b = game(user, vec![mon("Foe", &["protect"])], 0.5);
+    turn(&mut b);
+    assert_eq!(b.participants(Side::Foes)[0].hp, 1000);
+}

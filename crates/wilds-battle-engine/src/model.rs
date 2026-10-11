@@ -501,6 +501,8 @@ pub(crate) struct AbilityState {
 #[derive(Clone, Debug)]
 pub struct Pokemon {
     pub species_id: u32,
+    /// Species base Attack of the original party member, for Beat Up; independent of battle stats.
+    pub base_attack: Option<u16>,
     pub form: Option<String>,
     pub forms: BTreeMap<String, PokemonForm>,
     /// Saved on the first temporary form change and restored when the Pokemon leaves the field.
@@ -600,6 +602,7 @@ impl Pokemon {
     pub fn new(name: impl Into<String>, moves: Vec<String>) -> Self {
         Self {
             species_id: 0,
+            base_attack: None,
             form: None,
             forms: BTreeMap::new(),
             original_form: None,

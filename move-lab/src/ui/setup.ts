@@ -59,6 +59,7 @@ export function openSetup(options: SetupOptions): void {
       const species = findSpecies(name);
       const renamed = mon.name === mon.species || !mon.name.trim();
       mon.species = species ? name : 'Custom';
+      mon.base_attack = species?.base[1];
       if (species) {
         if (renamed) mon.name = name;
         mon.types = [...species.types];
@@ -137,6 +138,16 @@ export function openSetup(options: SetupOptions): void {
           ),
           h('label', { class: 'field grow' }, 'Gender',
             select(GENDERS.map((gender): [string, string] => [gender, gender === 'Genderless' ? 'None' : gender]), mon.gender ?? 'Genderless', (value) => { mon.gender = value; }, 'Gender'),
+          ),
+          h('label', { class: 'field weight' }, 'Base Attack (Beat Up)',
+            h('input', {
+              type: 'number', class: 'in', value: String(mon.base_attack ?? findSpecies(mon.species)?.base[1] ?? ''), min: '0', max: '65535', step: '1', placeholder: 'unknown',
+              onchange: (event: Event) => {
+                const input = event.target as HTMLInputElement;
+                mon.base_attack = input.value.trim() === '' ? undefined : Math.round(clamp(Number(input.value) || 0, 0, 65535));
+                input.value = String(mon.base_attack ?? '');
+              },
+            }),
           ),
           h('label', { class: 'field weight' }, 'Weight kg',
             h('input', {

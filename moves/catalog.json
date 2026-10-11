@@ -2498,6 +2498,17 @@
       "parameter_source": "https://pokeapi.co/api/v2/move/250/"
     },
     {
+      "id": 251,
+      "slug": "beat-up",
+      "name": "Beat Up",
+      "sheet_row": null,
+      "runtime_id": "beat-up",
+      "file": "moves/beat-up.lua",
+      "status": "implemented",
+      "limitations": [],
+      "parameter_source": "https://pokeapi.co/api/v2/move/251/"
+    },
+    {
       "id": 252,
       "slug": "fake-out",
       "name": "Fake Out",
@@ -8088,7 +8099,8 @@
       "mirror-move",
       "copycat",
       "me-first",
-      "encore"
+      "encore",
+      "beat-up"
     ]
   }
 }

@@ -50,6 +50,7 @@ export interface ConditionInfo {
 }
 
 export interface EngineMon {
+  base_attack?: number | null;
   form: string | null;
   name: string;
   level: number;
@@ -142,6 +143,7 @@ export interface SetupMon {
   /** What follows is only kept for moves to read. */
   species?: string;
   species_id?: number;
+  base_attack?: number;
   form?: string;
   forms?: Record<string, { attack: number; defense: number; sp_attack: number; sp_defense: number; speed: number; types: string[]; weight?: number }>;
   gender?: string;

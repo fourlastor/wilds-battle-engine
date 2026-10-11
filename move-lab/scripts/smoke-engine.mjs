@@ -215,3 +215,21 @@ assert.ok(swap.events.some(e => e.kind === 'swap_positions' && e.a.index === 0 &
 assert.deepEqual(swap.active.allies, [1, 0]);
 engine._wbe_destroy(swapBattle);
 console.log('ok: Ally Switch exposes slot changes through wasm');
+
+const beatBattle = withStrings([JSON.stringify({
+  allies: [{name: 'User', max_hp: 1000, base_attack: 55, moves: ['beat-up']}, {name: 'Bench', max_hp: 1000, base_attack: 120, moves: ['splash']}],
+  foes: [{name: 'Foe', max_hp: 1000, moves: ['splash']}],
+  active: {allies: [0], foes: [0]},
+}), '/moves'], (json, dir) => engine._wbe_create(json, dir));
+assert.notEqual(beatBattle, 0, lastError());
+for (let i = 0; i < 2; i++) {
+  const step = JSON.parse(text(engine._wbe_advance(beatBattle)));
+  assert.ok(engine._wbe_respond(beatBattle, BigInt(step.status.prompt_id), step.status.choices[0].id));
+}
+const beat = JSON.parse(text(engine._wbe_advance(beatBattle)));
+assert.equal(beat.allies[0].base_attack, 55);
+assert.equal(beat.events.filter(e => e.kind === 'damage' && e.target.side === 'foes').length, 2);
+assert.ok(beat.foes[0].hp < 1000);
+assert.equal(JSON.parse(text(engine._mlab_state(beatBattle))).allies[1].base_attack, 120);
+engine._wbe_destroy(beatBattle);
+console.log('ok: Beat Up reads party base Attack through wasm and hits once per eligible member');

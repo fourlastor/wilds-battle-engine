@@ -12,7 +12,7 @@ import { CATEGORIES, STYLE_COLORS, toolboxDefinition } from '../blocks/toolbox.t
 import { BUILTIN_FILES } from '../data/builtin.ts';
 import { Engine } from '../engine/engine.ts';
 import type { EngineChoice, EngineSetup, MoveInfo, SetupMon } from '../engine/engine.ts';
-import { DEFAULT_WEIGHT } from '../data/species.ts';
+import { DEFAULT_WEIGHT, findSpecies } from '../data/species.ts';
 import { HIDING_PLACES, CATEGORIES as MOVE_CATEGORIES, TYPES, TYPE_COLORS, clamp, slug, uid } from '../model.ts';
 import type { Category, MonSetup, MoveDoc } from '../model.ts';
 import { loadProject, saveProject } from '../store.ts';
@@ -696,6 +696,7 @@ class App {
         max_hp: maxHp,
         hp: clamp(mon.hp, 1, maxHp),
         attack: mon.stats.attack,
+        base_attack: mon.base_attack ?? findSpecies(mon.species)?.base[1],
         defense: mon.stats.defense,
         sp_attack: mon.stats.sp_attack,
         sp_defense: mon.stats.sp_defense,

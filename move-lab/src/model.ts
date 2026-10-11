@@ -93,6 +93,7 @@ export interface MonSetup {
   /** Things the engine only keeps for moves to read. Missing in setups saved before they existed. */
   gender?: string;
   weight?: number;
+  base_attack?: number;
   item?: string;
   ability?: string;
 }

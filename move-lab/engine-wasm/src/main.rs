@@ -116,6 +116,7 @@ fn pokemon(value: &Pokemon) -> Value {
     json!({
         "name": value.name,
         "species_id": value.species_id,
+        "base_attack": value.base_attack,
         "form": value.form,
         "level": value.level,
         "hp": value.hp,

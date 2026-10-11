@@ -156,6 +156,7 @@ pub(crate) struct HitOptions {
 
 #[derive(Clone, Debug, Default, PartialEq)]
 pub(crate) struct DamageOptions {
+    pub powers: Vec<u16>,
     pub hit: HitOptions,
     pub drain: Option<f32>,
     pub recoil: Option<f32>,
@@ -743,6 +744,7 @@ fn damage_options(value: Option<&Value>) -> mlua::Result<DamageOptions> {
             "ignore_protect",
             "ignore_evasion",
             "hits_hidden",
+            "powers",
             "drain",
             "recoil",
             "min_target_hp",
@@ -810,6 +812,7 @@ fn damage_options(value: Option<&Value>) -> mlua::Result<DamageOptions> {
     let mut hit = hit_options(&options)?;
     hit.contact = contact;
     Ok(DamageOptions {
+        powers: options.list("powers", |value, _| power_of(value))?,
         hit,
         drain: options.fraction("drain")?,
         recoil: options.fraction("recoil")?,
@@ -1176,16 +1179,22 @@ fn parse_op(name: &str, args: &[Value]) -> mlua::Result<ScriptOperation> {
             amount: floored(arg(1), "healing_hit")?,
         },
         "multi_hit" => {
-            let min = whole(arg(1), "multi_hit minimum", 1.0, 10.0)? as u8;
-            let max = whole(arg(2), "multi_hit maximum", 1.0, 10.0)? as u8;
+            let min = whole(arg(1), "multi_hit minimum", 1.0, 255.0)? as u8;
+            let max = whole(arg(2), "multi_hit maximum", 1.0, 255.0)? as u8;
             if min > max {
                 return Err(bad("multi_hit minimum exceeds maximum"));
+            }
+            let options = damage_options(given(3))?;
+            if !options.powers.is_empty()
+                && (min != max || options.powers.len() != usize::from(max))
+            {
+                return Err(bad("multi_hit powers must match a fixed hit count"));
             }
             ScriptOperation::MultiHit {
                 power: power_of(arg(0))?,
                 min,
                 max,
-                options: damage_options(given(3))?,
+                options,
             }
         }
         "direct_damage" => {
