@@ -921,3 +921,60 @@ fn final_gambit_sacrifices_user_only_on_a_successful_hit_including_substitute() 
         );
     }
 }
+
+fn check_source_trap(move_id: &str, ignores_protect: bool) {
+    use wilds_battle_engine::ParticipantId;
+    for (response, sub, ghost, expected) in [
+        ("splash", 0, false, true),
+        ("protect", 0, false, ignores_protect),
+        ("splash", 50, false, false),
+        ("splash", 0, true, false),
+    ] {
+        let mut foe = mon("Foe", &[response]);
+        foe.substitute_hp = sub;
+        if ghost {
+            foe.types = vec![PokemonType::Ghost];
+        }
+        let mut b = Battle::with_rng(
+            Fixed(0.5),
+            [
+                vec![mon("User", &[move_id]), mon("Bench", &["splash"])],
+                vec![foe, mon("Foe bench", &["splash"])],
+            ],
+            MoveCatalog::builtin().unwrap(),
+        )
+        .unwrap();
+        b.set_active([vec![0], vec![0]]).unwrap();
+        turn(&mut b);
+        let target = ParticipantId {
+            side: Side::Foes,
+            index: 0,
+        };
+        assert_eq!(
+            b.trapped(target),
+            expected,
+            "{move_id} {response} {sub} {ghost}"
+        );
+        if expected {
+            turn_with(&mut b, |p| {
+                p.choices
+                    .iter()
+                    .find(|c| {
+                        if p.actor.side == Side::Allies {
+                            matches!(c, Choice::Switch { .. })
+                        } else {
+                            matches!(c, Choice::UseMove { .. })
+                        }
+                    })
+                    .unwrap()
+                    .id()
+            });
+            assert!(!b.trapped(target));
+        }
+    }
+}
+
+#[test]
+fn spider_web_traps_until_the_source_leaves() {
+    check_source_trap("spider-web", false);
+}

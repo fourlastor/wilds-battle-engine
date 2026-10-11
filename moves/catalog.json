@@ -1598,6 +1598,17 @@
       "limitations": []
     },
     {
+      "id": 169,
+      "slug": "spider-web",
+      "name": "Spider Web",
+      "sheet_row": null,
+      "runtime_id": "spider-web",
+      "file": "moves/spider-web.lua",
+      "status": "implemented",
+      "limitations": [],
+      "parameter_source": "https://pokeapi.co/api/v2/move/169/"
+    },
+    {
       "id": 172,
       "slug": "flame-wheel",
       "name": "Flame Wheel",
@@ -6432,7 +6443,8 @@
       "psywave",
       "tri-attack",
       "endeavor",
-      "final-gambit"
+      "final-gambit",
+      "spider-web"
     ]
   }
 }
