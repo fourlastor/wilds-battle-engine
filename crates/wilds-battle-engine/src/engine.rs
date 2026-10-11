@@ -2652,7 +2652,11 @@ impl Battle {
             };
         }
         if crit {
-            damage *= 1.5;
+            damage *= if self.has_ability(actor, "sniper") {
+                2.25
+            } else {
+                1.5
+            };
         }
         let dealt = self.damage_dealt_factor(actor, attack.category, move_type);
         let taken = self.damage_taken_factor(actor, target, attack.category, move_type, crit);

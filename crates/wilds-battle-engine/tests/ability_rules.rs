@@ -1149,3 +1149,18 @@ fn super_luck_adds_a_critical_stage_but_respects_critical_immunity() {
         );
     }
 }
+
+#[test]
+fn sniper_only_boosts_critical_damage() {
+    let normal = ability_damage("frost-breath", "", "", false);
+    let boosted = ability_damage("frost-breath", "sniper", "", false);
+    assert!((f32::from(boosted) - f32::from(normal) * 1.5).abs() <= 1.0);
+    assert_eq!(
+        ability_damage("tackle", "sniper", "", false),
+        ability_damage("tackle", "", "", false)
+    );
+    assert_eq!(
+        ability_damage("frost-breath", "sniper", "battle-armor", false),
+        ability_damage("frost-breath", "", "battle-armor", false)
+    );
+}
