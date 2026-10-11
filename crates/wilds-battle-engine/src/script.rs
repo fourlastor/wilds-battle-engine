@@ -985,6 +985,7 @@ impl Battle {
             report.damage = report.damage.saturating_add(actual);
             if let Some(fraction) = options.recoil
                 && actual > 0
+                && !self.has_ability(actor, "magicguard")
             {
                 let recoil = ((f32::from(actual) * fraction).floor() as u16).max(1);
                 self.damage(actor, recoil, events);
@@ -1828,10 +1829,18 @@ impl Battle {
             }
             ScriptOperation::Hurt { who, amount } => {
                 let points = self.hp_points(who, amount, false).min(self.get(who).hp);
-                if points > 0 {
+                let lost = if points == 0 {
+                    0
+                } else if matches!(
+                    spec.id.as_str(),
+                    "belly-drum" | "curse" | "clangorous-soul" | "healing-wish" | "lunar-dance"
+                ) {
                     self.damage(who, points, events);
-                }
-                Value::Integer(i64::from(points))
+                    points
+                } else {
+                    self.indirect_damage(who, points, events)
+                };
+                Value::Integer(i64::from(lost))
             }
             ScriptOperation::SetHp { who, hp } => {
                 let pokemon = self.get_mut(who);

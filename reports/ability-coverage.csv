@@ -96,7 +96,7 @@ id,ability,status,verification
 95,quick-feet,IMPLEMENTED,Source inventory; existing tests only
 96,normalize,PARTIAL,Source inventory; existing tests only
 97,sniper,MISSING,No native battle behavior
-98,magic-guard,PARTIAL,Source inventory; existing tests only
+98,magic-guard,IMPLEMENTED,ability_rules::magic_guard_blocks_indirect_damage_but_keeps_hp_costs_and_struggle_recoil
 99,no-guard,MISSING,No native battle behavior
 100,stall,MISSING,No native battle behavior
 101,technician,MISSING,No native battle behavior

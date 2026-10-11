@@ -590,3 +590,57 @@ fn dry_skin_absorbs_status_water_and_responds_to_sun_rain_and_fire() {
         assert_eq!(foe(&battle).hp, 1000);
     }
 }
+
+#[test]
+fn magic_guard_blocks_indirect_damage_but_keeps_hp_costs_and_struggle_recoil() {
+    for attack in ["leech-seed", "sandstorm", "hail"] {
+        let mut user = mon("User", &[attack]);
+        user.hp = 500;
+        let mut target = mon("Target", &["splash"]);
+        target.ability = Some("magic-guard".into());
+        let mut battle = game(user, target, 0.5);
+        turn(&mut battle, attack, "splash");
+        assert_eq!(foe(&battle).hp, 1000);
+        if attack == "leech-seed" {
+            assert_eq!(ally(&battle).hp, 500);
+        }
+    }
+    for attack in ["double_edge", "steel-beam", "mind-blown"] {
+        let mut user = mon("User", &[attack]);
+        user.ability = Some("magic-guard".into());
+        let mut battle = game(user, mon("Target", &["splash"]), 0.5);
+        turn(&mut battle, attack, "splash");
+        assert_eq!(ally(&battle).hp, 1000, "{attack}");
+        assert!(foe(&battle).hp < 1000);
+    }
+    let mut user = mon("User", &["belly-drum"]);
+    user.ability = Some("magic-guard".into());
+    let mut battle = game(user, mon("Target", &["splash"]), 0.5);
+    turn(&mut battle, "belly-drum", "splash");
+    assert_eq!(ally(&battle).hp, 500);
+    let mut user = mon("User", &["tackle"]);
+    user.ability = Some("magic-guard".into());
+    user.move_pp.insert("tackle".into(), 0);
+    let mut battle = game(user, mon("Target", &["splash"]), 0.5);
+    turn(&mut battle, "struggle", "splash");
+    assert_eq!(ally(&battle).hp, 750);
+}
+
+#[test]
+fn magic_guard_stops_binding_and_nightmare_but_not_direct_hits() {
+    let mut target = mon("Target", &["splash"]);
+    target.ability = Some("magic-guard".into());
+    let mut battle = game(mon("User", &["wrap", "splash"]), target, 0.5);
+    turn(&mut battle, "wrap", "splash");
+    let hp = foe(&battle).hp;
+    assert!(hp < 1000);
+    turn(&mut battle, "splash", "splash");
+    assert_eq!(foe(&battle).hp, hp);
+    let mut target = mon("Target", &["splash"]);
+    target.ability = Some("magic-guard".into());
+    target.status = Some(Status::Asleep);
+    target.status_turns = 3;
+    let mut battle = game(mon("User", &["nightmare"]), target, 0.5);
+    turn(&mut battle, "nightmare", "splash");
+    assert_eq!(foe(&battle).hp, 1000);
+}

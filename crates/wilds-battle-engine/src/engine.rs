@@ -2028,6 +2028,7 @@ impl Battle {
                     events.extend(details);
                     if let Some(fraction) = recoil
                         && amount > 0
+                        && !self.has_ability(actor, "magicguard")
                     {
                         let recoil = ((amount as f32 * fraction).floor() as u16).max(1);
                         self.damage(actor, recoil, events);
@@ -2808,6 +2809,21 @@ impl Battle {
         Ok(lost)
     }
 
+    /// Residual/recoil damage is distinct from direct hits and deliberate HP costs.
+    pub(crate) fn indirect_damage(
+        &mut self,
+        target: ParticipantId,
+        amount: u16,
+        events: &mut Vec<BattleEvent>,
+    ) -> u16 {
+        if self.has_ability(target, "magicguard") {
+            return 0;
+        }
+        let before = self.get(target).hp;
+        self.damage(target, amount, events);
+        before - self.get(target).hp
+    }
+
     pub(crate) fn damage(
         &mut self,
         target: ParticipantId,
@@ -2920,7 +2936,7 @@ impl Battle {
                     "{} is hurt by {}!",
                     p.name, bound.source
                 )));
-                self.damage(id, fractional(p.max_hp, 8, 1), events);
+                self.indirect_damage(id, fractional(p.max_hp, 8, 1), events);
             }
         }
     }
@@ -2973,7 +2989,7 @@ impl Battle {
                 "{} is buffeted by the {name}!",
                 p.name
             )));
-            self.damage(*id, fractional(p.max_hp, 16, 1), events);
+            self.indirect_damage(*id, fractional(p.max_hp, 16, 1), events);
         }
     }
     pub(crate) fn resolve_outcome(&mut self, events: &mut Vec<BattleEvent>) {

@@ -926,7 +926,9 @@ impl Battle {
                         message,
                     } => {
                         let types = self.types_of(id);
-                        if except_types.iter().any(|spared| types.contains(spared)) {
+                        if self.has_ability(id, "magicguard")
+                            || except_types.iter().any(|spared| types.contains(spared))
+                        {
                             continue;
                         }
                         if let Some(message) = message {
@@ -955,6 +957,9 @@ impl Battle {
                         to,
                         message,
                     } => {
+                        if self.has_ability(id, "magicguard") {
+                            continue;
+                        }
                         let amount = share(fraction).min(self.get(id).hp);
                         if let Some(message) = message {
                             events.push(BattleEvent::Message(named(&message, &name)));
