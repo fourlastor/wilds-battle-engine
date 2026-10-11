@@ -1742,3 +1742,21 @@ fn jungle_healing_recovers_active_allies_and_cures_status_through_substitute() {
     assert_eq!(allies[2].hp, 500);
     assert_eq!(allies[2].status, Some(Status::Burned));
 }
+
+#[test]
+fn celebrate_spends_pp_and_announces_without_changing_combat_state() {
+    let mut b = game(
+        mon("User", &["celebrate"]),
+        vec![mon("Foe", &["splash"])],
+        0.5,
+    );
+    let events = turn(&mut b);
+    assert_eq!(b.participants(Side::Allies)[0].hp, 1000);
+    assert_eq!(b.participants(Side::Foes)[0].hp, 1000);
+    assert_eq!(b.participants(Side::Allies)[0].move_pp["celebrate"], 39);
+    assert!(
+        events
+            .iter()
+            .any(|e| matches!(e,BattleEvent::Message(s)if s=="Congratulations!"))
+    );
+}

@@ -5156,6 +5156,17 @@
       "limitations": []
     },
     {
+      "id": 606,
+      "slug": "celebrate",
+      "name": "Celebrate",
+      "sheet_row": null,
+      "runtime_id": "celebrate",
+      "file": "moves/celebrate.lua",
+      "status": "implemented",
+      "limitations": [],
+      "parameter_source": "https://pokeapi.co/api/v2/move/606/"
+    },
+    {
       "id": 608,
       "slug": "baby-doll-eyes",
       "name": "Baby-Doll Eyes",
@@ -6840,7 +6851,8 @@
       "acupressure",
       "heal-bell",
       "aromatherapy",
-      "jungle-healing"
+      "jungle-healing",
+      "celebrate"
     ]
   }
 }
