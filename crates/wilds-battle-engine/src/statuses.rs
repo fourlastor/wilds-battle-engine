@@ -1,6 +1,6 @@
 //! Sword/Shield status rules shared by ordinary effects and Lua moves.
 use crate::engine::Battle;
-use crate::model::{BattleEvent, ParticipantId, Status, WeatherKind};
+use crate::model::{BattleEvent, ParticipantId, Rule, Status, WeatherKind};
 
 impl Battle {
     pub(crate) fn team_status_ability(&self, who: ParticipantId, ability: &str) -> bool {
@@ -31,7 +31,9 @@ impl Battle {
                 self.has_ability(who, "immunity") || self.team_status_ability(who, "pastelveil")
             }
             Status::Paralyzed => self.has_ability(who, "limber"),
-            _ => false,
+            Status::Asleep => {
+                self.has_ability(who, "insomnia") || self.has_ability(who, "vitalspirit")
+            }
         }
     }
 
@@ -61,12 +63,36 @@ impl Battle {
 
     pub(crate) fn update_status_abilities(&mut self, events: &mut Vec<BattleEvent>) {
         for who in self.actors() {
-            if self
-                .get(who)
-                .status
-                .is_some_and(|status| self.status_ability_immunity(who, status))
-            {
+            if self.get(who).status.is_some_and(|status| {
+                self.status_ability_immunity(who, status)
+                    || (status == Status::Asleep && self.field_prevents_sleep())
+            }) {
                 self.cure_status(who, None, events);
+            }
+        }
+    }
+
+    pub(crate) fn field_prevents_sleep(&self) -> bool {
+        self.field_conditions.iter().flat_map(|c| &c.rules).any(|r|
+            matches!(r, Rule::BlockStatus {statuses, ..} if statuses.is_empty() || statuses.contains(&Status::Asleep)))
+    }
+
+    pub(crate) fn is_asleep(&self, who: ParticipantId) -> bool {
+        self.get(who).status == Some(Status::Asleep) || self.has_ability(who, "comatose")
+    }
+
+    pub(crate) fn bad_dreams_residual(&mut self, events: &mut Vec<BattleEvent>) {
+        for source in self.actors() {
+            if !self.has_ability(source, "baddreams") {
+                continue;
+            }
+            for target in self.actors() {
+                if source.side != target.side
+                    && self.is_asleep(target)
+                    && !self.has_ability(target, "magicguard")
+                {
+                    self.damage(target, (self.get(target).max_hp / 8).max(1), events);
+                }
             }
         }
     }

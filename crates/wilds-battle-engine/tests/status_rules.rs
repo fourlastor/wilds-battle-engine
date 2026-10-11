@@ -396,6 +396,167 @@ fn paralysis_checks_after_flinch_and_confusion() {
 }
 
 #[test]
+fn sleep_lasts_one_to_three_attempts_and_early_bird_can_wake_immediately() {
+    for turns in 1..=3 {
+        for early in [false, true] {
+            let mut user = mon("User", &["tackle"]);
+            user.status = Some(Status::Asleep);
+            user.status_turns = turns;
+            if early {
+                user.ability = Some("early-bird".into());
+            }
+            let mut battle = game(user, mon("Target", &["splash"]), 0.5);
+            let blocked = if early { turns / 2 } else { turns };
+            for _ in 0..blocked {
+                turn(&mut battle, "tackle", "splash");
+                assert_eq!(foe(&battle).hp, 1000);
+                assert_eq!(ally(&battle).status, Some(Status::Asleep));
+            }
+            turn(&mut battle, "tackle", "splash");
+            assert_eq!(ally(&battle).status, None);
+            assert!(foe(&battle).hp < 1000);
+        }
+    }
+}
+
+#[test]
+fn rest_sleeps_two_turns_or_one_with_early_bird() {
+    for early in [false, true] {
+        let mut user = mon("User", &["rest", "tackle"]);
+        user.hp = 500;
+        user.status = Some(Status::Poisoned);
+        if early {
+            user.ability = Some("early-bird".into());
+        }
+        let mut battle = game(user, mon("Target", &["splash"]), 0.5);
+        turn(&mut battle, "rest", "splash");
+        assert_eq!(ally(&battle).hp, 1000);
+        assert_eq!(ally(&battle).status, Some(Status::Asleep));
+        for _ in 0..if early { 1 } else { 2 } {
+            turn(&mut battle, "tackle", "splash");
+            assert_eq!(foe(&battle).hp, 1000);
+        }
+        turn(&mut battle, "tackle", "splash");
+        assert!(foe(&battle).hp < 1000);
+        assert_eq!(ally(&battle).status, None);
+    }
+}
+
+#[test]
+fn sleep_immunity_and_sweet_veil_distinguish_prevention_from_curing() {
+    for ability in ["insomnia", "vital-spirit", "sweet-veil"] {
+        let mut user = mon("User", &["rest"]);
+        user.ability = Some(ability.into());
+        user.hp = 500;
+        let mut battle = game(user.clone(), mon("Target", &["splash"]), 0.5);
+        turn(&mut battle, "rest", "splash");
+        assert_eq!(ally(&battle).hp, 500);
+        assert_eq!(ally(&battle).status, None);
+        user.status = Some(Status::Asleep);
+        user.status_turns = 3;
+        let mut battle = game(user, mon("Target", &["yawn"]), 0.5);
+        turn(&mut battle, "rest", "yawn");
+        assert_eq!(
+            ally(&battle).status,
+            (ability == "sweet-veil").then_some(Status::Asleep)
+        );
+    }
+    let mut veil = mon("Veil", &["splash"]);
+    veil.ability = Some("sweet-veil".into());
+    let mut battle = Battle::with_rng(
+        Fixed(0.5),
+        [
+            vec![mon("User", &["yawn", "spore"])],
+            vec![mon("Target", &["splash"]), veil],
+        ],
+        MoveCatalog::builtin().unwrap(),
+    )
+    .unwrap();
+    turn(&mut battle, "yawn", "splash");
+    assert!(foe(&battle).condition("yawn").is_none());
+    turn(&mut battle, "spore", "splash");
+    assert_eq!(foe(&battle).status, None);
+}
+
+#[test]
+fn sleep_talk_cannot_use_rest_to_reset_sleep_and_heal() {
+    let mut user = mon("User", &["sleep-talk", "rest"]);
+    user.hp = 500;
+    user.status = Some(Status::Asleep);
+    user.status_turns = 3;
+    let mut battle = game(user, mon("Target", &["splash"]), 0.5);
+    turn(&mut battle, "sleep-talk", "splash");
+    assert_eq!(ally(&battle).hp, 500);
+    assert_eq!(ally(&battle).status_turns, 2);
+}
+
+#[test]
+fn comatose_counts_as_sleep_for_snore_dream_eater_and_wake_up_slap() {
+    let mut user = mon("User", &["snore"]);
+    user.ability = Some("Comatose".into());
+    let mut battle = game(user, mon("Target", &["splash"]), 0.5);
+    turn(&mut battle, "snore", "splash");
+    assert!(foe(&battle).hp < 1000);
+    assert_eq!(ally(&battle).status, None);
+    for move_id in ["dream_eater", "wake-up-slap", "hex"] {
+        let run = |ability: Option<&str>| {
+            let mut target = mon("Target", &["splash"]);
+            target.types = vec![PokemonType::Water];
+            target.ability = ability.map(str::to_owned);
+            let mut battle = game(mon("User", &[move_id]), target, 0.5);
+            turn(&mut battle, move_id, "splash");
+            1000 - foe(&battle).hp
+        };
+        assert!(run(Some("comatose")) > run(None), "{move_id}");
+    }
+}
+
+#[test]
+fn bad_dreams_damages_sleep_and_comatose_but_respects_magic_guard() {
+    for (ability, asleep, expected) in [
+        (None, true, 19),
+        (Some("comatose"), false, 19),
+        (Some("magic-guard"), true, 0),
+        (None, false, 0),
+    ] {
+        let mut user = mon("User", &["splash"]);
+        user.ability = Some("bad-dreams".into());
+        let mut target = mon("Target", &["splash"]);
+        target.hp = 159;
+        target.max_hp = 159;
+        target.ability = ability.map(str::to_owned);
+        target.status = asleep.then_some(Status::Asleep);
+        target.status_turns = 2;
+        let mut battle = game(user, target, 0.5);
+        turn(&mut battle, "splash", "splash");
+        assert_eq!(foe(&battle).hp, 159 - expected);
+    }
+}
+
+#[test]
+fn uproar_blocks_rest_and_wakes_sleeping_switch_ins() {
+    let mut user = mon("User", &["uproar"]);
+    user.speed = 200;
+    let mut target = mon("Target", &["rest"]);
+    target.hp = 500;
+    let mut bench = mon("Bench", &["splash"]);
+    bench.status = Some(Status::Asleep);
+    bench.status_turns = 3;
+    let mut battle = Battle::with_rng(
+        Fixed(0.5),
+        [vec![user], vec![target, bench]],
+        MoveCatalog::builtin().unwrap(),
+    )
+    .unwrap();
+    battle.set_active([vec![0], vec![0]]).unwrap();
+    turn(&mut battle, "uproar", "rest");
+    assert!(foe(&battle).hp < 500);
+    assert_eq!(foe(&battle).status, None);
+    turn(&mut battle, "uproar", "switch:1");
+    assert_eq!(battle.participants(Side::Foes)[1].status, None);
+}
+
+#[test]
 fn freeze_fire_hits_thaw_before_the_targets_pending_action() {
     for attack in ["ember", "fire-punch", "fire-spin", "flamethrower"] {
         let mut user = mon("User", &[attack]);

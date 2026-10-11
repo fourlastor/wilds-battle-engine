@@ -58,3 +58,19 @@ Regression tests are in `crates/wilds-battle-engine/tests/status_rules.rs`.
   after flinch, confusion and infatuation. Blocked actions spend no PP.
 - Electric types are immune; Ground types resist Electric paralysis moves.
   Active Limber prevents and cures paralysis.
+
+## Sleep
+
+- Ordinary sleep blocks 1–3 attempted actions; Rest blocks two. Early Bird
+  accelerates the countdown, allowing 0–1 blocked actions for ordinary sleep
+  and one for Rest. Switching preserves the remaining sleep counter.
+- Insomnia and Vital Spirit prevent and cure sleep. Sweet Veil prevents sleep
+  for the user and its active allies without curing an existing sleep.
+- Rest fails if sleep is prevented or the user is already asleep (including
+  when called by Sleep Talk). Uproar prevents Rest and wakes sleeping entrants.
+- Yawn checks Safeguard when drowsiness starts; a later Safeguard does not stop
+  the pending sleep. Terrain and sleep immunity are still checked at expiry.
+- Lua's `pokemon.asleep` includes active Comatose. Snore, Sleep Talk, Dream Eater,
+  Wake-Up Slap and Hex use it; Comatose is not a removable major status.
+- Bad Dreams damages sleeping or Comatose opponents for floor(maximum HP / 8),
+  minimum 1, unless Magic Guard prevents it.

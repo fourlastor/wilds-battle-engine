@@ -3939,7 +3939,7 @@ fn yawn_sleeps_at_the_end_of_the_next_turn_and_cannot_be_refreshed() {
 }
 
 #[test]
-fn yawn_is_cancelled_by_switching_and_rechecks_safeguard_at_expiry() {
+fn yawn_is_cancelled_by_switching_but_ignores_later_safeguard() {
     for switch in [false, true] {
         let mut b = game(
             mon("User", &["yawn", "splash"]),
@@ -3962,7 +3962,10 @@ fn yawn_is_cancelled_by_switching_and_rechecks_safeguard_at_expiry() {
                 choose_move(p, "splash", "safeguard")
             }
         });
-        assert_eq!(b.participants(Side::Foes)[0].status, None);
+        assert_eq!(
+            b.participants(Side::Foes)[0].status,
+            (!switch).then_some(wilds_battle_engine::Status::Asleep)
+        );
         assert_eq!(b.participants(Side::Foes)[1].status, None);
         assert!(b.participants(Side::Foes)[0].conditions.is_empty());
     }

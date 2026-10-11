@@ -916,7 +916,13 @@ impl Battle {
             conditions.retain_mut(|condition| match &mut condition.turns_left {
                 Some(turns) if *turns <= 1 => {
                     ended.extend(condition.end_message.take());
-                    expired_rules.extend(condition.rules.clone());
+                    expired_rules.extend(
+                        condition
+                            .rules
+                            .iter()
+                            .cloned()
+                            .map(|r| (condition.name.clone(), r)),
+                    );
                     false
                 }
                 Some(turns) => {
@@ -926,10 +932,11 @@ impl Battle {
                 None => true,
             });
             if let Scope::Pokemon(id) = scope {
-                for rule in expired_rules {
+                for (condition_name, rule) in expired_rules {
                     if let Rule::StatusOnExpiry { status, source } = rule {
                         self.inflict_status(
-                            source,
+                            // Safeguard is checked when Yawn starts, not at expiry.
+                            if condition_name == "yawn" { id } else { source },
                             id,
                             status,
                             false,

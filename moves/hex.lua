@@ -2,7 +2,7 @@
 -- Behavior checked against PokeAPI; see catalog.json for scope and limitations.
 
 local move = {
-    script = function(ctx) ctx:damage(ctx.target.status and 130 or 65) end}
+    script = function(ctx) ctx:damage((ctx.target.status or ctx.target.asleep) and 130 or 65) end}
 
 move.id = "hex"
 move.name = "Hex"

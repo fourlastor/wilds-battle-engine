@@ -3,7 +3,7 @@
 
 local move = {flags = {"contact"},
     script = function(ctx)
-      local asleep = ctx.target.status == Status.Asleep
+      local asleep = ctx.target.asleep
       if ctx:damage(asleep and 140 or 70).hit and asleep then ctx:cure_status(ctx.target, Status.Asleep) end
     end}
 

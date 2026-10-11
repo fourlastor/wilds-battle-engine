@@ -1044,6 +1044,7 @@ impl Battle {
         }
         if self.winner.is_none() {
             self.tick_conditions(&order, events);
+            self.bad_dreams_residual(events);
             self.residual_berries(events);
             self.update_berries(events);
             self.resolve_outcome(events);
@@ -1059,6 +1060,9 @@ impl Battle {
     fn check_sleep(&mut self, id: ParticipantId, events: &mut Vec<BattleEvent>) {
         if self.get(id).hp == 0 || self.get(id).status != Some(Status::Asleep) {
             return;
+        }
+        if self.has_ability(id, "earlybird") {
+            self.get_mut(id).status_turns = self.get(id).status_turns.saturating_sub(1);
         }
         if self.get(id).status_turns == 0 {
             let name = self.get(id).name.clone();
@@ -1581,7 +1585,8 @@ impl Battle {
                     ..
                 }
             )
-        }) && self.status_immune_to(actor, actor, Status::Asleep, spec.move_type, false)
+        }) && (self.is_asleep(actor)
+            || self.status_immune_to(actor, actor, Status::Asleep, spec.move_type, false))
         {
             events.push(BattleEvent::Message(format!(
                 "{user_name} used {}!",

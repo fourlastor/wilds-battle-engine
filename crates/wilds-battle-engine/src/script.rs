@@ -182,6 +182,7 @@ impl Battle {
             )?;
         }
         table.raw_set("raw_stats", raw_stats)?;
+        table.raw_set("asleep", self.is_asleep(id))?;
         for (key, stat) in [
             ("attack", CombatStat::Attack),
             ("defense", CombatStat::Defense),
@@ -1258,7 +1259,7 @@ impl Battle {
             || (who != actor && self.blocks_status(who, status))
             || (!ignore_terrain && self.blocks_grounded_status(who, status))
             || (status == Status::Asleep
-                && (self.has_ability(who, "insomnia") || self.has_ability(who, "vitalspirit")))
+                && (self.team_status_ability(who, "sweetveil") || self.field_prevents_sleep()))
             || self.has_ability(who, "comatose")
             || self.status_ability_immunity(who, status)
             || (status == Status::Frozen && self.status_sun_active())

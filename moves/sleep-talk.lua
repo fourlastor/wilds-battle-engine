@@ -8,7 +8,7 @@ return {
   flags = {"calls_move"},
   usable_while_asleep = true,
   script = function(ctx)
-    if ctx.user.status ~= Status.Asleep and ctx.user.ability ~= "comatose" then ctx:fail(); return end
+    if not ctx.user.asleep then ctx:fail(); return end
     local choices = {}
     for _, id in ipairs(ctx.user.moves) do
       local info = ctx:move_info(id)
