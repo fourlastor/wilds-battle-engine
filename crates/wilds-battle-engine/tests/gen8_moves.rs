@@ -1016,3 +1016,19 @@ fn aqua_ring_heals_each_turn_and_cannot_stack() {
     assert_eq!(b.participants(Side::Allies)[0].hp, 624);
     assert!(b.participants(Side::Allies)[0].last_move_failed);
 }
+
+#[test]
+fn safeguard_blocks_external_status_but_allows_rest() {
+    use wilds_battle_engine::Status;
+    let mut user = mon("User", &["safeguard", "rest"]);
+    user.speed = 200;
+    user.hp = 500;
+    let mut b = game(user, vec![mon("Foe", &["toxic"])], 0.5);
+    turn(&mut b);
+    assert_eq!(b.participants(Side::Allies)[0].status, None);
+    assert_eq!(b.side_conditions(Side::Allies)[0].turns_left, Some(4));
+    turn_with(&mut b, |p| {
+        p.choices.iter().find(|c| matches!(c,Choice::UseMove{move_id,..} if move_id==if p.actor.side==Side::Allies {"rest"} else {"toxic"})).unwrap().id()
+    });
+    assert_eq!(b.participants(Side::Allies)[0].status, Some(Status::Asleep));
+}
