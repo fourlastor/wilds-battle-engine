@@ -3949,3 +3949,30 @@ fn disguise_blocks_one_hit_loses_an_eighth_hp_and_respects_substitutes_and_mold_
         }
     }
 }
+
+#[test]
+fn ice_face_blocks_physical_damage_once_and_repairs_only_when_hail_starts() {
+    let mut user = mon("User", &["tackle", "water-gun", "splash"]);
+    user.speed = 200;
+    let mut target = mon("Target", &["splash", "hail", "rain-dance"]);
+    target.species_id = 875;
+    target.types = vec![PokemonType::Ice];
+    target.ability = Some("ice-face".into());
+    add_form(&mut target, "eiscue-noice", PokemonType::Ice);
+    let mut battle = game(user, target, 0.5);
+    turn(&mut battle, "water-gun", "hail");
+    let hp = foe(&battle).hp;
+    assert!(hp < 1000);
+    assert!(foe(&battle).form.is_none());
+    turn(&mut battle, "tackle", "splash");
+    assert_eq!(foe(&battle).hp, hp);
+    assert_eq!(foe(&battle).form.as_deref(), Some("eiscue-noice"));
+    turn(&mut battle, "tackle", "splash");
+    assert!(foe(&battle).hp < hp);
+    turn(&mut battle, "splash", "rain-dance");
+    turn(&mut battle, "splash", "hail");
+    assert_eq!(foe(&battle).form.as_deref(), Some("eiscue-ice"));
+    let hp = foe(&battle).hp;
+    turn(&mut battle, "tackle", "splash");
+    assert_eq!(foe(&battle).hp, hp);
+}

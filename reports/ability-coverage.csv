@@ -246,7 +246,7 @@ id,ability,status,verification
 245,sand-spit,IMPLEMENTED,ability_rules::sand_spit_starts_sandstorm_after_damage_but_not_status_moves
 246,ice-scales,IMPLEMENTED,Source inventory; existing tests only
 247,ripen,IMPLEMENTED,Source inventory; existing tests only
-248,ice-face,MISSING,No native battle behavior
+248,ice-face,IMPLEMENTED,ability_rules::ice_face_blocks_physical_damage_once_and_repairs_only_when_hail_starts
 249,power-spot,IMPLEMENTED,ability_rules::power_spot_boosts_ally_attacks_but_not_the_holders
 250,mimicry,IMPLEMENTED,ability_rules::mimicry_changes_on_terrain_transitions_and_restores_original_types
 251,screen-cleaner,IMPLEMENTED,ability_rules::screen_cleaner_removes_both_sides_screens_but_preserves_mist

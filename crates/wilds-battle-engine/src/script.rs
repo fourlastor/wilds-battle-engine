@@ -2322,6 +2322,9 @@ impl Battle {
         self.weather = Some(weather.clone());
         events.push(BattleEvent::Message(kind.messages().0.into()));
         events.push(BattleEvent::Weather(Some(weather)));
+        for who in self.actors() {
+            self.restore_ice_face(who, events);
+        }
         true
     }
 }

@@ -9,15 +9,35 @@ impl Battle {
         who: ParticipantId,
         category: crate::moves::Category,
     ) -> bool {
-        category != crate::moves::Category::Status
+        if self.get(who).transformed() {
+            return false;
+        }
+        (category != crate::moves::Category::Status
             && self.has_ability(who, "disguise")
             && self.species_is(who, 778, "mimikyu")
-            && !self.get(who).transformed()
             && !self
                 .get(who)
                 .form
                 .as_deref()
-                .is_some_and(|id| id.contains("busted"))
+                .is_some_and(|id| id.contains("busted")))
+            || (category == crate::moves::Category::Physical
+                && self.has_ability(who, "iceface")
+                && self.species_is(who, 875, "eiscue")
+                && self.get(who).form.as_deref() != Some("eiscue-noice"))
+    }
+
+    pub(crate) fn restore_ice_face(&mut self, who: ParticipantId, events: &mut Vec<BattleEvent>) {
+        if self.has_ability(who, "iceface")
+            && self.species_is(who, 875, "eiscue")
+            && !self.get(who).transformed()
+            && self
+                .weather
+                .as_ref()
+                .is_some_and(|w| w.kind == WeatherKind::Hail)
+            && self.get(who).form.as_deref() == Some("eiscue-noice")
+        {
+            self.persistent_ability_form(who, "eiscue-ice", events);
+        }
     }
 
     fn persistent_ability_form(
@@ -43,6 +63,15 @@ impl Battle {
     ) -> bool {
         if !self.form_shields_hit(who, category) {
             return false;
+        }
+        if self.has_ability(who, "iceface") {
+            if let Some((_, base)) = self.get(who).battle_base_form.clone() {
+                self.get_mut(who)
+                    .forms
+                    .entry("eiscue-ice".into())
+                    .or_insert(base);
+            }
+            return self.persistent_ability_form(who, "eiscue-noice", events);
         }
         let form = if self
             .get(who)
