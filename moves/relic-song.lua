@@ -1,6 +1,5 @@
 -- Move 547: Relic Song. Identity and parameters: pokemon_data/assets/moves/547.json.
 -- Behavior checked against PokeAPI; see catalog.json for scope and limitations.
--- INCOMPLETE: Damage and sleep work; Meloetta form/stat transformation needs host or engine form support.
 
 local move = {script = function(ctx)
   local connected = false
@@ -9,6 +8,13 @@ local move = {script = function(ctx)
     if hit.hit then
       connected = true
       ctx:apply_status(pokemon, Status.Asleep, {chance = 0.1})
+    end
+  end
+  if connected and ctx.user.hp > 0 and (ctx.user.species_id == 648 or ctx.user.species:match("^meloetta")) then
+    if (ctx.user.form or ctx.user.species) == "meloetta-pirouette" then
+      if not ctx:restore_form(ctx.user) then ctx:change_form(ctx.user, "meloetta-aria") end
+    else
+      ctx:change_form(ctx.user, "meloetta-pirouette")
     end
   end
 end}
@@ -21,5 +27,5 @@ move.pp = 10
 move.accuracy = 1
 move.priority = 0
 move.target = Target.AllOpponents
-move.flags = {"sound", "incomplete"}
+move.flags = {"sound"}
 return move

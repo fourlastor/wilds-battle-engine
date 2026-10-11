@@ -120,6 +120,8 @@ impl Battle {
         let pokemon: &Pokemon = self.get(id);
         table.raw_set("name", pokemon.name.as_str())?;
         table.raw_set("species", pokemon.species.as_str())?;
+        table.raw_set("species_id", pokemon.species_id)?;
+        table.raw_set("form", pokemon.form.as_deref())?;
         table.raw_set("level", pokemon.level)?;
         table.raw_set("hp", pokemon.hp)?;
         table.raw_set("max_hp", pokemon.max_hp)?;
@@ -1413,6 +1415,10 @@ impl Battle {
             ScriptOperation::EndGroup { scope, group } => {
                 Value::Boolean(self.end_group(scope, &group))
             }
+            ScriptOperation::ChangeForm { who, form } => {
+                Value::Boolean(self.change_form(who, &form, events))
+            }
+            ScriptOperation::RestoreForm { who } => Value::Boolean(self.restore_form(who, events)),
             ScriptOperation::SetTypes { who, types } => {
                 self.get_mut(who).types = types;
                 Value::Nil

@@ -5,7 +5,7 @@ use std::panic::{AssertUnwindSafe, catch_unwind};
 use std::sync::Mutex;
 use wilds_battle_engine::{
     ActionSelection, AdvanceStatus, Battle, BattleEvent, Choice, CombatStat, Condition, Gender,
-    MoveCatalog, ParticipantId, Pokemon, PokemonType, Side, Status,
+    MoveCatalog, ParticipantId, Pokemon, PokemonForm, PokemonType, Side, Status,
 };
 
 static LAST_ERROR: Mutex<String> = Mutex::new(String::new());
@@ -68,6 +68,21 @@ struct SetupPokemon {
     ivs: Option<[u8; 6]>,
     happiness: Option<u8>,
     nature_down: Option<String>,
+    form: Option<String>,
+    #[serde(default)]
+    forms: std::collections::BTreeMap<String, SetupForm>,
+}
+
+#[derive(Deserialize)]
+struct SetupForm {
+    attack: u16,
+    defense: u16,
+    sp_attack: u16,
+    sp_defense: u16,
+    speed: u16,
+    types: Vec<String>,
+    #[serde(default)]
+    weight: f32,
 }
 
 fn pokemon(config: SetupPokemon) -> Result<Pokemon, String> {
@@ -85,6 +100,29 @@ fn pokemon(config: SetupPokemon) -> Result<Pokemon, String> {
             other => Err(format!("unknown nature_down stat {other}")),
         })
         .transpose()?;
+    value.form = config.form;
+    value.forms = config
+        .forms
+        .into_iter()
+        .map(|(id, form)| {
+            Ok((
+                id,
+                PokemonForm {
+                    attack: form.attack,
+                    defense: form.defense,
+                    sp_attack: form.sp_attack,
+                    sp_defense: form.sp_defense,
+                    speed: form.speed,
+                    weight: form.weight,
+                    types: form
+                        .types
+                        .iter()
+                        .map(|kind| parse_type(kind))
+                        .collect::<Result<_, _>>()?,
+                },
+            ))
+        })
+        .collect::<Result<_, String>>()?;
     value.level = config.level;
     value.max_hp = config.max_hp;
     value.hp = config.hp.unwrap_or(config.max_hp);
@@ -325,7 +363,9 @@ pub fn conditions(values: &[Condition]) -> Value {
         .collect()
 }
 fn snapshot(value: &Pokemon) -> Value {
-    json!({"name":value.name, "species_id":value.species_id,
+    json!({"name":value.name, "species_id":value.species_id, "form":value.form,
+        "attack":value.attack, "defense":value.defense, "sp_attack":value.sp_attack,
+        "sp_defense":value.sp_defense, "speed":value.speed, "weight":value.weight,
         "hp":value.hp, "max_hp":value.max_hp,
         "status":value.status.map(|status| format!("{status:?}")),
         "moves":value.moves, "move_pp":value.move_pp,
@@ -354,6 +394,9 @@ fn event(value: &BattleEvent) -> Value {
         } => {
             json!({"kind":"stat_change", "target":participant(*target), "stat":format!("{stat:?}"), "stages":stages})
         }
+        BattleEvent::FormChanged { target, form } => {
+            json!({"kind":"form", "target":participant(*target), "form":form})
+        }
         BattleEvent::Weather(weather) => {
             json!({"kind":"weather", "weather":weather.as_ref().map(|w| format!("{:?}",w.kind))})
         }
@@ -365,6 +408,49 @@ fn event(value: &BattleEvent) -> Value {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn c_api_accepts_forms_and_reports_transformation() {
+        let setup = CString::new(
+            json!({
+                "allies": [{"name":"Singer", "species_id":648, "moves":["relic-song"],
+                    "forms":{"meloetta-pirouette":{"attack":315,"defense":220,
+                        "sp_attack":177,"sp_defense":190,"speed":320,
+                        "types":["Normal","Fighting"],"weight":6.5}}}],
+                "foes": [{"name":"Target", "max_hp":1000, "moves":["splash"]}]
+            })
+            .to_string(),
+        )
+        .unwrap();
+        let directory = CString::new(concat!(env!("CARGO_MANIFEST_DIR"), "/../../moves")).unwrap();
+        let ptr = unsafe { wbe_create(setup.as_ptr(), directory.as_ptr()) };
+        assert!(!ptr.is_null());
+        for _ in 0..2 {
+            let output = unsafe { wbe_advance(ptr) };
+            let value: Value =
+                serde_json::from_str(unsafe { CStr::from_ptr(output) }.to_str().unwrap()).unwrap();
+            unsafe {
+                wbe_free_string(output);
+            }
+            assert!(unsafe { wbe_respond(ptr, value["status"]["prompt_id"].as_u64().unwrap(), 0) });
+        }
+        let output = unsafe { wbe_advance(ptr) };
+        let value: Value =
+            serde_json::from_str(unsafe { CStr::from_ptr(output) }.to_str().unwrap()).unwrap();
+        assert_eq!(value["allies"][0]["form"], "meloetta-pirouette");
+        assert_eq!(value["allies"][0]["attack"], 315);
+        assert!(
+            value["events"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .any(|event| event["kind"] == "form")
+        );
+        unsafe {
+            wbe_free_string(output);
+            wbe_destroy(ptr);
+        }
+    }
 
     #[test]
     fn c_api_loads_files_and_runs_a_turn() {

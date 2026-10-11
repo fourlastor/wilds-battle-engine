@@ -319,6 +319,13 @@ pub(crate) enum ScriptOperation {
         scope: Scope,
         group: String,
     },
+    ChangeForm {
+        who: ParticipantId,
+        form: String,
+    },
+    RestoreForm {
+        who: ParticipantId,
+    },
     SetTypes {
         who: ParticipantId,
         types: Vec<PokemonType>,
@@ -1047,6 +1054,11 @@ fn parse_op(name: &str, args: &[Value]) -> mlua::Result<ScriptOperation> {
             scope: scope_of(arg(0), name)?,
             group: name_of(arg(1), "effect group")?,
         },
+        "change_form" => ScriptOperation::ChangeForm {
+            who: who(0)?,
+            form: name_of(arg(1), "form")?,
+        },
+        "restore_form" => ScriptOperation::RestoreForm { who: who(0)? },
         "set_types" => {
             let Value::Table(list) = arg(1) else {
                 return Err(bad("set_types requires a list of Type values"));

@@ -349,9 +349,26 @@ pub struct NextMovePowerBoost {
     pub multiplier: f32,
 }
 
+/// One form's already-computed battle stats. HP, stages, status and PP are preserved on change.
+#[derive(Clone, Debug, PartialEq)]
+pub struct PokemonForm {
+    pub attack: u16,
+    pub defense: u16,
+    pub sp_attack: u16,
+    pub sp_defense: u16,
+    pub speed: u16,
+    pub types: Vec<PokemonType>,
+    pub weight: f32,
+}
+
 #[derive(Clone, Debug)]
 pub struct Pokemon {
     pub species_id: u32,
+    pub form: Option<String>,
+    pub forms: BTreeMap<String, PokemonForm>,
+    /// Saved on the first temporary form change and restored when the Pokemon leaves the field.
+    pub original_form: Option<(Option<String>, PokemonForm)>,
+    pub(crate) battle_base_form: Option<(Option<String>, PokemonForm)>,
     pub name: String,
     pub level: u8,
     pub hp: u16,
@@ -426,6 +443,10 @@ impl Pokemon {
     pub fn new(name: impl Into<String>, moves: Vec<String>) -> Self {
         Self {
             species_id: 0,
+            form: None,
+            forms: BTreeMap::new(),
+            original_form: None,
+            battle_base_form: None,
             name: name.into(),
             level: 100,
             hp: 100,
@@ -567,6 +588,10 @@ pub enum BattleEvent {
         target: ParticipantId,
         stat: Stat,
         stages: i8,
+    },
+    FormChanged {
+        target: ParticipantId,
+        form: Option<String>,
     },
     Weather(Option<Weather>),
     Fainted(ParticipantId),

@@ -151,6 +151,17 @@ impl Battle {
             if pokemon.hp > pokemon.max_hp || pokemon.max_hp == 0 {
                 return Err(BattleError::InvalidSetup("invalid HP".into()));
             }
+            for (id, form) in &pokemon.forms {
+                if id.is_empty()
+                    || id.len() > 40
+                    || form.types.is_empty()
+                    || form.types.len() > 2
+                    || !form.weight.is_finite()
+                    || form.weight < 0.0
+                {
+                    return Err(BattleError::InvalidSetup(format!("invalid form {id}")));
+                }
+            }
             if pokemon.moves.is_empty() {
                 return Err(BattleError::InvalidSetup(format!(
                     "{} has no moves",
@@ -167,6 +178,8 @@ impl Battle {
             }
         }
         for pokemon in sides.iter_mut().flatten() {
+            pokemon.battle_base_form =
+                Some((pokemon.form.clone(), crate::model::PokemonForm::of(pokemon)));
             for id in &pokemon.moves {
                 let spec = catalog.get(id).expect("validated catalog");
                 pokemon.move_pp.entry(id.clone()).or_insert(spec.pp);
@@ -1767,6 +1780,7 @@ impl Battle {
         let name = p.name.clone();
         events.push(BattleEvent::Damage { target, amount, hp });
         if was_alive && hp == 0 {
+            self.restore_form(target, events);
             self.get_mut(target).conditions.clear();
             self.last_faint_turn[target.side.index()] = Some(turn);
             self.hit_reactions

@@ -86,6 +86,165 @@ fn said(events: &[BattleEvent], text: &str) -> bool {
         .any(|event| matches!(event, BattleEvent::Message(message) if message.contains(text)))
 }
 
+fn meloetta() -> Pokemon {
+    let mut pokemon = mon("Singer", &["relic-song", "splash"]);
+    pokemon.species_id = 648;
+    pokemon.types = vec![PokemonType::Normal, PokemonType::Psychic];
+    pokemon.attack = 177;
+    pokemon.defense = 190;
+    pokemon.sp_attack = 315;
+    pokemon.sp_defense = 320;
+    pokemon.speed = 220;
+    pokemon.weight = 6.5;
+    pokemon.forms.insert(
+        "meloetta-pirouette".into(),
+        wilds_battle_engine::PokemonForm {
+            attack: 315,
+            defense: 220,
+            sp_attack: 177,
+            sp_defense: 190,
+            speed: 320,
+            types: vec![PokemonType::Normal, PokemonType::Fighting],
+            weight: 6.5,
+        },
+    );
+    pokemon
+}
+
+#[test]
+fn relic_song_can_start_in_pirouette_and_restore_registered_base_types() {
+    let aria = meloetta();
+    let mut user = aria.clone();
+    let original = wilds_battle_engine::PokemonForm::of(&aria);
+    user.form = Some("meloetta-pirouette".into());
+    user.attack = 315;
+    user.sp_attack = 177;
+    user.types = vec![PokemonType::Normal, PokemonType::Fighting];
+    user.forms.clear();
+    user.forms.insert("meloetta-aria".into(), original);
+    let mut game = Game::new(vec![user], vec![mon("Target", &["splash"])], 0.5);
+    game.turn("relic-song", "splash");
+    assert_eq!(game.ally().form.as_deref(), Some("meloetta-aria"));
+    assert_eq!(game.ally().attack, 177);
+    game.turn("relic-song", "splash");
+    assert_eq!(game.ally().form.as_deref(), Some("meloetta-pirouette"));
+    assert_eq!(game.ally().attack, 315);
+    // Temporary type changes before the first song do not overwrite the base form.
+    let mut target = mon("Target", &["soak", "splash"]);
+    target.speed = 1000;
+    let source = format!(
+        "return {{(function() {} end)(), (function() {} end)(), {{id='soak', name='Soak', type=Type.Water, category=Category.Status, pp=20, script=function(ctx) ctx:set_types(ctx.target, {{Type.Water}}) end}} }}",
+        include_str!("../../../moves/relic-song.lua"),
+        include_str!("../../../moves/splash.lua")
+    );
+    let mut game = Game(
+        Battle::with_rng(
+            Fixed(0.5),
+            [vec![meloetta()], vec![target]],
+            MoveCatalog::from_lua(&source).unwrap(),
+        )
+        .unwrap(),
+    );
+    game.turn("relic-song", "soak");
+    game.turn("relic-song", "splash");
+    assert_eq!(
+        game.ally().types,
+        [PokemonType::Normal, PokemonType::Psychic]
+    );
+}
+
+#[test]
+fn relic_song_toggles_host_supplied_stats_and_preserves_battle_state() {
+    let mut user = meloetta();
+    user.hp = 800;
+    user.stages.insert(Stat::Defense, 2);
+    user.status = Some(Status::Paralyzed);
+    let mut game = Game::new(vec![user], vec![mon("Target", &["splash"])], 0.5);
+    let events = game.turn("relic-song", "splash");
+    assert_eq!(game.ally().form.as_deref(), Some("meloetta-pirouette"));
+    assert_eq!(
+        (
+            game.ally().attack,
+            game.ally().defense,
+            game.ally().sp_attack,
+            game.ally().sp_defense,
+            game.ally().speed
+        ),
+        (315, 220, 177, 190, 320)
+    );
+    assert_eq!(
+        game.ally().types,
+        [PokemonType::Normal, PokemonType::Fighting]
+    );
+    assert!(events.iter().any(
+        |e| matches!(e, BattleEvent::FormChanged { target, .. } if target.side == Side::Allies)
+    ));
+    game.turn("relic-song", "splash");
+    assert_eq!(game.ally().form, None);
+    assert_eq!(
+        (
+            game.ally().attack,
+            game.ally().defense,
+            game.ally().sp_attack,
+            game.ally().sp_defense,
+            game.ally().speed
+        ),
+        (177, 190, 315, 320, 220)
+    );
+    assert_eq!(
+        game.ally().types,
+        [PokemonType::Normal, PokemonType::Psychic]
+    );
+    assert_eq!(game.ally().name, "Singer");
+    assert_eq!(game.ally().hp, 800);
+    assert_eq!(game.ally().status, Some(Status::Paralyzed));
+    assert_eq!(game.ally().stage(Stat::Defense), 2);
+    assert_eq!(game.ally().move_pp["relic-song"], 8);
+}
+
+#[test]
+fn relic_song_requires_a_successful_hit_and_meloetta_identity() {
+    for (protected, immune, meloetta_identity, changes) in [
+        (true, false, true, false),
+        (false, true, true, false),
+        (false, false, false, false),
+        (false, false, true, true),
+    ] {
+        let mut user = meloetta();
+        if !meloetta_identity {
+            user.species_id = 0;
+        }
+        let mut target = mon("Target", &["protect", "splash"]);
+        if immune {
+            target.types = vec![PokemonType::Ghost];
+        }
+        let mut game = Game::new(vec![user], vec![target], 0.5);
+        game.turn("relic-song", if protected { "protect" } else { "splash" });
+        assert_eq!(game.ally().form.is_some(), changes);
+    }
+    let mut user = meloetta();
+    user.forms.clear();
+    let mut game = Game::new(vec![user], vec![mon("Target", &["splash"])], 0.5);
+    let events = game.turn("relic-song", "splash");
+    assert!(said(&events, "no battle data for form"));
+    assert_eq!(game.ally().attack, 177);
+    assert_eq!(game.ally().form, None);
+}
+
+#[test]
+fn fainting_restores_the_original_form_and_does_not_revive() {
+    let mut user = meloetta();
+    user.speed = 1000;
+    user.hp = 1;
+    let mut target = mon("Target", &["tackle"]);
+    target.attack = 1000;
+    let mut game = Game::new(vec![user], vec![target], 0.5);
+    game.turn("relic-song", "tackle");
+    assert_eq!(game.ally().hp, 0);
+    assert_eq!(game.ally().form, None);
+    assert_eq!(game.ally().attack, 177);
+}
+
 #[test]
 fn pledge_moves_do_not_consume_gems() {
     for (attack, item) in [

@@ -13,6 +13,7 @@ export type EngineEvent =
   | { kind: 'heal'; target: Ref; amount: number; hp: number }
   | { kind: 'status'; target: Ref; status: string | null }
   | { kind: 'stat_change'; target: Ref; stat: string; stages: number }
+  | { kind: 'form'; target: Ref; form: string | null }
   | { kind: 'weather'; weather: string | null }
   | { kind: 'fainted'; target: Ref }
   | { kind: 'end'; winner: Side | null };
@@ -42,6 +43,7 @@ export interface ConditionInfo {
 }
 
 export interface EngineMon {
+  form: string | null;
   name: string;
   level: number;
   hp: number;
@@ -126,6 +128,9 @@ export interface SetupMon {
   status_turns?: number;
   /** What follows is only kept for moves to read. */
   species?: string;
+  species_id?: number;
+  form?: string;
+  forms?: Record<string, { attack: number; defense: number; sp_attack: number; sp_defense: number; speed: number; types: string[]; weight?: number }>;
   gender?: string;
   weight?: number;
   item?: string;

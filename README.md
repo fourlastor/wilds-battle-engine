@@ -209,6 +209,7 @@ before turn-start hooks; capped changes and resetting stages do not trigger them
 | `ctx:adjacent(a, b)` | Whether two Pokémon occupy neighboring field slots. `who.position` is its zero-based slot from its trainer's perspective; opposing rows face each other. Fainting does not collapse slots. |
 | `ctx:item_removable(who)` | Checks species-bound items independently of Sticky Hold, for damage bonuses such as Knock Off. Removal and atomic theft enforce both restrictions; fainted or suppressed Sticky Hold does not protect an item. |
 | `ctx:eat_berry(who, forced)`, `ctx:eat_stolen_berry(from, to)` | Apply berry consumption effects and record history. Forced eating bypasses Unnerve and Klutz; stealing a berry respects removal restrictions and preserves the eater's own item. |
+| `ctx:change_form(who, id)`, `ctx:restore_form(who)` | Apply a host-supplied form or restore the original one; return whether it changed. HP, status, stages, and PP are preserved. |
 | `ctx:consume_item(who)` | Removes a held item, records it in `who.consumed_items` and `who.last_consumed_item`, and returns its ID (or nil). Taking an item does not record consumption. |
 | `ctx:reduce_pp(who, move_id, amount)` | Returns PP removed, clamped to what remains; an absent move loses zero. Refreshed `who.pp` reflects the change. |
 | `ctx:chance(probability)`, `ctx:effect_chance(probability)`, `ctx:random_int(min, max)` | `effect_chance` is for a move's extra effects: an `EffectChance` rule can multiply it. |
@@ -307,3 +308,17 @@ Rust or `"Attack"`, `"Defense"`, `"SpAttack"`, `"SpDefense"`, `"Speed"` in setup
 for flavor-based confusion; absent means a neutral flavor preference. This does
 not recalculate host-provided stats. Berry effects account for Ripen, Cheek Pouch,
 Gluttony, Klutz and Unnerve when those abilities are active.
+
+Hosts supply form presets through `Pokemon.forms` (`PokemonForm` values), or the
+setup JSON's `forms` object keyed by form ID. Each entry contains `attack`,
+`defense`, `sp_attack`, `sp_defense`, `speed`, `types`, and optional `weight`.
+These are computed battle stats, just like the initial Pokémon's stats; the engine
+does not infer IVs, EVs or nature modifiers. Optional `form` identifies an initial
+alternate form. Form changes emit `BattleEvent::FormChanged` (`kind: "form"` in
+JSON), and `who.form` reports the current ID in Lua. The battle preserves its
+original stats and types for restoration, including on fainting.
+
+Relic Song uses the `meloetta-pirouette` preset for Meloetta (species ID 648), then
+restores the original form on its next successful use. If starting in Pirouette
+Forme, provide `form: "meloetta-pirouette"` and a `meloetta-aria` preset. Missing
+form data produces an explicit message and leaves the stats intact.

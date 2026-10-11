@@ -3984,10 +3984,8 @@
       "sheet_row": 389,
       "runtime_id": "relic-song",
       "file": "moves/relic-song.lua",
-      "status": "partial",
-      "limitations": [
-        "Damage and sleep work; Meloetta form/stat transformation needs host or engine form support."
-      ]
+      "status": "implemented",
+      "limitations": []
     },
     {
       "id": 548,

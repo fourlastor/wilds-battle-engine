@@ -1,6 +1,7 @@
 mod berries;
 mod conditions;
 mod engine;
+mod forms;
 mod items;
 mod lua_symbols;
 mod model;
@@ -13,7 +14,7 @@ pub use engine::Battle;
 pub use model::{
     ActionSelection, AdvanceResult, AdvanceStatus, AppliedStatus, BattleError, BattleEvent, Bound,
     Choice, CombatStat, Condition, ContinuationTarget, Gender, HiddenKind, HitInfo, LockedMove,
-    NextMovePowerBoost, ParticipantId, Pokemon, PokemonType, Prompt, Rule, Scope,
+    NextMovePowerBoost, ParticipantId, Pokemon, PokemonForm, PokemonType, Prompt, Rule, Scope,
     ScriptContinuation, Side, Stat, Status, Weather, WeatherKind,
 };
 pub use moves::{Accuracy, Category, Effect, MoveCatalog, MoveSpec, Target};
