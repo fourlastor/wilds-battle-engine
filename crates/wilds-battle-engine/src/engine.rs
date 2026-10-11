@@ -1807,6 +1807,9 @@ impl Battle {
             .locked_move
             .as_ref()
             .is_some_and(|lock| lock.charging);
+        if !second_turn && spec.id == "dive" {
+            self.load_gulp_missile(actor, events);
+        }
         let mut first_charge = !second_turn && spec.effects.iter().any(|e| matches!(e, Effect::TwoTurn { skip_in_sun, .. } if !skip_in_sun || self.effective_weather() != Some(WeatherKind::Sun)));
         if first_charge && !spec.has_flag("no_power_herb") && self.try_skip_charge(actor, events) {
             first_charge = false;
@@ -3058,6 +3061,7 @@ impl Battle {
                 self.get(target).name
             )));
         }
+        let gulp = self.gulp_missile_payload(target);
         if amount > 0 {
             self.damage(target, amount, events);
         }
@@ -3101,6 +3105,11 @@ impl Battle {
         }
         if lost > 0 && meta.critical && self.has_ability(target, "angerpoint") {
             self.change_stat(target, Stat::Attack, 12, events);
+        }
+        if lost > 0
+            && let Some(paralyze) = gulp
+        {
+            self.release_gulp_missile(target, actor, paralyze, events);
         }
         self.ability_damaging_hit(target, &hit_ability, &hit, events);
         self.ability_attacking_hit(target, &hit, events);

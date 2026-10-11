@@ -4535,3 +4535,48 @@ fn power_construct_adds_form_hp_preserves_missing_hp_and_survives_switching() {
         }
     }
 }
+
+#[test]
+fn gulp_missile_loads_with_surf_or_dive_and_retaliates_even_on_a_knockout() {
+    for (hp, lethal, paralyzed) in [(1000, false, false), (500, false, true), (1, true, true)] {
+        let mut user = mon("Cramorant", &["surf", "splash"]);
+        user.species_id = 845;
+        user.ability = Some("gulp-missile".into());
+        user.hp = hp;
+        user.speed = 200;
+        add_form(&mut user, "cramorant-gulping", PokemonType::Normal);
+        add_form(&mut user, "cramorant-gorging", PokemonType::Normal);
+        let target = mon("Target", &["tackle", "splash"]);
+        let mut battle = game(user, target, 0.5);
+        turn(&mut battle, "surf", "tackle");
+        assert_eq!(foe(&battle).status == Some(Status::Paralyzed), paralyzed);
+        assert_eq!(
+            *foe(&battle)
+                .stages
+                .get(&wilds_battle_engine::Stat::Defense)
+                .unwrap_or(&0),
+            if paralyzed { 0 } else { -1 }
+        );
+        assert!(foe(&battle).hp < 750);
+        assert_eq!(ally(&battle).hp == 0, lethal);
+        assert_eq!(ally(&battle).form, None);
+    }
+    let mut user = mon("Cramorant", &["dive"]);
+    user.species_id = 845;
+    user.ability = Some("gulp-missile".into());
+    user.speed = 200;
+    add_form(&mut user, "cramorant-gulping", PokemonType::Normal);
+    let mut battle = game(user, mon("Target", &["surf"]), 0.5);
+    turn(&mut battle, "dive", "surf");
+    assert_eq!(ally(&battle).form.as_deref(), Some("cramorant-gulping"));
+    assert_eq!(foe(&battle).hp, 1000); // Surf connects underwater without discharging the payload.
+    turn(&mut battle, "dive", "surf");
+    assert_eq!(ally(&battle).form, None);
+    assert_eq!(
+        *foe(&battle)
+            .stages
+            .get(&wilds_battle_engine::Stat::Defense)
+            .unwrap_or(&0),
+        -1
+    );
+}

@@ -848,6 +848,9 @@ impl Battle {
         if self.ability_blocks_status_move(actor, recipient, frame.spec, events) {
             return HitOutcome::Protected;
         }
+        if frame.spec.id == "surf" {
+            self.load_gulp_missile(actor, events);
+        }
         HitOutcome::Hit
     }
 

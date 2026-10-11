@@ -216,6 +216,71 @@ impl Battle {
         }
     }
 
+    pub(crate) fn load_gulp_missile(&mut self, who: ParticipantId, events: &mut Vec<BattleEvent>) {
+        if self.has_ability(who, "gulpmissile")
+            && self.species_is(who, 845, "cramorant")
+            && !self.get(who).transformed()
+            && self
+                .get(who)
+                .form
+                .as_deref()
+                .is_none_or(|f| f == "cramorant")
+        {
+            let form = if self.get(who).hp <= self.get(who).max_hp / 2 {
+                "cramorant-gorging"
+            } else {
+                "cramorant-gulping"
+            };
+            self.change_form(who, form, events);
+        }
+    }
+
+    pub(crate) fn gulp_missile_payload(&self, who: ParticipantId) -> Option<bool> {
+        if !self.has_ability(who, "gulpmissile")
+            || self.get(who).transformed()
+            || self.get(who).semi_invulnerable
+            || !self.species_is(who, 845, "cramorant")
+        {
+            return None;
+        }
+        match self.get(who).form.as_deref() {
+            Some("cramorant-gulping") => Some(false),
+            Some("cramorant-gorging") => Some(true),
+            _ => None,
+        }
+    }
+
+    pub(crate) fn release_gulp_missile(
+        &mut self,
+        who: ParticipantId,
+        attacker: ParticipantId,
+        paralyze: bool,
+        events: &mut Vec<BattleEvent>,
+    ) {
+        if who == attacker || self.get(attacker).hp == 0 || !self.is_active(attacker) {
+            return;
+        }
+        self.indirect_damage(attacker, (self.get(attacker).max_hp / 4).max(1), events);
+        if paralyze {
+            self.inflict_status(
+                who,
+                attacker,
+                crate::model::AppliedStatus::Paralyzed,
+                false,
+                crate::model::PokemonType::None,
+                false,
+                events,
+            );
+        } else {
+            self.change_stat_from(who, attacker, crate::model::Stat::Defense, -1, events);
+        }
+        if self.get(who).hp > 0 {
+            if !self.restore_form(who, events) {
+                self.change_form(who, "cramorant", events);
+            }
+        }
+    }
+
     pub(crate) fn battle_bond_knockout(
         &mut self,
         who: ParticipantId,
