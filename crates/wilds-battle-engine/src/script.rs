@@ -816,7 +816,12 @@ impl Battle {
             .or_else(|| matches!(frame.spec.accuracy, Accuracy::OneHitKnockout).then_some(0.3));
         let hit = if let Some(base) = ohko {
             self.ohko_hit_check(actor, recipient, base, options.never_miss)
-        } else if options.never_miss || self.always_hits(actor, recipient) {
+        } else if options.never_miss
+            || self.always_hits(actor, recipient)
+            || (frame.any_hit
+                && frame.spec.has_flag("multi_accuracy")
+                && self.has_ability(actor, "skilllink"))
+        {
             self.end_condition(Scope::Pokemon(actor), "micle_berry");
             true
         } else if let Some(value) = options.accuracy {
@@ -1095,7 +1100,7 @@ impl Battle {
             frame.failed = true;
             return Ok(report);
         }
-        let count = self.rng.range(hits.0, hits.1);
+        let count = self.roll_hit_count(actor, hits.0, hits.1);
         for (index, target) in eligible.iter().copied().enumerate() {
             if self.get(actor).hp == 0 {
                 break;
@@ -1149,7 +1154,7 @@ impl Battle {
         let attack = self.attack(frame, power, options);
         let meta = HitMeta::of(frame.spec, attack.category, attack.move_type)
             .with_contact(options.contact);
-        let hits = self.rng.range(min, max);
+        let hits = self.roll_hit_count(actor, min, max);
         let mut details = Vec::new();
         for index in 0..hits {
             if self.get(actor).hp == 0 || self.get(recipient).hp == 0 {

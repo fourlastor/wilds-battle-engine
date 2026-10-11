@@ -27,6 +27,22 @@ fn cannot_suppress(ability: &str) -> bool {
 }
 
 impl Battle {
+    pub(crate) fn roll_hit_count(&mut self, actor: ParticipantId, min: u8, max: u8) -> u8 {
+        if self.has_ability(actor, "skilllink") {
+            return max;
+        }
+        if (min, max) == (2, 5) {
+            match self.rng.range(1, 100) {
+                1..=35 => 2,
+                36..=70 => 3,
+                71..=85 => 4,
+                _ => 5,
+            }
+        } else {
+            self.rng.range(min, max)
+        }
+    }
+
     pub(crate) fn damp_active(&self) -> bool {
         !self.ability_bypass
             && self

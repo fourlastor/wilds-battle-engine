@@ -2384,3 +2384,53 @@ fn poison_touch_poisons_contact_targets_and_respects_shield_dust() {
         assert_eq!(foe(&battle).status, expected.then_some(Status::Poisoned));
     }
 }
+
+#[test]
+fn skill_link_maximizes_variable_hits_and_checks_multi_accuracy_once() {
+    for suppressed in [false, true] {
+        let mut user = mon("User", &["fury-attack"]);
+        user.ability = Some("skill-link".into());
+        user.ability_suppressed = suppressed;
+        let mut target = mon("Target", &["splash"]);
+        target.ability = Some("stamina".into());
+        let mut battle = game(user, target, 0.1);
+        turn(&mut battle, "fury-attack", "splash");
+        assert_eq!(
+            foe(&battle).stage(wilds_battle_engine::Stat::Defense),
+            if suppressed { 2 } else { 5 }
+        );
+    }
+    struct AccuracyThenMiss(u8);
+    impl BattleRng for AccuracyThenMiss {
+        fn next_u64(&mut self) -> u64 {
+            0
+        }
+        fn fraction(&mut self) -> f32 {
+            self.0 += 1;
+            if self.0 <= 3 { 0.1 } else { 0.95 }
+        }
+    }
+    for move_id in ["triple_kick", "triple-axel"] {
+        for suppressed in [false, true] {
+            let mut user = mon("User", &[move_id]);
+            user.speed = 100;
+            user.ability = Some("skill-link".into());
+            user.ability_suppressed = suppressed;
+            let mut target = mon("Target", &["splash"]);
+            target.speed = 10;
+            target.ability = Some("stamina".into());
+            let mut battle = Battle::with_rng(
+                AccuracyThenMiss(0),
+                [vec![user], vec![target]],
+                MoveCatalog::builtin().unwrap(),
+            )
+            .unwrap();
+            turn(&mut battle, move_id, "splash");
+            assert_eq!(
+                foe(&battle).stage(wilds_battle_engine::Stat::Defense),
+                if suppressed { 1 } else { 3 },
+                "{move_id}/{suppressed}"
+            );
+        }
+    }
+}

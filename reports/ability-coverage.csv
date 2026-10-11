@@ -90,7 +90,7 @@ id,ability,status,verification
 89,iron-fist,IMPLEMENTED,ability_rules::ironfist_boosts_matching_moves_only
 90,poison-heal,IMPLEMENTED,Source inventory; existing tests only
 91,adaptability,IMPLEMENTED,ability_rules::adaptability_increases_stab_to_double_without_boosting_other_types
-92,skill-link,MISSING,No native battle behavior
+92,skill-link,IMPLEMENTED,ability_rules::skill_link_maximizes_variable_hits_and_checks_multi_accuracy_once
 93,hydration,IMPLEMENTED,Source inventory; existing tests only
 94,solar-power,IMPLEMENTED,ability_rules::solar_power_boosts_special_attacks_and_costs_hp_only_in_effective_sun
 95,quick-feet,IMPLEMENTED,Source inventory; existing tests only

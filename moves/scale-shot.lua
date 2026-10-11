@@ -2,9 +2,8 @@
 -- Behavior checked against PokeAPI; see catalog.json for scope and limitations.
 
 local move = {script = function(ctx)
-local roll = ctx:random_int(1, 100)
-local hits = roll <= 35 and 2 or roll <= 70 and 3 or roll <= 85 and 4 or 5
-if ctx:multi_hit(25, hits, hits).hit then
+
+if ctx:multi_hit(25, 2, 5).hit then
   ctx:change_stat(ctx.user, Stat.Defense, -1)
   ctx:change_stat(ctx.user, Stat.Speed, 1)
 end

@@ -2129,7 +2129,7 @@ impl Battle {
                 }
             }
             Effect::MultiHit { power, min, max } => {
-                let hits = self.rng.range(*min, *max);
+                let hits = self.roll_hit_count(actor, *min, *max);
                 let mut count = 0;
                 let mut details = Vec::new();
                 for _ in 0..hits {
