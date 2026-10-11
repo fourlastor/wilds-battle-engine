@@ -5265,6 +5265,17 @@
       "limitations": []
     },
     {
+      "id": 673,
+      "slug": "laser-focus",
+      "name": "Laser Focus",
+      "sheet_row": null,
+      "runtime_id": "laser-focus",
+      "file": "moves/laser-focus.lua",
+      "status": "implemented",
+      "limitations": [],
+      "parameter_source": "https://pokeapi.co/api/v2/move/673/"
+    },
+    {
       "id": 674,
       "slug": "gear-up",
       "name": "Gear Up",
@@ -6672,7 +6683,8 @@
       "refresh",
       "purify",
       "psycho-shift",
-      "focus-energy"
+      "focus-energy",
+      "laser-focus"
     ]
   }
 }

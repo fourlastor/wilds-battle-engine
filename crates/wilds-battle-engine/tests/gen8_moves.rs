@@ -1390,3 +1390,26 @@ fn focus_energy_adds_two_critical_stages_and_does_not_stack() {
         );
     }
 }
+
+#[test]
+fn laser_focus_can_refresh_and_guarantees_critical_hits_for_the_next_turn_only() {
+    let mut b = game(
+        mon("User", &["laser-focus", "tackle"]),
+        vec![mon("Foe", &["splash"])],
+        0.75,
+    );
+    turn(&mut b);
+    turn(&mut b);
+    assert!(!b.participants(Side::Allies)[0].last_move_failed);
+    for critical in [true, false] {
+        let events = turn_with(&mut b, |p| {
+            p.choices.iter().find(|c|matches!(c,Choice::UseMove{move_id,..}if move_id==if p.actor.side==Side::Allies {"tackle"}else{"splash"})).unwrap().id()
+        });
+        assert_eq!(
+            events
+                .iter()
+                .any(|e| matches!(e,BattleEvent::Message(s)if s=="A critical hit!")),
+            critical
+        );
+    }
+}
