@@ -819,6 +819,15 @@ impl Battle {
         stat: crate::model::CombatStat,
     ) -> f32 {
         use crate::model::CombatStat::*;
+        if stat == Defense
+            && self.has_ability(who, "grasspelt")
+            && self
+                .field_conditions
+                .iter()
+                .any(|c| c.name == "grassy_terrain")
+        {
+            return 1.5;
+        }
         if stat == Speed
             && self.has_ability(who, "surgesurfer")
             && self

@@ -2805,3 +2805,34 @@ fn surge_surfer_doubles_speed_during_electric_terrain_even_when_airborne() {
         );
     }
 }
+
+#[test]
+fn grass_pelt_boosts_defense_in_grassy_terrain_and_is_bypassable() {
+    let run = |terrain: &str, breaker, suppressed| {
+        let mut user = mon("User", &[terrain, "tackle"]);
+        user.ability = if breaker {
+            Some("mold-breaker".into())
+        } else {
+            None
+        };
+        let mut target = mon("Target", &["splash"]);
+        target.ability = Some("grass-pelt".into());
+        target.ability_suppressed = suppressed;
+        let mut battle = game(user, target, 0.5);
+        turn(&mut battle, terrain, "splash");
+        turn(&mut battle, "tackle", "splash")
+            .iter()
+            .filter_map(|e| match e {
+                BattleEvent::Damage { target, amount, .. } if target.side == Side::Foes => {
+                    Some(*amount)
+                }
+                _ => None,
+            })
+            .sum::<u16>()
+    };
+    let base = run("grassy-terrain", false, true);
+    assert_eq!(run("electric-terrain", false, false), base);
+    assert_eq!(run("grassy-terrain", true, false), base);
+    let reduced = run("grassy-terrain", false, false);
+    assert!((f32::from(reduced) - f32::from(base) / 1.5).abs() <= 2.0);
+}
