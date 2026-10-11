@@ -58,6 +58,22 @@ impl Battle {
                     },
                 ],
             )
+        } else if self.has_ability(who, "mistysurge") {
+            (
+                "misty_terrain",
+                vec![
+                    Rule::IncomingBasePower {
+                        moves: vec![],
+                        move_type: Some(PokemonType::Dragon),
+                        factor: 0.5,
+                        grounded_only: true,
+                    },
+                    Rule::BlockGroundedStatus {
+                        statuses: vec![],
+                        confusion: true,
+                    },
+                ],
+            )
         } else {
             return;
         };

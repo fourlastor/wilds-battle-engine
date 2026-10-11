@@ -2771,3 +2771,8 @@ fn electric_surge_starts_five_turn_electric_terrain() {
 fn psychic_surge_starts_five_turn_psychic_terrain() {
     check_terrain_entry("psychic-surge", "psychic-terrain", "psychic_terrain");
 }
+
+#[test]
+fn misty_surge_starts_five_turn_misty_terrain() {
+    check_terrain_entry("misty-surge", "misty-terrain", "misty_terrain");
+}
