@@ -1612,6 +1612,17 @@ impl Battle {
                 .ability_move_lock
                 .get_or_insert(spec.id.clone());
         }
+        if !spec.auto_only && !forced_script && self.get(actor).locked_move.is_none() {
+            let cost = self.pressure_cost(actor, target, &spec);
+            let move_id = if called {
+                self.get(actor).last_used.clone()
+            } else {
+                Some(spec.id.clone())
+            };
+            if let Some(pp) = move_id.and_then(|id| self.get_mut(actor).move_pp.get_mut(&id)) {
+                *pp = pp.saturating_sub(cost);
+            }
+        }
         if matches!(
             crate::items::item_key(&spec.id).as_str(),
             "explosion" | "selfdestruct" | "mindblown" | "mistyexplosion"

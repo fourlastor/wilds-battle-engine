@@ -3416,3 +3416,40 @@ fn gorilla_tactics_boosts_attack_locks_moves_and_forces_struggle_without_pp() {
             .any(|e| matches!(e, BattleEvent::Message(m) if m == "User used Struggle!"))
     );
 }
+
+#[test]
+fn pressure_deducts_pp_per_opposing_target_with_field_and_hazard_exceptions() {
+    for (id, cost) in [
+        ("tackle", 2),
+        ("surf", 3),
+        ("splash", 1),
+        ("spikes", 3),
+        ("sticky-web", 1),
+        ("imprison", 3),
+        ("rain-dance", 3),
+        ("perish-song", 3),
+    ] {
+        let mut user = mon("User", &[id]);
+        user.ability = Some("mold-breaker".into());
+        let mut target = mon("Target", &["splash"]);
+        target.ability = Some("pressure".into());
+        let mut battle = Battle::with_rng(
+            Fixed(0.5),
+            [vec![user], vec![target.clone(), target]],
+            MoveCatalog::builtin().unwrap(),
+        )
+        .unwrap();
+        let initial = ally(&battle).move_pp[id];
+        turn(&mut battle, id, "splash");
+        assert_eq!(ally(&battle).move_pp[id], initial - cost, "{id}");
+    }
+    let mut user = mon("User", &["sleep-talk", "tackle"]);
+    user.status = Some(Status::Asleep);
+    user.status_turns = 3;
+    let mut target = mon("Target", &["splash"]);
+    target.ability = Some("pressure".into());
+    let mut battle = game(user, target, 0.5);
+    let initial = ally(&battle).move_pp["sleep-talk"];
+    turn(&mut battle, "sleep-talk", "splash");
+    assert_eq!(ally(&battle).move_pp["sleep-talk"], initial - 2);
+}

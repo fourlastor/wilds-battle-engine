@@ -3,7 +3,7 @@ return {
   id = "teatime", name = "Teatime", type = Type.Normal,
   category = Category.Status, pp = 10, accuracy = Accuracy.Always,
   priority = 0, target = Target.Field,
-  flags = {"bypass_substitute"},
+  flags = {"bypass_substitute", "pressure_all"},
   script = function(ctx)
     local ate = false
     for _, pokemon in ipairs(ctx.everyone) do

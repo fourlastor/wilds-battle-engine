@@ -27,5 +27,5 @@ move.pp = 10
 move.accuracy = Accuracy.Always
 move.priority = 0
 move.target = Target.All
-move.flags = {}
+move.flags = {"pressure_all"}
 return move

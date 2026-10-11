@@ -3,7 +3,7 @@ return {
   id = "perish-song", name = "Perish Song", type = Type.Normal,
   category = Category.Status, pp = 5, accuracy = Accuracy.Always,
   priority = 0, target = Target.User,
-  flags = {"sound", "bypass_substitute"},
+  flags = {"sound", "bypass_substitute", "pressure_all"},
   script = function(ctx)
     local applied = false
     for _, who in ipairs(ctx.everyone) do

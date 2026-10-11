@@ -10,7 +10,7 @@ return {
   accuracy = Accuracy.Always,
   priority = 0,
   target = Target.Field,
-  flags = {},
+  flags = {"pressure_all"},
   script = function(ctx)
     if not ctx:start_effect(ctx.field, "gravity", {
       turns = 5,

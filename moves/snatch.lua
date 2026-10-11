@@ -5,7 +5,7 @@ return {
   id = "snatch", name = "Snatch", type = Type.Dark,
   category = Category.Status, pp = 10, accuracy = Accuracy.Always,
   priority = 4, target = Target.User,
-  flags = {"bypass_substitute"},
+  flags = {"bypass_substitute", "pressure_all"},
   script = function(ctx)
     local moves = {}
     for _, id in ipairs(ctx:move_ids()) do

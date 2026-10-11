@@ -27,6 +27,33 @@ fn cannot_suppress(ability: &str) -> bool {
 }
 
 impl Battle {
+    pub(crate) fn pressure_cost(
+        &self,
+        actor: ParticipantId,
+        target: ParticipantId,
+        spec: &crate::moves::MoveSpec,
+    ) -> u8 {
+        use crate::moves::Target;
+        self.actors()
+            .into_iter()
+            .filter(|&foe| {
+                foe.side != actor.side
+                    && self.has_ability(foe, "pressure")
+                    && (spec.has_flag("pressure_all")
+                        || match self.move_target_kind(actor, spec) {
+                            Target::All | Target::AllOthers | Target::AllOpponents => {
+                                !spec.has_flag("adjacent_target") || self.adjacent(actor, foe)
+                            }
+                            Target::Selected | Target::AnyOther | Target::RandomOpponent => {
+                                foe == target
+                            }
+                            _ => false,
+                        })
+            })
+            .count()
+            .min(u8::MAX as usize) as u8
+    }
+
     pub(crate) fn try_trace(&mut self, who: ParticipantId, events: &mut Vec<BattleEvent>) {
         if !self.has_ability(who, "trace") {
             return;

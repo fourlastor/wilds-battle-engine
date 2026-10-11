@@ -44,7 +44,7 @@ id,ability,status,verification
 43,soundproof,IMPLEMENTED,Source inventory; existing tests only
 44,rain-dish,IMPLEMENTED,ability_rules::rain_dish_heals_one_sixteenth_in_effective_rain
 45,sand-stream,IMPLEMENTED,ability_rules::sandstream_starts_weather_on_entry_only_when_active
-46,pressure,MISSING,No native battle behavior
+46,pressure,IMPLEMENTED,ability_rules::pressure_deducts_pp_per_opposing_target_with_field_and_hazard_exceptions
 47,thick-fat,IMPLEMENTED,ability_rules::thickfat_halves_fire_and_ice_damage_and_is_bypassable
 48,early-bird,IMPLEMENTED,Source inventory; existing tests only
 49,flame-body,IMPLEMENTED,ability_rules::flame_body_has_thirty_percent_contact_burn_with_type_immunity

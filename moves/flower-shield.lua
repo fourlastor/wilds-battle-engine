@@ -3,7 +3,7 @@ return {
   id = "flower-shield", name = "Flower Shield", type = Type.Fairy,
   category = Category.Status, pp = 10, accuracy = Accuracy.Always,
   priority = 0, target = Target.Field,
-  flags = {"bypass_substitute"},
+  flags = {"bypass_substitute", "pressure_all"},
   script = function(ctx)
     local changed = false
     for _, pokemon in ipairs(ctx.everyone) do
