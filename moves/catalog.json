@@ -4840,10 +4840,8 @@
       "sheet_row": 478,
       "runtime_id": "shell-trap",
       "file": "moves/shell-trap.lua",
-      "status": "partial",
-      "limitations": [
-        "The trap records opposing physical hits, but reprioritizing the user immediately after the triggering attacker requires an ordering hook."
-      ]
+      "status": "implemented",
+      "limitations": []
     },
     {
       "id": 705,

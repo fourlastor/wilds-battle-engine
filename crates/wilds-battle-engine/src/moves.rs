@@ -341,7 +341,9 @@ pub(crate) enum ScriptOperation {
         who: ParticipantId,
     },
     AddPayout(u32),
-    Hurry,
+    Hurry {
+        who: Option<ParticipantId>,
+    },
 }
 impl UserData for ScriptOperation {}
 
@@ -1050,7 +1052,11 @@ fn parse_op(name: &str, args: &[Value]) -> mlua::Result<ScriptOperation> {
         "add_payout" => {
             ScriptOperation::AddPayout(whole(arg(0), "add_payout", 0.0, 1_000_000.0)? as u32)
         }
-        "hurry" => ScriptOperation::Hurry,
+        "hurry" => ScriptOperation::Hurry {
+            who: given(0)
+                .map(|value| pokemon_of(value, "hurry"))
+                .transpose()?,
+        },
         _ => return Err(bad(format!("unknown battle operation {name}"))),
     })
 }

@@ -79,6 +79,36 @@ fn said(events: &[BattleEvent], text: &str) -> bool {
 }
 
 #[test]
+fn shell_trap_is_promoted_after_the_triggering_attacker_only_once() {
+    let mut first = mon("First", &["tackle"]);
+    first.speed = 300;
+    let mut second = mon("Second", &["tackle"]);
+    second.speed = 200;
+    let mut game = Game::new(vec![mon("Ally", &["shell-trap"])], vec![first, second], 0.5);
+    let events = game.turn("shell-trap", "tackle");
+    let uses: Vec<&str> = events
+        .iter()
+        .filter_map(|event| match event {
+            BattleEvent::Message(text) if text.contains(" used ") => Some(text.as_str()),
+            _ => None,
+        })
+        .collect();
+    assert_eq!(
+        uses,
+        [
+            "First used Tackle!",
+            "Ally used Shell Trap!",
+            "Second used Tackle!"
+        ]
+    );
+
+    let mut game = Game::duel(&["shell-trap"], mon("Foe", &["water-gun"]), 0.5);
+    let events = game.turn("shell-trap", "water-gun");
+    assert!(said(&events, "shell trap didn't work"));
+    assert_eq!(game.foe().hp, 1000);
+}
+
+#[test]
 fn sheer_cold_uses_one_ohko_check_with_type_and_level_restrictions() {
     for (ice_user, dice, level, target_ice, guaranteed, hits) in [
         (false, 0.25, 100, false, false, false),

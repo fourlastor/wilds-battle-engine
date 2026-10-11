@@ -166,7 +166,7 @@ return function(api, fields, roster)
 
   -- The rest of the battle
   function ctx:add_payout(amount) return op("add_payout", amount) end
-  function ctx:hurry() return op("hurry") end
+  function ctx:hurry(who) return op("hurry", who) end
 
   -- Shorthands built from the operations above.
 

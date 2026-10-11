@@ -1412,8 +1412,17 @@ impl Battle {
                 *payout = payout.saturating_add(amount);
                 Value::Nil
             }
-            ScriptOperation::Hurry => {
-                self.hurry = Some(spec.id.clone());
+            ScriptOperation::Hurry { who } => {
+                if let Some(who) = who {
+                    self.hurry.push(who);
+                } else {
+                    self.hurry.extend(
+                        self.turn_choices
+                            .iter()
+                            .filter(|(_, move_id)| *move_id == spec.id)
+                            .map(|(id, _)| *id),
+                    );
+                }
                 Value::Nil
             }
         };
@@ -1473,6 +1482,7 @@ fn reaction_may(operation: &ScriptOperation, hook: ScriptHook) -> bool {
         | Op::GiveItem { .. }
         | Op::AddPayout(_) => true,
         Op::WatchHitsUntilNextAction | Op::Protect { .. } => hook == ScriptHook::TurnStart,
+        Op::Hurry { .. } => hook == ScriptHook::Hit,
         _ => false,
     }
 }

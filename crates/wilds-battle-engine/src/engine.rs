@@ -26,8 +26,8 @@ pub struct Battle {
     pub(crate) environment: Option<String>,
     /// The move each Pokémon chose this turn.
     pub(crate) turn_choices: Vec<(ParticipantId, String)>,
-    /// A move whose other users should act right away (Round).
-    pub(crate) hurry: Option<String>,
+    /// Pending actors promoted by moves or reactions after the current action.
+    pub(crate) hurry: Vec<ParticipantId>,
     /// Whether the move being used right now failed, missed or had no effect.
     pub(crate) move_failed: bool,
 }
@@ -173,7 +173,7 @@ impl Battle {
             payout: [0, 0],
             environment: None,
             turn_choices: Vec::new(),
-            hurry: None,
+            hurry: Vec::new(),
             move_failed: false,
         })
     }
@@ -450,7 +450,7 @@ impl Battle {
                 SelectedAction::Recharge => None,
             })
             .collect();
-        self.hurry = None;
+        self.hurry.clear();
         let mut events = Vec::new();
         // Moves that get ready before anyone acts (Focus Punch, Beak Blast).
         for (actor, choice, ..) in &ordered {
@@ -497,11 +497,12 @@ impl Battle {
             }
             self.get_mut(actor).acted = true;
             self.resolve_outcome(&mut events);
-            if let Some(move_id) = self.hurry.take() {
-                // Everyone else who chose that move goes next, in their usual order.
-                let (now, later): (Vec<_>, Vec<_>) = ordered.drain(next..).partition(|entry| {
-                    matches!(&entry.1, SelectedAction::Move(action) if action.move_id == move_id)
-                });
+            if !self.hurry.is_empty() {
+                // Only pending actions move; promoted actors retain their relative order.
+                let promoted = std::mem::take(&mut self.hurry);
+                let (now, later): (Vec<_>, Vec<_>) = ordered
+                    .drain(next..)
+                    .partition(|entry| promoted.contains(&entry.0));
                 ordered.extend(now);
                 ordered.extend(later);
             }

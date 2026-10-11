@@ -211,7 +211,7 @@ before turn-start hooks; capped changes and resetting stages do not trigger them
 | `ctx:opposite_genders(a, b)`, `ctx:share_type(a, b)`, `ctx:type_number(0..15)` | `type_number` uses Hidden Power's order. |
 | `who:raised_stages()`, `who:used_all_other_moves(id)` | Read-only helpers on a Pokémon. |
 | `ctx:add_payout(amount)` | Money for the user's side, read by the host with `Battle::payout`. |
-| `ctx:hurry()` | Everyone else who chose this move acts next (Round). |
+| `ctx:hurry(who)` | Promotes that Pokémon's pending action to immediately after the current action. Usable in hit reactions. Omitting `who` promotes all remaining users of this move (Round). Actors that have already acted do not act again. |
 
 Damage options: `ohko_accuracy`, `accuracy`, `never_miss`, `ignore_protect`, `ignore_evasion`,
 `hits_hidden` (a list of `Hidden` values, or `true`), `drain`, `recoil`,
