@@ -37,6 +37,9 @@ impl Battle {
         if hit.damage == 0 || hit.attacker == target {
             return;
         }
+        if ability == "gooey" && hit.contact && self.get(hit.attacker).hp > 0 {
+            self.change_stat_from(target, hit.attacker, crate::model::Stat::Speed, -1, events);
+        }
         if ability == "cutecharm" && hit.contact && self.rng.chance(0.3) {
             self.start_condition(
                 crate::model::Scope::Pokemon(hit.attacker),

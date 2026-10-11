@@ -1969,3 +1969,33 @@ fn cute_charm_infatuates_only_opposite_gender_contact_attackers() {
         );
     }
 }
+
+fn check_contact_speed_drop(ability: &str) {
+    for (move_id, attacker_ability, hp, expected) in [
+        ("tackle", "", 1000, -1),
+        ("tackle", "", 1, -1),
+        ("tackle", "mold-breaker", 1000, -1),
+        ("tackle", "long-reach", 1000, 0),
+        ("tackle", "clear-body", 1000, 0),
+        ("tackle", "contrary", 1000, 1),
+        ("swift", "", 1000, 0),
+    ] {
+        let mut user = mon("User", &[move_id]);
+        user.ability = Some(attacker_ability.into());
+        let mut target = mon("Target", &["splash"]);
+        target.ability = Some(ability.into());
+        target.hp = hp;
+        let mut battle = game(user, target, 0.5);
+        turn(&mut battle, move_id, "splash");
+        assert_eq!(
+            ally(&battle).stage(wilds_battle_engine::Stat::Speed),
+            expected,
+            "{ability}/{move_id}/{attacker_ability}/{hp}"
+        );
+    }
+}
+
+#[test]
+fn gooey_lowers_contact_attackers_speed_with_stat_protection() {
+    check_contact_speed_drop("gooey");
+}
