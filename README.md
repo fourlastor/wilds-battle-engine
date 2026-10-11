@@ -293,6 +293,9 @@ Voluntary switches resolve before ordinary moves. Attacks aim at field slots,
 so they hit the incoming occupant. Fainted slots prompt for a replacement before
 the next turn. Switching resets stages and volatile effects, restores temporary
 forms/types, and preserves HP, nonvolatile status, PP, items and consumption history.
+Pending actions refresh their speed after each action and resumed pivot, including
+stat-stage and paralysis changes. Priority brackets and the original tie rolls are
+preserved, as are Custap ordering and explicit promotions such as Pledge combinations.
 Bench members do not act, receive residual effects or activate abilities/items.
 A pending move flagged `intercepts_switch` runs once before an adjacent foe
 withdraws voluntarily or pivots. Its target has `switching = true` during that

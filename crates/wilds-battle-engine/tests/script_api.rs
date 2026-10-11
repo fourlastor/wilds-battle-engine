@@ -1985,3 +1985,59 @@ fn mistakes_in_a_script_are_reported() {
     );
     assert!(failing("while true do ctx:message('x') end").contains("exceeded 256 operations"));
 }
+
+#[test]
+fn pending_actions_follow_changed_speed_without_crossing_priority_brackets() {
+    for priority in [0, 1] {
+        let slow = "{id='slow',name='Slow',type=Type.Normal,category=Category.Status,pp=10,priority=2,script=function(ctx) ctx:change_stat(ctx.target, Stat.Speed, -6) end}";
+        let attack = format!(
+            "{{id='act',name='Act',type=Type.Normal,category=Category.Status,pp=10,priority={priority},script=function(ctx) ctx:message('acted ' .. ctx.user.name) end}}"
+        );
+        let normal = "{id='normal',name='Normal',type=Type.Normal,category=Category.Status,pp=10,script=function(ctx) ctx:message('acted ' .. ctx.user.name) end}";
+        let mut fast = mon("Fast", &["act"]);
+        fast.speed = 200;
+        let mut other = mon("Other", &["normal"]);
+        other.speed = 100;
+        let mut game = Game::new(
+            &[slow, &attack, normal],
+            vec![mon("User", &["slow"])],
+            vec![fast, other],
+        );
+        let lines = game.turn(&["slow", "act", "normal"]);
+        let order: Vec<_> = lines
+            .iter()
+            .filter(|line| line.starts_with("acted "))
+            .map(String::as_str)
+            .collect();
+        assert_eq!(
+            order,
+            if priority == 0 {
+                vec!["acted Other", "acted Fast"]
+            } else {
+                vec!["acted Fast", "acted Other"]
+            }
+        );
+    }
+}
+
+#[test]
+fn pending_actions_follow_new_paralysis_speed() {
+    let slow = "{id='slow',name='Slow',type=Type.Normal,category=Category.Status,pp=10,priority=2,script=function(ctx) ctx:apply_status(ctx.target, Status.Paralyzed) end}";
+    let act = "{id='act',name='Act',type=Type.Normal,category=Category.Status,pp=10,script=function(ctx) ctx:message('acted ' .. ctx.user.name) end}";
+    let mut fast = mon("Fast", &["act"]);
+    fast.speed = 150;
+    let mut other = mon("Other", &["act"]);
+    other.speed = 100;
+    let mut game = Game::new(
+        &[slow, act],
+        vec![mon("User", &["slow"])],
+        vec![fast, other],
+    );
+    let lines = game.turn(&["slow", "act", "act"]);
+    let order: Vec<_> = lines
+        .iter()
+        .filter(|line| line.starts_with("acted "))
+        .map(String::as_str)
+        .collect();
+    assert_eq!(order, ["acted Other", "acted Fast"]);
+}

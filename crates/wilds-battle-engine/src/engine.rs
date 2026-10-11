@@ -151,6 +151,8 @@ struct QueuedAction {
     priority: i8,
     speed: i32,
     tie: u64,
+    custap: bool,
+    promoted: bool,
 }
 impl QueuedAction {
     fn order(a: &Self, b: &Self) -> std::cmp::Ordering {
@@ -647,9 +649,9 @@ impl Battle {
                     SelectedAction::Recharge => 0,
                     SelectedAction::Switch(_) => 6,
                 };
-                let speed = if matches!(choice, SelectedAction::Move(_))
-                    && self.custap_priority(actor, events)
-                {
+                let custap = matches!(choice, SelectedAction::Move(_))
+                    && self.custap_priority(actor, events);
+                let speed = if custap {
                     i32::MAX
                 } else {
                     self.stat_value(actor, CombatStat::Speed) as i32
@@ -661,6 +663,8 @@ impl Battle {
                     priority,
                     speed,
                     tie: self.rng.next_u64(),
+                    custap,
+                    promoted: false,
                 }
             })
             .collect();
@@ -714,7 +718,29 @@ impl Battle {
         Ok(())
     }
 
+    /// Refresh speed after each action (and a paused pivot), without rerolling ties or
+    /// undoing moves that explicitly promoted a pending action.
+    fn refresh_pending_speed(&mut self) {
+        let mut queue = std::mem::take(&mut self.turn_queue);
+        for entry in &mut queue {
+            if !entry.custap {
+                entry.speed = self.stat_value(entry.actor, CombatStat::Speed) as i32;
+            }
+        }
+        queue.make_contiguous().sort_by(|a, b| {
+            b.promoted.cmp(&a.promoted).then_with(|| {
+                if a.promoted && b.promoted {
+                    std::cmp::Ordering::Equal
+                } else {
+                    QueuedAction::order(a, b)
+                }
+            })
+        });
+        self.turn_queue = queue;
+    }
+
     fn resume_turn(&mut self, events: &mut Vec<BattleEvent>) -> Result<(), BattleError> {
+        self.refresh_pending_speed();
         while let Some(entry) = self.turn_queue.pop_front() {
             if self.winner.is_some() {
                 break;
@@ -762,6 +788,7 @@ impl Battle {
             self.get_mut(actor).acted = true;
             self.completed_slots.push((actor.side, entry.position));
             self.resolve_outcome(events);
+            self.refresh_pending_speed();
             if !self.hurry.is_empty() {
                 // Only pending actions move; promoted actors retain their relative order.
                 let promoted = std::mem::take(&mut self.hurry);
@@ -770,6 +797,9 @@ impl Battle {
                         .into_iter()
                         .partition(|entry| promoted.contains(&entry.actor));
                 self.turn_queue = now;
+                for entry in &mut self.turn_queue {
+                    entry.promoted = true;
+                }
                 self.turn_queue.extend(later);
             }
             if let Some(who) = self.pivot.take()
