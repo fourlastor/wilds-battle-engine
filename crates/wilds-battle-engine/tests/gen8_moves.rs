@@ -279,3 +279,8 @@ fn clamp_damages_and_binds_only_after_a_reaching_hit() {
 fn sand_tomb_damages_and_binds_only_after_a_reaching_hit() {
     check_partial_trap("sand-tomb", 35, "Ground", "Physical");
 }
+
+#[test]
+fn magma_storm_damages_and_binds_only_after_a_reaching_hit() {
+    check_partial_trap("magma-storm", 100, "Fire", "Special");
+}
