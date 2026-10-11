@@ -247,7 +247,7 @@ id,ability,status,verification
 246,ice-scales,IMPLEMENTED,Source inventory; existing tests only
 247,ripen,IMPLEMENTED,Source inventory; existing tests only
 248,ice-face,MISSING,No native battle behavior
-249,power-spot,MISSING,No native battle behavior
+249,power-spot,IMPLEMENTED,ability_rules::power_spot_boosts_ally_attacks_but_not_the_holders
 250,mimicry,MISSING,No native battle behavior
 251,screen-cleaner,IMPLEMENTED,ability_rules::screen_cleaner_removes_both_sides_screens_but_preserves_mist
 252,steely-spirit,MISSING,No native battle behavior

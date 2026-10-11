@@ -993,6 +993,9 @@ impl Battle {
             if ally.side != actor.side {
                 continue;
             }
+            if ally != actor && self.has_ability(ally, "powerspot") {
+                factor *= 1.3;
+            }
             if ally != actor
                 && self.has_ability(ally, "battery")
                 && attack.category == crate::moves::Category::Special

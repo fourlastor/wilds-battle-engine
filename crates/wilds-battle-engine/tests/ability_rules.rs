@@ -2655,3 +2655,16 @@ fn battery_boosts_special_attacks_of_allies_and_stacks() {
         team_boost_damage("battery", "tackle", 0, false)
     );
 }
+
+#[test]
+fn power_spot_boosts_ally_attacks_but_not_the_holders() {
+    for move_id in ["water-gun", "tackle"] {
+        let base = team_boost_damage("power-spot", move_id, 0, false);
+        assert_eq!(team_boost_damage("power-spot", move_id, 0, true), base);
+        assert!(
+            (f32::from(team_boost_damage("power-spot", move_id, 1, false)) - f32::from(base) * 1.3)
+                .abs()
+                <= 3.0
+        );
+    }
+}
