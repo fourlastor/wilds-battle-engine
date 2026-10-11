@@ -9,7 +9,7 @@ id,ability,status,verification
 8,sand-veil,MISSING,No native battle behavior
 9,static,MISSING,No native battle behavior
 10,volt-absorb,IMPLEMENTED,ability_rules::volt_absorb_catches_status_moves_and_respects_suppression_and_bypass
-11,water-absorb,PARTIAL,Source inventory; existing tests only
+11,water-absorb,IMPLEMENTED,ability_rules::water_absorb_catches_soak_without_changing_types
 12,oblivious,PARTIAL,Source inventory; existing tests only
 13,cloud-nine,PARTIAL,Source inventory; existing tests only
 14,compound-eyes,MISSING,No native battle behavior

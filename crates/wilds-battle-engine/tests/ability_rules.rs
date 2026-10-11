@@ -94,3 +94,27 @@ fn volt_absorb_catches_status_moves_and_respects_suppression_and_bypass() {
         assert_eq!(ally(&battle).hp, 1000);
     }
 }
+
+#[test]
+fn water_absorb_catches_soak_without_changing_types() {
+    for (suppressed, breaker) in [(false, false), (true, false), (false, true)] {
+        let mut user = mon("User", &["soak"]);
+        user.ability = breaker.then(|| "mold-breaker".into());
+        let mut target = mon("Target", &["splash"]);
+        target.hp = 500;
+        target.ability = Some("water-absorb".into());
+        target.ability_suppressed = suppressed;
+        let mut battle = game(user, target, 0.5);
+        turn(&mut battle, "soak", "splash");
+        let active = !suppressed && !breaker;
+        assert_eq!(foe(&battle).hp, if active { 750 } else { 500 });
+        assert_eq!(
+            foe(&battle).types,
+            vec![if active {
+                PokemonType::Normal
+            } else {
+                PokemonType::Water
+            }]
+        );
+    }
+}

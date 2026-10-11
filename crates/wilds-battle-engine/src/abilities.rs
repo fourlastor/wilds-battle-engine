@@ -379,8 +379,10 @@ impl Battle {
             self.ignored_ability = Some(target);
         }
         let kind = self.converted_type(actor, spec.move_type);
-        let absorbs =
-            kind == crate::model::PokemonType::Electric && self.has_ability(target, "voltabsorb");
+        let absorbs = (kind == crate::model::PokemonType::Electric
+            && self.has_ability(target, "voltabsorb"))
+            || (kind == crate::model::PokemonType::Water
+                && self.has_ability(target, "waterabsorb"));
         absorbs && self.ability_blocks_damage(actor, target, kind, 2.0, false, false, true, events)
     }
 
