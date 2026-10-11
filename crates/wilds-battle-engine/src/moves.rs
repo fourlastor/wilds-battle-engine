@@ -837,6 +837,7 @@ fn rule_of(value: &Value) -> mlua::Result<Rule> {
             "screen",
             "unless_side_effect",
         ],
+        RuleKind::IncomingBasePower => &["kind", "moves", "type", "factor", "grounded_only"],
         RuleKind::BasePower => &["kind", "type", "factor", "grounded_only"],
         RuleKind::DamageDealt => &["kind", "factor", "category", "type"],
         RuleKind::StatMultiplier => &["kind", "stat", "factor"],
@@ -954,6 +955,12 @@ fn rule_of(value: &Value) -> mlua::Result<Rule> {
                 .get("multi_battle_factor")?
                 .map(|_| factor("multi_battle_factor"))
                 .transpose()?,
+        },
+        RuleKind::IncomingBasePower => Rule::IncomingBasePower {
+            moves: options.list("moves", name_of)?,
+            move_type: options.pokemon_type("type")?,
+            factor: factor("factor")?,
+            grounded_only: options.flag("grounded_only")?,
         },
         RuleKind::BasePower => Rule::BasePower {
             move_type: options.pokemon_type("type")?,

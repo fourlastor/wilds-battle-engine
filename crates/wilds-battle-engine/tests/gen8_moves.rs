@@ -4728,3 +4728,80 @@ fn electric_terrain_prevents_sleep_and_rest_only_on_grounded_pokemon_and_expires
     turn(&mut b);
     assert_eq!(b.participants(Side::Allies)[0].status, None);
 }
+
+#[test]
+fn misty_terrain_prevents_status_and_confusion_for_grounded_pokemon() {
+    for attack in ["toxic", "confuse_ray"] {
+        for flying in [false, true] {
+            let mut user = mon("User", &["misty-terrain"]);
+            user.speed = 200;
+            if flying {
+                user.types = vec![PokemonType::Flying];
+            }
+            let mut b = game(user, vec![mon("Foe", &[attack])], 0.5);
+            turn(&mut b);
+            let user = &b.participants(Side::Allies)[0];
+            if attack == "toxic" {
+                assert_eq!(user.status.is_some(), flying);
+            } else {
+                assert_eq!(user.confused_turns.is_some(), flying);
+            }
+        }
+    }
+    let mut b = game(
+        mon("User", &["misty-terrain", "outrage"]),
+        vec![mon("Foe", &["splash"])],
+        0.5,
+    );
+    turn(&mut b);
+    for _ in 0..2 {
+        turn_with(&mut b, |p| choose_move(p, "outrage", "splash"));
+    }
+    assert!(b.participants(Side::Allies)[0].confused_turns.is_none());
+}
+
+#[test]
+fn misty_terrain_halves_dragon_damage_to_grounded_targets_and_replaces_other_terrain() {
+    for flying in [false, true] {
+        let mut user = mon("User", &["misty-terrain", "splash"]);
+        user.speed = 200;
+        if flying {
+            user.types = vec![PokemonType::Flying];
+        }
+        let foe = mon("Foe", &["splash", "dragon-breath"]);
+        let normal = control_damage(
+            if flying { 60 } else { 30 },
+            "Dragon",
+            "Special",
+            foe.clone(),
+            user.clone(),
+        );
+        let mut b = game(user, vec![foe], 0.5);
+        turn(&mut b);
+        turn_with(&mut b, |p| choose_move(p, "splash", "dragon-breath"));
+        let damage = 1000 - b.participants(Side::Allies)[0].hp;
+        assert_eq!(damage, normal);
+    }
+    let mut b = game(
+        mon("User", &["electric-terrain", "misty-terrain"]),
+        vec![mon("Foe", &["splash"])],
+        0.5,
+    );
+    turn(&mut b);
+    turn_with(&mut b, |p| choose_move(p, "misty-terrain", "splash"));
+    assert_eq!(b.field_conditions().len(), 1);
+    assert_eq!(b.field_conditions()[0].name, "misty_terrain");
+}
+
+#[test]
+fn protective_terrain_does_not_stop_yawn_from_resolving_while_the_target_is_underground() {
+    use wilds_battle_engine::Status;
+    for terrain in ["electric-terrain", "misty-terrain"] {
+        let mut user = mon("User", &["yawn", terrain]);
+        user.speed = 200;
+        let mut b = game(user, vec![mon("Foe", &["splash", "dig"])], 0.5);
+        turn(&mut b);
+        turn_with(&mut b, |p| choose_move(p, terrain, "dig"));
+        assert_eq!(b.participants(Side::Foes)[0].status, Some(Status::Asleep));
+    }
+}

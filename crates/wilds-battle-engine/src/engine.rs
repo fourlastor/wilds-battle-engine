@@ -98,6 +98,7 @@ impl HitMeta {
 
 /// Everything the damage formula needs to know about one hit.
 pub(crate) struct Attack<'a> {
+    pub(crate) move_id: &'a str,
     pub(crate) power: u16,
     pub(crate) high_crit: bool,
     pub(crate) always_crit: bool,
@@ -1836,7 +1837,9 @@ impl Battle {
             }
             Effect::Confuse => {
                 self.rng.chance(1.0); // C# ConfuseEffect checks its default chance.
-                if target != actor && self.blocks_confusion(target) {
+                if (target != actor && self.blocks_confusion(target))
+                    || self.blocks_grounded_confusion(target)
+                {
                     return Ok(());
                 }
                 if self.get(target).confused_turns.is_none() {
@@ -2114,6 +2117,7 @@ impl Battle {
         events: &mut Vec<BattleEvent>,
     ) -> Option<u16> {
         let attack = Attack {
+            move_id: &spec.id,
             hits_airborne: spec.has_flag("hits_airborne"),
             power,
             high_crit,
@@ -2250,7 +2254,10 @@ impl Battle {
             self.gem_factor(actor, move_type, events)
         };
         // Base-power conditions round halves down, before the existing damage modifiers.
-        let base_power = (f32::from(attack.power) * self.base_power_factor(actor, move_type) - 0.5)
+        let base_power = (f32::from(attack.power)
+            * self.base_power_factor(actor, move_type)
+            * self.incoming_base_power_factor(target, attack.move_id, move_type)
+            - 0.5)
             .ceil()
             .max(1.0);
         let adjusted_power = gem

@@ -290,7 +290,7 @@ impl Battle {
     }
 
     pub(crate) fn blocks_grounded_status(&self, id: ParticipantId, status: Status) -> bool {
-        self.on_ground(id) && self.rules(id).any(|r| matches!(r, Rule::BlockGroundedStatus { statuses, .. } if statuses.is_empty() || statuses.contains(&status)))
+        self.on_ground(id) && self.get(id).hidden().is_none() && self.rules(id).any(|r| matches!(r, Rule::BlockGroundedStatus { statuses, .. } if statuses.is_empty() || statuses.contains(&status)))
     }
 
     pub(crate) fn blocks_status(&self, id: ParticipantId, status: Status) -> bool {
@@ -300,8 +300,9 @@ impl Battle {
         })
     }
 
-    pub(crate) fn blocks_confusion(&self, id: ParticipantId) -> bool {
-        if self.on_ground(id)
+    pub(crate) fn blocks_grounded_confusion(&self, id: ParticipantId) -> bool {
+        self.on_ground(id)
+            && self.get(id).hidden().is_none()
             && self.rules(id).any(|r| {
                 matches!(
                     r,
@@ -311,7 +312,10 @@ impl Battle {
                     }
                 )
             })
-        {
+    }
+
+    pub(crate) fn blocks_confusion(&self, id: ParticipantId) -> bool {
+        if self.blocks_grounded_confusion(id) {
             return true;
         }
         self.rules(id).any(|rule| {
@@ -501,6 +505,28 @@ impl Battle {
         }
         self.get_mut(id).flinched = true;
         true
+    }
+
+    pub(crate) fn incoming_base_power_factor(
+        &self,
+        id: ParticipantId,
+        move_id: &str,
+        kind: PokemonType,
+    ) -> f32 {
+        self.rules(id).fold(1.0, |factor, rule| match rule {
+            Rule::IncomingBasePower {
+                moves,
+                move_type,
+                factor: by,
+                grounded_only,
+            } if (moves.is_empty() || moves.iter().any(|name| name == move_id))
+                && move_type.is_none_or(|t| t == kind)
+                && (!grounded_only || (self.on_ground(id) && self.get(id).hidden().is_none())) =>
+            {
+                factor * by
+            }
+            _ => factor,
+        })
     }
 
     pub(crate) fn base_power_factor(&self, id: ParticipantId, kind: PokemonType) -> f32 {

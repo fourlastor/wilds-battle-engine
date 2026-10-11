@@ -777,6 +777,7 @@ impl Battle {
 
     fn attack<'a>(&self, frame: &Frame<'a>, power: u16, options: &'a DamageOptions) -> Attack<'a> {
         Attack {
+            move_id: &frame.spec.id,
             hits_airborne: frame.spec.has_flag("hits_airborne"),
             power,
             high_crit: options.high_crit,
@@ -1234,6 +1235,7 @@ impl Battle {
         if self.get(who).hp == 0
             || self.get(who).confused_turns.is_some()
             || (who != actor && self.blocks_confusion(who))
+            || self.blocks_grounded_confusion(who)
         {
             return false;
         }
@@ -1393,14 +1395,7 @@ impl Battle {
                 Value::Nil
             }
             ScriptOperation::ConfuseSelf => {
-                if self.get(actor).hp > 0 && self.get(actor).confused_turns.is_none() {
-                    let turns = self.rng.range(1, 4);
-                    self.get_mut(actor).confused_turns = Some(turns);
-                    events.push(BattleEvent::Message(format!(
-                        "{} became confused!",
-                        self.get(actor).name
-                    )));
-                }
+                self.confuse(actor, actor, events);
                 Value::Nil
             }
             ScriptOperation::RecoilMaxHp(fraction) => {

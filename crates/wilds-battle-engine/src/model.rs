@@ -153,6 +153,13 @@ pub enum Scope {
 /// A rule on a side applies to every Pokémon of that side, one on the field to everyone.
 #[derive(Clone, Debug, PartialEq)]
 pub enum Rule {
+    /// Base power of incoming moves, filtered by move id and/or type.
+    IncomingBasePower {
+        moves: Vec<String>,
+        move_type: Option<PokemonType>,
+        factor: f32,
+        grounded_only: bool,
+    },
     /// Status protection for grounded Pokemon, including self-inflicted status.
     BlockGroundedStatus {
         statuses: Vec<Status>,
