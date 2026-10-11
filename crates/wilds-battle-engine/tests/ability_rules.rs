@@ -1752,3 +1752,29 @@ fn gale_wings_only_prioritizes_flying_moves_at_full_health() {
         );
     }
 }
+
+#[test]
+fn triage_gives_healing_and_drain_moves_three_priority() {
+    for (move_id, suppressed, expected) in [
+        ("giga-drain", false, true),
+        ("rest", false, true),
+        ("wish", false, true),
+        ("giga-drain", true, false),
+        ("pain-split", false, false),
+        ("aromatherapy", false, false),
+    ] {
+        let mut user = mon("User", &[move_id]);
+        user.ability = Some("triage".into());
+        user.ability_suppressed = suppressed;
+        user.hp = 500;
+        user.speed = 10;
+        let mut target = mon("Target", &["quick-attack"]);
+        target.speed = 100;
+        let mut battle = game(user, target, 0.5);
+        assert_eq!(
+            first_move_is_user(&turn(&mut battle, move_id, "quick-attack")),
+            expected,
+            "{move_id}/{suppressed}"
+        );
+    }
+}

@@ -641,6 +641,7 @@ impl Battle {
                     && self.get(id).hp == self.get(id).max_hp
                     && self.has_ability(id, "galewings"),
             ))
+            .saturating_add(3 * i8::from(spec.has_flag("heal") && self.has_ability(id, "triage")))
     }
 
     pub(crate) fn move_priority(&self, id: ParticipantId, base: i8) -> i8 {

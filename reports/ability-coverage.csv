@@ -203,7 +203,7 @@ id,ability,status,verification
 202,slush-rush,IMPLEMENTED,ability_rules::slushrush_doubles_speed_in_effective_weather
 203,long-reach,IMPLEMENTED,ability_rules::long_reach_removes_contact_for_hit_reactions_and_fluffy
 204,liquid-voice,MISSING,No native battle behavior
-205,triage,MISSING,No native battle behavior
+205,triage,IMPLEMENTED,ability_rules::triage_gives_healing_and_drain_moves_three_priority
 206,galvanize,MISSING,No native battle behavior
 207,surge-surfer,MISSING,No native battle behavior
 208,schooling,MISSING,No native battle behavior
