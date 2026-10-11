@@ -819,6 +819,9 @@ impl Battle {
             )));
             return HitOutcome::Missed;
         }
+        if self.ability_blocks_status_move(actor, recipient, frame.spec, events) {
+            return HitOutcome::Protected;
+        }
         HitOutcome::Hit
     }
 

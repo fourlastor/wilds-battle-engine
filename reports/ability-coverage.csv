@@ -1,0 +1,268 @@
+id,ability,status,verification
+1,stench,MISSING,No native battle behavior
+2,drizzle,MISSING,No native battle behavior
+3,speed-boost,MISSING,No native battle behavior
+4,battle-armor,IMPLEMENTED,Source inventory; existing tests only
+5,sturdy,IMPLEMENTED,Source inventory; existing tests only
+6,damp,MISSING,No native battle behavior
+7,limber,IMPLEMENTED,Source inventory; existing tests only
+8,sand-veil,MISSING,No native battle behavior
+9,static,MISSING,No native battle behavior
+10,volt-absorb,IMPLEMENTED,ability_rules::volt_absorb_catches_status_moves_and_respects_suppression_and_bypass
+11,water-absorb,PARTIAL,Source inventory; existing tests only
+12,oblivious,PARTIAL,Source inventory; existing tests only
+13,cloud-nine,PARTIAL,Source inventory; existing tests only
+14,compound-eyes,MISSING,No native battle behavior
+15,insomnia,IMPLEMENTED,Source inventory; existing tests only
+16,color-change,MISSING,No native battle behavior
+17,immunity,IMPLEMENTED,Source inventory; existing tests only
+18,flash-fire,PARTIAL,Source inventory; existing tests only
+19,shield-dust,IMPLEMENTED,Source inventory; existing tests only
+20,own-tempo,IMPLEMENTED,Source inventory; existing tests only
+21,suction-cups,IMPLEMENTED,Source inventory; existing tests only
+22,intimidate,IMPLEMENTED,Source inventory; existing tests only
+23,shadow-tag,MISSING,No native battle behavior
+24,rough-skin,MISSING,No native battle behavior
+25,wonder-guard,IMPLEMENTED,Source inventory; existing tests only
+26,levitate,IMPLEMENTED,Source inventory; existing tests only
+27,effect-spore,MISSING,No native battle behavior
+28,synchronize,IMPLEMENTED,Source inventory; existing tests only
+29,clear-body,IMPLEMENTED,Source inventory; existing tests only
+30,natural-cure,IMPLEMENTED,Source inventory; existing tests only
+31,lightning-rod,PARTIAL,Source inventory; existing tests only
+32,serene-grace,MISSING,No native battle behavior
+33,swift-swim,MISSING,No native battle behavior
+34,chlorophyll,MISSING,No native battle behavior
+35,illuminate,MISSING,No native battle behavior
+36,trace,MISSING,No native battle behavior
+37,huge-power,IMPLEMENTED,Source inventory; existing tests only
+38,poison-point,MISSING,No native battle behavior
+39,inner-focus,IMPLEMENTED,Source inventory; existing tests only
+40,magma-armor,IMPLEMENTED,Source inventory; existing tests only
+41,water-veil,IMPLEMENTED,Source inventory; existing tests only
+42,magnet-pull,MISSING,No native battle behavior
+43,soundproof,IMPLEMENTED,Source inventory; existing tests only
+44,rain-dish,MISSING,No native battle behavior
+45,sand-stream,MISSING,No native battle behavior
+46,pressure,MISSING,No native battle behavior
+47,thick-fat,MISSING,No native battle behavior
+48,early-bird,IMPLEMENTED,Source inventory; existing tests only
+49,flame-body,MISSING,No native battle behavior
+50,run-away,MISSING,No native battle behavior
+51,keen-eye,MISSING,No native battle behavior
+52,hyper-cutter,PARTIAL,Source inventory; existing tests only
+53,pickup,MISSING,No native battle behavior
+54,truant,MISSING,No native battle behavior
+55,hustle,MISSING,No native battle behavior
+56,cute-charm,MISSING,No native battle behavior
+57,plus,MISSING,No native battle behavior
+58,minus,MISSING,No native battle behavior
+59,forecast,MISSING,No native battle behavior
+60,sticky-hold,IMPLEMENTED,Source inventory; existing tests only
+61,shed-skin,IMPLEMENTED,Source inventory; existing tests only
+62,guts,IMPLEMENTED,Source inventory; existing tests only
+63,marvel-scale,IMPLEMENTED,Source inventory; existing tests only
+64,liquid-ooze,MISSING,No native battle behavior
+65,overgrow,MISSING,No native battle behavior
+66,blaze,MISSING,No native battle behavior
+67,torrent,MISSING,No native battle behavior
+68,swarm,MISSING,No native battle behavior
+69,rock-head,MISSING,No native battle behavior
+70,drought,MISSING,No native battle behavior
+71,arena-trap,MISSING,No native battle behavior
+72,vital-spirit,IMPLEMENTED,Source inventory; existing tests only
+73,white-smoke,IMPLEMENTED,Source inventory; existing tests only
+74,pure-power,IMPLEMENTED,Source inventory; existing tests only
+75,shell-armor,IMPLEMENTED,Source inventory; existing tests only
+76,air-lock,PARTIAL,Source inventory; existing tests only
+77,tangled-feet,IMPLEMENTED,Source inventory; existing tests only
+78,motor-drive,PARTIAL,Source inventory; existing tests only
+79,rivalry,MISSING,No native battle behavior
+80,steadfast,IMPLEMENTED,Source inventory; existing tests only
+81,snow-cloak,MISSING,No native battle behavior
+82,gluttony,IMPLEMENTED,Source inventory; existing tests only
+83,anger-point,MISSING,No native battle behavior
+84,unburden,MISSING,No native battle behavior
+85,heatproof,PARTIAL,Source inventory; existing tests only
+86,simple,IMPLEMENTED,Source inventory; existing tests only
+87,dry-skin,PARTIAL,Source inventory; existing tests only
+88,download,MISSING,No native battle behavior
+89,iron-fist,MISSING,No native battle behavior
+90,poison-heal,IMPLEMENTED,Source inventory; existing tests only
+91,adaptability,MISSING,No native battle behavior
+92,skill-link,MISSING,No native battle behavior
+93,hydration,IMPLEMENTED,Source inventory; existing tests only
+94,solar-power,MISSING,No native battle behavior
+95,quick-feet,IMPLEMENTED,Source inventory; existing tests only
+96,normalize,PARTIAL,Source inventory; existing tests only
+97,sniper,MISSING,No native battle behavior
+98,magic-guard,PARTIAL,Source inventory; existing tests only
+99,no-guard,MISSING,No native battle behavior
+100,stall,MISSING,No native battle behavior
+101,technician,MISSING,No native battle behavior
+102,leaf-guard,IMPLEMENTED,Source inventory; existing tests only
+103,klutz,IMPLEMENTED,Source inventory; existing tests only
+104,mold-breaker,IMPLEMENTED,Source inventory; existing tests only
+105,super-luck,MISSING,No native battle behavior
+106,aftermath,MISSING,No native battle behavior
+107,anticipation,MISSING,No native battle behavior
+108,forewarn,MISSING,No native battle behavior
+109,unaware,MISSING,No native battle behavior
+110,tinted-lens,MISSING,No native battle behavior
+111,filter,IMPLEMENTED,Source inventory; existing tests only
+112,slow-start,MISSING,No native battle behavior
+113,scrappy,PARTIAL,Source inventory; existing tests only
+114,storm-drain,PARTIAL,Source inventory; existing tests only
+115,ice-body,MISSING,No native battle behavior
+116,solid-rock,IMPLEMENTED,Source inventory; existing tests only
+117,snow-warning,MISSING,No native battle behavior
+118,honey-gather,MISSING,No native battle behavior
+119,frisk,MISSING,No native battle behavior
+120,reckless,MISSING,No native battle behavior
+121,multitype,MISSING,No native battle behavior
+122,flower-gift,MISSING,No native battle behavior
+123,bad-dreams,IMPLEMENTED,Source inventory; existing tests only
+124,pickpocket,MISSING,No native battle behavior
+125,sheer-force,MISSING,No native battle behavior
+126,contrary,IMPLEMENTED,Source inventory; existing tests only
+127,unnerve,IMPLEMENTED,Source inventory; existing tests only
+128,defiant,MISSING,No native battle behavior
+129,defeatist,MISSING,No native battle behavior
+130,cursed-body,MISSING,No native battle behavior
+131,healer,IMPLEMENTED,Source inventory; existing tests only
+132,friend-guard,MISSING,No native battle behavior
+133,weak-armor,MISSING,No native battle behavior
+134,heavy-metal,MISSING,No native battle behavior
+135,light-metal,MISSING,No native battle behavior
+136,multiscale,IMPLEMENTED,Source inventory; existing tests only
+137,toxic-boost,IMPLEMENTED,Source inventory; existing tests only
+138,flare-boost,IMPLEMENTED,Source inventory; existing tests only
+139,harvest,MISSING,No native battle behavior
+140,telepathy,IMPLEMENTED,Source inventory; existing tests only
+141,moody,MISSING,No native battle behavior
+142,overcoat,PARTIAL,Source inventory; existing tests only
+143,poison-touch,MISSING,No native battle behavior
+144,regenerator,IMPLEMENTED,Source inventory; existing tests only
+145,big-pecks,MISSING,No native battle behavior
+146,sand-rush,MISSING,No native battle behavior
+147,wonder-skin,MISSING,No native battle behavior
+148,analytic,MISSING,No native battle behavior
+149,illusion,MISSING,No native battle behavior
+150,imposter,MISSING,No native battle behavior
+151,infiltrator,PARTIAL,Source inventory; existing tests only
+152,mummy,MISSING,No native battle behavior
+153,moxie,MISSING,No native battle behavior
+154,justified,MISSING,No native battle behavior
+155,rattled,PARTIAL,Source inventory; existing tests only
+156,magic-bounce,IMPLEMENTED,Source inventory; existing tests only
+157,sap-sipper,PARTIAL,Source inventory; existing tests only
+158,prankster,MISSING,No native battle behavior
+159,sand-force,MISSING,No native battle behavior
+160,iron-barbs,MISSING,No native battle behavior
+161,zen-mode,MISSING,No native battle behavior
+162,victory-star,MISSING,No native battle behavior
+163,turboblaze,IMPLEMENTED,Source inventory; existing tests only
+164,teravolt,IMPLEMENTED,Source inventory; existing tests only
+165,aroma-veil,IMPLEMENTED,Source inventory; existing tests only
+166,flower-veil,PARTIAL,Source inventory; existing tests only
+167,cheek-pouch,IMPLEMENTED,Source inventory; existing tests only
+168,protean,MISSING,No native battle behavior
+169,fur-coat,IMPLEMENTED,Source inventory; existing tests only
+170,magician,MISSING,No native battle behavior
+171,bulletproof,IMPLEMENTED,Source inventory; existing tests only
+172,competitive,MISSING,No native battle behavior
+173,strong-jaw,MISSING,No native battle behavior
+174,refrigerate,MISSING,No native battle behavior
+175,sweet-veil,IMPLEMENTED,Source inventory; existing tests only
+176,stance-change,MISSING,No native battle behavior
+177,gale-wings,MISSING,No native battle behavior
+178,mega-launcher,MISSING,No native battle behavior
+179,grass-pelt,MISSING,No native battle behavior
+180,symbiosis,MISSING,No native battle behavior
+181,tough-claws,MISSING,No native battle behavior
+182,pixilate,MISSING,No native battle behavior
+183,gooey,MISSING,No native battle behavior
+184,aerilate,MISSING,No native battle behavior
+185,parental-bond,MISSING,No native battle behavior
+186,dark-aura,MISSING,No native battle behavior
+187,fairy-aura,MISSING,No native battle behavior
+188,aura-break,MISSING,No native battle behavior
+189,primordial-sea,MISSING,No native battle behavior
+190,desolate-land,MISSING,No native battle behavior
+191,delta-stream,MISSING,No native battle behavior
+192,stamina,MISSING,No native battle behavior
+193,wimp-out,MISSING,No native battle behavior
+194,emergency-exit,MISSING,No native battle behavior
+195,water-compaction,MISSING,No native battle behavior
+196,merciless,IMPLEMENTED,Source inventory; existing tests only
+197,shields-down,MISSING,No native battle behavior
+198,stakeout,MISSING,No native battle behavior
+199,water-bubble,PARTIAL,Source inventory; existing tests only
+200,steelworker,MISSING,No native battle behavior
+201,berserk,MISSING,No native battle behavior
+202,slush-rush,MISSING,No native battle behavior
+203,long-reach,PARTIAL,Source inventory; existing tests only
+204,liquid-voice,MISSING,No native battle behavior
+205,triage,MISSING,No native battle behavior
+206,galvanize,MISSING,No native battle behavior
+207,surge-surfer,MISSING,No native battle behavior
+208,schooling,MISSING,No native battle behavior
+209,disguise,MISSING,No native battle behavior
+210,battle-bond,MISSING,No native battle behavior
+211,power-construct,MISSING,No native battle behavior
+212,corrosion,IMPLEMENTED,Source inventory; existing tests only
+213,comatose,IMPLEMENTED,Source inventory; existing tests only
+214,queenly-majesty,MISSING,No native battle behavior
+215,innards-out,MISSING,No native battle behavior
+216,dancer,MISSING,No native battle behavior
+217,battery,MISSING,No native battle behavior
+218,fluffy,IMPLEMENTED,Source inventory; existing tests only
+219,dazzling,MISSING,No native battle behavior
+220,soul-heart,MISSING,No native battle behavior
+221,tangling-hair,MISSING,No native battle behavior
+222,receiver,MISSING,No native battle behavior
+223,power-of-alchemy,MISSING,No native battle behavior
+224,beast-boost,MISSING,No native battle behavior
+225,rks-system,MISSING,No native battle behavior
+226,electric-surge,MISSING,No native battle behavior
+227,psychic-surge,MISSING,No native battle behavior
+228,misty-surge,MISSING,No native battle behavior
+229,grassy-surge,MISSING,No native battle behavior
+230,full-metal-body,IMPLEMENTED,Source inventory; existing tests only
+231,shadow-shield,IMPLEMENTED,Source inventory; existing tests only
+232,prism-armor,IMPLEMENTED,Source inventory; existing tests only
+233,neuroforce,MISSING,No native battle behavior
+234,intrepid-sword,MISSING,No native battle behavior
+235,dauntless-shield,MISSING,No native battle behavior
+236,libero,MISSING,No native battle behavior
+237,ball-fetch,MISSING,No native battle behavior
+238,cotton-down,MISSING,No native battle behavior
+239,propeller-tail,MISSING,No native battle behavior
+240,mirror-armor,MISSING,No native battle behavior
+241,gulp-missile,MISSING,No native battle behavior
+242,stalwart,MISSING,No native battle behavior
+243,steam-engine,MISSING,No native battle behavior
+244,punk-rock,PARTIAL,Source inventory; existing tests only
+245,sand-spit,MISSING,No native battle behavior
+246,ice-scales,IMPLEMENTED,Source inventory; existing tests only
+247,ripen,IMPLEMENTED,Source inventory; existing tests only
+248,ice-face,MISSING,No native battle behavior
+249,power-spot,MISSING,No native battle behavior
+250,mimicry,MISSING,No native battle behavior
+251,screen-cleaner,MISSING,No native battle behavior
+252,steely-spirit,MISSING,No native battle behavior
+253,perish-body,MISSING,No native battle behavior
+254,wandering-spirit,MISSING,No native battle behavior
+255,gorilla-tactics,MISSING,No native battle behavior
+256,neutralizing-gas,MISSING,No native battle behavior
+257,pastel-veil,IMPLEMENTED,Source inventory; existing tests only
+258,hunger-switch,MISSING,No native battle behavior
+259,quick-draw,MISSING,No native battle behavior
+260,unseen-fist,MISSING,No native battle behavior
+261,curious-medicine,MISSING,No native battle behavior
+262,transistor,MISSING,No native battle behavior
+263,dragons-maw,MISSING,No native battle behavior
+264,chilling-neigh,MISSING,No native battle behavior
+265,grim-neigh,MISSING,No native battle behavior
+266,as-one-glastrier,PARTIAL,Source inventory; existing tests only
+267,as-one-spectrier,PARTIAL,Source inventory; existing tests only

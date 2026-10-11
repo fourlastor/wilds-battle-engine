@@ -1721,6 +1721,9 @@ impl Battle {
             self.move_failed = true;
             return Ok(true);
         }
+        if !first_charge && self.ability_blocks_status_move(actor, target, &spec, events) {
+            return Ok(true);
+        }
         let has_damage = spec.effects.iter().any(|e| {
             matches!(
                 e,

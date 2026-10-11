@@ -363,6 +363,27 @@ impl Battle {
         }
     }
 
+    /// Status moves must use the same type absorption as damaging moves.
+    /// Damage-only immunities such as Wonder Guard and Telepathy do not apply here.
+    pub(crate) fn ability_blocks_status_move(
+        &mut self,
+        actor: ParticipantId,
+        target: ParticipantId,
+        spec: &crate::moves::MoveSpec,
+        events: &mut Vec<BattleEvent>,
+    ) -> bool {
+        if spec.category != crate::moves::Category::Status || actor == target {
+            return false;
+        }
+        if self.ability_bypass {
+            self.ignored_ability = Some(target);
+        }
+        let kind = self.converted_type(actor, spec.move_type);
+        let absorbs =
+            kind == crate::model::PokemonType::Electric && self.has_ability(target, "voltabsorb");
+        absorbs && self.ability_blocks_damage(actor, target, kind, 2.0, false, false, true, events)
+    }
+
     #[allow(clippy::too_many_arguments)]
     pub(crate) fn ability_blocks_damage(
         &mut self,
