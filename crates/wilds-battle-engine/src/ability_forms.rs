@@ -4,6 +4,29 @@ use crate::items::item_key;
 use crate::model::{BattleEvent, ParticipantId, WeatherKind};
 
 impl Battle {
+    pub(crate) fn stance_before_move(
+        &mut self,
+        who: ParticipantId,
+        spec: &crate::moves::MoveSpec,
+        events: &mut Vec<BattleEvent>,
+    ) {
+        if self.has_ability(who, "stancechange") && self.species_is(who, 681, "aegislash") {
+            let shield = item_key(&spec.id) == "kingsshield";
+            if shield || spec.category != crate::moves::Category::Status {
+                self.ability_form(
+                    who,
+                    if shield {
+                        "aegislash-shield"
+                    } else {
+                        "aegislash-blade"
+                    },
+                    "aegislash-shield",
+                    events,
+                );
+            }
+        }
+    }
+
     pub(crate) fn residual_ability_forms(&mut self, events: &mut Vec<BattleEvent>) {
         for who in self.actors() {
             self.health_ability_form(who, false, events);

@@ -3860,3 +3860,22 @@ fn hunger_switch_alternates_at_turn_end_and_changes_aura_wheel_type() {
     );
     assert!(ally(&battle).form.is_none());
 }
+
+#[test]
+fn stance_change_uses_blade_for_attacks_and_shield_for_kings_shield() {
+    let mut user = mon("User", &["tackle", "recover", "kings-shield"]);
+    user.species_id = 681;
+    user.ability = Some("stance-change".into());
+    user.hp = 500;
+    let old_attack = user.attack;
+    add_form(&mut user, "aegislash-blade", PokemonType::Steel);
+    user.forms.get_mut("aegislash-blade").unwrap().attack = 321;
+    let mut battle = game(user, mon("Target", &["splash"]), 0.5);
+    turn(&mut battle, "tackle", "splash");
+    assert_eq!(ally(&battle).attack, 321);
+    turn(&mut battle, "recover", "splash");
+    assert_eq!(ally(&battle).form.as_deref(), Some("aegislash-blade"));
+    turn(&mut battle, "kings-shield", "splash");
+    assert!(ally(&battle).form.is_none());
+    assert_eq!(ally(&battle).attack, old_attack);
+}

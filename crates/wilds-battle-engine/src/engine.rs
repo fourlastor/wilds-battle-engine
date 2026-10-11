@@ -1485,6 +1485,7 @@ impl Battle {
                 spec.category == Category::Status && self.has_ability(actor, "prankster");
         }
         self.current_move = Some(spec.id.clone());
+        self.stance_before_move(actor, &spec, events);
         if Self::normalizable_move(&spec.id) {
             self.ability_prepare_type(
                 actor,
