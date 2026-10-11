@@ -447,6 +447,18 @@ impl Battle {
         })
     }
 
+    pub(crate) fn floats_by_effect(&self, id: ParticipantId) -> bool {
+        !self.is_grounded(id) && self.rules(id).any(|r| matches!(r, Rule::Airborne))
+    }
+
+    pub(crate) fn on_ground(&self, id: ParticipantId) -> bool {
+        self.is_grounded(id)
+            || (!self.floats_by_effect(id)
+                && !self.types_of(id).contains(&PokemonType::Flying)
+                && !self.has_ability(id, "levitate")
+                && self.get(id).hidden() != Some(crate::model::HiddenKind::Air))
+    }
+
     pub(crate) fn is_grounded(&self, id: ParticipantId) -> bool {
         self.rules(id).any(|rule| matches!(rule, Rule::Grounded))
     }

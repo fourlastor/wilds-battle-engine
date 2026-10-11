@@ -75,9 +75,7 @@ impl Battle {
             if self.get(who).hp == 0 {
                 break;
             }
-            let grounded = self.is_grounded(who)
-                || (!self.types_of(who).contains(&PokemonType::Flying)
-                    && !self.has_ability(who, "levitate"));
+            let grounded = self.on_ground(who);
             let fraction = match hazard {
                 Hazard::Spikes if grounded => {
                     [0.0, 1.0 / 8.0, 1.0 / 6.0, 1.0 / 4.0][layers as usize]

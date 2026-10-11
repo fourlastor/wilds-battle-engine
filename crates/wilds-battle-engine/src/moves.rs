@@ -842,7 +842,8 @@ fn rule_of(value: &Value) -> mlua::Result<Rule> {
         RuleKind::StatMultiplier => &["kind", "stat", "factor"],
         RuleKind::BlockStatus => &["kind", "statuses", "confusion"],
         RuleKind::BlockMoves => &["kind", "flags", "message"],
-        RuleKind::BlockHealing
+        RuleKind::Airborne
+        | RuleKind::BlockHealing
         | RuleKind::ReflectMoves
         | RuleKind::SwapDefenses
         | RuleKind::ReverseSpeed
@@ -909,6 +910,7 @@ fn rule_of(value: &Value) -> mlua::Result<Rule> {
             fraction: fraction_of(&required("fraction")?, "explosion fraction")?,
             message: options.text("message")?,
         },
+        RuleKind::Airborne => Rule::Airborne,
         RuleKind::BlockHealing => Rule::BlockHealing,
         RuleKind::ReflectMoves => Rule::ReflectMoves,
         RuleKind::SwapDefenses => Rule::SwapDefenses,

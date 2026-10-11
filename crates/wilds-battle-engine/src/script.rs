@@ -257,6 +257,8 @@ impl Battle {
             },
         )?;
         table.raw_set("grounded", self.is_grounded(id))?;
+        table.raw_set("airborne", self.floats_by_effect(id))?;
+        table.raw_set("on_ground", self.on_ground(id))?;
         table.raw_set("trapped", self.trapped(id))?;
         table.raw_set("linked_trap", self.linked_trap(id))?;
         let (marks, effects) = self.conditions_tables(lua, Scope::Pokemon(id))?;
@@ -775,6 +777,7 @@ impl Battle {
 
     fn attack<'a>(&self, frame: &Frame<'a>, power: u16, options: &'a DamageOptions) -> Attack<'a> {
         Attack {
+            hits_airborne: frame.spec.has_flag("hits_airborne"),
             power,
             high_crit: options.high_crit,
             always_crit: options.always_crit,
@@ -950,6 +953,7 @@ impl Battle {
                 effectiveness,
                 attack.sound,
                 attack.bullet,
+                attack.hits_airborne,
                 events,
             ) {
                 report.immune = true;
@@ -1498,6 +1502,7 @@ impl Battle {
                         effectiveness,
                         spec.has_flag("sound"),
                         spec.has_flag("bullet"),
+                        spec.has_flag("hits_airborne"),
                         events,
                     )
                 {

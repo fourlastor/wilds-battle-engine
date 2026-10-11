@@ -3,7 +3,10 @@
 
 local move = {
   script = function(ctx)
-    if not ctx:damage(50).hit then return end
+    local hit = ctx:damage(50)
+    if not hit.hit or hit.substitute then return end
+    ctx:end_effect(ctx.target, "magnet_rise")
+    ctx:end_effect(ctx.target, "telekinesis")
     ctx:unhide(ctx.target)
     ctx:start_effect(ctx.target, "smacked_down", {rules = {{kind = Rule.Grounded}}})
   end,

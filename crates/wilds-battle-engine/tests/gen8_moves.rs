@@ -4559,3 +4559,55 @@ fn heal_block_does_not_prevent_pain_split_or_regenerator_on_switch_out() {
     });
     assert_eq!(b.participants(Side::Foes)[0].hp, 933);
 }
+
+#[test]
+fn magnet_rise_grants_five_turn_ground_immunity_and_gravity_removes_it() {
+    let mut user = mon("User", &["magnet-rise", "splash"]);
+    user.speed = 200;
+    let mut b = game(user, vec![mon("Foe", &["earthquake", "gravity"])], 0.5);
+    turn(&mut b);
+    assert_eq!(b.participants(Side::Allies)[0].hp, 1000);
+    for _ in 0..4 {
+        turn_with(&mut b, |p| choose_move(p, "splash", "earthquake"));
+    }
+    assert_eq!(b.participants(Side::Allies)[0].hp, 1000);
+    turn_with(&mut b, |p| choose_move(p, "splash", "earthquake"));
+    assert!(b.participants(Side::Allies)[0].hp < 1000);
+    turn_with(&mut b, |p| choose_move(p, "magnet-rise", "gravity"));
+    assert!(b.participants(Side::Allies)[0].conditions.is_empty());
+    turn_with(&mut b, |p| {
+        if p.actor.side == Side::Allies {
+            assert!(
+                !p.choices
+                    .iter()
+                    .any(|c| matches!(c,Choice::UseMove{move_id,..} if move_id=="magnet-rise"))
+            );
+        }
+        choose_move(p, "splash", "earthquake")
+    });
+}
+
+#[test]
+fn magnet_rise_is_removed_by_grounding_attacks_and_thousand_arrows_hits_levitate() {
+    for attack in ["smack-down", "thousand-arrows"] {
+        let mut user = mon("User", &["magnet-rise", "splash"]);
+        user.speed = 200;
+        let mut b = game(user, vec![mon("Foe", &[attack, "earthquake"])], 0.5);
+        turn(&mut b);
+        assert!(b.participants(Side::Allies)[0].hp < 1000);
+        assert!(
+            !b.participants(Side::Allies)[0]
+                .conditions
+                .iter()
+                .any(|c| c.name == "magnet_rise")
+        );
+        let before = b.participants(Side::Allies)[0].hp;
+        turn_with(&mut b, |p| choose_move(p, "splash", "earthquake"));
+        assert!(b.participants(Side::Allies)[0].hp < before);
+    }
+    let mut user = mon("User", &["splash"]);
+    user.ability = Some("levitate".into());
+    let mut b = game(user, vec![mon("Foe", &["thousand-arrows"])], 0.5);
+    turn(&mut b);
+    assert!(b.participants(Side::Allies)[0].hp < 1000);
+}

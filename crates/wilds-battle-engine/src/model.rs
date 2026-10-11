@@ -153,6 +153,8 @@ pub enum Scope {
 /// A rule on a side applies to every Pokémon of that side, one on the field to everyone.
 #[derive(Clone, Debug, PartialEq)]
 pub enum Rule {
+    /// Floats above the ground unless another rule grounds the holder.
+    Airborne,
     /// Prevents HP restoration; direct HP assignment and switch-out Regenerator bypass it.
     BlockHealing,
     /// Cancels a move of this type and inflicts residual damage on its user.

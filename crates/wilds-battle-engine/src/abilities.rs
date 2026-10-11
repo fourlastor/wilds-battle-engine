@@ -263,6 +263,7 @@ impl Battle {
         effectiveness: f32,
         sound: bool,
         bullet: bool,
+        hits_airborne: bool,
         events: &mut Vec<BattleEvent>,
     ) -> bool {
         use crate::model::PokemonType::{Electric, Fire, Grass, Ground, Water};
@@ -288,6 +289,7 @@ impl Battle {
             || boost.is_some()
             || flash
             || (kind == Ground
+                && !hits_airborne
                 && !self.is_grounded(target)
                 && self.has_ability(target, "levitate"))
             || (effectiveness <= 1.0 && self.has_ability(target, "wonderguard"))

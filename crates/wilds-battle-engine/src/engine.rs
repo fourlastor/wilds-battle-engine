@@ -102,6 +102,7 @@ pub(crate) struct Attack<'a> {
     pub(crate) high_crit: bool,
     pub(crate) always_crit: bool,
     pub(crate) force_stab: bool,
+    pub(crate) hits_airborne: bool,
     pub(crate) no_gem: bool,
     pub(crate) sound: bool,
     pub(crate) bypass_substitute: bool,
@@ -1997,6 +1998,9 @@ impl Battle {
         Ok(())
     }
     pub(crate) fn effectiveness(&self, target: ParticipantId, move_type: PokemonType) -> f32 {
+        if move_type == PokemonType::Ground && self.floats_by_effect(target) {
+            return 0.0;
+        }
         type_chart::multiplier(move_type, &self.defending_types(target, move_type))
             * self.effectiveness_factor(target, move_type)
     }
@@ -2004,7 +2008,12 @@ impl Battle {
     pub(crate) fn matchup(&self, target: ParticipantId, attack: &Attack) -> f32 {
         let against = |move_type: PokemonType, exceptions: &[(PokemonType, f32)]| -> f32 {
             if exceptions.is_empty() {
-                return self.effectiveness(target, move_type);
+                return if attack.hits_airborne {
+                    type_chart::multiplier(move_type, &self.defending_types(target, move_type))
+                        * self.effectiveness_factor(target, move_type)
+                } else {
+                    self.effectiveness(target, move_type)
+                };
             }
             self.defending_types(target, move_type)
                 .iter()
@@ -2052,6 +2061,7 @@ impl Battle {
             effectiveness,
             spec.has_flag("sound"),
             spec.has_flag("bullet"),
+            spec.has_flag("hits_airborne"),
             events,
         ) {
             return Ok(());
@@ -2078,6 +2088,7 @@ impl Battle {
         events: &mut Vec<BattleEvent>,
     ) -> Option<u16> {
         let attack = Attack {
+            hits_airborne: spec.has_flag("hits_airborne"),
             power,
             high_crit,
             always_crit,
@@ -2151,6 +2162,7 @@ impl Battle {
                 effectiveness,
                 attack.sound,
                 attack.bullet,
+                attack.hits_airborne,
                 events,
             )
         {
