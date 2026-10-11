@@ -4140,6 +4140,17 @@
       "limitations": []
     },
     {
+      "id": 535,
+      "slug": "heat-crash",
+      "name": "Heat Crash",
+      "sheet_row": null,
+      "runtime_id": "heat-crash",
+      "file": "moves/heat-crash.lua",
+      "status": "implemented",
+      "limitations": [],
+      "parameter_source": "https://pokeapi.co/api/v2/move/535/"
+    },
+    {
       "id": 536,
       "slug": "leaf-tornado",
       "name": "Leaf Tornado",
@@ -6276,7 +6287,8 @@
       "pika-papow",
       "veevee-volley",
       "grass-knot",
-      "heavy-slam"
+      "heavy-slam",
+      "heat-crash"
     ]
   }
 }
