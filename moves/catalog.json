@@ -5940,6 +5940,17 @@
       "limitations": []
     },
     {
+      "id": 738,
+      "slug": "sappy-seed",
+      "name": "Sappy Seed",
+      "sheet_row": null,
+      "runtime_id": "sappy-seed",
+      "file": "moves/sappy-seed.lua",
+      "status": "implemented",
+      "limitations": [],
+      "parameter_source": "https://pokeapi.co/api/v2/move/738/"
+    },
+    {
       "id": 739,
       "slug": "freezy-frost",
       "name": "Freezy Frost",
@@ -6948,7 +6959,8 @@
       "toxic-thread",
       "throat-chop",
       "flower-shield",
-      "memento"
+      "memento",
+      "sappy-seed"
     ]
   }
 }

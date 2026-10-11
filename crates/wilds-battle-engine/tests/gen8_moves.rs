@@ -2038,3 +2038,43 @@ fn memento_lowers_both_attacks_and_faints_only_after_reaching_target() {
         }
     }
 }
+
+#[test]
+fn sappy_seed_attacks_then_seeds_non_grass_targets_outside_substitute() {
+    for (kind, sub, seeded) in [
+        (PokemonType::Normal, 0, true),
+        (PokemonType::Grass, 0, false),
+        (PokemonType::Normal, 50, false),
+    ] {
+        let mut user = mon("User", &["sappy-seed"]);
+        user.hp = 500;
+        let mut foe = mon("Foe", &["splash"]);
+        foe.types = vec![kind];
+        foe.substitute_hp = sub;
+        let expected = control_damage(100, "Grass", "Physical", user.clone(), foe.clone())
+            + if seeded { 125 } else { 0 };
+        let mut b = game(user, vec![foe], 0.5);
+        turn(&mut b);
+        assert_eq!(1000 - b.participants(Side::Foes)[0].hp, expected);
+        assert_eq!(
+            b.participants(Side::Allies)[0].hp,
+            if seeded { 625 } else { 500 }
+        );
+    }
+}
+
+#[test]
+fn sappy_seed_can_be_reflected_by_magic_bounce() {
+    let mut foe = mon("Foe", &["splash"]);
+    foe.ability = Some("magic-bounce".into());
+    let mut b = game(mon("User", &["sappy-seed"]), vec![foe], 0.5);
+    turn(&mut b);
+    assert_eq!(b.participants(Side::Foes)[0].hp, 1000);
+    assert!(b.participants(Side::Allies)[0].hp < 875);
+    assert!(
+        b.participants(Side::Allies)[0]
+            .conditions
+            .iter()
+            .any(|c| c.name == "leech_seed")
+    );
+}

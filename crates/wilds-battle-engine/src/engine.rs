@@ -2398,7 +2398,6 @@ impl Battle {
     ) -> Result<bool, BattleError> {
         if self.reflecting
             || actor == reflector
-            || spec.category != Category::Status
             || !spec.has_flag("reflectable")
             || !self.has_ability(reflector, "magicbounce")
             || self.get(reflector).hidden().is_some()
