@@ -185,6 +185,7 @@ impl Battle {
                     !matches!(rule,
                         Rule::InfatuatedBy(by)
                         | Rule::TrappedBy { source: by }
+                        | Rule::StatEachTurn { source: by, .. }
                         | Rule::AlwaysHit { against: Some(by) } if *by == source)
                 });
                 condition.rules.len() == before || !condition.rules.is_empty()

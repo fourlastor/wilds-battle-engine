@@ -6484,6 +6484,17 @@
       "parameter_source": "https://pokeapi.co/api/v2/move/752/"
     },
     {
+      "id": 753,
+      "slug": "octolock",
+      "name": "Octolock",
+      "sheet_row": null,
+      "runtime_id": "octolock",
+      "file": "moves/octolock.lua",
+      "status": "implemented",
+      "limitations": [],
+      "parameter_source": "https://pokeapi.co/api/v2/move/753/"
+    },
+    {
       "id": 754,
       "slug": "bolt-beak",
       "name": "Bolt Beak",
@@ -7440,7 +7451,8 @@
       "water-sport",
       "helping-hand",
       "hold-hands",
-      "happy-hour"
+      "happy-hour",
+      "octolock"
     ]
   }
 }

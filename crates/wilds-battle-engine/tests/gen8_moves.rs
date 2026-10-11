@@ -3858,3 +3858,63 @@ fn happy_hours_multiplier_persists_when_its_user_switches_out() {
     });
     assert_eq!(b.payout_multiplier(Side::Allies), 2);
 }
+
+#[test]
+fn octolock_repeatedly_drops_both_defenses_respects_immunities_and_releases_with_source() {
+    use wilds_battle_engine::Stat;
+    for (ability, kind, expected) in [
+        (None, PokemonType::Normal, -2),
+        (Some("contrary"), PokemonType::Normal, 2),
+        (Some("clear-body"), PokemonType::Normal, 0),
+        (None, PokemonType::Ghost, 0),
+    ] {
+        let mut foe = mon("Foe", &["splash"]);
+        foe.ability = ability.map(str::to_owned);
+        foe.types = vec![kind];
+        let mut b = Battle::with_rng(
+            Fixed(0.5),
+            [
+                vec![
+                    mon("User", &["octolock", "splash"]),
+                    mon("Bench", &["splash"]),
+                ],
+                vec![foe, mon("Foe bench", &["splash"])],
+            ],
+            MoveCatalog::builtin().unwrap(),
+        )
+        .unwrap();
+        b.set_active([vec![0], vec![0]]).unwrap();
+        turn(&mut b);
+        turn_with(&mut b, |p| choose_move(p, "splash", "splash"));
+        assert_eq!(b.participants(Side::Foes)[0].stage(Stat::Defense), expected);
+        assert_eq!(
+            b.participants(Side::Foes)[0].stage(Stat::SpDefense),
+            expected
+        );
+        turn_with(&mut b, |p| {
+            if p.actor.side == Side::Allies {
+                p.choices
+                    .iter()
+                    .find(|c| matches!(c, Choice::Switch { .. }))
+                    .unwrap()
+                    .id()
+            } else {
+                choose_move(p, "splash", "splash")
+            }
+        });
+        assert_eq!(b.participants(Side::Foes)[0].stage(Stat::Defense), expected);
+        assert!(
+            !b.participants(Side::Foes)[0]
+                .conditions
+                .iter()
+                .any(|c| c.name == "octolock")
+        );
+    }
+    for response in ["protect", "substitute"] {
+        let mut foe = mon("Foe", &[response]);
+        foe.speed = 200;
+        let mut b = game(mon("User", &["octolock"]), vec![foe], 0.5);
+        turn(&mut b);
+        assert!(b.participants(Side::Foes)[0].conditions.is_empty());
+    }
+}

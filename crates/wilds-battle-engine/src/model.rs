@@ -153,6 +153,12 @@ pub enum Scope {
 /// A rule on a side applies to every Pokémon of that side, one on the field to everyone.
 #[derive(Clone, Debug, PartialEq)]
 pub enum Rule {
+    /// Changes a stat at turn end while the source stays on the field.
+    StatEachTurn {
+        stat: Stat,
+        stages: i8,
+        source: ParticipantId,
+    },
     /// Loses this share of max HP at the end of each turn.
     DamageEachTurn {
         fraction: f32,

@@ -1,9 +1,9 @@
 # Wilds battle engine
 
 `wilds-battle-engine` is the Rust battle simulation. Move definitions are loaded
-from Lua; `MoveCatalog::builtin()` embeds the 689 files under `moves/`,
+from Lua; `MoveCatalog::builtin()` embeds the 690 files under `moves/`,
 and `MoveCatalog::from_directory(path)` reads them from disk at runtime.
-Both catalogs also include the system move Struggle, for 690 moves in total.
+Both catalogs also include the system move Struggle, for 691 moves in total.
 The [move catalog](moves/README.md) includes 538 entries from the Saved moves sheet,
 plus support moves, additional local JSON moves and the original moves outside the sheet. Its manifest
 records the 34 excluded Z/Max Moves. Files use canonical slugs and source display
@@ -269,6 +269,7 @@ ctx:end_effect(ctx.target.team, "reflect")                  -- Brick Break
 
 | Rule | Options |
 |---|---|
+| `StatEachTurn` | `stat`, `stages`, `by`; changes a stage at turn end, respecting stat abilities and prevention. Ends when its source leaves or faints. |
 | `DamageEachTurn`, `HealEachTurn` | `fraction` of max HP, `message` (`{name}` is the Pokémon); `except_types` for damage |
 | `DrainEachTurn` | `fraction`, `to` (who gets the HP), `message` |
 | `BasePower` | `factor` and optional move `type`; modifies base power before the damage formula, rounding halves down |

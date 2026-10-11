@@ -481,7 +481,8 @@ impl Battle {
                 .filter(|rule| {
                     matches!(
                         rule,
-                        Rule::DamageEachTurn { .. }
+                        Rule::StatEachTurn { .. }
+                            | Rule::DamageEachTurn { .. }
                             | Rule::HealEachTurn { .. }
                             | Rule::DrainEachTurn { .. }
                     )
@@ -496,6 +497,15 @@ impl Battle {
                 let max_hp = self.get(id).max_hp;
                 let share = |fraction: f32| ((f32::from(max_hp) * fraction).floor() as u16).max(1);
                 match rule {
+                    Rule::StatEachTurn {
+                        stat,
+                        stages,
+                        source,
+                    } => {
+                        if self.is_active(source) && self.get(source).hp > 0 {
+                            self.change_stat_from(source, id, stat, stages, events);
+                        }
+                    }
                     Rule::DamageEachTurn {
                         fraction,
                         except_types,

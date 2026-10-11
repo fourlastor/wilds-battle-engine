@@ -810,6 +810,7 @@ fn rule_of(value: &Value) -> mlua::Result<Rule> {
         _ => return Err(bad("rule kind requires a Rule value")),
     };
     let allowed: &[&str] = match kind {
+        RuleKind::StatEachTurn => &["kind", "stat", "stages", "by"],
         RuleKind::DamageEachTurn => &["kind", "fraction", "except_types", "message"],
         RuleKind::HealEachTurn => &["kind", "fraction", "message"],
         RuleKind::DrainEachTurn => &["kind", "fraction", "to", "message"],
@@ -873,6 +874,11 @@ fn rule_of(value: &Value) -> mlua::Result<Rule> {
         }
     };
     Ok(match kind {
+        RuleKind::StatEachTurn => Rule::StatEachTurn {
+            stat: stat_of(&required("stat")?, "residual stat")?,
+            stages: whole(&required("stages")?, "residual stages", -12.0, 12.0)? as i8,
+            source: pokemon_of(&required("by")?, "residual source")?,
+        },
         RuleKind::NoRepeat => Rule::NoRepeat,
         RuleKind::SealMoves => Rule::SealMoves,
         RuleKind::BlockMove => Rule::BlockMove {
