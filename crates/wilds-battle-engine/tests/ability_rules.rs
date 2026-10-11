@@ -800,3 +800,8 @@ fn ironfist_boosts_matching_moves_only() {
 fn strongjaw_boosts_matching_moves_only() {
     check_power_ability("strong-jaw", &["bite", "crunch"], "tackle", 1.5, 1000);
 }
+
+#[test]
+fn toughclaws_boosts_matching_moves_only() {
+    check_power_ability("tough-claws", &["tackle", "bite"], "thunderbolt", 1.3, 1000);
+}

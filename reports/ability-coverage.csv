@@ -179,7 +179,7 @@ id,ability,status,verification
 178,mega-launcher,MISSING,No native battle behavior
 179,grass-pelt,MISSING,No native battle behavior
 180,symbiosis,MISSING,No native battle behavior
-181,tough-claws,MISSING,No native battle behavior
+181,tough-claws,IMPLEMENTED,ability_rules::toughclaws_boosts_matching_moves_only
 182,pixilate,MISSING,No native battle behavior
 183,gooey,MISSING,No native battle behavior
 184,aerilate,MISSING,No native battle behavior
