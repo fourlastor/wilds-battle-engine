@@ -1813,7 +1813,7 @@ impl Battle {
                 None => Value::Nil,
             },
             ScriptOperation::GiveItem { who, item } => {
-                let free = self.get(who).item.is_none() && self.get(who).hp > 0;
+                let free = self.can_receive_item(who, &item);
                 if free {
                     self.get_mut(who).item = Some(item);
                 }

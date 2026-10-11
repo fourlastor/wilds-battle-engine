@@ -2865,3 +2865,43 @@ fn trick_swaps_existing_items_atomically_with_empty_slots_and_removal_restrictio
 fn switcheroo_swaps_existing_items_atomically_with_empty_slots_and_removal_restrictions() {
     check_item_exchange("switcheroo");
 }
+
+#[test]
+fn bestow_gives_through_protect_substitute_and_both_participants_sticky_hold() {
+    let mut user = mon("User", &["bestow"]);
+    user.item = Some("power-herb".into());
+    user.ability = Some("sticky-hold".into());
+    let mut foe = mon("Foe", &["protect"]);
+    foe.substitute_hp = 50;
+    foe.ability = Some("sticky-hold".into());
+    let mut b = game(user, vec![foe], 0.5);
+    turn(&mut b);
+    assert_eq!(b.participants(Side::Allies)[0].item, None);
+    assert_eq!(
+        b.participants(Side::Foes)[0].item.as_deref(),
+        Some("power-herb")
+    );
+    assert!(b.participants(Side::Allies)[0].consumed_items.is_empty());
+}
+
+#[test]
+fn bestow_rejects_occupied_slots_and_species_binding_without_losing_the_gift() {
+    for (mine, theirs, source_species, target_species) in [
+        (Some("power-herb"), Some("normal-gem"), 0, 0),
+        (Some("griseous-orb"), None, 487, 0),
+        (Some("griseous-orb"), None, 0, 487),
+        (None, None, 0, 0),
+    ] {
+        let mut user = mon("User", &["bestow"]);
+        user.item = mine.map(str::to_owned);
+        user.species_id = source_species;
+        let mut foe = mon("Foe", &["splash"]);
+        foe.item = theirs.map(str::to_owned);
+        foe.species_id = target_species;
+        let mut b = game(user, vec![foe], 0.5);
+        turn(&mut b);
+        assert_eq!(b.participants(Side::Allies)[0].item.as_deref(), mine);
+        assert_eq!(b.participants(Side::Foes)[0].item.as_deref(), theirs);
+        assert!(b.participants(Side::Allies)[0].last_move_failed);
+    }
+}

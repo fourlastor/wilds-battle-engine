@@ -161,6 +161,11 @@ impl Battle {
         self.get_mut(who).item.take()
     }
 
+    pub(crate) fn can_receive_item(&self, who: ParticipantId, item: &str) -> bool {
+        let pokemon = self.get(who);
+        pokemon.hp > 0 && pokemon.item.is_none() && !bound_to(&item_key(item), pokemon)
+    }
+
     /// Exchange atomically. A rejected item on either side leaves both held items untouched.
     pub(crate) fn swap_items(&mut self, source: ParticipantId, target: ParticipantId) -> bool {
         let mine = self.get(source);
