@@ -2860,3 +2860,8 @@ fn check_item_exchange(move_id: &str) {
 fn trick_swaps_existing_items_atomically_with_empty_slots_and_removal_restrictions() {
     check_item_exchange("trick");
 }
+
+#[test]
+fn switcheroo_swaps_existing_items_atomically_with_empty_slots_and_removal_restrictions() {
+    check_item_exchange("switcheroo");
+}

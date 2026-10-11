@@ -3667,6 +3667,17 @@
       "limitations": []
     },
     {
+      "id": 415,
+      "slug": "switcheroo",
+      "name": "Switcheroo",
+      "sheet_row": null,
+      "runtime_id": "switcheroo",
+      "file": "moves/switcheroo.lua",
+      "status": "implemented",
+      "limitations": [],
+      "parameter_source": "https://pokeapi.co/api/v2/move/415/"
+    },
+    {
       "id": 416,
       "slug": "giga-impact",
       "name": "Giga Impact",
@@ -7188,7 +7199,8 @@
       "follow-me",
       "rage-powder",
       "spotlight",
-      "trick"
+      "trick",
+      "switcheroo"
     ]
   }
 }
