@@ -1888,6 +1888,17 @@
       "limitations": []
     },
     {
+      "id": 212,
+      "slug": "mean-look",
+      "name": "Mean Look",
+      "sheet_row": null,
+      "runtime_id": "mean-look",
+      "file": "moves/mean-look.lua",
+      "status": "implemented",
+      "limitations": [],
+      "parameter_source": "https://pokeapi.co/api/v2/move/212/"
+    },
+    {
       "id": 216,
       "slug": "return",
       "name": "Return",
@@ -6444,7 +6455,8 @@
       "tri-attack",
       "endeavor",
       "final-gambit",
-      "spider-web"
+      "spider-web",
+      "mean-look"
     ]
   }
 }

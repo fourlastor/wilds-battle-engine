@@ -978,3 +978,8 @@ fn check_source_trap(move_id: &str, ignores_protect: bool) {
 fn spider_web_traps_until_the_source_leaves() {
     check_source_trap("spider-web", false);
 }
+
+#[test]
+fn mean_look_traps_until_the_source_leaves() {
+    check_source_trap("mean-look", true);
+}
