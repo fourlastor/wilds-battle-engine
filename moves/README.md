@@ -5,6 +5,9 @@ canonical slug from `pokewilds-next/pokemon_data/assets/moves/<ID>.json`;
 `HumanName` supplies its display name. All 588 slugs in that source are unique.
 Moves without local source JSON use PokeAPI names and parameters, checked against
 the pinned Gen 8 behavior reference; individual references are in the manifest.
+The move cutoff is Sword/Shield, including The Isle of Armor and The Crown Tundra.
+Legends: Arceus moves and battle rules are outside the project scope. Older moves
+remain included even when they cannot be used in Sword/Shield itself.
 
 Of the 572 entries in the [Saved moves sheet](https://docs.google.com/spreadsheets/d/1e9lPFCqyuwpX6R6s69HXoFUXedoIAD8SdtSbswY48Q8/edit?gid=1664051581),
 538 remain in the active catalog. The 16 Z-Moves and 18 Max Moves are deliberately
@@ -18,7 +21,7 @@ otherwise Electric. The host supplies its current form; automatic Hunger Switch
 form changes remain part of the unfinished ability catalog.
 
 With seven additional support moves, 14 further moves from the local JSON data,
-186 further Gen 1–8 moves and the nine original moves outside the sheet,
+186 further moves through Sword/Shield and the nine original moves outside the sheet,
 the runtime catalog has 754 moves: 753 files here and Struggle in
 `src/system_moves.lua` inside the crate.
 The 22 original filenames containing underscores have been renamed with hyphens.
@@ -39,7 +42,7 @@ participants, and No Retreat raises five stats and records its one-use trap.
 
 All added definitions implement their move-specific behavior through the
 available API. No included move remains flagged `incomplete` in the manifest.
-Z-Moves and Max Moves remain excluded.
+Z-Moves and Max Moves remain excluded, including from the older Lua API examples.
 
 Voluntary switches and faint replacements now use host-selected bench choices.
 Source-linked traps now prevent switches and end when their source leaves or faints.

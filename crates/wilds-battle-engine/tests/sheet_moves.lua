@@ -406,18 +406,6 @@ return {
     script = terrain("electric_terrain", {
       {kind = Rule.BlockStatus, statuses = {Status.Asleep}},
       {kind = Rule.DamageDealt, type = Type.Electric, factor = 1.3}})}),
-  move("genesis_supernova", "Genesis Supernova", Type.Psychic, Category.Special, {
-    script = function(ctx)
-      if ctx:damage(185).hit then
-        ctx:start_effect(ctx.field, "psychic_terrain", {turns = 5, group = "terrain", restart = true,
-          rules = {{kind = Rule.DamageDealt, type = Type.Psychic, factor = 1.3}}})
-      end
-    end}),
-  move("splintered_stormshards", "Splintered Stormshards", Type.Rock, Category.Physical, {
-    script = function(ctx)
-      ctx:damage(190)
-      if ctx:end_group(ctx.field, "terrain") then ctx:message("The terrain returned to normal.") end
-    end}),
   move("floral_healing", "Floral Healing", Type.Fairy, Category.Status, {target = Target.AnyOther,
     script = function(ctx)
       if ctx:reached() then ctx:heal(ctx.target, {fraction = ctx.field.effects.grassy_terrain and 2/3 or 1/2}) end
@@ -749,13 +737,6 @@ return {
     script = function(ctx)
       local hit = ctx:damage(100)
       for _ = 1, hit.hits do ctx:change_stat(ctx.user, Stat.Defense, 2, {chance = 0.5}) end
-    end}),
-  move("clangorous_soulblaze", "Clangorous Soulblaze", Type.Dragon, Category.Special, {target = Target.AllOpponents, flags = {"sound"},
-    script = function(ctx)
-      if not ctx:damage(185).hit then return end
-      for _, stat in ipairs({Stat.Attack, Stat.Defense, Stat.SpAttack, Stat.SpDefense, Stat.Speed}) do
-        ctx:change_stat(ctx.user, stat, 1)
-      end
     end}),
   move("flame_burst", "Flame Burst", Type.Fire, Category.Special, {
     script = function(ctx)
