@@ -3221,6 +3221,17 @@
       "limitations": []
     },
     {
+      "id": 346,
+      "slug": "water-sport",
+      "name": "Water Sport",
+      "sheet_row": null,
+      "runtime_id": "water-sport",
+      "file": "moves/water-sport.lua",
+      "status": "implemented",
+      "limitations": [],
+      "parameter_source": "https://pokeapi.co/api/v2/move/346/"
+    },
+    {
       "id": 347,
       "slug": "calm-mind",
       "name": "Calm Mind",
@@ -7392,7 +7403,8 @@
       "torment",
       "imprison",
       "curse",
-      "mud-sport"
+      "mud-sport",
+      "water-sport"
     ]
   }
 }

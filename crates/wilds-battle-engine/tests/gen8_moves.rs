@@ -3684,3 +3684,19 @@ fn mud_sport_persists_after_its_user_switches_out() {
     });
     assert_eq!(1000 - b.participants(Side::Allies)[1].hp, expected);
 }
+
+#[test]
+fn water_sport_reduces_fire_base_power_for_five_turns_without_refreshing() {
+    check_sport("water-sport", "ember", "Fire");
+}
+
+#[test]
+fn water_sport_does_not_reduce_other_attack_types() {
+    let mut user = mon("User", &["water-sport"]);
+    user.speed = 200;
+    let foe = mon("Foe", &["thunder_shock"]);
+    let expected = control_damage(40, "Electric", "Special", foe.clone(), user.clone());
+    let mut b = game(user, vec![foe], 0.5);
+    turn(&mut b);
+    assert_eq!(1000 - b.participants(Side::Allies)[0].hp, expected);
+}
