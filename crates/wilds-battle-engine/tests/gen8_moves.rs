@@ -5158,3 +5158,30 @@ fn worry_seed_respects_protection_substitute_and_ability_exceptions() {
         assert!(b.participants(Side::Allies)[0].last_move_failed);
     }
 }
+
+#[test]
+fn simple_beam_changes_stage_multipliers_and_respects_ability_exceptions() {
+    use wilds_battle_engine::Stat;
+    for (ability, succeeds) in [
+        ("contrary", true),
+        ("simple", false),
+        ("truant", false),
+        ("multitype", false),
+    ] {
+        let mut user = mon("User", &["simple-beam", "growl"]);
+        user.speed = 200;
+        let mut foe = mon("Foe", &["splash"]);
+        foe.ability = Some(ability.into());
+        let mut b = game(user, vec![foe], 0.5);
+        turn(&mut b);
+        assert_eq!(b.participants(Side::Allies)[0].last_move_failed, !succeeds);
+        assert_eq!(
+            b.participants(Side::Foes)[0].ability.as_deref(),
+            Some(if succeeds { "simple" } else { ability })
+        );
+        if succeeds {
+            turn_with(&mut b, |p| choose_move(p, "growl", "splash"));
+            assert_eq!(b.participants(Side::Foes)[0].stage(Stat::Attack), -2);
+        }
+    }
+}

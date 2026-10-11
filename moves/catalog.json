@@ -4722,6 +4722,17 @@
       "limitations": []
     },
     {
+      "id": 493,
+      "slug": "simple-beam",
+      "name": "Simple Beam",
+      "sheet_row": null,
+      "runtime_id": "simple-beam",
+      "file": "moves/simple-beam.lua",
+      "status": "implemented",
+      "limitations": [],
+      "parameter_source": "https://pokeapi.co/api/v2/move/493/"
+    },
+    {
       "id": 495,
       "slug": "after-you",
       "name": "After You",
@@ -7740,7 +7751,8 @@
       "conversion",
       "conversion-2",
       "role-play",
-      "worry-seed"
+      "worry-seed",
+      "simple-beam"
     ]
   }
 }
