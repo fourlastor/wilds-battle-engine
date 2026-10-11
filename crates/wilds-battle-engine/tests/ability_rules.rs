@@ -2725,3 +2725,17 @@ fn dark_aura_boosts_both_sides_without_stacking() {
 fn fairy_aura_boosts_both_sides_without_stacking() {
     check_aura("fairy-aura", "moonblast");
 }
+
+#[test]
+fn aura_break_reverses_only_active_auras_and_is_bypassable() {
+    for (move_id, aura) in [("dark-pulse", "dark-aura"), ("moonblast", "fairy-aura")] {
+        let base = aura_damage(move_id, "", "", "");
+        assert_eq!(aura_damage(move_id, "", "", "aura-break"), base);
+        let weakened = aura_damage(move_id, "", aura, "aura-break");
+        assert!((f32::from(weakened) - f32::from(base) * 0.75).abs() <= 2.0);
+        assert_eq!(
+            aura_damage(move_id, "mold-breaker", aura, "aura-break"),
+            aura_damage(move_id, "", aura, "")
+        );
+    }
+}

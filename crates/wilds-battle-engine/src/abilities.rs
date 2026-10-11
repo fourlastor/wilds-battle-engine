@@ -989,13 +989,23 @@ impl Battle {
         attack: &crate::engine::Attack,
     ) -> f32 {
         let mut factor = 1.0;
+        let aura_factor = if !self.ability_bypass
+            && self
+                .actors()
+                .into_iter()
+                .any(|who| self.has_ability(who, "aurabreak"))
+        {
+            0.75
+        } else {
+            5448.0 / 4096.0
+        };
         if attack.move_type == crate::model::PokemonType::Dark
             && self
                 .actors()
                 .into_iter()
                 .any(|who| self.has_ability(who, "darkaura"))
         {
-            factor *= 5448.0 / 4096.0;
+            factor *= aura_factor;
         }
         if attack.move_type == crate::model::PokemonType::Fairy
             && self
@@ -1003,7 +1013,7 @@ impl Battle {
                 .into_iter()
                 .any(|who| self.has_ability(who, "fairyaura"))
         {
-            factor *= 5448.0 / 4096.0;
+            factor *= aura_factor;
         }
         for ally in self.actors() {
             if ally.side != actor.side {
