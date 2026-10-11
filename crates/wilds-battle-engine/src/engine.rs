@@ -1332,6 +1332,36 @@ impl Battle {
         delta: i8,
         events: &mut Vec<BattleEvent>,
     ) -> i8 {
+        let delta = self.ability_stage_delta(recipient, delta);
+        self.change_stat_unmodified(recipient, stat, delta, events)
+    }
+
+    pub(crate) fn change_stat_from(
+        &mut self,
+        actor: ParticipantId,
+        recipient: ParticipantId,
+        stat: Stat,
+        delta: i8,
+        events: &mut Vec<BattleEvent>,
+    ) -> i8 {
+        let delta = self.ability_stage_delta(recipient, delta);
+        if actor != recipient && delta < 0 && self.blocks_stat_drops(recipient) {
+            events.push(BattleEvent::Message(format!(
+                "{}'s stats were not lowered!",
+                self.get(recipient).name
+            )));
+            return 0;
+        }
+        self.change_stat_unmodified(recipient, stat, delta, events)
+    }
+
+    pub(crate) fn change_stat_unmodified(
+        &mut self,
+        recipient: ParticipantId,
+        stat: Stat,
+        delta: i8,
+        events: &mut Vec<BattleEvent>,
+    ) -> i8 {
         let pokemon = self.get_mut(recipient);
         let change = pokemon.change_stage(stat, delta);
         pokemon.stats_raised_this_turn |= change > 0;
@@ -1555,14 +1585,7 @@ impl Battle {
                     return Ok(());
                 }
                 for (stat, delta) in stages {
-                    if *delta < 0 && recipient != actor && self.blocks_stat_drops(recipient) {
-                        events.push(BattleEvent::Message(format!(
-                            "{}'s stats were not lowered!",
-                            self.get(recipient).name
-                        )));
-                        break;
-                    }
-                    self.change_stat(recipient, *stat, *delta, events);
+                    self.change_stat_from(actor, recipient, *stat, *delta, events);
                 }
             }
             Effect::Status {

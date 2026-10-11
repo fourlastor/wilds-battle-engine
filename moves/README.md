@@ -47,8 +47,9 @@ cannot be lifted, and Power Herb does not skip the carry turn.
 These definitions use the current engine's general damage, status and rounding rules;
 the coverage count does not imply full official battle parity.
 
-Stockpile stores up to three charges and tracks each actual Defense and Special
-Defense increase, including stat-cap cases. Swallow consumes those charges,
+Stockpile stores up to three charges and counts each successful Defense and Special
+Defense change, including stat-cap cases. Contrary and Simple modify both the
+initial change and its repayment. Swallow consumes those charges,
 heals the corresponding amount and removes only the recorded boosts.
 
 Gravity grounds everyone for five turns, cancels airborne charging, and activates

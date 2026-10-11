@@ -146,6 +146,7 @@ return function(api, fields, roster)
   function ctx:flinch(who, options) return op("flinch", who, options) end
   function ctx:change_stat(who, stat, stages, options) return op("change_stat", who, stat, stages, options) end
   function ctx:reset_stats(who) return op("reset_stats", who) end
+  function ctx:set_stage(who, stat, stage) return op("set_stage", who, stat, stage) end
   function ctx:bind(who, options) return op("bind", who, options) end
   function ctx:free(who) return op("free", who) end
   function ctx:protect(who) return op("protect", who or ctx.user) end
@@ -188,9 +189,9 @@ return function(api, fields, roster)
   function ctx:steal_boosts(from, to)
     for _, stat in ipairs({Stat.Attack, Stat.Defense, Stat.SpAttack, Stat.SpDefense, Stat.Speed,
         Stat.Accuracy, Stat.Evasion}) do
-      local stages = math.min(from:stage(stat), 6 - to:stage(stat))
+      local stages = from:stage(stat)
       if stages > 0 then
-        ctx:change_stat(from, stat, -stages)
+        ctx:set_stage(from, stat, 0)
         ctx:change_stat(to, stat, stages)
       end
     end

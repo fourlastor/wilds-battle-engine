@@ -2041,3 +2041,57 @@ fn pending_actions_follow_new_paralysis_speed() {
         .collect();
     assert_eq!(order, ["acted Other", "acted Fast"]);
 }
+
+#[test]
+fn stage_abilities_modify_changes_and_respect_suppression_and_move_bypass() {
+    for (ability, expected) in [("contrary", 2), ("simple", -4)] {
+        for (suppressed, bypass) in [(false, false), (true, false), (false, true)] {
+            let script = test_move(
+                if bypass {
+                    "flags={'ignore_ability'},"
+                } else {
+                    ""
+                },
+                "ctx:change_stat(ctx.target, Stat.Attack, -2)",
+            );
+            let mut target = mon("Target", &["wait"]);
+            target.ability = Some(ability.into());
+            target.ability_suppressed = suppressed;
+            let mut game = Game::new(&[&script], vec![mon("User", &["test"])], vec![target]);
+            game.turn(&["test", "wait"]);
+            assert_eq!(
+                game.foe(0).stage(Stat::Attack),
+                if suppressed || bypass { -2 } else { expected }
+            );
+        }
+    }
+}
+
+#[test]
+fn simple_clamps_at_stage_caps_and_stat_theft_clears_the_donor_exactly() {
+    let script = test_move("", "ctx:steal_boosts(ctx.target, ctx.user)");
+    let mut user = mon("User", &["test"]);
+    user.ability = Some("simple".into());
+    user.stages.insert(Stat::Attack, 5);
+    let mut target = mon("Target", &["wait"]);
+    target.ability = Some("contrary".into());
+    target.stages.insert(Stat::Attack, 4);
+    let mut game = Game::new(&[&script], vec![user], vec![target]);
+    game.turn(&["test", "wait"]);
+    assert_eq!(game.ally(0).stage(Stat::Attack), 6);
+    assert_eq!(game.foe(0).stage(Stat::Attack), 0);
+}
+
+#[test]
+fn contrary_reversal_precedes_external_stat_drop_protection() {
+    let script = test_move(
+        "",
+        "ctx:start_effect(ctx.target, 'mist', {rules={{kind=Rule.BlockStatDrops}}}); ctx:change_stat(ctx.target, Stat.Attack, -1); ctx:change_stat(ctx.target, Stat.Defense, 1)",
+    );
+    let mut target = mon("Target", &["wait"]);
+    target.ability = Some("contrary".into());
+    let mut game = Game::new(&[&script], vec![mon("User", &["test"])], vec![target]);
+    game.turn(&["test", "wait"]);
+    assert_eq!(game.foe(0).stage(Stat::Attack), 1);
+    assert_eq!(game.foe(0).stage(Stat::Defense), 0);
+}

@@ -273,6 +273,11 @@ pub(crate) enum ScriptOperation {
     ResetStats {
         who: ParticipantId,
     },
+    SetStage {
+        who: ParticipantId,
+        stat: Stat,
+        stage: i8,
+    },
     Bind {
         who: ParticipantId,
         min_turns: u8,
@@ -999,6 +1004,11 @@ fn parse_op(name: &str, args: &[Value]) -> mlua::Result<ScriptOperation> {
             }
         }
         "reset_stats" => ScriptOperation::ResetStats { who: who(0)? },
+        "set_stage" => ScriptOperation::SetStage {
+            who: who(0)?,
+            stat: stat_of(arg(1), "set_stage")?,
+            stage: whole(arg(2), "stat stage", -6.0, 6.0)? as i8,
+        },
         "bind" => {
             let options = Options::new(given(1), "bind", &["min_turns", "max_turns"])?;
             let min_turns = options.whole("min_turns", 1.0, 15.0)?.unwrap_or(4.0) as u8;

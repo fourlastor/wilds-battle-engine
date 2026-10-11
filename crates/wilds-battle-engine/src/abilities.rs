@@ -27,6 +27,16 @@ fn cannot_suppress(ability: &str) -> bool {
 }
 
 impl Battle {
+    pub(crate) fn ability_stage_delta(&self, who: ParticipantId, delta: i8) -> i8 {
+        if self.has_ability(who, "contrary") {
+            delta.saturating_neg()
+        } else if self.has_ability(who, "simple") {
+            delta.saturating_mul(2)
+        } else {
+            delta
+        }
+    }
+
     pub(crate) fn ability_on_exit(&mut self, who: ParticipantId, events: &mut Vec<BattleEvent>) {
         // Run before volatile state and suppression are cleared, and only while alive.
         if self.has_ability(who, "regenerator") {
@@ -49,7 +59,8 @@ impl Battle {
             if target.side == who.side || !self.adjacent(who, target) {
                 continue;
             }
-            let immune = self.blocks_stat_drops(target)
+            let immune = (self.ability_stage_delta(target, -1) < 0
+                && self.blocks_stat_drops(target))
                 || [
                     "hypercutter",
                     "innerfocus",
@@ -71,8 +82,8 @@ impl Battle {
             } else {
                 -1
             };
-            self.change_stat(target, crate::model::Stat::Attack, amount, events);
-            if self.has_ability(target, "rattled") {
+            let changed = self.change_stat(target, crate::model::Stat::Attack, amount, events);
+            if changed != 0 && self.has_ability(target, "rattled") {
                 self.change_stat(target, crate::model::Stat::Speed, 1, events);
             }
         }

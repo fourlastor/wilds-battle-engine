@@ -1172,3 +1172,25 @@ fn forced_switches_activate_withdrawal_and_entry_abilities() {
     assert!(b.participants(Side::Foes)[0].hp > 500);
     assert_eq!(b.participants(Side::Allies)[0].stage(Stat::Attack), -1);
 }
+
+#[test]
+fn stockpile_and_swallow_repay_successful_changes_through_stage_abilities() {
+    for (ability, stage) in [("contrary", -1), ("simple", 2)] {
+        let mut user = mon("User", &["stockpile", "swallow"]);
+        user.ability = Some(ability.into());
+        let mut b = game(
+            vec![user],
+            vec![mon("Foe", &["splash"])],
+            [vec![0], vec![0]],
+        );
+        pick(&mut b, id(Side::Allies, 0), "stockpile");
+        pick(&mut b, id(Side::Foes, 0), "splash");
+        b.advance().unwrap();
+        assert_eq!(b.participants(Side::Allies)[0].stage(Stat::Defense), stage);
+        pick(&mut b, id(Side::Allies, 0), "swallow");
+        pick(&mut b, id(Side::Foes, 0), "splash");
+        b.advance().unwrap();
+        assert_eq!(b.participants(Side::Allies)[0].stage(Stat::Defense), 0);
+        assert_eq!(b.participants(Side::Allies)[0].stage(Stat::SpDefense), 0);
+    }
+}

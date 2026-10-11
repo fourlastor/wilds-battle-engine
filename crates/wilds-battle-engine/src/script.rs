@@ -1333,16 +1333,18 @@ impl Battle {
             } => {
                 let change = if self.get(who).hp == 0 || !self.effect_roll(actor, chance) {
                     0
-                } else if stages < 0 && who != actor && self.blocks_stat_drops(who) {
-                    events.push(BattleEvent::Message(format!(
-                        "{}'s stats were not lowered!",
-                        self.get(who).name
-                    )));
-                    0
                 } else {
-                    self.change_stat(who, stat, stages, events)
+                    self.change_stat_from(actor, who, stat, stages, events)
                 };
                 Value::Integer(i64::from(change))
+            }
+            ScriptOperation::SetStage { who, stat, stage } => {
+                let delta = stage - self.get(who).stage(stat);
+                Value::Integer(i64::from(if self.get(who).hp > 0 && delta != 0 {
+                    self.change_stat_unmodified(who, stat, delta, events)
+                } else {
+                    0
+                }))
             }
             ScriptOperation::ResetStats { who } => {
                 let stages: Vec<(Stat, i8)> = self
@@ -1590,6 +1592,7 @@ fn reaction_may(operation: &ScriptOperation, hook: ScriptHook) -> bool {
         | Op::ChangeSelfStat { .. }
         | Op::ChangeStat { .. }
         | Op::ResetStats { .. }
+        | Op::SetStage { .. }
         | Op::ApplyStatus { .. }
         | Op::CureStatus { .. }
         | Op::Confuse { .. }

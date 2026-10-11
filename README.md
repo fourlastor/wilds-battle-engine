@@ -380,3 +380,8 @@ Inner Focus, Oblivious, Own Tempo and Scrappy; Guard Dog reverses its drop and R
 raises Speed. Clear Body, White Smoke and Full Metal Body block external stat drops.
 Regenerator and Natural Cure activate on withdrawal (including forced switches),
 before suppression resets. Fainted Pokémon do not activate these effects.
+
+Contrary reverses stage changes and Simple doubles them before stage caps and
+external stat-drop protection. Suppression and eligible ability bypass apply.
+Lua `ctx:set_stage(who, stat, stage)` sets an exact stage in -6..6 without these
+modifiers; stat theft uses it to clear the donor before boosting the recipient.
