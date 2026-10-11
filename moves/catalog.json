@@ -5367,6 +5367,17 @@
       "limitations": []
     },
     {
+      "id": 779,
+      "slug": "snap-trap",
+      "name": "Snap Trap",
+      "sheet_row": null,
+      "runtime_id": "snap-trap",
+      "file": "moves/snap-trap.lua",
+      "status": "implemented",
+      "limitations": [],
+      "parameter_source": "https://pokeapi.co/api/v2/move/779/"
+    },
+    {
       "id": 780,
       "slug": "pyro-ball",
       "name": "Pyro Ball",
@@ -6108,7 +6119,8 @@
       "clamp",
       "sand-tomb",
       "magma-storm",
-      "infestation"
+      "infestation",
+      "snap-trap"
     ]
   }
 }

@@ -289,3 +289,8 @@ fn magma_storm_damages_and_binds_only_after_a_reaching_hit() {
 fn infestation_damages_and_binds_only_after_a_reaching_hit() {
     check_partial_trap("infestation", 20, "Bug", "Special");
 }
+
+#[test]
+fn snap_trap_damages_and_binds_only_after_a_reaching_hit() {
+    check_partial_trap("snap-trap", 35, "Grass", "Physical");
+}
