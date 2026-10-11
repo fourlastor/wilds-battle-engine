@@ -225,6 +225,8 @@ pub enum Rule {
     CriticalStage {
         stages: u8,
     },
+    /// Incoming attacks cannot score critical hits, including guaranteed criticals.
+    BlockCritical,
     /// Moves of one type are used as another.
     MoveType {
         from: PokemonType,

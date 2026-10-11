@@ -1,9 +1,9 @@
 # Wilds battle engine
 
 `wilds-battle-engine` is the Rust battle simulation. Move definitions are loaded
-from Lua; `MoveCatalog::builtin()` embeds the 626 files under `moves/`,
+from Lua; `MoveCatalog::builtin()` embeds the 627 files under `moves/`,
 and `MoveCatalog::from_directory(path)` reads them from disk at runtime.
-Both catalogs also include the system move Struggle, for 627 moves in total.
+Both catalogs also include the system move Struggle, for 628 moves in total.
 The [move catalog](moves/README.md) includes 538 entries from the Saved moves sheet,
 plus support moves, additional local JSON moves and the original moves outside the sheet. Its manifest
 records the 34 excluded Z/Max Moves. Files use canonical slugs and source display
@@ -271,7 +271,7 @@ ctx:end_effect(ctx.target.team, "reflect")                  -- Brick Break
 | `MovePriority` | `amount` (-7 to 7); adds to priority. Applied after turn-start hooks, retaining existing speed/tie ordering. |
 | `BlockMoves` | nonempty `flags` list, optional `message`; prevents selection and execution of matching moves |
 | `BlockStatus` | `statuses` (all if left out), `confusion`. Does not stop what a Pokémon does to itself. |
-| `BlockStatDrops`, `BlockFlinch`, `Grounded`, `Endure`, `BlockForcedSwitch` | |
+| `BlockStatDrops`, `BlockFlinch`, `BlockCritical`, `Grounded`, `Endure`, `BlockForcedSwitch` | |
 | `CriticalStage` | `stages` (0–3), added to the holder's critical-hit stage while the condition lasts |
 | `Trapped` | Optional `by` Pokémon; the trap ends when that source leaves or faints. Without it, a self trap lasts until removed or the holder leaves. |
 | `EffectChance` | `factor` for the `chance` of the holder's extra effects |

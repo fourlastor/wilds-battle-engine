@@ -803,6 +803,7 @@ fn rule_of(value: &Value) -> mlua::Result<Rule> {
         RuleKind::Trapped => &["kind", "by"],
         RuleKind::WithoutType => &["kind", "type"],
         RuleKind::BlockForcedSwitch
+        | RuleKind::BlockCritical
         | RuleKind::BlockFlinch
         | RuleKind::BlockStatDrops
         | RuleKind::Grounded
@@ -901,6 +902,7 @@ fn rule_of(value: &Value) -> mlua::Result<Rule> {
         RuleKind::CriticalStage => Rule::CriticalStage {
             stages: whole(&required("stages")?, "critical stages", 0.0, 3.0)? as u8,
         },
+        RuleKind::BlockCritical => Rule::BlockCritical,
         RuleKind::MoveType => Rule::MoveType {
             from: type_of(&required("from")?, "rule option from")?,
             to: type_of(&required("to")?, "rule option to")?,

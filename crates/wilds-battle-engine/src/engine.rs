@@ -1970,6 +1970,9 @@ impl Battle {
             _ => 1.0,
         };
         let crit = (attack.always_crit || self.rng.chance(chance))
+            && !self
+                .rules(target)
+                .any(|rule| matches!(rule, Rule::BlockCritical))
             && !self.has_ability(target, "battlearmor")
             && !self.has_ability(target, "shellarmor");
         let effectiveness = if typeless {

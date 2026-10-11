@@ -1413,3 +1413,24 @@ fn laser_focus_can_refresh_and_guarantees_critical_hits_for_the_next_turn_only()
         );
     }
 }
+
+#[test]
+fn lucky_chant_blocks_guaranteed_criticals_for_five_turns_without_refreshing() {
+    let mut user = mon("User", &["lucky-chant", "splash"]);
+    user.speed = 200;
+    let mut b = game(user, vec![mon("Foe", &["frost-breath"])], 0.5);
+    for round in 0..6 {
+        let events = turn_with(&mut b, |p| {
+            p.choices.iter().find(|c|matches!(c,Choice::UseMove{move_id,..}if move_id==if p.actor.side==Side::Allies {if round<2{"lucky-chant"}else{"splash"}}else{"frost-breath"})).unwrap().id()
+        });
+        assert_eq!(
+            events
+                .iter()
+                .any(|e| matches!(e,BattleEvent::Message(s)if s=="A critical hit!")),
+            round == 5
+        );
+        if round == 1 {
+            assert!(b.participants(Side::Allies)[0].last_move_failed);
+        }
+    }
+}
