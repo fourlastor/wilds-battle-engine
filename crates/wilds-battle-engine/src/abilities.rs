@@ -396,6 +396,9 @@ impl Battle {
         _target: ParticipantId,
         category: crate::moves::Category,
     ) -> f32 {
+        if self.has_ability(actor, "compoundeyes") {
+            return 1.3;
+        }
         if category == crate::moves::Category::Physical && self.has_ability(actor, "hustle") {
             0.8
         } else {

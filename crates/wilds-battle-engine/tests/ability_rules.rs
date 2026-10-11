@@ -926,3 +926,20 @@ fn hustle_boosts_attack_and_reduces_only_physical_accuracy() {
         assert_eq!(foe(&battle).hp < 1000, hits);
     }
 }
+
+#[test]
+fn compound_eyes_boosts_damage_and_status_accuracy_only_when_active() {
+    for attack in ["fire-blast", "will-o-wisp"] {
+        for suppressed in [false, true] {
+            let mut user = mon("User", &[attack]);
+            user.ability = Some("compound-eyes".into());
+            user.ability_suppressed = suppressed;
+            let mut battle = game(user, mon("Target", &["splash"]), 0.9);
+            turn(&mut battle, attack, "splash");
+            assert_eq!(
+                foe(&battle).hp < 1000 || foe(&battle).status.is_some(),
+                !suppressed
+            );
+        }
+    }
+}
