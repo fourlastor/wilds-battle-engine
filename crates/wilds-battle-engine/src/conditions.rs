@@ -654,8 +654,12 @@ impl Battle {
         self.rules(id).any(|rule| matches!(rule, Rule::BlockFlinch))
     }
 
-    pub(crate) fn flinch(&mut self, id: ParticipantId) -> bool {
-        if self.get(id).hp == 0 || self.blocks_flinch(id) {
+    pub(crate) fn flinch(&mut self, id: ParticipantId, secondary: bool) -> bool {
+        if self.get(id).hp == 0
+            || self.blocks_flinch(id)
+            || self.has_ability(id, "innerfocus")
+            || (secondary && self.has_ability(id, "shielddust"))
+        {
             return false;
         }
         self.get_mut(id).flinched = true;

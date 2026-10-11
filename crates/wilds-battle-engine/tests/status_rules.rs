@@ -642,6 +642,52 @@ fn tangled_feet_halves_accuracy_only_while_confused_and_preserves_always_hit_mov
 }
 
 #[test]
+fn flinch_respects_inner_focus_shield_dust_suppression_and_ability_bypass() {
+    for ability in ["inner-focus", "shield-dust"] {
+        for (suppressed, bypass, acts) in [
+            (false, false, true),
+            (true, false, false),
+            (false, true, false),
+        ] {
+            let mut user = mon("User", &["fake-out"]);
+            if bypass {
+                user.ability = Some("mold-breaker".into());
+            }
+            let mut target = mon("Target", &["tackle"]);
+            target.ability = Some(ability.into());
+            target.ability_suppressed = suppressed;
+            let mut battle = game(user, target, 0.5);
+            turn(&mut battle, "fake-out", "tackle");
+            assert_eq!(
+                ally(&battle).hp < 1000,
+                acts,
+                "{ability} suppressed={suppressed} bypass={bypass}"
+            );
+            assert!(!foe(&battle).flinched);
+        }
+    }
+}
+
+#[test]
+fn steadfast_boosts_only_when_flinch_actually_prevents_the_action() {
+    for (speed, asleep, expected) in [(50, false, 1), (300, false, 0), (50, true, 0)] {
+        let mut user = mon("User", &["air-slash"]);
+        user.speed = 200;
+        let mut target = mon("Target", &["splash"]);
+        target.speed = speed;
+        target.ability = Some("steadfast".into());
+        target.status = asleep.then_some(Status::Asleep);
+        target.status_turns = 2;
+        let mut battle = game(user, target, 0.1);
+        turn(&mut battle, "air-slash", "splash");
+        assert_eq!(
+            foe(&battle).stage(wilds_battle_engine::Stat::Speed),
+            expected
+        );
+    }
+}
+
+#[test]
 fn freeze_fire_hits_thaw_before_the_targets_pending_action() {
     for attack in ["ember", "fire-punch", "fire-spin", "flamethrower"] {
         let mut user = mon("User", &[attack]);

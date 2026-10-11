@@ -6,8 +6,8 @@ use crate::model::{
     ParticipantId, Pokemon, Scope, ScriptContinuation, Side, Stat, Status, Weather,
 };
 use crate::moves::{
-    Accuracy, DamageOptions, HitOptions, HpAmount, MoveSpec, ScopeRef, ScriptHook, ScriptOperation,
-    Target,
+    Accuracy, Category, DamageOptions, HitOptions, HpAmount, MoveSpec, ScopeRef, ScriptHook,
+    ScriptOperation, Target,
 };
 use crate::type_chart;
 use mlua::thread::ThreadStatus;
@@ -1540,7 +1540,7 @@ impl Battle {
             ScriptOperation::FlinchTarget(chance) => {
                 let chance = self.effect_chance(actor, chance);
                 if self.get(target).hp > 0 && self.rng.chance(chance) {
-                    self.flinch(target);
+                    self.flinch(target, spec.category != Category::Status);
                 }
                 Value::Nil
             }
@@ -1850,8 +1850,9 @@ impl Battle {
                 Value::Boolean(self.effect_roll(actor, chance) && self.confuse(actor, who, events))
             }
             ScriptOperation::Flinch { who, chance } => {
-                let flinched =
-                    self.get(who).hp > 0 && self.effect_roll(actor, chance) && self.flinch(who);
+                let flinched = self.get(who).hp > 0
+                    && self.effect_roll(actor, chance)
+                    && self.flinch(who, spec.category != Category::Status);
                 Value::Boolean(flinched)
             }
             ScriptOperation::ChangeStat {

@@ -85,3 +85,12 @@ Regression tests are in `crates/wilds-battle-engine/tests/status_rules.rs`.
   does not prevent the self-hit.
 - Own Tempo prevents and cures confusion, including self-inflicted confusion.
   Tangled Feet halves incoming accuracy while confused; always-hit moves bypass it.
+
+## Flinch
+
+- Applies only to the current turn and only prevents a pending move. Sleep and
+  freeze are checked first; confusion, attraction and paralysis follow flinch.
+- Inner Focus prevents application; Shield Dust blocks flinching secondary
+  effects. Suppression and ability-bypassing attacks can disable those protections.
+- Steadfast raises Speed once when flinch actually prevents an action, rather
+  than merely when a flinching hit lands.
