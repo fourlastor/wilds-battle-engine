@@ -1304,6 +1304,7 @@ impl Battle {
             || (status == Status::Asleep
                 && (self.team_status_ability(who, "sweetveil") || self.field_prevents_sleep()))
             || self.has_ability(who, "comatose")
+            || self.shields_down_blocks_status(who)
             || self.status_ability_immunity(who, status)
             || (status == Status::Frozen && self.status_sun_active())
             || (self.has_ability(who, "leafguard") && self.status_sun_active())

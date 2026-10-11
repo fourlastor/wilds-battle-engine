@@ -195,7 +195,7 @@ id,ability,status,verification
 194,emergency-exit,MISSING,No native battle behavior
 195,water-compaction,IMPLEMENTED,ability_rules::water_compaction_boosts_defense_by_two_when_damaged_by_water
 196,merciless,IMPLEMENTED,Source inventory; existing tests only
-197,shields-down,MISSING,No native battle behavior
+197,shields-down,IMPLEMENTED,ability_rules::shields_down_changes_minior_forms_and_blocks_new_statuses_without_curing_existing_ones
 198,stakeout,IMPLEMENTED,ability_rules::stakeout_boosts_attacks_only_on_the_targets_switch_in_turn
 199,water-bubble,IMPLEMENTED,ability_rules::water_bubble_boosts_water_and_resists_fire
 200,steelworker,IMPLEMENTED,ability_rules::steelworker_boosts_steel_attacks_only

@@ -3879,3 +3879,34 @@ fn stance_change_uses_blade_for_attacks_and_shield_for_kings_shield() {
     assert!(ally(&battle).form.is_none());
     assert_eq!(ally(&battle).attack, old_attack);
 }
+
+#[test]
+fn shields_down_changes_minior_forms_and_blocks_new_statuses_without_curing_existing_ones() {
+    for (hp, move_id, blocked) in [
+        (1000, "toxic", true),
+        (1000, "yawn", true),
+        (500, "toxic", false),
+    ] {
+        let mut user = mon("User", &["splash", "recover"]);
+        user.species_id = 774;
+        user.form = Some("minior-blue".into());
+        user.hp = hp;
+        user.ability = Some("shields-down".into());
+        add_form(&mut user, "minior-blue-meteor", PokemonType::Rock);
+        let mut target = mon("Target", &[move_id, "splash"]);
+        target.ability = Some("mold-breaker".into());
+        let mut battle = game(user, target, 0.5);
+        turn(&mut battle, "splash", move_id);
+        if blocked {
+            assert_eq!(ally(&battle).form.as_deref(), Some("minior-blue-meteor"));
+            assert!(ally(&battle).status.is_none());
+            assert!(!ally(&battle).conditions.iter().any(|c| c.name == "yawn"));
+        } else {
+            assert_eq!(ally(&battle).form.as_deref(), Some("minior-blue"));
+            assert_eq!(ally(&battle).status, Some(Status::BadlyPoisoned));
+            turn(&mut battle, "recover", "splash");
+            assert_eq!(ally(&battle).form.as_deref(), Some("minior-blue-meteor"));
+            assert_eq!(ally(&battle).status, Some(Status::BadlyPoisoned));
+        }
+    }
+}

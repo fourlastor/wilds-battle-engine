@@ -4,6 +4,16 @@ use crate::items::item_key;
 use crate::model::{BattleEvent, ParticipantId, WeatherKind};
 
 impl Battle {
+    pub(crate) fn shields_down_blocks_status(&self, who: ParticipantId) -> bool {
+        self.has_ability(who, "shieldsdown")
+            && self.species_is(who, 774, "minior")
+            && !self.get(who).transformed()
+            && self
+                .get(who)
+                .form
+                .as_deref()
+                .is_some_and(|id| id.contains("meteor"))
+    }
     pub(crate) fn stance_before_move(
         &mut self,
         who: ParticipantId,
@@ -49,6 +59,23 @@ impl Battle {
     ) {
         if self.get(who).transformed() {
             return;
+        }
+        if self.has_ability(who, "shieldsdown") && self.species_is(who, 774, "minior") {
+            let core = self
+                .get(who)
+                .battle_base_form
+                .as_ref()
+                .and_then(|(form, _)| form.as_deref())
+                .unwrap_or("minior-red")
+                .trim_end_matches("-meteor")
+                .to_owned();
+            let meteor = format!("{core}-meteor");
+            let form = if self.get(who).hp > self.get(who).max_hp / 2 {
+                meteor.as_str()
+            } else {
+                core.as_str()
+            };
+            self.ability_form(who, form, &core, events);
         }
         if self.has_ability(who, "schooling")
             && self.species_is(who, 746, "wishiwashi")
