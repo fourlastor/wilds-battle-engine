@@ -345,6 +345,10 @@ export class Bench {
     switch (event.kind) {
       case 'message':
         return { turn, kind: 'message', text: event.text, blockId: null };
+      case 'hp_set': {
+        const target = mon(event.target);
+        return { turn, kind: 'message', text: `${target?.name ?? '?'}'s HP was set to ${event.hp}`, blockId: null };
+      }
       case 'damage': {
         const target = mon(event.target);
         return { turn, kind: 'damage', text: target?.name ?? '?', amount: `−${event.amount}`, tone: 'down', tail: `${event.hp}/${target?.max_hp ?? '?'} HP`, blockId: null };

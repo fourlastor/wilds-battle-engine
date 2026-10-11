@@ -138,6 +138,7 @@ return function(api, fields, roster)
   function ctx:multi_hit(power, min, max, options) return note(op("multi_hit", power, min, max, options)) end
   function ctx:direct_damage(who, amount, options) return note(op("direct_damage", who, amount, options)) end
   function ctx:hurt(who, amount) return op("hurt", who, amount) end
+  function ctx:set_hp(who, hp) return op("set_hp", who, hp) end
   function ctx:heal(who, amount) return op("heal", who, amount) end
 
   -- Conditions of a Pokémon

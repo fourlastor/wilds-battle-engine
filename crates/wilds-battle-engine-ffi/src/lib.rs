@@ -400,6 +400,9 @@ fn snapshot(value: &Pokemon) -> Value {
 }
 fn event(value: &BattleEvent) -> Value {
     match value {
+        BattleEvent::HpSet { target, hp } => {
+            json!({"kind":"hp_set", "target":participant(*target), "hp":hp})
+        }
         BattleEvent::Switched { from, to, position } => {
             json!({"kind":"switch", "from":participant(*from),"to":participant(*to),"position":position})
         }

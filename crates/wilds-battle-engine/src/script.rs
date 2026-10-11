@@ -1204,6 +1204,7 @@ impl Battle {
             | ScriptOperation::RestoreForm { who }
             | ScriptOperation::EatBerry { who, .. } => Some((*who, Value::Boolean(false))),
             ScriptOperation::ChangeStat { who, .. }
+            | ScriptOperation::SetHp { who, .. }
             | ScriptOperation::SetStage { who, .. }
             | ScriptOperation::ReducePp { who, .. }
             | ScriptOperation::Heal { who, .. } => Some((*who, Value::Integer(0))),
@@ -1469,6 +1470,18 @@ impl Battle {
                     self.damage(who, points, events);
                 }
                 Value::Integer(i64::from(points))
+            }
+            ScriptOperation::SetHp { who, hp } => {
+                let pokemon = self.get_mut(who);
+                if pokemon.hp > 0 {
+                    pokemon.hp = hp.min(pokemon.max_hp);
+                    events.push(BattleEvent::HpSet {
+                        target: who,
+                        hp: pokemon.hp,
+                    });
+                    frame.any_hit = true;
+                }
+                Value::Integer(i64::from(pokemon.hp))
             }
             ScriptOperation::Heal { who, amount } => {
                 let pokemon = self.get(who);
@@ -1816,6 +1829,7 @@ fn reaction_may(operation: &ScriptOperation, hook: ScriptHook) -> bool {
         | Op::Confuse { .. }
         | Op::Flinch { .. }
         | Op::Hurt { .. }
+        | Op::SetHp { .. }
         | Op::Heal { .. }
         | Op::Mark { .. }
         | Op::Unmark { .. }

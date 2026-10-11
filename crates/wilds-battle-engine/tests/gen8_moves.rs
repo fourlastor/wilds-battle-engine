@@ -1898,3 +1898,46 @@ fn metal_burst_returns_one_and_a_half_times_damage_only_if_it_acts_after_the_hit
         assert_eq!(b.participants(Side::Allies)[0].last_move_failed, !returns);
     }
 }
+
+#[test]
+fn pain_split_averages_hp_with_flooring_and_individual_maximums() {
+    for (user_hp, foe_hp, foe_max, sub, user_expected, foe_expected) in [
+        (200, 1000, 1000, 0, 600, 600),
+        (999, 1000, 1000, 0, 999, 999),
+        (900, 100, 100, 0, 500, 100),
+        (200, 1000, 1000, 50, 200, 1000),
+    ] {
+        let mut user = mon("User", &["pain-split"]);
+        user.hp = user_hp;
+        let mut foe = mon("Foe", &["splash"]);
+        foe.hp = foe_hp;
+        foe.max_hp = foe_max;
+        foe.substitute_hp = sub;
+        let mut b = game(user, vec![foe], 0.5);
+        turn(&mut b);
+        assert_eq!(b.participants(Side::Allies)[0].hp, user_expected);
+        assert_eq!(b.participants(Side::Foes)[0].hp, foe_expected);
+    }
+}
+
+#[test]
+fn pain_split_ignores_ghost_immunity_and_does_not_count_as_hit_damage() {
+    let mut user = mon("User", &["pain-split"]);
+    user.hp = 200;
+    let mut foe = mon("Foe", &["counter"]);
+    foe.types = vec![PokemonType::Ghost];
+    let mut b = game(user, vec![foe], 0.5);
+    let events = turn(&mut b);
+    assert_eq!(b.participants(Side::Allies)[0].hp, 600);
+    assert_eq!(b.participants(Side::Foes)[0].hp, 600);
+    assert_eq!(b.participants(Side::Foes)[0].damage_taken, 0);
+    assert!(!b.participants(Side::Foes)[0].hurt_this_turn);
+    assert!(b.participants(Side::Foes)[0].last_move_failed);
+    assert_eq!(
+        events
+            .iter()
+            .filter(|e| matches!(e, BattleEvent::HpSet { .. }))
+            .count(),
+        2
+    );
+}

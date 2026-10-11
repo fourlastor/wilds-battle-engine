@@ -242,6 +242,10 @@ pub(crate) enum ScriptOperation {
         who: ParticipantId,
         amount: HpAmount,
     },
+    SetHp {
+        who: ParticipantId,
+        hp: u16,
+    },
     Heal {
         who: ParticipantId,
         amount: HpAmount,
@@ -970,6 +974,10 @@ fn parse_op(name: &str, args: &[Value]) -> mlua::Result<ScriptOperation> {
         },
         "chance" => ScriptOperation::Chance(fraction_of(arg(0), "chance")?),
         "effect_chance" => ScriptOperation::EffectChance(fraction_of(arg(0), "effect_chance")?),
+        "set_hp" => ScriptOperation::SetHp {
+            who: who(0)?,
+            hp: whole(arg(1), "set_hp", 1.0, 65535.0)? as u16,
+        },
         "hurt" => ScriptOperation::Hurt {
             who: who(0)?,
             amount: hp_amount(arg(1), "hurt")?,

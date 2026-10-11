@@ -168,3 +168,20 @@ assert.ok(doll.events.some(event => event.kind === 'substitute' && event.amount 
 assert.equal(JSON.parse(text(engine._mlab_state(substituteBattle))).allies[0].substitute_hp, 60);
 engine._wbe_destroy(substituteBattle);
 console.log('ok: Substitute HP and absorbed damage round-trip through wasm');
+
+const splitBattle = withStrings([JSON.stringify({
+  allies: [{ name: 'User', hp: 200, max_hp: 1000, moves: ['pain-split'] }],
+  foes: [{ name: 'Foe', max_hp: 1000, moves: ['counter'] }],
+}), '/moves'], (json, dir) => engine._wbe_create(json, dir));
+assert.notEqual(splitBattle, 0, lastError());
+for (let i = 0; i < 2; i++) {
+  const step = JSON.parse(text(engine._wbe_advance(splitBattle)));
+  assert.ok(engine._wbe_respond(splitBattle, BigInt(step.status.prompt_id), step.status.choices[0].id));
+}
+const split = JSON.parse(text(engine._wbe_advance(splitBattle)));
+assert.equal(split.allies[0].hp, 600);
+assert.equal(split.foes[0].hp, 600);
+assert.equal(split.events.filter(event => event.kind === 'hp_set' && event.hp === 600).length, 2);
+assert.ok(!split.events.some(event => event.kind === 'damage'));
+engine._wbe_destroy(splitBattle);
+console.log('ok: Pain Split HP assignments round-trip without triggering Counter');
