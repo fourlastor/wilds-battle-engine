@@ -4049,6 +4049,17 @@
       "limitations": []
     },
     {
+      "id": 432,
+      "slug": "defog",
+      "name": "Defog",
+      "sheet_row": null,
+      "runtime_id": "defog",
+      "file": "moves/defog.lua",
+      "status": "implemented",
+      "limitations": [],
+      "parameter_source": "https://pokeapi.co/api/v2/move/432/"
+    },
+    {
       "id": 433,
       "slug": "trick-room",
       "name": "Trick Room",
@@ -7584,7 +7595,8 @@
       "magic-coat",
       "powder",
       "court-change",
-      "aurora-veil"
+      "aurora-veil",
+      "defog"
     ]
   }
 }

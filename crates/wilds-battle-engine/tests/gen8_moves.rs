@@ -4466,3 +4466,27 @@ fn aurora_veil_keeps_working_after_hail_ends_but_expires_after_five_turns() {
     }
     assert!(b.side_conditions(Side::Allies).is_empty());
 }
+
+#[test]
+fn defog_clears_both_sides_hazards_and_only_targets_screens_while_substitute_blocks_the_drop() {
+    use wilds_battle_engine::Stat;
+    for sub in [0, 100] {
+        let mut foe = mon("Foe", &["reflect", "spikes", "splash"]);
+        foe.substitute_hp = sub;
+        let mut b = game(mon("User", &["reflect", "spikes", "defog"]), vec![foe], 0.5);
+        turn(&mut b);
+        turn_with(&mut b, |p| choose_move(p, "spikes", "spikes"));
+        turn_with(&mut b, |p| choose_move(p, "defog", "splash"));
+        assert!(b.side_conditions(Side::Foes).is_empty());
+        assert_eq!(b.side_conditions(Side::Allies).len(), 1);
+        assert_eq!(b.side_conditions(Side::Allies)[0].name, "reflect");
+        assert_eq!(
+            b.participants(Side::Foes)[0].stage(Stat::Evasion),
+            if sub == 0 { -1 } else { 0 }
+        );
+    }
+    let mut b = game(mon("User", &["defog"]), vec![mon("Foe", &["protect"])], 0.5);
+    turn(&mut b);
+    assert_eq!(b.participants(Side::Foes)[0].stage(Stat::Evasion), 0);
+    assert!(b.participants(Side::Allies)[0].last_move_failed);
+}
