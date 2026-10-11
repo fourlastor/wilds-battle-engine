@@ -44,11 +44,19 @@ impl Battle {
                 events,
             );
         }
-        if ability == "static" && hit.contact && self.rng.chance(0.3) {
+        let contact_status = match ability {
+            "static" => Some(crate::model::AppliedStatus::Paralyzed),
+            "flamebody" => Some(crate::model::AppliedStatus::Burned),
+            _ => None,
+        };
+        if let Some(status) = contact_status
+            && hit.contact
+            && self.rng.chance(0.3)
+        {
             self.inflict_status(
                 target,
                 hit.attacker,
-                crate::model::AppliedStatus::Paralyzed,
+                status,
                 false,
                 crate::model::PokemonType::None,
                 false,

@@ -1908,3 +1908,8 @@ fn check_contact_status(ability: &str, status: Status, immune_type: PokemonType)
 fn static_has_thirty_percent_contact_paralysis_with_type_immunity() {
     check_contact_status("static", Status::Paralyzed, PokemonType::Electric);
 }
+
+#[test]
+fn flame_body_has_thirty_percent_contact_burn_with_type_immunity() {
+    check_contact_status("flame-body", Status::Burned, PokemonType::Fire);
+}
