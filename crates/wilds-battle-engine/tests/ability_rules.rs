@@ -260,3 +260,32 @@ fn storm_drain_redirects_damage_and_status_but_not_mold_breaker() {
         }
     }
 }
+
+fn ability_damage(move_id: &str, attacker: &str, defender: &str, suppressed: bool) -> u16 {
+    let mut user = mon("User", &[move_id]);
+    user.ability = (!attacker.is_empty()).then(|| attacker.into());
+    let mut target = mon("Target", &["splash"]);
+    target.ability = (!defender.is_empty()).then(|| defender.into());
+    target.ability_suppressed = suppressed;
+    let mut battle = game(user, target, 0.5);
+    turn(&mut battle, move_id, "splash");
+    1000 - foe(&battle).hp
+}
+
+#[test]
+fn heatproof_halves_fire_damage_and_is_bypassable() {
+    for move_id in ["ember", "fire-punch"] {
+        let base = ability_damage(move_id, "", "", false);
+        let reduced = ability_damage(move_id, "", "heatproof", false);
+        assert!((i32::from(base) - 2 * i32::from(reduced)).abs() <= 1);
+        assert_eq!(
+            base,
+            ability_damage(move_id, "mold-breaker", "heatproof", false)
+        );
+        assert_eq!(base, ability_damage(move_id, "", "heatproof", true));
+    }
+    assert_eq!(
+        ability_damage("tackle", "", "heatproof", false),
+        ability_damage("tackle", "", "", false)
+    );
+}

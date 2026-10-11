@@ -83,7 +83,7 @@ id,ability,status,verification
 82,gluttony,IMPLEMENTED,Source inventory; existing tests only
 83,anger-point,MISSING,No native battle behavior
 84,unburden,MISSING,No native battle behavior
-85,heatproof,PARTIAL,Source inventory; existing tests only
+85,heatproof,IMPLEMENTED,ability_rules::heatproof_halves_fire_damage_and_is_bypassable
 86,simple,IMPLEMENTED,Source inventory; existing tests only
 87,dry-skin,PARTIAL,Source inventory; existing tests only
 88,download,MISSING,No native battle behavior
