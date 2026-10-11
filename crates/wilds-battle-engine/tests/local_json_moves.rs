@@ -304,3 +304,24 @@ fn bolt_beak_doubles_before_a_move_or_after_a_switch_but_not_recharge() {
     assert_eq!(order_damage("bolt-beak", 200, true), base);
     assert_eq!(switched_damage("bolt-beak"), boosted);
 }
+
+#[test]
+fn fishious_rend_doubles_before_a_move_or_after_a_switch_but_not_recharge() {
+    let base = order_damage("fishious-rend", 10, false);
+    let boosted = order_damage("fishious-rend", 200, false);
+    assert!(base > 0 && boosted > base * 18 / 10 && boosted <= base * 2);
+    assert_eq!(order_damage("fishious-rend", 200, true), base);
+    assert_eq!(switched_damage("fishious-rend"), boosted);
+}
+
+#[test]
+fn fishious_rend_is_absorbed_even_when_its_power_is_doubled() {
+    let mut user = mon("User", &["fishious-rend"]);
+    user.speed = 200;
+    let mut foe = mon("Foe", &["splash"]);
+    foe.hp = 500;
+    foe.ability = Some("water-absorb".into());
+    let mut battle = game(user, vec![foe], 0.5);
+    turn(&mut battle);
+    assert_eq!(battle.participants(Side::Foes)[0].hp, 750);
+}

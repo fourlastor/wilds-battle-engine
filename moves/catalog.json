@@ -5196,6 +5196,16 @@
       "limitations": []
     },
     {
+      "id": 755,
+      "slug": "fishious-rend",
+      "name": "Fishious Rend",
+      "sheet_row": null,
+      "runtime_id": "fishious-rend",
+      "file": "moves/fishious-rend.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
       "id": 778,
       "slug": "drum-beating",
       "name": "Drum Beating",
@@ -5866,7 +5876,8 @@
       "sonic-boom",
       "seismic-toss",
       "dragon-darts",
-      "bolt-beak"
+      "bolt-beak",
+      "fishious-rend"
     ]
   }
 }
