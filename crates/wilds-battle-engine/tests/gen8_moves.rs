@@ -2013,3 +2013,28 @@ fn flower_shield_raises_defense_of_all_active_grass_types_through_protection() {
     assert_eq!(b.participants(Side::Foes)[0].stage(Stat::Defense), 1);
     assert_eq!(b.participants(Side::Foes)[1].stage(Stat::Defense), 0);
 }
+
+#[test]
+fn memento_lowers_both_attacks_and_faints_only_after_reaching_target() {
+    use wilds_battle_engine::Stat;
+    for (response, sub, lands) in [
+        ("splash", 0, true),
+        ("protect", 0, false),
+        ("splash", 50, false),
+    ] {
+        let mut foe = mon("Foe", &[response]);
+        foe.substitute_hp = sub;
+        let mut b = game(mon("User", &["memento"]), vec![foe], 0.5);
+        turn(&mut b);
+        assert_eq!(
+            b.participants(Side::Allies)[0].hp,
+            if lands { 0 } else { 1000 }
+        );
+        for stat in [Stat::Attack, Stat::SpAttack] {
+            assert_eq!(
+                b.participants(Side::Foes)[0].stage(stat),
+                if lands { -2 } else { 0 }
+            );
+        }
+    }
+}

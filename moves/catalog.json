@@ -2372,6 +2372,17 @@
       "limitations": []
     },
     {
+      "id": 262,
+      "slug": "memento",
+      "name": "Memento",
+      "sheet_row": null,
+      "runtime_id": "memento",
+      "file": "moves/memento.lua",
+      "status": "implemented",
+      "limitations": [],
+      "parameter_source": "https://pokeapi.co/api/v2/move/262/"
+    },
+    {
       "id": 263,
       "slug": "facade",
       "name": "Facade",
@@ -6936,7 +6947,8 @@
       "pain-split",
       "toxic-thread",
       "throat-chop",
-      "flower-shield"
+      "flower-shield",
+      "memento"
     ]
   }
 }
