@@ -3776,3 +3776,38 @@ fn helping_hand_fails_in_singles_and_does_not_boost_fixed_damage() {
     turn(&mut b);
     assert_eq!(b.participants(Side::Foes)[0].hp, 960);
 }
+
+#[test]
+fn hold_hands_succeeds_with_an_adjacent_ally_through_protect_and_substitute() {
+    let mut ally = mon("Ally", &["protect"]);
+    ally.substitute_hp = 50;
+    let mut b = Battle::with_rng(
+        Fixed(0.5),
+        [
+            vec![mon("User", &["hold-hands"]), ally],
+            vec![mon("Foe", &["splash"])],
+        ],
+        MoveCatalog::builtin().unwrap(),
+    )
+    .unwrap();
+    let events = turn(&mut b);
+    assert!(!b.participants(Side::Allies)[0].last_move_failed);
+    assert!(
+        events
+            .iter()
+            .any(|e| matches!(e,BattleEvent::Message(m) if m=="User and Ally held hands!"))
+    );
+    assert_eq!(b.participants(Side::Allies)[1].substitute_hp, 50);
+    assert!(b.participants(Side::Allies).iter().all(|p| p.hp == 1000));
+}
+#[test]
+fn hold_hands_fails_without_an_ally_after_spending_pp() {
+    let mut b = game(
+        mon("User", &["hold-hands"]),
+        vec![mon("Foe", &["splash"])],
+        0.5,
+    );
+    turn(&mut b);
+    assert!(b.participants(Side::Allies)[0].last_move_failed);
+    assert_eq!(b.participants(Side::Allies)[0].move_pp["hold-hands"], 39);
+}
