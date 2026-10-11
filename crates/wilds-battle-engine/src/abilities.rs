@@ -27,6 +27,46 @@ fn cannot_suppress(ability: &str) -> bool {
 }
 
 impl Battle {
+    fn ability_terrain_entry(&mut self, who: ParticipantId, events: &mut Vec<BattleEvent>) {
+        use crate::model::{Condition, PokemonType, Rule, Scope, Status};
+        let (name, rules) = if self.has_ability(who, "electricsurge") {
+            (
+                "electric_terrain",
+                vec![
+                    Rule::BasePower {
+                        move_type: Some(PokemonType::Electric),
+                        factor: 5325.0 / 4096.0,
+                        grounded_only: true,
+                    },
+                    Rule::BlockGroundedStatus {
+                        statuses: vec![Status::Asleep],
+                        confusion: false,
+                    },
+                ],
+            )
+        } else {
+            return;
+        };
+        if self.start_condition(
+            Scope::Field,
+            Condition {
+                name: name.into(),
+                value: 1,
+                turns_left: Some(5),
+                rules,
+                group: Some("terrain".into()),
+                end_message: None,
+            },
+            false,
+        ) {
+            events.push(BattleEvent::Message(format!(
+                "{}'s ability set {}!",
+                self.get(who).name,
+                name.replace('_', " ")
+            )));
+        }
+    }
+
     pub(crate) fn drain_health(
         &mut self,
         who: ParticipantId,
@@ -443,6 +483,7 @@ impl Battle {
     }
 
     pub(crate) fn ability_on_entry(&mut self, who: ParticipantId, events: &mut Vec<BattleEvent>) {
+        self.ability_terrain_entry(who, events);
         if self.has_ability(who, "screencleaner") {
             let mut cleared = false;
             for side in [crate::model::Side::Allies, crate::model::Side::Foes] {

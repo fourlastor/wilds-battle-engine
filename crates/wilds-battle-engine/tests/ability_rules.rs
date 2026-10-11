@@ -2739,3 +2739,30 @@ fn aura_break_reverses_only_active_auras_and_is_bypassable() {
         );
     }
 }
+
+fn check_terrain_entry(ability: &str, move_id: &str, terrain: &str) {
+    let mut user = mon("User", &["splash"]);
+    user.ability = Some(ability.into());
+    let mut battle = game(user, mon("Target", &["splash"]), 0.5);
+    turn(&mut battle, "splash", "splash");
+    let ability_field = battle.field_conditions().to_vec();
+    assert!(ability_field.iter().any(|c| c.name == terrain));
+    let mut control = game(mon("User", &[move_id]), mon("Target", &["splash"]), 0.5);
+    turn(&mut control, move_id, "splash");
+    assert_eq!(ability_field, control.field_conditions());
+    for _ in 0..4 {
+        turn(&mut battle, "splash", "splash");
+    }
+    assert!(!battle.field_conditions().iter().any(|c| c.name == terrain));
+    let mut user = mon("User", &["splash"]);
+    user.ability = Some(ability.into());
+    user.ability_suppressed = true;
+    let mut battle = game(user, mon("Target", &["splash"]), 0.5);
+    turn(&mut battle, "splash", "splash");
+    assert!(battle.field_conditions().is_empty());
+}
+
+#[test]
+fn electric_surge_starts_five_turn_electric_terrain() {
+    check_terrain_entry("electric-surge", "electric-terrain", "electric_terrain");
+}
