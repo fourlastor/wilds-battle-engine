@@ -2174,3 +2174,34 @@ fn aftermath_damages_only_contact_knockouts() {
         assert_eq!(1000 - ally(&battle).hp, expected);
     }
 }
+
+#[test]
+fn damp_stops_explosive_moves_and_aftermath_but_is_bypassable() {
+    for move_id in [
+        "explosion",
+        "self-destruct",
+        "mind-blown",
+        "misty-explosion",
+    ] {
+        for breaker in [false, true] {
+            let mut user = mon("User", &[move_id]);
+            user.ability = breaker.then(|| "mold-breaker".into());
+            let mut target = mon("Target", &["splash"]);
+            target.ability = Some("damp".into());
+            let mut battle = game(user, target, 0.5);
+            let pp = ally(&battle).move_pp[move_id];
+            turn(&mut battle, move_id, "splash");
+            assert_eq!(ally(&battle).hp == 1000, !breaker, "{move_id}/{breaker}");
+            assert_eq!(foe(&battle).hp == 1000, !breaker, "{move_id}/{breaker}");
+            assert_eq!(ally(&battle).move_pp[move_id], pp - 1);
+        }
+    }
+    let mut user = mon("User", &["tackle"]);
+    user.ability = Some("damp".into());
+    let mut target = mon("Target", &["splash"]);
+    target.hp = 1;
+    target.ability = Some("aftermath".into());
+    let mut battle = game(user, target, 0.5);
+    turn(&mut battle, "tackle", "splash");
+    assert_eq!(ally(&battle).hp, 1000);
+}

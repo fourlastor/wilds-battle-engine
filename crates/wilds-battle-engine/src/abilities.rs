@@ -27,6 +27,14 @@ fn cannot_suppress(ability: &str) -> bool {
 }
 
 impl Battle {
+    pub(crate) fn damp_active(&self) -> bool {
+        !self.ability_bypass
+            && self
+                .actors()
+                .into_iter()
+                .any(|who| self.has_ability(who, "damp"))
+    }
+
     pub(crate) fn ability_damaging_hit(
         &mut self,
         target: ParticipantId,
@@ -37,7 +45,8 @@ impl Battle {
         if hit.damage == 0 || hit.attacker == target {
             return;
         }
-        if ability == "aftermath" && self.get(target).hp == 0 && hit.contact {
+        if ability == "aftermath" && self.get(target).hp == 0 && hit.contact && !self.damp_active()
+        {
             self.indirect_damage(
                 hit.attacker,
                 (self.get(hit.attacker).max_hp / 4).max(1),

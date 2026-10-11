@@ -1571,6 +1571,19 @@ impl Battle {
         {
             *pp = pp.saturating_sub(1);
         }
+        if matches!(
+            crate::items::item_key(&spec.id).as_str(),
+            "explosion" | "selfdestruct" | "mindblown" | "mistyexplosion"
+        ) && self.damp_active()
+        {
+            events.push(BattleEvent::Message(format!(
+                "{user_name} used {}!",
+                spec.name
+            )));
+            events.push(BattleEvent::Message("Damp prevented the explosion!".into()));
+            self.move_failed = true;
+            return Ok(true);
+        }
         if !spec.auto_only
             && self.explode_on_type(actor, self.converted_type(actor, spec.move_type), events)
         {
