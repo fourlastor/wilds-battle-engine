@@ -115,7 +115,7 @@ id,ability,status,verification
 114,storm-drain,IMPLEMENTED,ability_rules::storm_drain_redirects_damage_and_status_but_not_mold_breaker
 115,ice-body,MISSING,No native battle behavior
 116,solid-rock,IMPLEMENTED,Source inventory; existing tests only
-117,snow-warning,MISSING,No native battle behavior
+117,snow-warning,IMPLEMENTED,ability_rules::snowwarning_starts_weather_on_entry_only_when_active
 118,honey-gather,MISSING,No native battle behavior
 119,frisk,MISSING,No native battle behavior
 120,reckless,MISSING,No native battle behavior
