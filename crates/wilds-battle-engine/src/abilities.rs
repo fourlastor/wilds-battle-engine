@@ -210,6 +210,17 @@ impl Battle {
     }
 
     pub(crate) fn ability_on_entry(&mut self, who: ParticipantId, events: &mut Vec<BattleEvent>) {
+        if self.has_ability(who, "curiousmedicine") {
+            for ally in self.actors() {
+                if ally != who && ally.side == who.side && !self.get(ally).stages.is_empty() {
+                    self.get_mut(ally).stages.clear();
+                    events.push(BattleEvent::Message(format!(
+                        "{}'s stat changes were removed by Curious Medicine!",
+                        self.get(ally).name
+                    )));
+                }
+            }
+        }
         if self.has_ability(who, "download") {
             let (defense, special) = self
                 .actors()

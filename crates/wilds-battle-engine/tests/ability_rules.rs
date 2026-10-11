@@ -1552,3 +1552,28 @@ fn download_compares_opponents_combined_staged_defenses_and_breaks_ties_to_speci
         );
     }
 }
+
+#[test]
+fn curious_medicine_resets_only_active_teammates() {
+    use wilds_battle_engine::Stat;
+    let mut holder = mon("Holder", &["splash"]);
+    holder.ability = Some("curious-medicine".into());
+    holder.stages.insert(Stat::Attack, 2);
+    let mut partner = mon("Partner", &["splash"]);
+    partner.stages.insert(Stat::Attack, 3);
+    partner.stages.insert(Stat::Defense, -2);
+    let bench = partner.clone();
+    let target = partner.clone();
+    let mut battle = Battle::with_rng(
+        Fixed(0.5),
+        [vec![holder, partner, bench], vec![target]],
+        MoveCatalog::builtin().unwrap(),
+    )
+    .unwrap();
+    battle.set_active([vec![0, 1], vec![0]]).unwrap();
+    battle.advance().unwrap();
+    assert_eq!(ally(&battle).stage(Stat::Attack), 2);
+    assert!(battle.participants(Side::Allies)[1].stages.is_empty());
+    assert_eq!(battle.participants(Side::Allies)[2].stage(Stat::Attack), 3);
+    assert_eq!(foe(&battle).stage(Stat::Defense), -2);
+}
