@@ -2029,3 +2029,13 @@ fn stamina_raises_defense_per_direct_hit() {
     check_hit_stat_boost("stamina", "double_kick", Stat::Defense, 2);
     check_hit_stat_boost("stamina", "growl", Stat::Defense, 0);
 }
+
+#[test]
+fn weak_armor_trades_defense_for_two_speed_per_physical_hit() {
+    use wilds_battle_engine::Stat;
+    check_hit_stat_boost("weak-armor", "tackle", Stat::Defense, -1);
+    check_hit_stat_boost("weak-armor", "tackle", Stat::Speed, 2);
+    check_hit_stat_boost("weak-armor", "double_kick", Stat::Speed, 4);
+    check_hit_stat_boost("weak-armor", "swift", Stat::Defense, 0);
+    check_hit_stat_boost("weak-armor", "swift", Stat::Speed, 0);
+}

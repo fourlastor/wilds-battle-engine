@@ -131,7 +131,7 @@ id,ability,status,verification
 130,cursed-body,MISSING,No native battle behavior
 131,healer,IMPLEMENTED,Source inventory; existing tests only
 132,friend-guard,MISSING,No native battle behavior
-133,weak-armor,MISSING,No native battle behavior
+133,weak-armor,IMPLEMENTED,ability_rules::weak_armor_trades_defense_for_two_speed_per_physical_hit
 134,heavy-metal,IMPLEMENTED,ability_rules::heavy_metal_modifies_battle_weight_without_compounding_autotomize
 135,light-metal,IMPLEMENTED,ability_rules::light_metal_halves_weight_and_respects_suppression_and_mold_breaker
 136,multiscale,IMPLEMENTED,Source inventory; existing tests only

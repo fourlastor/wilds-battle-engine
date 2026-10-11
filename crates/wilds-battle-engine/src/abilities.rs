@@ -40,6 +40,13 @@ impl Battle {
         if self.get(target).hp > 0 && ability == "stamina" {
             self.change_stat(target, crate::model::Stat::Defense, 1, events);
         }
+        if self.get(target).hp > 0
+            && ability == "weakarmor"
+            && hit.category == crate::moves::Category::Physical
+        {
+            self.change_stat(target, crate::model::Stat::Defense, -1, events);
+            self.change_stat(target, crate::model::Stat::Speed, 2, events);
+        }
         if matches!(ability, "gooey" | "tanglinghair")
             && hit.contact
             && self.get(hit.attacker).hp > 0
