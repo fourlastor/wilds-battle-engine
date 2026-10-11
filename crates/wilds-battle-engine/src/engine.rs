@@ -3290,7 +3290,10 @@ impl Battle {
                 "sandstorm",
             ),
             WeatherKind::Hail => (&[PokemonType::Ice], "hail"),
-            WeatherKind::Sun | WeatherKind::Rain | WeatherKind::HeavyRain => return,
+            WeatherKind::Sun
+            | WeatherKind::Rain
+            | WeatherKind::HeavyRain
+            | WeatherKind::HarshSun => return,
         };
         for id in order {
             let p = self.get(*id).clone();

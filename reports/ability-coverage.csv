@@ -188,7 +188,7 @@ id,ability,status,verification
 187,fairy-aura,IMPLEMENTED,ability_rules::fairy_aura_boosts_both_sides_without_stacking
 188,aura-break,IMPLEMENTED,ability_rules::aura_break_reverses_only_active_auras_and_is_bypassable
 189,primordial-sea,IMPLEMENTED,ability_rules::primordial_sea_keeps_heavy_rain_blocks_fire_attacks_and_ends_with_its_last_source
-190,desolate-land,MISSING,No native battle behavior
+190,desolate-land,IMPLEMENTED,ability_rules::desolate_land_blocks_water_damage_allows_status_moves_and_replaces_extreme_rain
 191,delta-stream,MISSING,No native battle behavior
 192,stamina,IMPLEMENTED,ability_rules::stamina_raises_defense_per_direct_hit
 193,wimp-out,IMPLEMENTED,ability_rules::wimp_out_offers_a_switch_after_crossing_half_hp_with_berry_and_pivot_timing

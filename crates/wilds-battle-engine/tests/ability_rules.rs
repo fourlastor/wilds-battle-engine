@@ -4349,3 +4349,31 @@ fn primordial_sea_keeps_heavy_rain_blocks_fire_attacks_and_ends_with_its_last_so
     turn(&mut battle, "switch:1", "splash");
     assert_eq!(battle.weather().unwrap().kind, WeatherKind::Sun);
 }
+
+#[test]
+fn desolate_land_blocks_water_damage_allows_status_moves_and_replaces_extreme_rain() {
+    use wilds_battle_engine::WeatherKind;
+    let mut user = mon("User", &["rain-dance", "splash"]);
+    user.ability = Some("desolate-land".into());
+    let mut battle = game(
+        user,
+        mon("Target", &["water-gun", "soak", "splash", "gastro-acid"]),
+        0.5,
+    );
+    turn(&mut battle, "rain-dance", "water-gun");
+    assert_eq!(battle.weather().unwrap().kind, WeatherKind::HarshSun);
+    assert_eq!(ally(&battle).hp, 1000);
+    turn(&mut battle, "splash", "soak");
+    assert_eq!(ally(&battle).types, [PokemonType::Water]);
+    turn(&mut battle, "splash", "gastro-acid");
+    assert!(battle.weather().is_none());
+    let mut fast_sea = mon("Sea", &["splash"]);
+    fast_sea.ability = Some("primordial-sea".into());
+    fast_sea.speed = 200;
+    let mut slow_sun = mon("Sun", &["splash"]);
+    slow_sun.ability = Some("desolate-land".into());
+    slow_sun.speed = 100;
+    let mut battle = game(fast_sea, slow_sun, 0.5);
+    turn(&mut battle, "splash", "splash");
+    assert_eq!(battle.weather().unwrap().kind, WeatherKind::HarshSun);
+}

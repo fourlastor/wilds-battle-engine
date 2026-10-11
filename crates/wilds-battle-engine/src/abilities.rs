@@ -49,8 +49,10 @@ impl Battle {
         category != crate::moves::Category::Status
             && self.effective_weather().is_some()
             && self.weather.as_ref().is_some_and(|w| {
-                w.kind == crate::model::WeatherKind::HeavyRain
-                    && kind == crate::model::PokemonType::Fire
+                (w.kind == crate::model::WeatherKind::HeavyRain
+                    && kind == crate::model::PokemonType::Fire)
+                    || (w.kind == crate::model::WeatherKind::HarshSun
+                        && kind == crate::model::PokemonType::Water)
             })
     }
 
@@ -994,6 +996,9 @@ impl Battle {
         self.ability_terrain_entry(who, events);
         if self.has_ability(who, "primordialsea") {
             self.start_weather(crate::model::WeatherKind::HeavyRain, u8::MAX, events);
+        }
+        if self.has_ability(who, "desolateland") {
+            self.start_weather(crate::model::WeatherKind::HarshSun, u8::MAX, events);
         }
         self.update_ability_form(who, events);
         self.health_ability_form(who, true, events);
