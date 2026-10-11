@@ -5669,3 +5669,111 @@ fn grudge_can_be_reused_but_ends_when_another_action_or_residual_damage_occurs()
     turn(&mut b);
     assert_eq!(b.participants(Side::Foes)[0].move_pp["splash"], 19);
 }
+
+#[test]
+fn bide_stores_two_turns_of_direct_damage_then_releases_twice_that_amount() {
+    let user = mon("User", &["bide"]);
+    let mut foe = mon("Foe", &["pound"]);
+    foe.types = vec![PokemonType::Ghost];
+    let mut b = game(user, vec![foe], 0.5);
+    turn(&mut b);
+    turn(&mut b);
+    let taken = 1000 - b.participants(Side::Allies)[0].hp;
+    assert_eq!(b.participants(Side::Foes)[0].hp, 1000);
+    turn(&mut b);
+    assert_eq!(b.participants(Side::Foes)[0].hp, 1000 - 2 * taken);
+    assert_eq!(b.participants(Side::Allies)[0].move_pp["bide"], 9);
+    assert!(
+        b.participants(Side::Allies)[0]
+            .script_continuation
+            .is_none()
+    );
+}
+
+#[test]
+fn bide_fails_without_damage_and_its_retaliation_respects_guards() {
+    for guard in ["protect", "quick-guard"] {
+        let mut b = game(
+            mon("User", &["bide"]),
+            vec![mon("Foe", &["pound", guard])],
+            0.5,
+        );
+        turn(&mut b);
+        turn(&mut b);
+        turn_with(&mut b, |p| choose_move(p, "bide", guard));
+        assert_eq!(b.participants(Side::Foes)[0].hp, 1000);
+    }
+    let mut b = game(mon("User", &["bide"]), vec![mon("Foe", &["splash"])], 0.5);
+    turn(&mut b);
+    turn(&mut b);
+    turn(&mut b);
+    assert!(b.participants(Side::Allies)[0].last_move_failed);
+}
+
+#[test]
+fn bide_redirects_retaliation_when_the_last_attacker_has_switched_out() {
+    let mut b = game(
+        mon("User", &["bide"]),
+        vec![mon("Foe", &["pound"]), mon("Bench", &["splash"])],
+        0.5,
+    );
+    b.set_active([vec![0], vec![0]]).unwrap();
+    turn(&mut b);
+    turn(&mut b);
+    let taken = 1000 - b.participants(Side::Allies)[0].hp;
+    turn_with(&mut b, |p| {
+        if p.actor.side == Side::Foes {
+            p.choices
+                .iter()
+                .find(|c| matches!(c, Choice::Switch { .. }))
+                .unwrap()
+                .id()
+        } else {
+            choose_move(p, "bide", "splash")
+        }
+    });
+    assert_eq!(b.participants(Side::Foes)[1].hp, 1000 - 2 * taken);
+}
+
+#[test]
+fn bide_does_not_count_poison_or_substitute_damage_and_sleep_aborts_the_sequence() {
+    use wilds_battle_engine::Status;
+    let mut user = mon("User", &["bide"]);
+    user.status = Some(Status::Poisoned);
+    let mut b = game(user, vec![mon("Foe", &["splash"])], 0.5);
+    turn(&mut b);
+    turn(&mut b);
+    turn(&mut b);
+    assert!(b.participants(Side::Allies)[0].last_move_failed);
+    assert_eq!(b.participants(Side::Foes)[0].hp, 1000);
+    let mut user = mon("User", &["bide"]);
+    user.substitute_hp = 500;
+    let mut b = game(user, vec![mon("Foe", &["pound"])], 0.5);
+    turn(&mut b);
+    turn(&mut b);
+    turn(&mut b);
+    assert!(b.participants(Side::Allies)[0].last_move_failed);
+    let user = mon("User", &["bide"]);
+    let foe = mon("Foe", &["pound", "spore"]);
+    let mut b = Battle::with_rng(
+        Rolls(2, 0.5),
+        [vec![user], vec![foe]],
+        MoveCatalog::builtin().unwrap(),
+    )
+    .unwrap();
+    turn(&mut b);
+    turn_with(&mut b, |p| choose_move(p, "bide", "spore"));
+    turn_with(&mut b, |p| choose_move(p, "bide", "spore"));
+    assert!(
+        b.participants(Side::Allies)[0]
+            .script_continuation
+            .is_none()
+    );
+    assert!(
+        b.participants(Side::Allies)[0]
+            .conditions
+            .iter()
+            .all(|c| !c.name.starts_with("bide_"))
+    );
+    assert_eq!(b.participants(Side::Foes)[0].hp, 1000);
+}

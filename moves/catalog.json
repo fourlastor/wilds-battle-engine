@@ -1180,6 +1180,17 @@
       "parameter_source": "https://pokeapi.co/api/v2/move/116/"
     },
     {
+      "id": 117,
+      "slug": "bide",
+      "name": "Bide",
+      "sheet_row": null,
+      "runtime_id": "bide",
+      "file": "moves/bide.lua",
+      "status": "implemented",
+      "limitations": [],
+      "parameter_source": "https://pokeapi.co/api/v2/move/117/"
+    },
+    {
       "id": 120,
       "slug": "self-destruct",
       "name": "Self-Destruct",
@@ -7896,7 +7907,8 @@
       "spiky-shield",
       "baneful-bunker",
       "destiny-bond",
-      "grudge"
+      "grudge",
+      "bide"
     ]
   }
 }

@@ -421,7 +421,7 @@ impl Battle {
         spec: &MoveSpec,
         ignore_protect: bool,
     ) -> Option<&Rule> {
-        if actor == target || matches!(spec.target, Target::User | Target::Field | Target::All) {
+        if actor == target || matches!(spec.target, Target::Field | Target::All) {
             return None;
         }
         self.rules(target).filter(|rule| matches!(rule, Rule::Guard {spread_only, priority_only, damaging_only, status_only, unbypassable, ..}
@@ -516,7 +516,7 @@ impl Battle {
         target: ParticipantId,
         spec: &MoveSpec,
     ) -> bool {
-        actor.side != target.side && !matches!(spec.target, Target::User | Target::Field)
+        actor.side != target.side && spec.target != Target::Field
             && self.effective_move_priority(actor, spec) > 0
             && self.rules(target).any(|rule| matches!(rule, Rule::BlockPriority {grounded_only} if !grounded_only || (self.on_ground(target) && self.get(target).hidden().is_none())))
     }
