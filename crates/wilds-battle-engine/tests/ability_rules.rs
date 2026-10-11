@@ -1256,3 +1256,36 @@ fn speed_boost_triggers_each_turn_except_the_switch_in_turn() {
         1
     );
 }
+
+fn check_weather_entry(ability: &str, kind: wilds_battle_engine::WeatherKind) {
+    for suppressed in [false, true] {
+        let mut user = mon("User", &["splash"]);
+        user.ability = Some(ability.into());
+        user.ability_suppressed = suppressed;
+        let mut battle = game(user, mon("Target", &["splash"]), 0.5);
+        battle.advance().unwrap();
+        assert_eq!(
+            battle.weather().map(|w| (w.kind, w.turns_left)),
+            (!suppressed).then_some((kind, 5))
+        );
+    }
+    let lead = mon("Lead", &["splash"]);
+    let mut reserve = mon("Reserve", &["splash"]);
+    reserve.ability = Some(ability.into());
+    let mut battle = Battle::with_rng(
+        Fixed(0.5),
+        [vec![lead, reserve], vec![mon("Target", &["splash"])]],
+        MoveCatalog::builtin().unwrap(),
+    )
+    .unwrap();
+    battle.set_active([vec![0], vec![0]]).unwrap();
+    battle.advance().unwrap();
+    assert!(battle.weather().is_none());
+    turn(&mut battle, "switch:1", "splash");
+    assert_eq!(battle.weather().unwrap().kind, kind);
+}
+
+#[test]
+fn drizzle_starts_rain_on_entry_only_when_active() {
+    check_weather_entry("drizzle", wilds_battle_engine::WeatherKind::Rain);
+}
