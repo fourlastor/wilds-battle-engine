@@ -738,3 +738,8 @@ fn chillingneigh_rewards_move_knockouts() {
 fn grimneigh_rewards_move_knockouts() {
     check_knockout_boost("grim-neigh", wilds_battle_engine::Stat::SpAttack);
 }
+
+#[test]
+fn moxie_rewards_move_knockouts() {
+    check_knockout_boost("moxie", wilds_battle_engine::Stat::Attack);
+}
