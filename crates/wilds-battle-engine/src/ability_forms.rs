@@ -274,10 +274,8 @@ impl Battle {
         } else {
             self.change_stat_from(who, attacker, crate::model::Stat::Defense, -1, events);
         }
-        if self.get(who).hp > 0 {
-            if !self.restore_form(who, events) {
-                self.change_form(who, "cramorant", events);
-            }
+        if self.get(who).hp > 0 && !self.restore_form(who, events) {
+            self.change_form(who, "cramorant", events);
         }
     }
 
