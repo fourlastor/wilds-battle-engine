@@ -34,6 +34,9 @@ impl Battle {
         spec: &crate::moves::MoveSpec,
     ) -> u8 {
         use crate::moves::Target;
+        if spec.has_flag("pressure_none") {
+            return 0;
+        }
         self.actors()
             .into_iter()
             .filter(|&foe| {

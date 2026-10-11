@@ -1,3 +1,3 @@
-return { id="splash", name="Splash", type=Type.Normal, category=Category.Physical, pp=20, target=Target.User,
-    flags={"gravity"},
+return { id="splash", name="Splash", type=Type.Normal, category=Category.Physical, pp=20,
+    flags={"gravity", "pressure_none"},
     effects={{kind=Effect.Splash}} }
