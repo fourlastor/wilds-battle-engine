@@ -2094,6 +2094,17 @@
       "limitations": []
     },
     {
+      "id": 240,
+      "slug": "rain-dance",
+      "name": "Rain Dance",
+      "sheet_row": null,
+      "runtime_id": "rain-dance",
+      "file": "moves/rain-dance.lua",
+      "status": "implemented",
+      "limitations": [],
+      "parameter_source": "https://pokeapi.co/api/v2/move/240/"
+    },
+    {
       "id": 242,
       "slug": "crunch",
       "name": "Crunch",
@@ -6528,7 +6539,8 @@
       "aqua-ring",
       "safeguard",
       "tailwind",
-      "fairy-lock"
+      "fairy-lock",
+      "rain-dance"
     ]
   }
 }

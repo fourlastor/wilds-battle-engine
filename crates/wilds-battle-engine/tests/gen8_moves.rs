@@ -1085,3 +1085,21 @@ fn fairy_lock_traps_both_sides_for_the_next_turn_only() {
         assert!(!b.trapped(ParticipantId { side, index: 0 }));
     }
 }
+
+#[test]
+fn rain_dance_sets_five_turn_weather_and_cannot_refresh_it() {
+    let mut b = game(
+        mon("User", &["rain-dance"]),
+        vec![mon("Foe", &["splash"])],
+        0.5,
+    );
+    turn(&mut b);
+    assert_eq!(
+        b.weather().unwrap().kind,
+        wilds_battle_engine::WeatherKind::Rain
+    );
+    assert_eq!(b.weather().unwrap().turns_left, 4);
+    turn(&mut b);
+    assert!(b.participants(Side::Allies)[0].last_move_failed);
+    assert_eq!(b.weather().unwrap().turns_left, 3);
+}
