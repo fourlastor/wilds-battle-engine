@@ -198,7 +198,7 @@ id,ability,status,verification
 197,shields-down,MISSING,No native battle behavior
 198,stakeout,MISSING,No native battle behavior
 199,water-bubble,IMPLEMENTED,ability_rules::water_bubble_boosts_water_and_resists_fire
-200,steelworker,MISSING,No native battle behavior
+200,steelworker,IMPLEMENTED,ability_rules::steelworker_boosts_steel_attacks_only
 201,berserk,MISSING,No native battle behavior
 202,slush-rush,MISSING,No native battle behavior
 203,long-reach,IMPLEMENTED,ability_rules::long_reach_removes_contact_for_hit_reactions_and_fluffy

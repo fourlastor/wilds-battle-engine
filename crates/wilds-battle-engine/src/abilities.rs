@@ -516,6 +516,11 @@ impl Battle {
         actor: ParticipantId,
         attack: &crate::engine::Attack,
     ) -> f32 {
+        if self.has_ability(actor, "steelworker")
+            && attack.move_type == crate::model::PokemonType::Steel
+        {
+            return 1.5;
+        }
         if self.has_ability(actor, "normalize") && Self::normalizable_move(attack.move_id) {
             1.2
         } else {

@@ -743,3 +743,34 @@ fn grimneigh_rewards_move_knockouts() {
 fn moxie_rewards_move_knockouts() {
     check_knockout_boost("moxie", wilds_battle_engine::Stat::Attack);
 }
+
+fn check_power_ability(ability: &str, boosted: &[&str], neutral: &str, multiplier: f32, hp: u16) {
+    let run = |move_id: &str, suppressed| {
+        let mut user = mon("User", &[move_id]);
+        user.ability = Some(ability.into());
+        user.ability_suppressed = suppressed;
+        user.hp = hp;
+        let mut battle = game(user, mon("Target", &["splash"]), 0.5);
+        turn(&mut battle, move_id, "splash");
+        1000 - foe(&battle).hp
+    };
+    for &attack in boosted {
+        let base = run(attack, true);
+        let modified = run(attack, false);
+        assert!(modified > base, "{ability}: {attack} did not boost");
+        assert!(
+            (f32::from(modified) - f32::from(base) * multiplier).abs() <= 3.0,
+            "{ability} {attack}: base={base} modified={modified}"
+        );
+    }
+    assert_eq!(
+        run(neutral, false),
+        run(neutral, true),
+        "{ability} boosted unrelated {neutral}"
+    );
+}
+
+#[test]
+fn steelworker_boosts_steel_attacks_only() {
+    check_power_ability("steelworker", &["iron-head"], "tackle", 1.5, 1000);
+}
