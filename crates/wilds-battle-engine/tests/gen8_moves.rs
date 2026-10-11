@@ -845,3 +845,31 @@ fn psywave_scales_a_uniform_fifty_to_150_percent_by_level() {
     turn(&mut b);
     assert_eq!(b.participants(Side::Foes)[0].hp, 1000);
 }
+
+#[test]
+fn tri_attack_chooses_one_of_three_statuses_and_respects_chance_and_substitute() {
+    use wilds_battle_engine::Status;
+    for (roll, status) in [
+        (0, Status::Burned),
+        (1, Status::Paralyzed),
+        (2, Status::Frozen),
+    ] {
+        let mut user = mon("User", &["tri-attack"]);
+        user.speed = 1;
+        let mut b = Battle::with_rng(
+            Rolls(roll, 0.1),
+            [vec![user], vec![mon("Foe", &["splash"])]],
+            MoveCatalog::builtin().unwrap(),
+        )
+        .unwrap();
+        turn(&mut b);
+        assert_eq!(b.participants(Side::Foes)[0].status, Some(status));
+    }
+    for (sub, dice) in [(0, 0.5), (500, 0.1)] {
+        let mut foe = mon("Foe", &["splash"]);
+        foe.substitute_hp = sub;
+        let mut b = game(mon("User", &["tri-attack"]), vec![foe], dice);
+        turn(&mut b);
+        assert_eq!(b.participants(Side::Foes)[0].status, None);
+    }
+}

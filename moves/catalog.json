@@ -1523,6 +1523,17 @@
       "limitations": []
     },
     {
+      "id": 161,
+      "slug": "tri-attack",
+      "name": "Tri Attack",
+      "sheet_row": null,
+      "runtime_id": "tri-attack",
+      "file": "moves/tri-attack.lua",
+      "status": "implemented",
+      "limitations": [],
+      "parameter_source": "https://pokeapi.co/api/v2/move/161/"
+    },
+    {
       "id": 162,
       "slug": "super-fang",
       "name": "Super Fang",
@@ -6396,7 +6407,8 @@
       "punishment",
       "super-fang",
       "natures-madness",
-      "psywave"
+      "psywave",
+      "tri-attack"
     ]
   }
 }
