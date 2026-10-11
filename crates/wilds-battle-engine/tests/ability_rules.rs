@@ -1391,3 +1391,23 @@ fn sand_rush_doubles_speed_and_prevents_sandstorm_damage() {
     check_weather_speed("sand-rush", "sandstorm");
     check_weather_immunity("sand-rush", "sandstorm");
 }
+
+#[test]
+fn solar_power_boosts_special_attacks_and_costs_hp_only_in_effective_sun() {
+    let run = |attack: &str, suppressed, cloud: bool| {
+        let mut user = mon("User", &["sunny_day", attack]);
+        user.ability = Some("solar-power".into());
+        user.ability_suppressed = suppressed;
+        let mut target = mon("Target", &["splash"]);
+        target.ability = cloud.then(|| "cloud-nine".into());
+        let mut battle = game(user, target, 0.5);
+        turn(&mut battle, "sunny_day", "splash");
+        turn(&mut battle, attack, "splash");
+        (1000 - foe(&battle).hp, ally(&battle).hp)
+    };
+    assert!(run("water-gun", false, false).0 > run("water-gun", true, false).0);
+    assert_eq!(run("tackle", false, false).0, run("tackle", true, false).0);
+    assert_eq!(run("water-gun", false, false).1, 750);
+    assert_eq!(run("water-gun", true, false).1, 1000);
+    assert_eq!(run("water-gun", false, true), run("water-gun", true, true));
+}

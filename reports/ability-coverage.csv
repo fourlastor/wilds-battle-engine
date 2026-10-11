@@ -92,7 +92,7 @@ id,ability,status,verification
 91,adaptability,IMPLEMENTED,ability_rules::adaptability_increases_stab_to_double_without_boosting_other_types
 92,skill-link,MISSING,No native battle behavior
 93,hydration,IMPLEMENTED,Source inventory; existing tests only
-94,solar-power,MISSING,No native battle behavior
+94,solar-power,IMPLEMENTED,ability_rules::solar_power_boosts_special_attacks_and_costs_hp_only_in_effective_sun
 95,quick-feet,IMPLEMENTED,Source inventory; existing tests only
 96,normalize,IMPLEMENTED,ability_rules::normalize_changes_damage_and_status_types_and_boosts_power_except_variable_types
 97,sniper,IMPLEMENTED,ability_rules::sniper_only_boosts_critical_damage

@@ -153,6 +153,9 @@ impl Battle {
         events: &mut Vec<BattleEvent>,
     ) {
         use crate::model::WeatherKind::*;
+        if kind == Sun && self.has_ability(who, "solarpower") {
+            self.indirect_damage(who, (self.get(who).max_hp / 8).max(1), events);
+        }
         if self.has_ability(who, "dryskin") {
             match kind {
                 Rain => {
@@ -424,6 +427,12 @@ impl Battle {
         stat: crate::model::CombatStat,
     ) -> f32 {
         use crate::model::CombatStat::*;
+        if stat == SpAttack
+            && self.has_ability(who, "solarpower")
+            && self.effective_weather() == Some(crate::model::WeatherKind::Sun)
+        {
+            return 1.5;
+        }
         if stat == Speed
             && self.has_ability(who, "sandrush")
             && self.effective_weather() == Some(crate::model::WeatherKind::Sandstorm)
