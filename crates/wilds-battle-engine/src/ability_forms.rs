@@ -19,6 +19,17 @@ impl Battle {
         if self.get(who).transformed() {
             return;
         }
+        if self.has_ability(who, "schooling")
+            && self.species_is(who, 746, "wishiwashi")
+            && self.get(who).level >= 20
+        {
+            let form = if self.get(who).hp > self.get(who).max_hp / 4 {
+                "wishiwashi-school"
+            } else {
+                "wishiwashi-solo"
+            };
+            self.ability_form(who, form, "wishiwashi-solo", events);
+        }
         if !entry && self.has_ability(who, "zenmode") && self.species_is(who, 555, "darmanitan") {
             let galar = self
                 .get(who)

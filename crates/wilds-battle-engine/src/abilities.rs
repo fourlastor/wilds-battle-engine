@@ -857,6 +857,7 @@ impl Battle {
         }
         self.ability_terrain_entry(who, events);
         self.update_ability_form(who, events);
+        self.health_ability_form(who, true, events);
         if self.has_ability(who, "truant") {
             self.end_condition(crate::model::Scope::Pokemon(who), "truant");
             if self.get(who).acted && self.get(who).entered_turn < self.turn {

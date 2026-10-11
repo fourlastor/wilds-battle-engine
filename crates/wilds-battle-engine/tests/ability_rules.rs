@@ -3814,3 +3814,28 @@ fn zen_mode_changes_at_turn_end_at_half_hp_and_supports_galar_forms() {
         assert_eq!(ally(&battle).sp_attack, old_spa);
     }
 }
+
+#[test]
+fn schooling_checks_level_and_quarter_hp_on_entry_and_at_turn_end() {
+    for (level, hp, school) in [(19, 1000, false), (20, 251, true), (20, 250, false)] {
+        let mut user = mon("User", &["splash"]);
+        user.species_id = 746;
+        user.level = level;
+        user.hp = hp;
+        user.ability = Some("schooling".into());
+        add_form(&mut user, "wishiwashi-school", PokemonType::Water);
+        let mut battle = game(user, mon("Target", &["splash"]), 0.5);
+        battle.advance().unwrap();
+        assert_eq!(ally(&battle).form.is_some(), school);
+    }
+    let mut user = mon("User", &["splash", "recover"]);
+    user.species_id = 746;
+    user.hp = 260;
+    user.ability = Some("schooling".into());
+    add_form(&mut user, "wishiwashi-school", PokemonType::Water);
+    let mut battle = game(user, mon("Target", &["tackle", "splash"]), 0.5);
+    turn(&mut battle, "splash", "tackle");
+    assert!(ally(&battle).form.is_none());
+    turn(&mut battle, "recover", "splash");
+    assert_eq!(ally(&battle).form.as_deref(), Some("wishiwashi-school"));
+}
