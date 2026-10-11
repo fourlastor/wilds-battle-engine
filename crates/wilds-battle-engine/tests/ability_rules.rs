@@ -1411,3 +1411,28 @@ fn solar_power_boosts_special_attacks_and_costs_hp_only_in_effective_sun() {
     assert_eq!(run("water-gun", true, false).1, 1000);
     assert_eq!(run("water-gun", false, true), run("water-gun", true, true));
 }
+
+fn check_weather_evasion(ability: &str, weather: &str) {
+    for (suppressed, source_ability, hit) in [
+        (false, "", false),
+        (true, "", true),
+        (false, "mold-breaker", true),
+        (false, "cloud-nine", true),
+    ] {
+        let mut user = mon("User", &[weather, "will-o-wisp"]);
+        user.ability = Some(source_ability.into());
+        let mut target = mon("Target", &["splash"]);
+        target.ability = Some(ability.into());
+        target.ability_suppressed = suppressed;
+        let mut battle = game(user, target, 0.75);
+        turn(&mut battle, weather, "splash");
+        turn(&mut battle, "will-o-wisp", "splash");
+        assert_eq!(foe(&battle).status, hit.then_some(Status::Burned));
+    }
+}
+
+#[test]
+fn sand_veil_reduces_accuracy_and_grants_weather_immunity() {
+    check_weather_evasion("sand-veil", "sandstorm");
+    check_weather_immunity("sand-veil", "sandstorm");
+}

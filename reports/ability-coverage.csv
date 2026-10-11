@@ -6,7 +6,7 @@ id,ability,status,verification
 5,sturdy,IMPLEMENTED,Source inventory; existing tests only
 6,damp,MISSING,No native battle behavior
 7,limber,IMPLEMENTED,Source inventory; existing tests only
-8,sand-veil,MISSING,No native battle behavior
+8,sand-veil,IMPLEMENTED,ability_rules::sand_veil_reduces_accuracy_and_grants_weather_immunity
 9,static,MISSING,No native battle behavior
 10,volt-absorb,IMPLEMENTED,ability_rules::volt_absorb_catches_status_moves_and_respects_suppression_and_bypass
 11,water-absorb,IMPLEMENTED,ability_rules::water_absorb_catches_soak_without_changing_types

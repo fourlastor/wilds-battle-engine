@@ -746,6 +746,9 @@ impl Battle {
         events: &mut Vec<BattleEvent>,
     ) -> HitOutcome {
         let actor = frame.actor;
+        if self.ability_bypass {
+            self.ignored_ability = Some(recipient);
+        }
         if self.get(recipient).hp == 0 {
             return HitOutcome::Fainted;
         }

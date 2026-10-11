@@ -180,7 +180,8 @@ impl Battle {
         who: ParticipantId,
         kind: crate::model::WeatherKind,
     ) -> bool {
-        (kind == crate::model::WeatherKind::Sandstorm && self.has_ability(who, "sandrush"))
+        (kind == crate::model::WeatherKind::Sandstorm
+            && (self.has_ability(who, "sandrush") || self.has_ability(who, "sandveil")))
             || self.has_ability(who, "overcoat")
             || (kind == crate::model::WeatherKind::Hail && self.has_ability(who, "icebody"))
     }
@@ -495,7 +496,7 @@ impl Battle {
     pub(crate) fn ability_accuracy_factor(
         &self,
         actor: ParticipantId,
-        _target: ParticipantId,
+        target: ParticipantId,
         category: crate::moves::Category,
     ) -> f32 {
         let mut factor = if self.has_ability(actor, "compoundeyes") {
@@ -510,6 +511,11 @@ impl Battle {
             if ally.side == actor.side && self.has_ability(ally, "victorystar") {
                 factor *= 1.1;
             }
+        }
+        if self.has_ability(target, "sandveil")
+            && self.effective_weather() == Some(crate::model::WeatherKind::Sandstorm)
+        {
+            factor *= 0.8;
         }
         factor
     }
