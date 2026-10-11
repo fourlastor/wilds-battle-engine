@@ -420,7 +420,18 @@ impl Battle {
                         .into_iter()
                         .filter(|id| id.side != actor.side)
                         .collect(),
-                    Target::Ally => allies(false),
+                    Target::Ally => {
+                        let targets: Vec<_> = allies(false)
+                            .into_iter()
+                            .filter(|&id| self.adjacent(actor, id))
+                            .collect();
+                        // An ally move can still be attempted without an ally; it fails at execution.
+                        if targets.is_empty() {
+                            vec![actor]
+                        } else {
+                            targets
+                        }
+                    }
                     Target::UserOrAlly => allies(true),
                     Target::AnyOther => self
                         .actors()
@@ -1240,6 +1251,17 @@ impl Battle {
             && let Some(pp) = self.get_mut(actor).move_pp.get_mut(&spec.id)
         {
             *pp = pp.saturating_sub(1);
+        }
+        if target_kind == Target::Ally && (target == actor || !self.adjacent(actor, target)) {
+            events.push(BattleEvent::Message(format!(
+                "{user_name} used {}!",
+                spec.name
+            )));
+            events.push(BattleEvent::Message(
+                "But there is no adjacent ally!".into(),
+            ));
+            self.move_failed = true;
+            return Ok(true);
         }
         if spec.script.is_some() {
             if !spec.manual_announce {

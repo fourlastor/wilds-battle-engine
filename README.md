@@ -1,9 +1,9 @@
 # Wilds battle engine
 
 `wilds-battle-engine` is the Rust battle simulation. Move definitions are loaded
-from Lua; `MoveCatalog::builtin()` embeds the 686 files under `moves/`,
+from Lua; `MoveCatalog::builtin()` embeds the 687 files under `moves/`,
 and `MoveCatalog::from_directory(path)` reads them from disk at runtime.
-Both catalogs also include the system move Struggle, for 687 moves in total.
+Both catalogs also include the system move Struggle, for 688 moves in total.
 The [move catalog](moves/README.md) includes 538 entries from the Saved moves sheet,
 plus support moves, additional local JSON moves and the original moves outside the sheet. Its manifest
 records the 34 excluded Z/Max Moves. Files use canonical slugs and source display
@@ -401,6 +401,9 @@ before suppression resets. Fainted Pokémon do not activate these effects.
 
 Contrary reverses stage changes and Simple doubles them before stage caps and
 external stat-drop protection. Suppression and eligible ability bypass apply.
+`Target.Ally` offers adjacent teammates. Without one, the move can be selected
+and fails after spending PP.
+
 Move metadata `target_user_unless_type = Type.Ghost` makes targeting depend on
 the user's current type, both when choices are offered and when the move runs.
 The optional `adjacent_target` flag restricts random opponents to adjacent slots.

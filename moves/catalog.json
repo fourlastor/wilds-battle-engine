@@ -2548,6 +2548,17 @@
       "parameter_source": "https://pokeapi.co/api/v2/move/269/"
     },
     {
+      "id": 270,
+      "slug": "helping-hand",
+      "name": "Helping Hand",
+      "sheet_row": null,
+      "runtime_id": "helping-hand",
+      "file": "moves/helping-hand.lua",
+      "status": "implemented",
+      "limitations": [],
+      "parameter_source": "https://pokeapi.co/api/v2/move/270/"
+    },
+    {
       "id": 271,
       "slug": "trick",
       "name": "Trick",
@@ -7404,7 +7415,8 @@
       "imprison",
       "curse",
       "mud-sport",
-      "water-sport"
+      "water-sport",
+      "helping-hand"
     ]
   }
 }

@@ -3700,3 +3700,79 @@ fn water_sport_does_not_reduce_other_attack_types() {
     turn(&mut b);
     assert_eq!(1000 - b.participants(Side::Allies)[0].hp, expected);
 }
+
+#[test]
+fn helping_hand_stacks_base_power_boosts_for_one_turn_through_substitute() {
+    for helpers in [1, 2] {
+        let mut helper = mon("Helper", &["helping-hand", "splash"]);
+        helper.speed = 200;
+        let mut attacker = mon("Attacker", &["tackle"]);
+        attacker.substitute_hp = 50;
+        let foe = mon("Foe", &["splash"]);
+        let boosted = control_damage(
+            if helpers == 1 { 60 } else { 90 },
+            "Normal",
+            "Physical",
+            attacker.clone(),
+            foe.clone(),
+        );
+        let normal = control_damage(40, "Normal", "Physical", attacker.clone(), foe.clone());
+        let mut allies = vec![helper.clone(), attacker];
+        if helpers == 2 {
+            allies.push(helper);
+        }
+        let mut b = Battle::with_rng(
+            Fixed(0.5),
+            [allies, vec![foe]],
+            MoveCatalog::builtin().unwrap(),
+        )
+        .unwrap();
+        turn_with(&mut b, |p| {
+            if p.actor.side == Side::Allies && p.actor.index != 1 {
+                p.choices.iter().find(|c| matches!(c,Choice::UseMove{move_id,target,..} if move_id=="helping-hand" && target.index==1)).unwrap().id()
+            } else {
+                p.choices[0].id()
+            }
+        });
+        assert_eq!(1000 - b.participants(Side::Foes)[0].hp, boosted);
+        turn_with(&mut b, |p| {
+            choose_move(
+                p,
+                if p.actor.index == 1 {
+                    "tackle"
+                } else {
+                    "splash"
+                },
+                "splash",
+            )
+        });
+        assert_eq!(1000 - b.participants(Side::Foes)[0].hp, boosted + normal);
+    }
+}
+
+#[test]
+fn helping_hand_fails_in_singles_and_does_not_boost_fixed_damage() {
+    let mut b = game(
+        mon("User", &["helping-hand"]),
+        vec![mon("Foe", &["splash"])],
+        0.5,
+    );
+    turn(&mut b);
+    assert!(b.participants(Side::Allies)[0].last_move_failed);
+    assert_eq!(b.participants(Side::Allies)[0].move_pp["helping-hand"], 19);
+    assert_eq!(b.participants(Side::Foes)[0].hp, 1000);
+    let mut b = Battle::with_rng(
+        Fixed(0.5),
+        [
+            vec![
+                mon("Helper", &["helping-hand"]),
+                mon("Attacker", &["dragon_rage"]),
+            ],
+            vec![mon("Foe", &["splash"])],
+        ],
+        MoveCatalog::builtin().unwrap(),
+    )
+    .unwrap();
+    turn(&mut b);
+    assert_eq!(b.participants(Side::Foes)[0].hp, 960);
+}
