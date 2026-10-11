@@ -229,6 +229,8 @@ pub enum Rule {
         id: String,
         message: Option<String>,
     },
+    /// Prevent choosing the last used move again; does not interrupt an already queued action.
+    NoRepeat,
     /// Stats cannot be lowered by others.
     BlockStatDrops,
     /// Flinching cannot interrupt the holder.

@@ -2428,6 +2428,17 @@
       "parameter_source": "https://pokeapi.co/api/v2/move/258/"
     },
     {
+      "id": 259,
+      "slug": "torment",
+      "name": "Torment",
+      "sheet_row": null,
+      "runtime_id": "torment",
+      "file": "moves/torment.lua",
+      "status": "implemented",
+      "limitations": [],
+      "parameter_source": "https://pokeapi.co/api/v2/move/259/"
+    },
+    {
       "id": 260,
       "slug": "flatter",
       "name": "Flatter",
@@ -7344,7 +7355,8 @@
       "nightmare",
       "attract",
       "taunt",
-      "disable"
+      "disable",
+      "torment"
     ]
   }
 }

@@ -367,7 +367,12 @@ impl Battle {
                 continue;
             }
             let spec = self.catalog.get(move_id).expect("validated catalog");
-            if self.move_block(actor, spec).is_some() {
+            if self.move_block(actor, spec).is_some()
+                || (pokemon.locked_move.is_none()
+                    && move_id != "struggle"
+                    && pokemon.last_used.as_deref() == Some(move_id)
+                    && self.rules(actor).any(|rule| matches!(rule, Rule::NoRepeat)))
+            {
                 continue;
             }
             let targets: Vec<_> = if let Some(lock) = &pokemon.locked_move

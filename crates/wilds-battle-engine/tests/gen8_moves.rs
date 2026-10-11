@@ -3467,3 +3467,38 @@ fn disable_fails_without_a_previous_move_or_when_that_move_has_no_pp() {
     assert!(b.participants(Side::Allies)[0].last_move_failed);
     assert!(b.participants(Side::Foes)[0].condition("disable").is_none());
 }
+
+#[test]
+fn torment_restricts_future_choices_without_canceling_an_already_selected_repeat() {
+    let mut user = mon("User", &["torment", "splash"]);
+    user.speed = 200;
+    let mut foe = mon("Foe", &["tackle", "splash"]);
+    foe.substitute_hp = 50;
+    let mut b = game(user, vec![foe], 0.5);
+    turn_with(&mut b, |p| choose_move(p, "splash", "tackle"));
+    let pp = b.participants(Side::Foes)[0].move_pp["tackle"];
+    turn_with(&mut b, |p| choose_move(p, "torment", "tackle"));
+    assert_eq!(b.participants(Side::Foes)[0].move_pp["tackle"], pp - 1);
+    turn_with(&mut b, |p| {
+        if p.actor.side == Side::Foes {
+            assert!(
+                !p.choices
+                    .iter()
+                    .any(|c| matches!(c,Choice::UseMove{move_id,..} if move_id=="tackle"))
+            );
+        }
+        choose_move(p, "splash", "splash")
+    });
+    turn_with(&mut b, |p| choose_move(p, "splash", "tackle"));
+}
+
+#[test]
+fn torment_allows_struggle_when_the_only_learned_move_cannot_repeat() {
+    let mut user = mon("User", &["torment", "splash"]);
+    user.speed = 200;
+    let mut b = game(user, vec![mon("Foe", &["tackle"])], 0.5);
+    turn_with(&mut b, |p| choose_move(p, "torment", "tackle"));
+    turn_with(&mut b, |p| choose_move(p, "splash", "struggle"));
+    assert!(b.participants(Side::Foes)[0].hp < 1000);
+    turn_with(&mut b, |p| choose_move(p, "splash", "tackle"));
+}
