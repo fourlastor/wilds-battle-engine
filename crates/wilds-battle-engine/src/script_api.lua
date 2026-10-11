@@ -102,6 +102,10 @@ return function(api, fields, roster)
     return coroutine.yield(api.boost_next_move(move_type, multiplier))
   end
 
+  function ctx:watch_contacts_until_next_action()
+    return op("watch_contacts")
+  end
+
   function ctx:watch_hits_until_next_action()
     return coroutine.yield(api.watch_hits_until_next_action())
   end

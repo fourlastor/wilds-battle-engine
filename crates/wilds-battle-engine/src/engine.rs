@@ -19,6 +19,7 @@ pub struct Battle {
     pub(crate) turn: u64,
     active_power_multiplier: f32,
     pub(crate) hit_reactions: Vec<HitReaction>,
+    pub(crate) reaction_hit: Option<HitInfo>,
     pub(crate) side_conditions: [Vec<Condition>; 2],
     pub(crate) field_conditions: Vec<Condition>,
     pub(crate) last_faint_turn: [Option<u64>; 2],
@@ -37,6 +38,7 @@ pub struct Battle {
 #[derive(Clone)]
 pub(crate) struct HitReaction {
     pub(crate) owner: ParticipantId,
+    pub(crate) contact_only: bool,
     pub(crate) move_id: String,
 }
 
@@ -170,6 +172,7 @@ impl Battle {
             turn: 0,
             active_power_multiplier: 1.0,
             hit_reactions: Vec::new(),
+            reaction_hit: None,
             side_conditions: [Vec::new(), Vec::new()],
             field_conditions: Vec::new(),
             last_faint_turn: [None, None],
@@ -1589,47 +1592,59 @@ impl Battle {
         events: &mut Vec<BattleEvent>,
     ) -> Result<(), BattleError> {
         let before = self.get(target).hp;
+        if before == 0 {
+            return Ok(());
+        }
+        // Capture contact listeners before damage clears a fainted Pokémon's effects.
+        let reactions: Vec<_> = self
+            .hit_reactions
+            .iter()
+            .filter(|r| r.owner == target)
+            .cloned()
+            .collect();
         let mut amount = amount;
-        if amount >= before && before > 0 && self.endures(target) {
+        if amount >= before && self.endures(target) {
             amount = before - 1;
             events.push(BattleEvent::Message(format!(
                 "{} endured the hit!",
                 self.get(target).name
             )));
-            if amount == 0 {
-                return Ok(());
-            }
         }
-        self.damage(target, amount, events);
+        if amount > 0 {
+            self.damage(target, amount, events);
+        }
         let lost = before - self.get(target).hp;
+        let hit = HitInfo {
+            attacker: actor,
+            move_id: meta.move_id.clone(),
+            category: meta.category,
+            move_type: meta.move_type,
+            damage: lost,
+            contact: meta.contact,
+        };
         if lost > 0 {
             let pokemon = self.get_mut(target);
             pokemon.damage_taken = pokemon.damage_taken.saturating_add(lost);
-            pokemon.last_hit = Some(HitInfo {
-                attacker: actor,
-                move_id: meta.move_id.clone(),
-                category: meta.category,
-                move_type: meta.move_type,
-                damage: lost,
-                contact: meta.contact,
-            });
+            pokemon.last_hit = Some(hit.clone());
         }
-        if self.get(target).hp == 0 || self.get(target).hp == before {
-            return Ok(());
-        }
-        let reactions: Vec<_> = self
-            .hit_reactions
-            .iter()
-            .filter(|reaction| reaction.owner == target)
-            .cloned()
-            .collect();
         for reaction in reactions {
+            let triggers = if reaction.contact_only {
+                meta.contact
+            } else {
+                lost > 0 && self.get(target).hp > 0
+            };
+            if !triggers {
+                continue;
+            }
             let spec = self
                 .catalog
                 .get(&reaction.move_id)
                 .expect("registered reaction has a move")
                 .clone();
-            self.execute_script(target, actor, &spec, events, ScriptHook::Hit)?;
+            let previous = self.reaction_hit.replace(hit.clone());
+            let result = self.execute_script(target, actor, &spec, events, ScriptHook::Hit);
+            self.reaction_hit = previous;
+            result?;
         }
         Ok(())
     }

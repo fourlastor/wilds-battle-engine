@@ -154,7 +154,7 @@ trapping metadata and incomplete mechanics.
 | `hits_hidden` | Hidden places the move still reaches, such as `{Hidden.Air}`. |
 | `usable_while_asleep`, `usable_while_frozen` | The second also thaws the user. |
 | `on_turn_start` | Runs before anyone acts, on a turn where the move was chosen (Focus Punch, Beak Blast). |
-| `on_hit` | Runs each time a move damages the user after `ctx:watch_hits_until_next_action()`. `ctx.target` is the attacker and `ctx.hit` describes the hit. |
+| `on_hit` | After `ctx:watch_hits_until_next_action()`, reacts to HP loss while surviving. After `ctx:watch_contacts_until_next_action()`, reacts to successful contact, including zero HP loss and knockout. Misses, protection and immunity do not make contact. `ctx.target` is the attacker and `ctx.hit` describes the current hit. |
 
 ### What a script reads
 

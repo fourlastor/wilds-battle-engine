@@ -234,6 +234,7 @@ pub(crate) enum ScriptOperation {
         multiplier: f32,
     },
     WatchHitsUntilNextAction,
+    WatchContactsUntilNextAction,
     HealSelf(f32),
     FlinchTarget(f32),
     Hurt {
@@ -1045,6 +1046,7 @@ fn parse_op(name: &str, args: &[Value]) -> mlua::Result<ScriptOperation> {
                 weight: weight as f32,
             }
         }
+        "watch_contacts" => ScriptOperation::WatchContactsUntilNextAction,
         "reduce_pp" => ScriptOperation::ReducePp {
             who: who(0)?,
             move_id: name_of(arg(1), "reduce_pp move")?,

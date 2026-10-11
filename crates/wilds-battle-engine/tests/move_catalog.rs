@@ -84,6 +84,28 @@ fn said(events: &[BattleEvent], text: &str) -> bool {
 }
 
 #[test]
+fn beak_blast_reacts_to_zero_damage_and_knockout_contact_but_not_immunity() {
+    for attack in ["hold-back", "body-slam"] {
+        let mut ally = mon("Ally", &["beak-blast"]);
+        ally.hp = 1;
+        let mut game = Game::new(vec![ally], vec![mon("Foe", &[attack])], 0.5);
+        game.turn("beak-blast", attack);
+        assert_eq!(game.foe().status, Some(Status::Burned), "{attack}");
+        assert_eq!(game.ally().hp, if attack == "hold-back" { 1 } else { 0 });
+        if attack == "hold-back" {
+            assert!(game.ally().last_hit.is_none());
+            assert_eq!(game.ally().damage_taken, 0);
+        }
+    }
+    let mut ally = mon("Ally", &["beak-blast"]);
+    ally.types = vec![PokemonType::Ghost];
+    let mut game = Game::new(vec![ally], vec![mon("Foe", &["body-slam"])], 0.5);
+    game.turn("beak-blast", "body-slam");
+    assert_eq!(game.foe().status, None);
+    assert_eq!(game.ally().hp, 1000);
+}
+
+#[test]
 fn pledges_combine_in_both_orders_promote_the_partner_and_apply_the_right_effect() {
     let pairs = [
         (

@@ -511,7 +511,10 @@ impl Battle {
         fields.raw_set("user", Self::pokemon_table(&run, frame.actor).cloned())?;
         fields.raw_set("target", Self::pokemon_table(&run, frame.target).cloned())?;
         if frame.hook == ScriptHook::Hit
-            && let Some(hit) = &self.get(frame.actor).last_hit
+            && let Some(hit) = self
+                .reaction_hit
+                .as_ref()
+                .or(self.get(frame.actor).last_hit.as_ref())
         {
             fields.raw_set("hit", self.hit_table(lua, hit)?)?;
         }
@@ -736,9 +739,7 @@ impl Battle {
             let actual = roll
                 .amount
                 .min(self.get(recipient).hp.saturating_sub(options.min_target_hp));
-            if actual > 0 {
-                self.damage_from_move(actor, recipient, actual, &meta, events)?;
-            }
+            self.damage_from_move(actor, recipient, actual, &meta, events)?;
             events.extend(details);
             report.hit = true;
             report.hits += 1;
@@ -836,9 +837,7 @@ impl Battle {
         }
         for amount in amounts {
             let actual = amount.min(self.get(recipient).hp.saturating_sub(options.min_target_hp));
-            if actual > 0 {
-                self.damage_from_move(actor, recipient, actual, &meta, events)?;
-            }
+            self.damage_from_move(actor, recipient, actual, &meta, events)?;
             report.damage = report.damage.saturating_add(actual);
         }
         events.extend(details);
@@ -1001,7 +1000,10 @@ impl Battle {
         let target = frame.target;
         let spec = frame.spec;
         let value = match operation {
-            ScriptOperation::WatchHitsUntilNextAction => {
+            ScriptOperation::WatchHitsUntilNextAction
+            | ScriptOperation::WatchContactsUntilNextAction => {
+                let contact_only =
+                    matches!(operation, ScriptOperation::WatchContactsUntilNextAction);
                 if spec.on_hit.is_none() {
                     return Err(BattleError::InvalidSetup(format!(
                         "move {} has no hit hook",
@@ -1012,6 +1014,7 @@ impl Battle {
                     .retain(|reaction| reaction.owner != actor || reaction.move_id != spec.id);
                 self.hit_reactions.push(HitReaction {
                     owner: actor,
+                    contact_only,
                     move_id: spec.id.clone(),
                 });
                 Value::Nil
@@ -1492,7 +1495,9 @@ fn reaction_may(operation: &ScriptOperation, hook: ScriptHook) -> bool {
         | Op::TakeItem { .. }
         | Op::GiveItem { .. }
         | Op::AddPayout(_) => true,
-        Op::WatchHitsUntilNextAction | Op::Protect { .. } => hook == ScriptHook::TurnStart,
+        Op::WatchHitsUntilNextAction | Op::WatchContactsUntilNextAction | Op::Protect { .. } => {
+            hook == ScriptHook::TurnStart
+        }
         Op::Hurry { .. } => hook == ScriptHook::Hit,
         _ => false,
     }

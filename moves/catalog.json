@@ -4792,10 +4792,8 @@
       "sheet_row": 466,
       "runtime_id": "beak-blast",
       "file": "moves/beak-blast.lua",
-      "status": "partial",
-      "limitations": [
-        "Hit reactions run only for damaging hits; contact moves stopped by immunity and other non-damaging contact require a broader contact hook."
-      ]
+      "status": "implemented",
+      "limitations": []
     },
     {
       "id": 691,
