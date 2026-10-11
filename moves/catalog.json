@@ -5206,6 +5206,16 @@
       "limitations": []
     },
     {
+      "id": 775,
+      "slug": "clangorous-soul",
+      "name": "Clangorous Soul",
+      "sheet_row": null,
+      "runtime_id": "clangorous-soul",
+      "file": "moves/clangorous-soul.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
       "id": 778,
       "slug": "drum-beating",
       "name": "Drum Beating",
@@ -5877,7 +5887,8 @@
       "seismic-toss",
       "dragon-darts",
       "bolt-beak",
-      "fishious-rend"
+      "fishious-rend",
+      "clangorous-soul"
     ]
   }
 }

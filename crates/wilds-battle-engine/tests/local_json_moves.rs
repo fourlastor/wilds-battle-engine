@@ -325,3 +325,56 @@ fn fishious_rend_is_absorbed_even_when_its_power_is_doubled() {
     turn(&mut battle);
     assert_eq!(battle.participants(Side::Foes)[0].hp, 750);
 }
+
+const FIVE_STATS: [wilds_battle_engine::Stat; 5] = [
+    wilds_battle_engine::Stat::Attack,
+    wilds_battle_engine::Stat::Defense,
+    wilds_battle_engine::Stat::SpAttack,
+    wilds_battle_engine::Stat::SpDefense,
+    wilds_battle_engine::Stat::Speed,
+];
+
+#[test]
+fn clangorous_soul_pays_hp_once_and_obeys_stage_abilities() {
+    for (ability, stage) in [(None, 1), (Some("simple"), 2), (Some("contrary"), -1)] {
+        let mut user = mon("User", &["clangorous-soul"]);
+        user.ability = ability.map(str::to_owned);
+        let mut battle = game(user, vec![mon("Foe", &["splash"])], 0.5);
+        turn(&mut battle);
+        let user = &battle.participants(Side::Allies)[0];
+        assert_eq!(user.hp, 670);
+        for stat in FIVE_STATS {
+            assert_eq!(user.stage(stat), stage);
+        }
+    }
+}
+
+#[test]
+fn clangorous_soul_checks_hp_and_actual_stage_changes_before_payment() {
+    for (hp, max_hp, initial_stage, ability, expected_hp, success) in [
+        (330, 1000, 0, None, 330, false),
+        (331, 1000, 0, None, 1, true),
+        (1000, 1000, 6, None, 1000, false),
+        (1000, 1000, -6, Some("contrary"), 1000, false),
+        (1, 1, 0, None, 1, false),
+        (100, 101, 5, None, 67, true),
+    ] {
+        let mut user = mon("User", &["clangorous-soul"]);
+        user.hp = hp;
+        user.max_hp = max_hp;
+        user.ability = ability.map(str::to_owned);
+        for stat in FIVE_STATS {
+            user.stages.insert(stat, initial_stage);
+        }
+        let mut battle = game(user, vec![mon("Foe", &["splash"])], 0.5);
+        turn(&mut battle);
+        let user = &battle.participants(Side::Allies)[0];
+        assert_eq!(user.hp, expected_hp);
+        assert_eq!(user.last_move_failed, !success);
+        if !success {
+            for stat in FIVE_STATS {
+                assert_eq!(user.stage(stat), initial_stage);
+            }
+        }
+    }
+}
