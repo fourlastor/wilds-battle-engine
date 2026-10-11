@@ -614,7 +614,7 @@ impl Battle {
         }
         self.rules(target).any(|rule| matches!(rule, Rule::BlockPriority {grounded_only} if !grounded_only || (self.on_ground(target) && self.get(target).hidden().is_none())))
             || (!self.ability_bypass && self.actors().into_iter().any(|ally| {
-                ally.side == target.side && self.has_ability(ally, "queenlymajesty")
+                ally.side == target.side && (self.has_ability(ally, "queenlymajesty") || self.has_ability(ally, "dazzling"))
             }))
     }
 

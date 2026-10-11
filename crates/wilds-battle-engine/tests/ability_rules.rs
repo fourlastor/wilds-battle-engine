@@ -1811,3 +1811,8 @@ fn check_priority_protection(ability: &str) {
 fn queenly_majesty_protects_allies_from_priority_and_allows_mold_breaker() {
     check_priority_protection("queenly-majesty");
 }
+
+#[test]
+fn dazzling_protects_allies_from_priority_and_allows_mold_breaker() {
+    check_priority_protection("dazzling");
+}

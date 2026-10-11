@@ -217,7 +217,7 @@ id,ability,status,verification
 216,dancer,MISSING,No native battle behavior
 217,battery,MISSING,No native battle behavior
 218,fluffy,IMPLEMENTED,Source inventory; existing tests only
-219,dazzling,MISSING,No native battle behavior
+219,dazzling,IMPLEMENTED,ability_rules::dazzling_protects_allies_from_priority_and_allows_mold_breaker
 220,soul-heart,MISSING,No native battle behavior
 221,tangling-hair,MISSING,No native battle behavior
 222,receiver,MISSING,No native battle behavior
