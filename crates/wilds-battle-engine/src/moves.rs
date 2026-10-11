@@ -841,6 +841,7 @@ fn rule_of(value: &Value) -> mlua::Result<Rule> {
             "unless_side_effect",
         ],
         RuleKind::IncomingBasePower => &["kind", "moves", "type", "factor", "grounded_only"],
+        RuleKind::BlockPriority => &["kind", "grounded_only"],
         RuleKind::BasePower => &["kind", "type", "factor", "grounded_only"],
         RuleKind::DamageDealt => &["kind", "factor", "category", "type"],
         RuleKind::StatMultiplier => &["kind", "stat", "factor"],
@@ -964,6 +965,9 @@ fn rule_of(value: &Value) -> mlua::Result<Rule> {
             moves: options.list("moves", name_of)?,
             move_type: options.pokemon_type("type")?,
             factor: factor("factor")?,
+            grounded_only: options.flag("grounded_only")?,
+        },
+        RuleKind::BlockPriority => Rule::BlockPriority {
             grounded_only: options.flag("grounded_only")?,
         },
         RuleKind::BasePower => Rule::BasePower {

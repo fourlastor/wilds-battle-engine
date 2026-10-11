@@ -4884,3 +4884,61 @@ fn misty_terrain_allows_yawns_drowsiness_while_electric_terrain_prevents_it() {
         );
     }
 }
+
+#[test]
+fn psychic_terrain_blocks_opposing_priority_attacks_and_status_only_on_grounded_targets() {
+    use wilds_battle_engine::Stat;
+    for attack in ["quick-attack", "feint", "baby-doll-eyes"] {
+        for flying in [false, true] {
+            let mut user = mon("User", &["psychic-terrain", "splash"]);
+            if flying {
+                user.types = vec![PokemonType::Flying];
+            }
+            let mut b = game(user, vec![mon("Foe", &["splash", attack])], 0.5);
+            turn(&mut b);
+            turn_with(&mut b, |p| choose_move(p, "splash", attack));
+            if attack == "baby-doll-eyes" {
+                assert_eq!(
+                    b.participants(Side::Allies)[0].stage(Stat::Attack),
+                    if flying { -1 } else { 0 }
+                );
+            } else {
+                assert_eq!(b.participants(Side::Allies)[0].hp < 1000, flying);
+            }
+        }
+    }
+}
+
+#[test]
+fn psychic_terrain_boosts_psychic_power_and_does_not_block_helping_hand_from_an_ally() {
+    let user = mon("User", &["psychic-terrain", "psychic"]);
+    let foe = mon("Foe", &["splash"]);
+    let expected = control_damage(117, "Psychic", "Special", user.clone(), foe.clone());
+    let mut b = game(user, vec![foe], 0.5);
+    turn(&mut b);
+    turn_with(&mut b, |p| choose_move(p, "psychic", "splash"));
+    assert_eq!(1000 - b.participants(Side::Foes)[0].hp, expected);
+    let attacker = mon("Attacker", &["psychic-terrain", "pound"]);
+    let helper = mon("Helper", &["splash", "helping-hand"]);
+    let foe = mon("Foe", &["splash"]);
+    let expected = control_damage(60, "Normal", "Physical", attacker.clone(), foe.clone());
+    let mut b = Battle::with_rng(
+        Fixed(0.5),
+        [vec![attacker, helper], vec![foe]],
+        MoveCatalog::builtin().unwrap(),
+    )
+    .unwrap();
+    turn(&mut b);
+    turn_with(&mut b, |p| {
+        choose_move(
+            p,
+            if p.actor.index == 0 {
+                "pound"
+            } else {
+                "helping-hand"
+            },
+            "splash",
+        )
+    });
+    assert_eq!(1000 - b.participants(Side::Foes)[0].hp, expected);
+}

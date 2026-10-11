@@ -1416,6 +1416,14 @@ impl Battle {
                 spec.name
             )));
         }
+        if !first_charge && self.priority_blocked(actor, target, &spec) {
+            events.push(BattleEvent::Message(format!(
+                "{} is protected from priority moves!",
+                self.get(target).name
+            )));
+            self.move_failed = true;
+            return Ok(true);
+        }
         if !first_charge && self.reflect_move(actor, target, &spec, events)? {
             return Ok(true);
         }
@@ -2624,6 +2632,7 @@ impl Battle {
         events: &mut Vec<BattleEvent>,
     ) -> Result<bool, BattleError> {
         if self.reflecting
+            || self.priority_blocked(actor, reflector, spec)
             || actor == reflector
             || !spec.has_flag("reflectable")
             || !(self.has_ability(reflector, "magicbounce")

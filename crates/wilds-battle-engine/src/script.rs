@@ -706,6 +706,13 @@ impl Battle {
         if self.get(recipient).hp == 0 {
             return HitOutcome::Fainted;
         }
+        if self.priority_blocked(actor, recipient, frame.spec) {
+            events.push(BattleEvent::Message(format!(
+                "{} is protected from priority moves!",
+                self.get(recipient).name
+            )));
+            return HitOutcome::Protected;
+        }
         if frame.spec.has_flag("powder")
             && (self
                 .types_of(recipient)

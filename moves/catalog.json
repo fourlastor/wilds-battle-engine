@@ -6098,6 +6098,17 @@
       "limitations": []
     },
     {
+      "id": 678,
+      "slug": "psychic-terrain",
+      "name": "Psychic Terrain",
+      "sheet_row": null,
+      "runtime_id": "psychic-terrain",
+      "file": "moves/psychic-terrain.lua",
+      "status": "implemented",
+      "limitations": [],
+      "parameter_source": "https://pokeapi.co/api/v2/move/678/"
+    },
+    {
       "id": 679,
       "slug": "lunge",
       "name": "Lunge",
@@ -7668,7 +7679,8 @@
       "telekinesis",
       "electric-terrain",
       "misty-terrain",
-      "grassy-terrain"
+      "grassy-terrain",
+      "psychic-terrain"
     ]
   }
 }

@@ -409,6 +409,17 @@ impl Battle {
             .map_or(target, |(_, _, to)| to)
     }
 
+    pub(crate) fn priority_blocked(
+        &self,
+        actor: ParticipantId,
+        target: ParticipantId,
+        spec: &MoveSpec,
+    ) -> bool {
+        actor.side != target.side && !matches!(spec.target, Target::User | Target::Field)
+            && self.effective_move_priority(actor, spec) > 0
+            && self.rules(target).any(|rule| matches!(rule, Rule::BlockPriority {grounded_only} if !grounded_only || (self.on_ground(target) && self.get(target).hidden().is_none())))
+    }
+
     pub(crate) fn effective_move_priority(&self, id: ParticipantId, spec: &MoveSpec) -> i8 {
         let bonus = spec.priority_terrain.as_ref().is_some_and(|name| {
             self.on_ground(id) && self.field_conditions.iter().any(|c| &c.name == name)

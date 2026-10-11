@@ -153,6 +153,10 @@ pub enum Scope {
 /// A rule on a side applies to every Pokémon of that side, one on the field to everyone.
 #[derive(Clone, Debug, PartialEq)]
 pub enum Rule {
+    /// Blocks opposing moves with positive priority, optionally only for grounded holders.
+    BlockPriority {
+        grounded_only: bool,
+    },
     /// Base power of incoming moves, filtered by move id and/or type.
     IncomingBasePower {
         moves: Vec<String>,
