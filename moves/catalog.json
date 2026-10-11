@@ -4490,6 +4490,17 @@
       "limitations": []
     },
     {
+      "id": 511,
+      "slug": "quash",
+      "name": "Quash",
+      "sheet_row": null,
+      "runtime_id": "quash",
+      "file": "moves/quash.lua",
+      "status": "implemented",
+      "limitations": [],
+      "parameter_source": "https://pokeapi.co/api/v2/move/511/"
+    },
+    {
       "id": 512,
       "slug": "acrobatics",
       "name": "Acrobatics",
@@ -7128,7 +7139,8 @@
       "trick-or-treat",
       "forests-curse",
       "reflect-type",
-      "after-you"
+      "after-you",
+      "quash"
     ]
   }
 }

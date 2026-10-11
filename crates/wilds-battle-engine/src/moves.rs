@@ -410,6 +410,9 @@ pub(crate) enum ScriptOperation {
         who: ParticipantId,
     },
     AddPayout(u32),
+    Delay {
+        who: ParticipantId,
+    },
     Hurry {
         who: Option<ParticipantId>,
     },
@@ -1193,6 +1196,7 @@ fn parse_op(name: &str, args: &[Value]) -> mlua::Result<ScriptOperation> {
         },
         "consume_item" => ScriptOperation::ConsumeItem { who: who(0)? },
         "recycle_item" => ScriptOperation::RecycleItem { who: who(0)? },
+        "delay" => ScriptOperation::Delay { who: who(0)? },
         "item_removable" => ScriptOperation::ItemRemovable { who: who(0)? },
         "steal_item" => ScriptOperation::StealItem {
             from: who(0)?,

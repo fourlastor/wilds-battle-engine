@@ -189,6 +189,7 @@ return function(api, fields, roster)
 
   -- The rest of the battle
   function ctx:add_payout(amount) return op("add_payout", amount) end
+  function ctx:delay(who) return op("delay", who) end
   function ctx:hurry(who) return op("hurry", who) end
 
   -- Shorthands built from the operations above.

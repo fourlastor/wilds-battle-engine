@@ -159,6 +159,7 @@ struct QueuedAction {
     tie: u64,
     custap: bool,
     promoted: bool,
+    postponed: bool,
 }
 impl QueuedAction {
     fn order(a: &Self, b: &Self) -> std::cmp::Ordering {
@@ -684,6 +685,7 @@ impl Battle {
                     tie: self.rng.next_u64(),
                     custap,
                     promoted: false,
+                    postponed: false,
                 }
             })
             .collect();
@@ -737,6 +739,19 @@ impl Battle {
         Ok(())
     }
 
+    pub(crate) fn delay_action(&mut self, who: ParticipantId) -> bool {
+        let Some(entry) = self
+            .turn_queue
+            .iter_mut()
+            .find(|entry| entry.actor == who && matches!(entry.action, SelectedAction::Move(_)))
+        else {
+            return false;
+        };
+        entry.promoted = false;
+        entry.postponed = true;
+        true
+    }
+
     /// Refresh speed after each action (and a paused pivot), without rerolling ties or
     /// undoing moves that explicitly promoted a pending action.
     fn refresh_pending_speed(&mut self) {
@@ -751,7 +766,9 @@ impl Battle {
                 if a.promoted && b.promoted {
                     std::cmp::Ordering::Equal
                 } else {
-                    QueuedAction::order(a, b)
+                    a.postponed
+                        .cmp(&b.postponed)
+                        .then_with(|| QueuedAction::order(a, b))
                 }
             })
         });
@@ -818,6 +835,7 @@ impl Battle {
                 self.turn_queue = now;
                 for entry in &mut self.turn_queue {
                     entry.promoted = true;
+                    entry.postponed = false;
                 }
                 self.turn_queue.extend(later);
             }

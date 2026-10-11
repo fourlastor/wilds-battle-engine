@@ -2620,3 +2620,45 @@ fn after_you_fails_in_singles_and_when_the_target_has_already_moved() {
     turn(&mut b);
     assert!(b.participants(Side::Allies)[0].last_move_failed);
 }
+
+#[test]
+fn quash_delays_a_pending_action_even_after_negative_priority_moves() {
+    let mut user = mon("User", &["quash"]);
+    user.speed = 300;
+    let mut ally = mon("Ally", &["splash"]);
+    ally.speed = 100;
+    let mut foe = mon("Foe", &["tackle"]);
+    foe.speed = 200;
+    let mut slow = mon("Slow", &["whirlwind"]);
+    slow.speed = 10;
+    let mut b = Battle::with_rng(
+        Fixed(0.5),
+        [vec![user, ally], vec![foe, slow]],
+        MoveCatalog::builtin().unwrap(),
+    )
+    .unwrap();
+    let events = turn_with(&mut b, |p| {
+        if p.actor.side == Side::Allies && p.actor.index == 0 {
+            p.choices.iter().find(|c| matches!(c, Choice::UseMove {target,..} if target.side == Side::Foes && target.index == 0)).unwrap().id()
+        } else {
+            p.choices[0].id()
+        }
+    });
+    assert_eq!(used_names(&events), ["User", "Ally", "Slow", "Foe"]);
+}
+
+#[test]
+fn quash_fails_in_singles_and_cannot_reach_a_substitute_or_completed_action() {
+    let mut b = game(mon("User", &["quash"]), vec![mon("Foe", &["splash"])], 0.5);
+    turn(&mut b);
+    assert!(b.participants(Side::Allies)[0].last_move_failed);
+    for (response, sub) in [("splash", 50), ("protect", 0)] {
+        let mut user = mon("User", &["quash"]);
+        user.speed = 200;
+        let mut foe = mon("Foe", &[response]);
+        foe.substitute_hp = sub;
+        let mut b = game(user, vec![foe, mon("Other", &["splash"])], 0.5);
+        turn(&mut b);
+        assert!(b.participants(Side::Allies)[0].last_move_failed);
+    }
+}

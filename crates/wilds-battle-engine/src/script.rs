@@ -1825,6 +1825,7 @@ impl Battle {
                 *payout = payout.saturating_add(amount);
                 Value::Nil
             }
+            ScriptOperation::Delay { who } => Value::Boolean(self.delay_action(who)),
             ScriptOperation::Hurry { who } => {
                 if let Some(who) = who {
                     self.hurry.push(who);
