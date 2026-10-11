@@ -1512,6 +1512,17 @@
       "limitations": []
     },
     {
+      "id": 162,
+      "slug": "super-fang",
+      "name": "Super Fang",
+      "sheet_row": null,
+      "runtime_id": "super-fang",
+      "file": "moves/super-fang.lua",
+      "status": "implemented",
+      "limitations": [],
+      "parameter_source": "https://pokeapi.co/api/v2/move/162/"
+    },
+    {
       "id": 163,
       "slug": "slash",
       "name": "Slash",
@@ -6360,7 +6371,8 @@
       "wring-out",
       "crush-grip",
       "trump-card",
-      "punishment"
+      "punishment",
+      "super-fang"
     ]
   }
 }
