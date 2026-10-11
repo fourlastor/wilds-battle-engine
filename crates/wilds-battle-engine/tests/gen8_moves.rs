@@ -793,3 +793,25 @@ fn super_fang_halves_current_hp_with_a_minimum_of_one() {
         }
     }
 }
+
+#[test]
+fn natures_madness_halves_current_hp_with_a_minimum_of_one() {
+    for (hp, sub, response, expected) in [
+        (1000, 0, "splash", 500),
+        (999, 0, "splash", 500),
+        (1, 0, "splash", 0),
+        (1000, 600, "splash", 1000),
+        (1000, 0, "protect", 1000),
+    ] {
+        let user = mon("User", &["natures-madness"]);
+        let mut foe = mon("Foe", &[response]);
+        foe.hp = hp;
+        foe.substitute_hp = sub;
+        let mut b = game(user, vec![foe], 0.5);
+        turn(&mut b);
+        assert_eq!(b.participants(Side::Foes)[0].hp, expected);
+        if sub > 0 {
+            assert_eq!(b.participants(Side::Foes)[0].substitute_hp, 100);
+        }
+    }
+}

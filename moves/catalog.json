@@ -5292,6 +5292,17 @@
       "limitations": []
     },
     {
+      "id": 717,
+      "slug": "natures-madness",
+      "name": "Nature\u2019s Madness",
+      "sheet_row": null,
+      "runtime_id": "natures-madness",
+      "file": "moves/natures-madness.lua",
+      "status": "implemented",
+      "limitations": [],
+      "parameter_source": "https://pokeapi.co/api/v2/move/717/"
+    },
+    {
       "id": 718,
       "slug": "multi-attack",
       "name": "Multi-Attack",
@@ -6372,7 +6383,8 @@
       "crush-grip",
       "trump-card",
       "punishment",
-      "super-fang"
+      "super-fang",
+      "natures-madness"
     ]
   }
 }
