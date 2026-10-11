@@ -895,3 +895,29 @@ fn endeavor_matches_users_hp_only_when_target_has_more_and_can_be_hit() {
         }
     }
 }
+
+#[test]
+fn final_gambit_sacrifices_user_only_on_a_successful_hit_including_substitute() {
+    for (kind, response, sub, hit) in [
+        (PokemonType::Normal, "splash", 0, true),
+        (PokemonType::Normal, "splash", 500, true),
+        (PokemonType::Ghost, "splash", 0, false),
+        (PokemonType::Normal, "protect", 0, false),
+    ] {
+        let mut user = mon("User", &["final-gambit"]);
+        user.hp = 300;
+        let mut foe = mon("Foe", &[response]);
+        foe.types = vec![kind];
+        foe.substitute_hp = sub;
+        let mut b = game(user, vec![foe], 0.5);
+        turn(&mut b);
+        assert_eq!(
+            b.participants(Side::Allies)[0].hp,
+            if hit { 0 } else { 300 }
+        );
+        assert_eq!(
+            b.participants(Side::Foes)[0].hp,
+            if hit && sub == 0 { 700 } else { 1000 }
+        );
+    }
+}

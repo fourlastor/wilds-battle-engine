@@ -4070,6 +4070,17 @@
       "limitations": []
     },
     {
+      "id": 515,
+      "slug": "final-gambit",
+      "name": "Final Gambit",
+      "sheet_row": null,
+      "runtime_id": "final-gambit",
+      "file": "moves/final-gambit.lua",
+      "status": "implemented",
+      "limitations": [],
+      "parameter_source": "https://pokeapi.co/api/v2/move/515/"
+    },
+    {
       "id": 517,
       "slug": "inferno",
       "name": "Inferno",
@@ -6420,7 +6431,8 @@
       "natures-madness",
       "psywave",
       "tri-attack",
-      "endeavor"
+      "endeavor",
+      "final-gambit"
     ]
   }
 }
