@@ -79,7 +79,7 @@ id,ability,status,verification
 78,motor-drive,IMPLEMENTED,ability_rules::motor_drive_absorbs_thunder_wave_and_boosts_speed_once
 79,rivalry,IMPLEMENTED,ability_rules::rivalry_scales_damage_by_gender_and_leaves_genderless_targets_unchanged
 80,steadfast,IMPLEMENTED,Source inventory; existing tests only
-81,snow-cloak,MISSING,No native battle behavior
+81,snow-cloak,IMPLEMENTED,ability_rules::snow_cloak_reduces_accuracy_and_grants_hail_immunity
 82,gluttony,IMPLEMENTED,Source inventory; existing tests only
 83,anger-point,MISSING,No native battle behavior
 84,unburden,MISSING,No native battle behavior

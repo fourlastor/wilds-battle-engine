@@ -183,7 +183,8 @@ impl Battle {
         (kind == crate::model::WeatherKind::Sandstorm
             && (self.has_ability(who, "sandrush") || self.has_ability(who, "sandveil")))
             || self.has_ability(who, "overcoat")
-            || (kind == crate::model::WeatherKind::Hail && self.has_ability(who, "icebody"))
+            || (kind == crate::model::WeatherKind::Hail
+                && (self.has_ability(who, "icebody") || self.has_ability(who, "snowcloak")))
     }
 
     pub(crate) fn ability_residual(&mut self, events: &mut Vec<BattleEvent>) {
@@ -514,6 +515,11 @@ impl Battle {
         }
         if self.has_ability(target, "sandveil")
             && self.effective_weather() == Some(crate::model::WeatherKind::Sandstorm)
+        {
+            factor *= 0.8;
+        }
+        if self.has_ability(target, "snowcloak")
+            && self.effective_weather() == Some(crate::model::WeatherKind::Hail)
         {
             factor *= 0.8;
         }

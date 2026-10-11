@@ -1436,3 +1436,9 @@ fn sand_veil_reduces_accuracy_and_grants_weather_immunity() {
     check_weather_evasion("sand-veil", "sandstorm");
     check_weather_immunity("sand-veil", "sandstorm");
 }
+
+#[test]
+fn snow_cloak_reduces_accuracy_and_grants_hail_immunity() {
+    check_weather_evasion("snow-cloak", "hail");
+    check_weather_immunity("snow-cloak", "hail");
+}
