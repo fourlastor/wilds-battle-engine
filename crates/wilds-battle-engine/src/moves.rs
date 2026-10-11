@@ -164,6 +164,8 @@ pub(crate) struct DamageOptions {
     /// Matchups that replace the type chart's against the listed defending types (Freeze-Dry).
     pub effective: Vec<(PokemonType, f32)>,
     pub category: Option<Category>,
+    /// Overrides the move flag for this hit only.
+    pub contact: Option<bool>,
     /// Whose attacking stat is used (Foul Play).
     pub attack_from: Option<ParticipantId>,
     pub attack_stat: Option<CombatStat>,
@@ -615,6 +617,7 @@ fn damage_options(value: Option<&Value>) -> mlua::Result<DamageOptions> {
             "also_type",
             "effective",
             "category",
+            "contact",
             "attack_from",
             "attack_stat",
             "defense_stat",
@@ -675,6 +678,10 @@ fn damage_options(value: Option<&Value>) -> mlua::Result<DamageOptions> {
         also_type: options.pokemon_type("also_type")?,
         effective,
         category,
+        contact: options
+            .get("contact")?
+            .map(|_| options.flag("contact"))
+            .transpose()?,
         attack_from: options.pokemon("attack_from")?,
         attack_stat: options
             .get("attack_stat")?

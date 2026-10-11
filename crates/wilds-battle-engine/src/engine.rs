@@ -54,6 +54,12 @@ impl HitMeta {
             contact: spec.has_flag("contact"),
         }
     }
+    pub(crate) fn with_contact(mut self, contact: Option<bool>) -> Self {
+        if let Some(contact) = contact {
+            self.contact = contact;
+        }
+        self
+    }
     fn plain(spec: &MoveSpec) -> Self {
         Self::of(spec, spec.category, spec.move_type)
     }

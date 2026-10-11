@@ -5349,10 +5349,8 @@
       "sheet_row": 551,
       "runtime_id": "shell-side-arm",
       "file": "moves/shell-side-arm.lua",
-      "status": "partial",
-      "limitations": [
-        "Damage category is selected from current stats. Dynamically adding contact for the physical hit is not exposed by the damage API."
-      ]
+      "status": "implemented",
+      "limitations": []
     },
     {
       "id": 802,

@@ -79,6 +79,31 @@ fn said(events: &[BattleEvent], text: &str) -> bool {
 }
 
 #[test]
+fn shell_side_arm_makes_contact_only_for_its_physical_hit() {
+    for physical in [true, false] {
+        let mut ally = mon("Ally", &["shell-side-arm"]);
+        ally.attack = if physical { 200 } else { 10 };
+        ally.sp_attack = if physical { 10 } else { 200 };
+        let mut game = Game::new(vec![ally], vec![mon("Foe", &["beak-blast"])], 0.5);
+        game.turn("shell-side-arm", "beak-blast");
+        let hit = game.foe().last_hit.as_ref().unwrap();
+        assert_eq!(hit.contact, physical);
+        assert_eq!(
+            hit.category,
+            if physical {
+                wilds_battle_engine::Category::Physical
+            } else {
+                wilds_battle_engine::Category::Special
+            }
+        );
+        assert_eq!(
+            game.ally().status,
+            if physical { Some(Status::Burned) } else { None }
+        );
+    }
+}
+
+#[test]
 fn focus_punch_loses_focus_from_damage_without_being_interrupted_by_flinch() {
     let mut foe = mon("Foe", &["headbutt"]);
     foe.speed = 200;

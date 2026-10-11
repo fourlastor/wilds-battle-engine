@@ -705,7 +705,8 @@ impl Battle {
                 }
             }
             let attack = self.attack(frame, power, options);
-            let meta = HitMeta::of(frame.spec, attack.category, attack.move_type);
+            let meta = HitMeta::of(frame.spec, attack.category, attack.move_type)
+                .with_contact(options.contact);
             let mut details = Vec::new();
             let Some(roll) = self.calculate(actor, recipient, &attack, &mut details) else {
                 // Only the line saying that the hit does nothing.
@@ -785,7 +786,8 @@ impl Battle {
             return Ok(report);
         }
         let attack = self.attack(frame, power, options);
-        let meta = HitMeta::of(frame.spec, attack.category, attack.move_type);
+        let meta = HitMeta::of(frame.spec, attack.category, attack.move_type)
+            .with_contact(options.contact);
         if !attack.typeless && self.matchup(recipient, &attack) == 0.0 {
             self.immune_message(recipient, events);
             report.immune = true;

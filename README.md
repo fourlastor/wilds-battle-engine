@@ -220,6 +220,10 @@ Damage options: `accuracy`, `never_miss`, `ignore_protect`, `ignore_evasion`,
 against the listed types), `category`, `attack_from` (whose attacking stat is used),
 `attack_stat`, `defense_stat`, `ignore_stages`. `try_hit` takes the first five.
 
+A damage call can set `contact = true` or `contact = false` for that hit. If omitted,
+contact follows the move's flags. This applies to multi-hit attacks too and controls
+hit reactions and the contact value in `last_hit`.
+
 Power and amounts of HP drop any fraction, so `ctx:damage(150 * ctx.user.hp / ctx.user.max_hp)`
 works as it does in the games. A hook may run up to 256 operations.
 

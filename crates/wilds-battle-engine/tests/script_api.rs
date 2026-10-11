@@ -1805,6 +1805,28 @@ fn an_effect_chance_follows_the_rainbow() {
 // Guard rails
 
 #[test]
+fn contact_overrides_apply_to_single_and_multiple_hits_without_changing_move_flags() {
+    for flags in ["", "flags={'contact'},"] {
+        let script = test_move(
+            flags,
+            "
+            ctx:damage(1, {contact=false})
+            assert(not ctx.target.last_hit.contact)
+            ctx:multi_hit(1, 2, 2, {contact=true})
+            assert(ctx.target.last_hit.contact)
+            ctx:damage(1)
+        ",
+        );
+        let mut game = Game::duel(&[&script], &["test"]);
+        game.turn(&["test", "wait"]);
+        assert_eq!(
+            game.foe(0).last_hit.as_ref().unwrap().contact,
+            !flags.is_empty()
+        );
+    }
+}
+
+#[test]
 fn a_timed_rule_blocks_scripted_flinches_and_expires() {
     let script = test_move(
         "",
@@ -1888,6 +1910,7 @@ fn mistakes_in_a_script_are_reported() {
     assert!(failing("ctx:apply_status('foe', ctx.Status.Burned)").contains("needs a Pokémon"));
     assert!(failing("ctx:apply_status(ctx.field, ctx.Status.Burned)").contains("needs a Pokémon"));
     assert!(failing("ctx:damage(40, {tipe=ctx.Type.Fire})").contains("unknown damage option tipe"));
+    assert!(failing("ctx:damage(40, {contact='yes'})").contains("must be true or false"));
     assert!(failing("ctx:heal(ctx.user, {fraction=2})").contains("must be between 0 and 1"));
     assert!(failing("ctx:reduce_pp(ctx.target, 'wait', -1)").contains("reduce_pp amount"));
     assert!(
