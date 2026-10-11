@@ -167,9 +167,11 @@ impl Battle {
             return;
         };
         let factor = if self.has_ability(who, "ripen") { 2 } else { 1 };
+        let turn = self.turn;
         let p = self.get_mut(who);
         if !stolen {
             p.recyclable_item = Some(item.clone());
+            p.item_used_turn = Some(turn);
         }
         p.last_consumed_item = Some(item.clone());
         p.consumed_items.insert(item.clone());

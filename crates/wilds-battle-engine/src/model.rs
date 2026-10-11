@@ -563,6 +563,7 @@ pub struct Pokemon {
     pub last_consumed_item: Option<String>,
     /// Most recently consumed held item, available once to Recycle. Stolen berries do not count.
     pub recyclable_item: Option<String>,
+    pub(crate) item_used_turn: Option<u64>,
     /// Ability id. Supported mechanics query its active/suppressed state.
     pub ability: Option<String>,
     pub(crate) original_ability: Option<AbilityState>,
@@ -657,6 +658,7 @@ impl Pokemon {
             ate_berry: false,
             last_consumed_item: None,
             recyclable_item: None,
+            item_used_turn: None,
             ability: None,
             original_ability: None,
             ability_move_lock: None,

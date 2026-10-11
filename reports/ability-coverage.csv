@@ -51,7 +51,7 @@ id,ability,status,verification
 50,run-away,MISSING,No native battle behavior
 51,keen-eye,IMPLEMENTED,ability_rules::keen_eye_blocks_accuracy_drops_and_ignores_positive_evasion
 52,hyper-cutter,IMPLEMENTED,ability_rules::hyper_cutter_blocks_external_attack_drops_only
-53,pickup,MISSING,No native battle behavior
+53,pickup,IMPLEMENTED,ability_rules::pickup_reclaims_a_neighbors_item_used_this_turn_only_once
 54,truant,IMPLEMENTED,ability_rules::truant_skips_alternate_actions_without_spending_pp_and_shares_recharge
 55,hustle,IMPLEMENTED,ability_rules::hustle_boosts_attack_and_reduces_only_physical_accuracy
 56,cute-charm,IMPLEMENTED,ability_rules::cute_charm_infatuates_only_opposite_gender_contact_attackers

@@ -3515,3 +3515,25 @@ fn harvest_recovers_consumed_berries_with_half_chance_or_guaranteed_sun() {
     turn(&mut battle, "splash", "splash");
     assert!(ally(&battle).item.is_none());
 }
+
+#[test]
+fn pickup_reclaims_a_neighbors_item_used_this_turn_only_once() {
+    for (suppressed, picked_up) in [(false, true), (true, false)] {
+        let mut user = mon("User", &["splash"]);
+        user.ability = Some("pickup".into());
+        user.ability_suppressed = suppressed;
+        let mut target = mon("Target", &["stuff-cheeks", "splash"]);
+        target.item = Some("sitrus-berry".into());
+        let mut battle = game(user, target, 0.5);
+        turn(&mut battle, "splash", "stuff-cheeks");
+        assert_eq!(ally(&battle).item.is_some(), picked_up);
+        assert_eq!(foe(&battle).recyclable_item.is_none(), picked_up);
+    }
+    let mut user = mon("User", &["splash"]);
+    user.ability = Some("pickup".into());
+    let mut target = mon("Target", &["splash"]);
+    target.recyclable_item = Some("sitrus-berry".into());
+    let mut battle = game(user, target, 0.5);
+    turn(&mut battle, "splash", "splash");
+    assert!(ally(&battle).item.is_none());
+}

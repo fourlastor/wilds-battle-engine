@@ -649,6 +649,25 @@ impl Battle {
         let mut order = self.actors();
         order.sort_by_key(|&who| std::cmp::Reverse(self.action_speed(who)));
         for who in order {
+            if self.has_ability(who, "pickup") && self.get(who).item.is_none() {
+                let sources: Vec<_> = self
+                    .actors()
+                    .into_iter()
+                    .filter(|&source| {
+                        self.adjacent(who, source)
+                            && self.get(source).item_used_turn == Some(self.turn)
+                            && self.get(source).recyclable_item.is_some()
+                    })
+                    .collect();
+                if !sources.is_empty() {
+                    let source = sources[self.rng.index(sources.len())];
+                    self.get_mut(who).item = self.get_mut(source).recyclable_item.take();
+                    events.push(BattleEvent::Message(format!(
+                        "{} found an item with Pickup!",
+                        self.get(who).name
+                    )));
+                }
+            }
             if self.has_ability(who, "harvest")
                 && self.get(who).item.is_none()
                 && self
