@@ -1332,3 +1332,35 @@ fn rain_dish_heals_one_sixteenth_in_effective_rain() {
 fn ice_body_heals_in_hail_and_prevents_hail_damage() {
     check_weather_healing("ice-body", "hail");
 }
+
+fn check_weather_speed(ability: &str, weather: &str) {
+    for (suppressed, cloud, faster) in [
+        (false, false, true),
+        (true, false, false),
+        (false, true, false),
+    ] {
+        let mut user = mon("User", &[weather, "tackle"]);
+        user.speed = 60;
+        user.ability = Some(ability.into());
+        user.ability_suppressed = suppressed;
+        let mut target = mon("Target", &["splash", "tackle"]);
+        target.speed = 100;
+        target.ability = cloud.then(|| "cloud-nine".into());
+        let mut battle = game(user, target, 0.5);
+        turn(&mut battle, weather, "splash");
+        let events = turn(&mut battle, "tackle", "tackle");
+        let first = events
+            .iter()
+            .find_map(|event| match event {
+                BattleEvent::Message(text) if text.contains("used Tackle!") => Some(text.as_str()),
+                _ => None,
+            })
+            .unwrap();
+        assert_eq!(first.starts_with("User"), faster, "{ability}");
+    }
+}
+
+#[test]
+fn swift_swim_doubles_speed_in_effective_rain() {
+    check_weather_speed("swift-swim", "rain-dance");
+}

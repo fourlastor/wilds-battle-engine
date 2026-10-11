@@ -423,6 +423,12 @@ impl Battle {
         stat: crate::model::CombatStat,
     ) -> f32 {
         use crate::model::CombatStat::*;
+        if stat == Speed
+            && self.has_ability(who, "swiftswim")
+            && self.effective_weather() == Some(crate::model::WeatherKind::Rain)
+        {
+            return 2.0;
+        }
         if stat == Attack && self.has_ability(who, "hustle") {
             return 1.5;
         }
