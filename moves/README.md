@@ -12,8 +12,8 @@ excluded while Z-Moves and Dynamax are outside the project scope. They are liste
 under `excluded_moves` in the manifest and have no loadable Lua files here.
 Dynamax Cannon remains an ordinary attack; its Dynamax-only bonus is out of scope.
 
-With Gravity, Stockpile and the nine original moves outside the sheet, the runtime
-catalog has 549 moves: 548 files here and Struggle in `src/system_moves.lua`
+With six additional support moves and the nine original moves outside the sheet,
+the runtime catalog has 553 moves: 552 files here and Struggle in `src/system_moves.lua`
 inside the crate.
 The 22 original filenames containing underscores have been renamed with hyphens.
 
@@ -31,7 +31,7 @@ Pokémon Showdown reference recorded in [catalog.json](catalog.json).
 For example, Snipe Shot has an increased critical-hit rate, Jaw Lock traps both
 participants, and No Retreat raises five stats and records its one-use trap.
 
-All 507 added definitions implement their move-specific behavior through the
+All added definitions implement their move-specific behavior through the
 available API. No included move remains flagged `incomplete` in the manifest.
 Z-Moves and Max Moves remain excluded.
 
@@ -79,3 +79,7 @@ every interaction with every other move.
 Move Lab builds the same files. Its block parity suite covers the definitions it
 can reconstruct as blocks; Lua-only moves remain available to the engine and are
 covered by the Rust runtime tests.
+
+Spikes, Toxic Spikes, Stealth Rock and Sticky Web are additional support moves.
+Their parameters come from the pinned Showdown reference because no local JSON
+definitions exist. Their side conditions activate on entry and Rapid Spin removes them.

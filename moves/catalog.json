@@ -1524,6 +1524,17 @@
       "limitations": []
     },
     {
+      "id": 191,
+      "slug": "spikes",
+      "name": "Spikes",
+      "sheet_row": null,
+      "runtime_id": "spikes",
+      "file": "moves/spikes.lua",
+      "status": "implemented",
+      "limitations": [],
+      "parameter_source": "Pokemon Showdown 942cda71, data/moves.ts"
+    },
+    {
       "id": 192,
       "slug": "zap-cannon",
       "name": "Zap Cannon",
@@ -2722,6 +2733,17 @@
       "limitations": []
     },
     {
+      "id": 390,
+      "slug": "toxic-spikes",
+      "name": "Toxic Spikes",
+      "sheet_row": null,
+      "runtime_id": "toxic-spikes",
+      "file": "moves/toxic-spikes.lua",
+      "status": "implemented",
+      "limitations": [],
+      "parameter_source": "Pokemon Showdown 942cda71, data/moves.ts"
+    },
+    {
       "id": 394,
       "slug": "flare-blitz",
       "name": "Flare Blitz",
@@ -3212,6 +3234,17 @@
       "file": "moves/captivate.lua",
       "status": "implemented",
       "limitations": []
+    },
+    {
+      "id": 446,
+      "slug": "stealth-rock",
+      "name": "Stealth Rock",
+      "sheet_row": null,
+      "runtime_id": "stealth-rock",
+      "file": "moves/stealth-rock.lua",
+      "status": "implemented",
+      "limitations": [],
+      "parameter_source": "Pokemon Showdown 942cda71, data/moves.ts"
     },
     {
       "id": 448,
@@ -4126,6 +4159,17 @@
       "limitations": []
     },
     {
+      "id": 564,
+      "slug": "sticky-web",
+      "name": "Sticky Web",
+      "sheet_row": null,
+      "runtime_id": "sticky-web",
+      "file": "moves/sticky-web.lua",
+      "status": "implemented",
+      "limitations": [],
+      "parameter_source": "Pokemon Showdown 942cda71, data/moves.ts"
+    },
+    {
       "id": 565,
       "slug": "fell-stinger",
       "name": "Fell Stinger",
@@ -4460,7 +4504,7 @@
     {
       "id": 616,
       "slug": "lands-wrath",
-      "name": "Land’s Wrath",
+      "name": "Land\u2019s Wrath",
       "sheet_row": 438,
       "runtime_id": "lands-wrath",
       "file": "moves/lands-wrath.lua",
@@ -5589,7 +5633,7 @@
     {
       "id": 726,
       "slug": "lets-snuggle-forever",
-      "name": "Let’s Snuggle Forever",
+      "name": "Let\u2019s Snuggle Forever",
       "sheet_row": 499,
       "mechanic": "z-move",
       "reason": "Z-Moves and Dynamax are outside the requested scope."
@@ -5762,7 +5806,11 @@
     ],
     "additional_moves": [
       "gravity",
-      "stockpile"
+      "stockpile",
+      "spikes",
+      "toxic-spikes",
+      "stealth-rock",
+      "sticky-web"
     ]
   }
 }

@@ -385,3 +385,13 @@ Contrary reverses stage changes and Simple doubles them before stage caps and
 external stat-drop protection. Suppression and eligible ability bypass apply.
 Lua `ctx:set_stage(who, stat, stage)` sets an exact stage in -6..6 without these
 modifiers; stat theft uses it to clear the donor before boosting the recipient.
+
+Entry hazards run in placement order before entry abilities on every switch path.
+`ctx:add_hazard(team, name)` accepts `spikes`, `toxic_spikes`, `stealth_rock`, or
+`sticky_web`, and returns false at the layer cap. They are persistent named side
+conditions, so Rapid Spin and `end_effect` remove them. Spikes stack to three
+layers; Toxic Spikes stack to two and grounded Poison types absorb them. Flying
+types and active Levitate avoid grounded hazards unless forcibly grounded.
+Stealth Rock uses Rock effectiveness; Sticky Web uses stage abilities and external
+stat-drop protection. Hazard damage respects Magic Guard. No new held-item effects
+are included. A hazard knockout stops later hazards and the incoming ability.

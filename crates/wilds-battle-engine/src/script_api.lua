@@ -177,6 +177,7 @@ return function(api, fields, roster)
   function ctx:unmark(scope, name) return op("unmark", scope, name) end
   function ctx:start_effect(scope, name, options) return op("start_effect", scope, name, options) end
   function ctx:end_effect(scope, name) return op("end_effect", scope, name) end
+  function ctx:add_hazard(team, name) return op("add_hazard", team, name) end
   function ctx:end_group(scope, group) return op("end_group", scope, group) end
 
   -- The rest of the battle

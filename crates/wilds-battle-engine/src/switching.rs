@@ -146,7 +146,11 @@ impl Battle {
             self.get(from).name,
             self.get(to).name
         )));
+        // Move-scoped ability bypass must not leak into the incoming Pokémon's entry.
+        let ignored = self.ignored_ability.take();
+        self.entry_hazards(to, events);
         self.ability_on_entry(to, events);
+        self.ignored_ability = ignored;
         true
     }
 }

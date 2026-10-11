@@ -1473,6 +1473,9 @@ impl Battle {
             ScriptOperation::EndGroup { scope, group } => {
                 Value::Boolean(self.end_group(scope, &group))
             }
+            ScriptOperation::AddHazard { side, hazard } => {
+                Value::Boolean(self.add_hazard(side, hazard, events))
+            }
             ScriptOperation::Carry { who } => Value::Boolean(self.carry(actor, who)),
             ScriptOperation::ReleaseCarry => Value::Boolean(self.release_carry(actor, events)),
             ScriptOperation::SwitchOut => Value::Boolean(self.request_pivot(actor)),

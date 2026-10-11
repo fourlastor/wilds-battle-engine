@@ -1194,3 +1194,147 @@ fn stockpile_and_swallow_repay_successful_changes_through_stage_abilities() {
         assert_eq!(b.participants(Side::Allies)[0].stage(Stat::SpDefense), 0);
     }
 }
+
+#[test]
+fn spikes_layers_cap_and_damage_only_the_incoming_grounded_member() {
+    for layers in 1..=4 {
+        let mut b = game(
+            vec![mon("Setter", &["spikes"])],
+            vec![mon("Lead", &["splash"]), mon("Reserve", &["splash"])],
+            [vec![0], vec![0]],
+        );
+        for _ in 0..layers {
+            pick(&mut b, id(Side::Allies, 0), "spikes");
+            pick(&mut b, id(Side::Foes, 0), "splash");
+            b.advance().unwrap();
+        }
+        assert_eq!(b.side_conditions(Side::Foes)[0].value, layers.min(3));
+        pick(&mut b, id(Side::Allies, 0), "spikes");
+        switch(&mut b, id(Side::Foes, 0), 1);
+        b.advance().unwrap();
+        assert_eq!(b.participants(Side::Foes)[0].hp, 1000);
+        assert_eq!(
+            b.participants(Side::Foes)[1].hp,
+            1000 - [0, 125, 166, 250][layers.min(3) as usize]
+        );
+    }
+}
+
+#[test]
+fn toxic_spikes_poison_absorption_airborne_and_steel_immunity() {
+    use wilds_battle_engine::PokemonType;
+    for (kind, layers, expected, removed) in [
+        (PokemonType::Normal, 1, Some(Status::Poisoned), false),
+        (PokemonType::Normal, 2, Some(Status::BadlyPoisoned), false),
+        (PokemonType::Flying, 2, None, false),
+        (PokemonType::Steel, 2, None, false),
+        (PokemonType::Poison, 2, None, true),
+    ] {
+        let mut reserve = mon("Reserve", &["splash"]);
+        reserve.types = vec![kind];
+        let mut b = game(
+            vec![mon("Setter", &["toxic-spikes", "splash"])],
+            vec![mon("Lead", &["splash"]), reserve],
+            [vec![0], vec![0]],
+        );
+        for _ in 0..layers {
+            pick(&mut b, id(Side::Allies, 0), "toxic-spikes");
+            pick(&mut b, id(Side::Foes, 0), "splash");
+            b.advance().unwrap();
+        }
+        pick(&mut b, id(Side::Allies, 0), "splash");
+        switch(&mut b, id(Side::Foes, 0), 1);
+        b.advance().unwrap();
+        assert_eq!(b.participants(Side::Foes)[1].status, expected);
+        assert_eq!(b.side_conditions(Side::Foes).is_empty(), removed);
+    }
+}
+
+#[test]
+fn sticky_web_uses_stage_abilities_and_grounding_on_entry() {
+    for (ability, gravity, expected) in [
+        ("contrary", false, 1),
+        ("simple", false, -2),
+        ("clear-body", false, 0),
+        ("levitate", false, 0),
+        ("levitate", true, -1),
+    ] {
+        let mut reserve = mon("Reserve", &["splash"]);
+        reserve.ability = Some(ability.into());
+        let mut b = game(
+            vec![mon("Setter", &["sticky-web", "gravity", "splash"])],
+            vec![mon("Lead", &["splash"]), reserve],
+            [vec![0], vec![0]],
+        );
+        pick(&mut b, id(Side::Allies, 0), "sticky-web");
+        pick(&mut b, id(Side::Foes, 0), "splash");
+        b.advance().unwrap();
+        if gravity {
+            pick(&mut b, id(Side::Allies, 0), "gravity");
+            pick(&mut b, id(Side::Foes, 0), "splash");
+            b.advance().unwrap();
+        }
+        pick(&mut b, id(Side::Allies, 0), "sticky-web");
+        switch(&mut b, id(Side::Foes, 0), 1);
+        b.advance().unwrap();
+        assert_eq!(
+            b.participants(Side::Foes)[1].stage(Stat::Speed),
+            expected,
+            "{ability} gravity={gravity}"
+        );
+    }
+}
+
+#[test]
+fn stealth_rock_uses_type_effectiveness_and_knockout_prevents_entry_ability() {
+    use wilds_battle_engine::PokemonType;
+    let mut reserve = mon("Reserve", &["splash"]);
+    reserve.types = vec![PokemonType::Fire, PokemonType::Flying];
+    reserve.hp = 500;
+    reserve.ability = Some("intimidate".into());
+    let mut b = game(
+        vec![mon("Setter", &["stealth-rock", "splash"])],
+        vec![mon("Lead", &["splash"]), reserve],
+        [vec![0], vec![0]],
+    );
+    pick(&mut b, id(Side::Allies, 0), "stealth-rock");
+    pick(&mut b, id(Side::Foes, 0), "splash");
+    b.advance().unwrap();
+    pick(&mut b, id(Side::Allies, 0), "splash");
+    switch(&mut b, id(Side::Foes, 0), 1);
+    let result = b.advance().unwrap();
+    assert_eq!(b.participants(Side::Foes)[1].hp, 0);
+    assert_eq!(b.participants(Side::Allies)[0].stage(Stat::Attack), 0);
+    let AdvanceStatus::Awaiting(prompt) = result.status else {
+        panic!()
+    };
+    assert_eq!(prompt.reason, PromptReason::Replacement);
+}
+
+#[test]
+fn rapid_spin_removes_real_entry_hazards() {
+    let mut b = game(
+        vec![mon(
+            "Setter",
+            &[
+                "spikes",
+                "toxic-spikes",
+                "stealth-rock",
+                "sticky-web",
+                "splash",
+            ],
+        )],
+        vec![mon("Spinner", &["rapid-spin", "splash"])],
+        [vec![0], vec![0]],
+    );
+    for hazard in ["spikes", "toxic-spikes", "stealth-rock", "sticky-web"] {
+        pick(&mut b, id(Side::Allies, 0), hazard);
+        pick(&mut b, id(Side::Foes, 0), "splash");
+        b.advance().unwrap();
+    }
+    assert_eq!(b.side_conditions(Side::Foes).len(), 4);
+    pick(&mut b, id(Side::Allies, 0), "splash");
+    pick(&mut b, id(Side::Foes, 0), "rapid-spin");
+    b.advance().unwrap();
+    assert!(b.side_conditions(Side::Foes).is_empty());
+}

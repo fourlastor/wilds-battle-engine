@@ -273,6 +273,10 @@ pub(crate) enum ScriptOperation {
     ResetStats {
         who: ParticipantId,
     },
+    AddHazard {
+        side: crate::model::Side,
+        hazard: crate::hazards::Hazard,
+    },
     SetStage {
         who: ParticipantId,
         stat: Stat,
@@ -1004,6 +1008,14 @@ fn parse_op(name: &str, args: &[Value]) -> mlua::Result<ScriptOperation> {
             }
         }
         "reset_stats" => ScriptOperation::ResetStats { who: who(0)? },
+        "add_hazard" => ScriptOperation::AddHazard {
+            side: match scope_of(arg(0), name)? {
+                Scope::Side(side) => side,
+                _ => return Err(bad("add_hazard requires a team")),
+            },
+            hazard: crate::hazards::Hazard::parse(&text_of(arg(1), name)?)
+                .ok_or_else(|| bad("unknown entry hazard"))?,
+        },
         "set_stage" => ScriptOperation::SetStage {
             who: who(0)?,
             stat: stat_of(arg(1), "set_stage")?,

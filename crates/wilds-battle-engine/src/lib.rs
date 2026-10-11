@@ -4,6 +4,7 @@ mod carrying;
 mod conditions;
 mod engine;
 mod forms;
+mod hazards;
 mod items;
 mod lua_symbols;
 mod model;
@@ -188,7 +189,7 @@ mod tests {
     #[test]
     fn loads_original_and_scripted_moves() {
         let catalog = MoveCatalog::builtin().unwrap();
-        assert_eq!(catalog.len(), 549);
+        assert_eq!(catalog.len(), 553);
         let from_files =
             MoveCatalog::from_directory(concat!(env!("CARGO_MANIFEST_DIR"), "/../../moves"))
                 .unwrap();
