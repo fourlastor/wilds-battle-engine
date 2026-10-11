@@ -1,9 +1,9 @@
 # Wilds battle engine
 
 `wilds-battle-engine` is the Rust battle simulation. Move definitions are loaded
-from Lua; `MoveCatalog::builtin()` embeds the 704 files under `moves/`,
+from Lua; `MoveCatalog::builtin()` embeds the 705 files under `moves/`,
 and `MoveCatalog::from_directory(path)` reads them from disk at runtime.
-Both catalogs also include the system move Struggle, for 705 moves in total.
+Both catalogs also include the system move Struggle, for 706 moves in total.
 The [move catalog](moves/README.md) includes 538 entries from the Saved moves sheet,
 plus support moves, additional local JSON moves and the original moves outside the sheet. Its manifest
 records the 34 excluded Z/Max Moves. Files use canonical slugs and source display
@@ -273,6 +273,7 @@ ctx:end_effect(ctx.target.team, "reflect")                  -- Brick Break
 |---|---|
 | `ExplodeOnType` | `type`, `fraction`, optional `message`; cancels moves of that type after PP is spent and deals rounded residual damage. Magic Guard prevents that damage. |
 | Screen damage rules | `DamageTaken` accepts `screen=true` to allow Infiltrator and `unless_side_effect` to avoid stacking with another named screen. |
+| `IncomingAlwaysHit` | Ordinary incoming moves pass accuracy checks; OHKO accuracy, Protect and hiding remain separate. |
 | `Airborne` | Grants Ground immunity unless grounded. Read `pokemon.airborne` for this effect or `pokemon.on_ground` for terrain/hazard eligibility. Moves flagged `hits_airborne` ignore levitation immunity. |
 | `BlockHealing` | Blocks healing, including drain and passive recovery; combine with `BlockMoves` for the `heal` flag. Direct HP assignments and Regenerator on withdrawal bypass it. |
 | `ReflectMoves` | Reflects eligible incoming moves, including side hazards, once. Independent of ability suppression. |

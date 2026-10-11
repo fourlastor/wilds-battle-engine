@@ -1609,6 +1609,13 @@ impl Battle {
         value: f32,
         ignore_evasion: bool,
     ) -> bool {
+        if self
+            .rules(target)
+            .any(|r| matches!(r, Rule::IncomingAlwaysHit))
+        {
+            self.end_condition(Scope::Pokemon(actor), "micle_berry");
+            return true;
+        }
         let evasion = if ignore_evasion
             || (self.get(target).stage(Stat::Evasion) > 0
                 && self

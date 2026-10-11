@@ -4611,3 +4611,54 @@ fn magnet_rise_is_removed_by_grounding_attacks_and_thousand_arrows_hits_levitate
     turn(&mut b);
     assert!(b.participants(Side::Allies)[0].hp < 1000);
 }
+
+#[test]
+fn telekinesis_guarantees_ordinary_hits_for_three_turns_but_not_ohko_hits() {
+    let mut user = mon("User", &["telekinesis", "fire-blast", "sheer-cold"]);
+    user.speed = 200;
+    let mut b = game(user, vec![mon("Foe", &["splash"])], 0.95);
+    turn(&mut b);
+    turn_with(&mut b, |p| choose_move(p, "fire-blast", "splash"));
+    let after = b.participants(Side::Foes)[0].hp;
+    assert!(after < 1000);
+    turn_with(&mut b, |p| choose_move(p, "sheer-cold", "splash"));
+    assert_eq!(b.participants(Side::Foes)[0].hp, after);
+    assert!(
+        !b.participants(Side::Foes)[0]
+            .conditions
+            .iter()
+            .any(|c| c.name == "telekinesis")
+    );
+    turn_with(&mut b, |p| choose_move(p, "fire-blast", "splash"));
+    assert_eq!(b.participants(Side::Foes)[0].hp, after);
+}
+
+#[test]
+fn telekinesis_grants_ground_immunity_but_fails_on_grounded_species_and_protect() {
+    let mut b = game(
+        mon("User", &["telekinesis", "earthquake"]),
+        vec![mon("Foe", &["splash"])],
+        0.5,
+    );
+    turn(&mut b);
+    turn_with(&mut b, |p| choose_move(p, "earthquake", "splash"));
+    assert_eq!(b.participants(Side::Foes)[0].hp, 1000);
+    for id in [50, 51, 769, 770, 94] {
+        let mut foe = mon("Foe", &["splash"]);
+        foe.species_id = id;
+        if id == 94 {
+            foe.form = Some("mega".into());
+        }
+        let mut b = game(mon("User", &["telekinesis"]), vec![foe], 0.5);
+        turn(&mut b);
+        assert!(b.participants(Side::Foes)[0].conditions.is_empty());
+        assert!(b.participants(Side::Allies)[0].last_move_failed);
+    }
+    let mut b = game(
+        mon("User", &["telekinesis"]),
+        vec![mon("Foe", &["protect"])],
+        0.5,
+    );
+    turn(&mut b);
+    assert!(b.participants(Side::Foes)[0].conditions.is_empty());
+}

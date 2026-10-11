@@ -4511,6 +4511,17 @@
       "parameter_source": "https://pokeapi.co/api/v2/move/476/"
     },
     {
+      "id": 477,
+      "slug": "telekinesis",
+      "name": "Telekinesis",
+      "sheet_row": null,
+      "runtime_id": "telekinesis",
+      "file": "moves/telekinesis.lua",
+      "status": "implemented",
+      "limitations": [],
+      "parameter_source": "https://pokeapi.co/api/v2/move/477/"
+    },
+    {
       "id": 479,
       "slug": "smack-down",
       "name": "Smack Down",
@@ -7620,7 +7631,8 @@
       "aurora-veil",
       "defog",
       "heal-block",
-      "magnet-rise"
+      "magnet-rise",
+      "telekinesis"
     ]
   }
 }

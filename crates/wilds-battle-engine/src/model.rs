@@ -153,6 +153,8 @@ pub enum Scope {
 /// A rule on a side applies to every Pokémon of that side, one on the field to everyone.
 #[derive(Clone, Debug, PartialEq)]
 pub enum Rule {
+    /// Ordinary incoming attacks cannot miss; does not affect OHKO checks or hiding.
+    IncomingAlwaysHit,
     /// Floats above the ground unless another rule grounds the holder.
     Airborne,
     /// Prevents HP restoration; direct HP assignment and switch-out Regenerator bypass it.
