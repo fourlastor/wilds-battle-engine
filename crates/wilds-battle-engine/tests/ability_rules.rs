@@ -822,3 +822,9 @@ fn blaze_boosts_matching_moves_only() {
     check_power_ability("blaze", &["ember"], "tackle", 1.5, 333);
     check_power_ability("blaze", &[], "ember", 1.0, 334);
 }
+
+#[test]
+fn torrent_boosts_matching_moves_only() {
+    check_power_ability("torrent", &["water-gun"], "tackle", 1.5, 333);
+    check_power_ability("torrent", &[], "water-gun", 1.0, 334);
+}
