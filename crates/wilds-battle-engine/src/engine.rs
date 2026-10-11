@@ -1857,7 +1857,11 @@ impl Battle {
             )));
             return 0;
         }
-        self.change_stat_unmodified(recipient, stat, delta, events)
+        let changed = self.change_stat_unmodified(recipient, stat, delta, events);
+        if changed < 0 && actor.side != recipient.side && self.has_ability(recipient, "defiant") {
+            self.change_stat(recipient, Stat::Attack, 2, events);
+        }
+        changed
     }
 
     pub(crate) fn change_stat_unmodified(

@@ -126,7 +126,7 @@ id,ability,status,verification
 125,sheer-force,MISSING,No native battle behavior
 126,contrary,IMPLEMENTED,Source inventory; existing tests only
 127,unnerve,IMPLEMENTED,Source inventory; existing tests only
-128,defiant,MISSING,No native battle behavior
+128,defiant,IMPLEMENTED,ability_rules::defiant_responds_to_opposing_stat_drops_and_intimidate
 129,defeatist,IMPLEMENTED,ability_rules::defeatist_halves_both_attacking_stats_at_half_hp
 130,cursed-body,IMPLEMENTED,ability_rules::cursed_body_disables_the_damaging_move_for_four_turns_including_the_hit
 131,healer,IMPLEMENTED,Source inventory; existing tests only

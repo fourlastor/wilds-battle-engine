@@ -2244,3 +2244,47 @@ fn anger_point_maximizes_attack_after_a_critical_hit() {
         assert_eq!(foe(&battle).stage(Stat::Attack), expected);
     }
 }
+
+fn check_drop_response(ability: &str, boosted_stat: wilds_battle_engine::Stat) {
+    use wilds_battle_engine::Stat;
+    for (move_id, source_ability, suppressed, expected) in [
+        ("growl", "", false, 2),
+        ("splash", "intimidate", false, 2),
+        ("growl", "", true, 0),
+    ] {
+        let mut user = mon("User", &[move_id]);
+        user.ability = Some(source_ability.into());
+        let mut target = mon("Target", &["splash"]);
+        target.ability = Some(ability.into());
+        target.ability_suppressed = suppressed;
+        let mut battle = game(user, target, 0.5);
+        turn(&mut battle, move_id, "splash");
+        assert_eq!(
+            foe(&battle).stage(boosted_stat),
+            expected - i8::from(boosted_stat == Stat::Attack)
+        );
+    }
+    let mut user = mon("User", &["superpower"]);
+    user.ability = Some(ability.into());
+    let mut battle = game(user, mon("Target", &["splash"]), 0.5);
+    turn(&mut battle, "superpower", "splash");
+    assert_eq!(
+        ally(&battle).stage(boosted_stat),
+        -i8::from(boosted_stat == Stat::Attack)
+    );
+    let user = mon("User", &["growl"]);
+    let mut target = mon("Target", &["splash"]);
+    target.stages.insert(Stat::Attack, -6);
+    target.ability = Some(ability.into());
+    let mut battle = game(user, target, 0.5);
+    turn(&mut battle, "growl", "splash");
+    assert_eq!(
+        foe(&battle).stage(boosted_stat),
+        -6 * i8::from(boosted_stat == Stat::Attack)
+    );
+}
+
+#[test]
+fn defiant_responds_to_opposing_stat_drops_and_intimidate() {
+    check_drop_response("defiant", wilds_battle_engine::Stat::Attack);
+}

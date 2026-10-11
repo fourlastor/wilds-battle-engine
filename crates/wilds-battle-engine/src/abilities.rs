@@ -490,7 +490,8 @@ impl Battle {
                 )));
                 continue;
             }
-            let changed = self.change_stat(target, crate::model::Stat::Attack, amount, events);
+            let changed =
+                self.change_stat_from(who, target, crate::model::Stat::Attack, amount, events);
             if changed != 0 && self.has_ability(target, "rattled") {
                 self.change_stat(target, crate::model::Stat::Speed, 1, events);
             }
