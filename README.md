@@ -7,8 +7,8 @@ Both catalogs also include the system move Struggle, for 549 moves in total.
 The [move catalog](moves/README.md) includes 538 entries from the Saved moves sheet,
 plus Gravity, Stockpile and the original moves outside the sheet. Its manifest
 records the 34 excluded Z/Max Moves. Files use canonical slugs and source display
-names. Unsupported mechanics are flagged in each affected file and in
-[catalog.json](moves/catalog.json).
+names. [catalog.json](moves/catalog.json) records per-move coverage and the
+remaining general engine limitations.
 The host supplies choices for both sides.
 The Rust API uses enums for sides, Pokémon types, stats, statuses, and weather.
 Host-facing prompts contain `Choice::UseMove { id, move_id, target }` or
@@ -142,7 +142,7 @@ Production definitions live in `moves/`. The older API examples in
 deliberately altered move names and prototypes. They are not the production catalog
 or an authoritative source of move behavior. `tests/move_catalog.rs` exercises the
 shipped files, including identity, spread targeting, critical hits, multi-hit attacks,
-trapping metadata and incomplete mechanics.
+switching, source-linked traps and linked carrying.
 
 ### Move fields
 
@@ -170,6 +170,7 @@ STAB bonus even when the attacker lacks the hit's type, without doubling an exis
 | `types`, `:has_type(Type.X)`, `grounded` | Types as they count right now. |
 | `attack`, `defense`, `sp_attack`, `sp_defense`, `speed` | With stat stages and effects applied. |
 | `stages[Stat.X]`, `:stage(Stat.X)` | −6 to +6. |
+| `carrying`, `carried_by` | Linked Pokémon tables, or nil. Both host state APIs report the corresponding participant references. |
 | `hidden` | A `Hidden` value (`Air`, `Underground`, `Underwater`, `Vanished`) or nil. |
 | `item`, `ability` | Item/ability IDs or nil. Power Herb activates on charging; supported berries activate or can be eaten by move scripts. |
 | `marks[name]`, `effects[name]` | See below. |
@@ -205,6 +206,7 @@ before turn-start hooks; capped changes and resetting stages do not trigger them
 | `ctx:hide(Hidden.X)`, `ctx:unhide(who)` | The user hides until it next acts. `unhide` also calls off what the Pokémon was doing. |
 | `ctx:set_weather(Weather.X, turns)`, `ctx:clear_weather()` | `Sun`, `Sandstorm`, `Rain`, `Hail`. |
 | `ctx:set_types(who, {Type.X})`, `ctx:set_weight(who, kg)`, `ctx:take_item(who)`, `ctx:give_item(who, item)`, `ctx:suppress_ability(who)` | Suppression returns false for absent, already suppressed, fainted, or protected abilities. Active-ability checks immediately respect suppression. |
+| `ctx:carry(who)`, `ctx:release()` | Link the user and a foe in the air, then release the pair. Carrying requires a living, active, unhidden foe under 200 kg. Pair state blocks switching and suppresses the carried member's action while it remains held. Interruption, fainting and `unhide` release both and cancel the carrier's continuation. |
 | `ctx:switch_out()` | Requests a host-selected bench replacement for the user after this move and its hit reactions. Bypasses ordinary traps. A `Pivot` prompt pauses the turn; responding resumes the remaining actions without rerolling order or repeating moves. |
 | `ctx:force_switch(who)` | Requests a random living bench replacement after this move and its hit reactions. Returns false when unavailable or blocked by Suction Cups, Guard Dog or `Rule.BlockForcedSwitch`. Cancels the outgoing member's pending action. |
 | `ctx:adjacent(a, b)` | Whether two Pokémon occupy neighboring field slots. `who.position` is its zero-based slot from its trainer's perspective; opposing rows face each other. Fainting does not collapse slots. |
@@ -307,7 +309,8 @@ independently of that escape permission. Binding also ends when its source leave
 or faints. Move-triggered switches use separate mechanics. Items and abilities are data that moves can
 read, take, give and suppress. Power Herb now
 activates when a move charges: `Effect.TwoTurn`, or a scripted move flagged `charge`
-that calls `force_move(2, ...)`. Its second phase runs immediately, paying PP once.
+that calls `force_move(2, ...)`, unless flagged `no_power_herb` (Sky Drop).
+Its second phase runs immediately, paying PP once.
 Weather shortcuts preserve the item. Berry and gem activation also run in the engine. Other item and ability effects
 remain separate mechanics.
 

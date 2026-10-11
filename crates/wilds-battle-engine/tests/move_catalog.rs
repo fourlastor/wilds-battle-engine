@@ -2107,15 +2107,18 @@ fn berry_moves_report_consumption_and_unlock_belch() {
 }
 
 #[test]
-fn unavailable_moves_fail_explicitly_without_fake_effects() {
-    {
-        let id = "sky-drop";
-        let mut game = Game::duel(&[id], mon("Foe", &["splash"]), 0.5);
-        let events = game.turn(id, "splash");
-        assert!(said(&events, "unavailable"), "{id}");
-        assert_eq!(game.foe().hp, 1000);
-        assert_eq!(game.ally().stage(Stat::Defense), 0);
-    }
+fn sky_drop_hides_both_pokemon_then_releases_and_damages_the_target() {
+    let mut user = mon("User", &["sky-drop"]);
+    user.speed = 200;
+    let mut game = Game::new(vec![user], vec![mon("Foe", &["splash"])], 0.5);
+    game.turn("sky-drop", "splash");
+    assert!(game.ally().semi_invulnerable && game.foe().semi_invulnerable);
+    assert!(game.ally().carrying.is_some() && game.foe().carried_by.is_some());
+    assert_eq!(game.foe().hp, 1000);
+    game.turn("sky-drop", "splash");
+    assert!(!game.ally().semi_invulnerable && !game.foe().semi_invulnerable);
+    assert!(game.ally().carrying.is_none() && game.foe().carried_by.is_none());
+    assert!(game.foe().hp < 1000);
 }
 
 #[test]

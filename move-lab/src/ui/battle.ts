@@ -138,6 +138,8 @@ function card(mon: MonView): HTMLElement {
   if (mon.bound) chip('TRAP', 'flag');
   if (mon.protected) chip('PROT', 'flag');
   if (mon.hidden) chip(HIDING[mon.hidden_in ?? 'Vanished'] ?? 'AWAY', 'flag');
+  if (mon.carrying) chip('CARRYING', 'flag');
+  if (mon.carried_by) chip('CARRIED', 'flag');
   if (mon.recharging) chip('RCHG', 'flag');
   if (mon.locked) chip('LOCK', 'flag');
   if (mon.boost) chip(`${mon.boost.type} ×${mon.boost.multiplier}`, 'up');

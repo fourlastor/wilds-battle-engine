@@ -78,6 +78,7 @@ impl Battle {
         if from.side != to.side || !self.bench(from.side).contains(&to) {
             return false;
         }
+        self.release_carry(from, events);
         self.release_links(from);
         // Draining effects attach their recovery to a field slot (for example Leech Seed).
         for condition in self
@@ -189,6 +190,8 @@ impl Battle {
         if self.get(actor).hp == 0
             || self.get(who).hp == 0
             || !self.is_active(who)
+            || self.get(who).carrying.is_some()
+            || self.get(who).carried_by.is_some()
             || self.bench(who.side).is_empty()
             || self.has_ability(who, "suctioncups")
             || self.has_ability(who, "guarddog")
@@ -223,7 +226,12 @@ impl Battle {
 
 impl Battle {
     pub(crate) fn request_pivot(&mut self, who: ParticipantId) -> bool {
-        if self.get(who).hp == 0 || !self.is_active(who) || self.bench(who.side).is_empty() {
+        if self.get(who).hp == 0
+            || !self.is_active(who)
+            || self.bench(who.side).is_empty()
+            || self.get(who).carrying.is_some()
+            || self.get(who).carried_by.is_some()
+        {
             return false;
         }
         self.pivot = Some(who);

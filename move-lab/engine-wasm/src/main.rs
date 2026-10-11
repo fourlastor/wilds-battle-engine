@@ -134,6 +134,8 @@ fn pokemon(value: &Pokemon) -> Value {
         "protected": value.protected,
         "recharging": value.recharging,
         "hidden": value.semi_invulnerable,
+        "carrying": value.carrying.map(ffi::participant),
+        "carried_by": value.carried_by.map(ffi::participant),
         "hidden_in": value.hidden().map(|place| format!("{place:?}")),
         "locked": value.locked_move.is_some() || value.script_continuation.is_some(),
         "gender": format!("{:?}", value.gender),

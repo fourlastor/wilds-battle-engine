@@ -402,6 +402,8 @@ pub struct Pokemon {
     pub consecutive_count: u8,
     pub crit_stage: u8,
     pub semi_invulnerable: bool,
+    pub carrying: Option<ParticipantId>,
+    pub carried_by: Option<ParticipantId>,
     pub recharging: bool,
     /// Free-form species name for scripts that care (Chatter, Relic Song).
     pub species: String,
@@ -485,6 +487,8 @@ impl Pokemon {
             consecutive_count: 0,
             crit_stage: 0,
             semi_invulnerable: false,
+            carrying: None,
+            carried_by: None,
             recharging: false,
             species: String::new(),
             gender: Gender::Genderless,

@@ -7,7 +7,7 @@
   ],
   "parameter_policy": "JSON names and parameters; actual behavior for conflicting spreadsheet descriptions; original runtime IDs and behaviors retained for existing moves. Gravity and Stockpile have no local source JSON and use PokeAPI parameters.",
   "global_limitations": [
-    "The engine supports benches, voluntary switching, selected item/ability effects, redirection and move-priority hooks. Carrying and substitute remain unsupported; the item and ability catalogs are not exhaustive.",
+    "The engine supports benches, voluntary switching, selected item/ability effects, redirection and move-priority hooks. Substitute remains unsupported; the item and ability catalogs are not exhaustive.",
     "General battle interactions follow the current Rust engine; catalog coverage is not full official battle parity."
   ],
   "moves": [
@@ -3622,10 +3622,8 @@
       "sheet_row": 354,
       "runtime_id": "sky-drop",
       "file": "moves/sky-drop.lua",
-      "status": "partial",
-      "limitations": [
-        "Unavailable: the Lua API cannot carry, hide or disable another Pokemon across turns."
-      ]
+      "status": "implemented",
+      "limitations": []
     },
     {
       "id": 508,

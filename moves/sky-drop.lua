@@ -1,10 +1,16 @@
 -- Move 507: Sky Drop. Identity and parameters: pokemon_data/assets/moves/507.json.
 -- Behavior checked against PokeAPI; see catalog.json for scope and limitations.
--- INCOMPLETE: Unavailable: the Lua API cannot carry, hide or disable another Pokemon across turns.
 
 local move = {script = function(ctx)
-ctx:message("Sky Drop is unavailable: carrying another Pokemon needs engine support.")
-return ctx:fail()
+  if ctx.turn == 1 then
+    if not ctx:try_hit(ctx.target, {never_miss = true}) then return end
+    if not ctx:carry(ctx.target) then return ctx:fail() end
+    ctx:message(ctx.user.name .. " lifted " .. ctx.target.name .. " into the air!")
+    ctx:force_move(2, TargetPolicy.SameTarget)
+    return
+  end
+  if not ctx:release() then return ctx:fail() end
+  ctx:damage(60, {effective = {[Type.Flying] = 0}})
 end}
 
 move.id = "sky-drop"
@@ -15,5 +21,5 @@ move.pp = 10
 move.accuracy = 1
 move.priority = 0
 move.target = Target.Selected
-move.flags = {"gravity", "incomplete"}
+move.flags = {"gravity", "charge", "no_power_herb", "contact"}
 return move

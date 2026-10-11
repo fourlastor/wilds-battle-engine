@@ -359,7 +359,7 @@ fn side(value: Side) -> &'static str {
         Side::Foes => "foes",
     }
 }
-fn participant(id: ParticipantId) -> Value {
+pub(crate) fn participant(id: ParticipantId) -> Value {
     json!({"side":side(id.side), "index":id.index})
 }
 fn choice(value: &Choice) -> Value {
@@ -393,6 +393,7 @@ fn snapshot(value: &Pokemon) -> Value {
         "ate_berry":value.ate_berry, "consumed_items":value.consumed_items, "last_consumed_item":value.last_consumed_item,
         "nature_down":value.nature_down.map(|stat| format!("{stat:?}")),
         "ability":value.ability, "ability_suppressed":value.ability_suppressed,
+        "carrying":value.carrying.map(participant), "carried_by":value.carried_by.map(participant),
         "item":value.item, "hidden":value.hidden().map(|place| format!("{place:?}")),
         "conditions":conditions(&value.conditions)})
 }

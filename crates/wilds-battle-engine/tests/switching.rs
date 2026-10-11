@@ -799,3 +799,248 @@ fn an_intercepted_pursuit_still_checks_sleep_once() {
     assert_eq!(b.participants(Side::Foes)[0].status_turns, 2);
     assert_eq!(b.participants(Side::Foes)[0].move_pp["pursuit"], 20);
 }
+
+#[test]
+fn sky_drop_action_timing_depends_on_when_the_carried_pokemon_is_released() {
+    for fast in [false, true] {
+        let mut lead = mon("Carrier", &["sky-drop"]);
+        lead.speed = if fast { 200 } else { 50 };
+        lead.item = Some("power-herb".into());
+        let mut b = game(
+            vec![lead],
+            vec![mon("Foe", &["tackle"])],
+            [vec![0], vec![0]],
+        );
+        pick(&mut b, id(Side::Allies, 0), "sky-drop");
+        pick(&mut b, id(Side::Foes, 0), "tackle");
+        b.advance().unwrap();
+        assert!(b.participants(Side::Allies)[0].carrying.is_some());
+        assert!(b.participants(Side::Foes)[0].carried_by.is_some());
+        let hp = b.participants(Side::Allies)[0].hp;
+        assert_eq!(
+            b.participants(Side::Foes)[0].move_pp["tackle"],
+            if fast { 35 } else { 34 }
+        );
+        pick(&mut b, id(Side::Foes, 0), "tackle");
+        b.advance().unwrap();
+        assert_eq!(b.participants(Side::Foes)[0].move_pp["tackle"], 34);
+        assert_eq!(b.participants(Side::Allies)[0].hp < hp, fast);
+        assert!(b.participants(Side::Foes)[0].hp < 1000);
+        assert!(b.participants(Side::Allies)[0].carrying.is_none());
+        assert!(!b.participants(Side::Foes)[0].semi_invulnerable);
+        assert_eq!(b.participants(Side::Allies)[0].move_pp["sky-drop"], 9);
+        assert_eq!(
+            b.participants(Side::Allies)[0].item.as_deref(),
+            Some("power-herb")
+        );
+    }
+}
+
+#[test]
+fn sky_drop_fails_against_heavy_or_protected_targets() {
+    for (heavy, protect) in [(true, false), (false, true)] {
+        let mut lead = mon("Carrier", &["sky-drop"]);
+        lead.speed = 200;
+        let mut foe = mon("Foe", &["protect", "splash"]);
+        foe.weight = if heavy { 200.0 } else { 199.9 };
+        let mut b = game(vec![lead], vec![foe], [vec![0], vec![0]]);
+        pick(&mut b, id(Side::Allies, 0), "sky-drop");
+        pick(
+            &mut b,
+            id(Side::Foes, 0),
+            if protect { "protect" } else { "splash" },
+        );
+        b.advance().unwrap();
+        assert!(b.participants(Side::Allies)[0].carrying.is_none());
+        assert!(
+            b.participants(Side::Allies)[0]
+                .script_continuation
+                .is_none()
+        );
+        assert_eq!(b.participants(Side::Foes)[0].hp, 1000);
+    }
+}
+
+#[test]
+fn sky_drop_carries_flying_targets_without_damaging_them_and_blocks_ghost_escape() {
+    let mut lead = mon("Carrier", &["sky-drop"]);
+    lead.speed = 200;
+    let mut foe = mon("Foe", &["splash"]);
+    foe.types = vec![
+        wilds_battle_engine::PokemonType::Flying,
+        wilds_battle_engine::PokemonType::Ghost,
+    ];
+    foe.item = Some("shed-shell".into());
+    let mut b = game(
+        vec![lead],
+        vec![foe, mon("Reserve", &["splash"])],
+        [vec![0], vec![0]],
+    );
+    pick(&mut b, id(Side::Allies, 0), "sky-drop");
+    pick(&mut b, id(Side::Foes, 0), "splash");
+    let result = b.advance().unwrap();
+    assert!(b.trapped(id(Side::Foes, 0)));
+    let AdvanceStatus::Awaiting(p) = result.status else {
+        panic!()
+    };
+    assert!(!p.choices.iter().any(|c| matches!(c, Choice::Switch { .. })));
+    pick(&mut b, id(Side::Foes, 0), "splash");
+    b.advance().unwrap();
+    assert_eq!(b.participants(Side::Foes)[0].hp, 1000);
+    assert!(b.participants(Side::Allies)[0].last_move_failed);
+    assert!(!b.trapped(id(Side::Foes, 0)));
+}
+
+#[test]
+fn gravity_and_smack_down_release_the_pair_and_cancel_the_queued_drop() {
+    for interrupt in ["gravity", "smack-down"] {
+        let mut lead = mon("Carrier", &["sky-drop", "splash"]);
+        lead.speed = 150;
+        let mut partner = mon("Partner", &["splash", interrupt]);
+        partner.speed = 200;
+        let mut b = game(
+            vec![lead],
+            vec![mon("Foe", &["tackle"]), partner],
+            [vec![0], vec![0, 1]],
+        );
+        pick(&mut b, id(Side::Allies, 0), "sky-drop");
+        pick(&mut b, id(Side::Foes, 0), "tackle");
+        pick(&mut b, id(Side::Foes, 1), "splash");
+        b.advance().unwrap();
+        assert!(b.participants(Side::Allies)[0].carrying.is_some());
+        pick(&mut b, id(Side::Foes, 0), "tackle");
+        pick(&mut b, id(Side::Foes, 1), interrupt);
+        b.advance().unwrap();
+        assert!(b.participants(Side::Allies)[0].carrying.is_none());
+        assert!(
+            b.participants(Side::Allies)[0]
+                .script_continuation
+                .is_none()
+        );
+        assert!(b.participants(Side::Foes)[0].carried_by.is_none());
+        assert!(!b.participants(Side::Allies)[0].semi_invulnerable);
+        assert!(!b.participants(Side::Foes)[0].semi_invulnerable);
+        assert_eq!(b.participants(Side::Foes)[0].hp, 1000);
+        assert_eq!(b.participants(Side::Allies)[0].move_pp["sky-drop"], 9);
+    }
+}
+
+#[test]
+fn fainting_either_carried_participant_releases_both() {
+    for carrier_faints in [false, true] {
+        let mut lead = mon("Carrier", &["sky-drop"]);
+        lead.speed = 200;
+        let mut foe = mon("Foe", &["splash"]);
+        let poisoned = if carrier_faints { &mut lead } else { &mut foe };
+        poisoned.hp = 1;
+        poisoned.status = Some(Status::Poisoned);
+        let mut b = game(
+            vec![lead, mon("Reserve", &["splash"])],
+            vec![foe, mon("Enemy reserve", &["splash"])],
+            [vec![0], vec![0]],
+        );
+        pick(&mut b, id(Side::Allies, 0), "sky-drop");
+        pick(&mut b, id(Side::Foes, 0), "splash");
+        b.advance().unwrap();
+        assert!(b.participants(Side::Allies)[0].carrying.is_none());
+        assert!(
+            b.participants(Side::Allies)[0]
+                .script_continuation
+                .is_none()
+        );
+        assert!(b.participants(Side::Foes)[0].carried_by.is_none());
+        assert!(!b.participants(Side::Allies)[0].semi_invulnerable);
+        assert!(!b.participants(Side::Foes)[0].semi_invulnerable);
+    }
+}
+
+#[test]
+fn sky_drop_releases_its_target_when_paralysis_interrupts_the_carrier() {
+    use std::{cell::Cell, rc::Rc};
+    struct Controlled(Rc<Cell<f32>>);
+    impl BattleRng for Controlled {
+        fn next_u64(&mut self) -> u64 {
+            0
+        }
+        fn fraction(&mut self) -> f32 {
+            self.0.get()
+        }
+    }
+    let dice = Rc::new(Cell::new(0.5));
+    let mut lead = mon("Carrier", &["sky-drop"]);
+    lead.speed = 800;
+    lead.status = Some(Status::Paralyzed);
+    let mut b = Battle::with_rng(
+        Controlled(dice.clone()),
+        [vec![lead], vec![mon("Foe", &["tackle"])]],
+        MoveCatalog::builtin().unwrap(),
+    )
+    .unwrap();
+    pick(&mut b, id(Side::Allies, 0), "sky-drop");
+    pick(&mut b, id(Side::Foes, 0), "tackle");
+    b.advance().unwrap();
+    assert!(b.participants(Side::Allies)[0].carrying.is_some());
+    dice.set(0.0);
+    pick(&mut b, id(Side::Foes, 0), "tackle");
+    b.advance().unwrap();
+    assert!(b.participants(Side::Allies)[0].carrying.is_none());
+    assert!(b.participants(Side::Foes)[0].carried_by.is_none());
+    assert_eq!(b.participants(Side::Foes)[0].hp, 1000);
+    assert_eq!(b.participants(Side::Allies)[0].move_pp["sky-drop"], 9);
+}
+
+#[test]
+fn sky_drop_lift_ignores_accuracy_but_a_missed_drop_still_releases_both() {
+    let mut lead = mon("Carrier", &["sky-drop"]);
+    lead.speed = 200;
+    lead.stages.insert(Stat::Accuracy, -6);
+    let mut foe = mon("Foe", &["splash"]);
+    foe.stages.insert(Stat::Evasion, 6);
+    let mut b = game(vec![lead], vec![foe], [vec![0], vec![0]]);
+    pick(&mut b, id(Side::Allies, 0), "sky-drop");
+    pick(&mut b, id(Side::Foes, 0), "splash");
+    b.advance().unwrap();
+    assert!(b.participants(Side::Allies)[0].carrying.is_some());
+    pick(&mut b, id(Side::Foes, 0), "splash");
+    b.advance().unwrap();
+    assert_eq!(b.participants(Side::Foes)[0].hp, 1000);
+    assert!(b.participants(Side::Allies)[0].carrying.is_none());
+    assert!(!b.participants(Side::Foes)[0].semi_invulnerable);
+}
+
+#[test]
+fn an_air_reaching_hit_can_damage_the_carrier_but_cannot_force_it_out() {
+    let mut lead = mon("Carrier", &["sky-drop"]);
+    lead.conditions.push(Condition {
+        name: "quick".into(),
+        value: 1,
+        turns_left: None,
+        rules: vec![Rule::MovePriority { amount: 2 }],
+        group: None,
+        end_message: None,
+    });
+    let mut partner = mon("Partner", &["dragon-tail"]);
+    partner.conditions.push(Condition {
+        name: "aim".into(),
+        value: 1,
+        turns_left: None,
+        rules: vec![
+            Rule::AlwaysHit { against: None },
+            Rule::MovePriority { amount: 7 },
+        ],
+        group: None,
+        end_message: None,
+    });
+    let mut b = game(
+        vec![lead, mon("Reserve", &["splash"])],
+        vec![mon("Foe", &["splash"]), partner],
+        [vec![0], vec![0, 1]],
+    );
+    pick(&mut b, id(Side::Allies, 0), "sky-drop");
+    pick(&mut b, id(Side::Foes, 0), "splash");
+    pick(&mut b, id(Side::Foes, 1), "dragon-tail");
+    b.advance().unwrap();
+    assert_eq!(b.active_indices(Side::Allies), &[0]);
+    assert!(b.participants(Side::Allies)[0].hp < 1000);
+    assert!(b.participants(Side::Allies)[0].carrying.is_some());
+}

@@ -65,6 +65,8 @@ export interface EngineMon {
   protected: boolean;
   recharging: boolean;
   hidden: boolean;
+  carrying: Ref | null;
+  carried_by: Ref | null;
   /** Where it hides: "Air", "Underground", "Underwater" or "Vanished". */
   hidden_in: string | null;
   locked: boolean;

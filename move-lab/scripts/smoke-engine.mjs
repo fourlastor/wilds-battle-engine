@@ -124,3 +124,30 @@ assert.equal(resumed.allies[0].move_pp['u-turn'], 19);
 assert.ok(resumed.allies[1].hp < 1000);
 engine._wbe_destroy(pivotBattle);
 console.log('ok: a pivot pauses for a host choice and resumes the same turn');
+
+const carryBattle = withStrings([JSON.stringify({
+  allies: [{ name: 'Carrier', max_hp: 1000, speed: 200, item: 'power-herb', moves: ['sky-drop'] }],
+  foes: [{ name: 'Carried', max_hp: 1000, moves: ['splash'] }, { name: 'Reserve', moves: ['splash'] }],
+  active: { allies: [0], foes: [0] },
+}), '/moves'], (json, dir) => engine._wbe_create(json, dir));
+assert.notEqual(carryBattle, 0, lastError());
+for (let i = 0; i < 2; i++) {
+  const step = JSON.parse(text(engine._wbe_advance(carryBattle)));
+  const move = step.status.choices.find(choice => choice.kind === 'use_move');
+  assert.ok(engine._wbe_respond(carryBattle, BigInt(step.status.prompt_id), move.id));
+}
+const lifted = JSON.parse(text(engine._wbe_advance(carryBattle)));
+assert.deepEqual(lifted.allies[0].carrying, { side: 'foes', index: 0 });
+assert.deepEqual(lifted.foes[0].carried_by, { side: 'allies', index: 0 });
+assert.equal(lifted.allies[0].item, 'power-herb');
+assert.ok(lifted.status.choices.every(choice => choice.kind === 'use_move'));
+const carriedState = JSON.parse(text(engine._mlab_state(carryBattle)));
+assert.deepEqual(carriedState.foes[0].carried_by, lifted.foes[0].carried_by);
+assert.ok(engine._wbe_respond(carryBattle, BigInt(lifted.status.prompt_id), lifted.status.choices[0].id));
+const dropped = JSON.parse(text(engine._wbe_advance(carryBattle)));
+assert.equal(dropped.allies[0].carrying, null);
+assert.equal(dropped.foes[0].carried_by, null);
+assert.ok(dropped.foes[0].hp < 1000);
+assert.equal(dropped.allies[0].move_pp['sky-drop'], 9);
+engine._wbe_destroy(carryBattle);
+console.log('ok: Sky Drop carries and releases both participants through wasm');

@@ -22,7 +22,7 @@ where applicable (for example, `solar_beam` lives in `solar-beam.lua`) so existi
 setups continue to work. Original move behavior and parameters are preserved.
 Move Lab replaces and downloads edited files using the canonical filenames.
 
-## Behavior and incomplete mechanics
+## Behavior and coverage
 
 New files keep the source JSON's names and numeric parameters. Actual move behavior
 takes precedence over conflicting sheet descriptions. PokeAPI metadata and effects
@@ -31,17 +31,19 @@ Pokémon Showdown reference recorded in [catalog.json](catalog.json).
 For example, Snipe Shot has an increased critical-hit rate, Jaw Lock traps both
 participants, and No Retreat raises five stats and records its one-use trap.
 
-Of the 507 added definitions currently included, 506 implement their move-specific
-behavior through the available API and 1 are partial. Each partial file has an
-`INCOMPLETE` comment, an `incomplete` flag, and specific limitations in the manifest. Sky Drop fails explicitly because carrying another Pokémon cannot yet run through this API.
-Other partial moves execute the supported portion of their effects.
+All 507 added definitions implement their move-specific behavior through the
+available API. No included move remains flagged `incomplete` in the manifest.
+Z-Moves and Max Moves remain excluded.
 
 Voluntary switches and faint replacements now use host-selected bench choices.
 Source-linked traps now prevent switches and end when their source leaves or faints.
 Circle Throw and Dragon Tail now force a random eligible bench replacement.
 U-turn, Volt Switch, Flip Turn and Parting Shot pause for a host-selected replacement.
 Pursuit intercepts voluntary and pivot switches before withdrawal.
-The remaining move-specific gap is carrying another Pokémon across turns.
+Sky Drop links both participants in the air, blocks carrying-related switches and
+actions, and releases them on the drop, interruption, fainting or grounding.
+Flying targets are carried without taking drop damage, targets at least 200 kg
+cannot be lifted, and Power Herb does not skip the carry turn.
 These definitions use the current engine's general damage, status and rounding rules;
 the coverage count does not imply full official battle parity.
 
@@ -59,7 +61,7 @@ including Splash and Sky Drop. If every move is blocked, the engine uses Struggl
 The manifest maps included sheet IDs and rows to their slugs, display names,
 runtime IDs, files, statuses and limitations; excluded entries retain their IDs,
 rows and exclusion reasons. Additional moves have a null `sheet_row`.
-To list partial moves:
+To check for partial moves (currently no results):
 
 ```sh
 jq -r '.moves[] | select(.status == "partial") | "\(.id)\t\(.slug)\t\(.limitations | join("; "))"' moves/catalog.json

@@ -206,6 +206,18 @@ impl Battle {
         table.raw_set("fainted", pokemon.hp == 0)?;
         table.raw_set("confused", pokemon.confused_turns.is_some())?;
         table.raw_set("bound", pokemon.bound.is_some())?;
+        table.raw_set(
+            "carrying",
+            pokemon
+                .carrying
+                .and_then(|id| Self::pokemon_table(run, id).cloned()),
+        )?;
+        table.raw_set(
+            "carried_by",
+            pokemon
+                .carried_by
+                .and_then(|id| Self::pokemon_table(run, id).cloned()),
+        )?;
         table.raw_set("protected", pokemon.protected)?;
         table.raw_set("flinched", pokemon.flinched)?;
         table.raw_set("recharging", pokemon.recharging)?;
@@ -1114,6 +1126,7 @@ impl Battle {
                 Value::Nil
             }
             ScriptOperation::BreakSequence => {
+                self.release_carry(actor, events);
                 self.get_mut(actor).script_continuation = None;
                 Value::Nil
             }
@@ -1410,8 +1423,10 @@ impl Battle {
                 Value::Nil
             }
             ScriptOperation::Unhide { who } => {
+                let was_hidden = self.get(who).semi_invulnerable;
+                self.release_carry(who, events);
                 let pokemon = self.get_mut(who);
-                let was_hidden = std::mem::take(&mut pokemon.semi_invulnerable);
+                pokemon.semi_invulnerable = false;
                 if was_hidden {
                     // Whatever it was in the middle of is called off.
                     pokemon.script_continuation = None;
@@ -1456,6 +1471,8 @@ impl Battle {
             ScriptOperation::EndGroup { scope, group } => {
                 Value::Boolean(self.end_group(scope, &group))
             }
+            ScriptOperation::Carry { who } => Value::Boolean(self.carry(actor, who)),
+            ScriptOperation::ReleaseCarry => Value::Boolean(self.release_carry(actor, events)),
             ScriptOperation::SwitchOut => Value::Boolean(self.request_pivot(actor)),
             ScriptOperation::ForceSwitch { who } => {
                 Value::Boolean(self.request_forced_switch(actor, who))

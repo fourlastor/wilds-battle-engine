@@ -138,6 +138,7 @@ enum SelectedAction {
 
 #[derive(Clone)]
 struct MoveAction {
+    forced: bool,
     move_id: String,
     target: ParticipantId,
     target_position: usize,
@@ -289,6 +290,9 @@ impl Battle {
     }
     /// Whether an effect keeps this Pokémon from leaving the battle.
     pub fn trapped(&self, id: ParticipantId) -> bool {
+        if self.get(id).carrying.is_some() || self.get(id).carried_by.is_some() {
+            return true;
+        }
         if !self.is_active(id)
             || self.get(id).hp == 0
             || self.types_of(id).contains(&PokemonType::Ghost)
@@ -496,6 +500,7 @@ impl Battle {
                 self.selections.push((
                     actor,
                     SelectedAction::Move(MoveAction {
+                        forced: true,
                         move_id: continuation.move_id,
                         target: continuation.target,
                         target_position: self.target_position(continuation.target),
@@ -513,6 +518,7 @@ impl Battle {
                 self.selections.push((
                     actor,
                     SelectedAction::Move(MoveAction {
+                        forced: false,
                         move_id: "struggle".into(),
                         target,
                         target_position: self.target_position(target),
@@ -527,7 +533,7 @@ impl Battle {
                 .is_some_and(|lock| lock.charging)
             {
                 self.selections
-                    .push((actor, self.selected_action(&choices[0])));
+                    .push((actor, self.selected_action(actor, &choices[0])));
                 continue;
             }
             let prompt = self.make_prompt(actor, choices, PromptReason::Action);
@@ -565,7 +571,7 @@ impl Battle {
             .ok_or_else(|| BattleError::InvalidResponse("choice is not legal".into()))?;
         let actor = prompt.actor;
         let reason = prompt.reason;
-        let action = self.selected_action(choice);
+        let action = self.selected_action(actor, choice);
         self.pending = None;
         if reason == PromptReason::Action {
             self.selections.push((actor, action));
@@ -597,11 +603,16 @@ impl Battle {
             .or(self.get(target).last_position)
             .unwrap_or(0)
     }
-    fn selected_action(&self, choice: &Choice) -> SelectedAction {
+    fn selected_action(&self, actor: ParticipantId, choice: &Choice) -> SelectedAction {
         match choice {
             Choice::UseMove {
                 move_id, target, ..
             } => SelectedAction::Move(MoveAction {
+                forced: self
+                    .get(actor)
+                    .locked_move
+                    .as_ref()
+                    .is_some_and(|lock| lock.charging),
                 move_id: move_id.clone(),
                 target: *target,
                 target_position: self.target_position(*target),
@@ -723,7 +734,8 @@ impl Battle {
                 self.completed_slots.push((actor.side, entry.position));
                 continue;
             }
-            if !matches!(choice, SelectedAction::Switch(_)) {
+            if !matches!(choice, SelectedAction::Switch(_)) && self.get(actor).carried_by.is_none()
+            {
                 self.check_sleep(actor, events);
             }
             match &choice {
@@ -873,7 +885,18 @@ impl Battle {
         choice: &MoveAction,
         events: &mut Vec<BattleEvent>,
     ) -> Result<bool, BattleError> {
-        if self.get(actor).hp == 0 || !self.is_active(actor) {
+        if self.get(actor).hp == 0 || !self.is_active(actor) || self.get(actor).carried_by.is_some()
+        {
+            return Ok(false);
+        }
+        if choice.forced
+            && self.get(actor).script_continuation.is_none()
+            && !self
+                .get(actor)
+                .locked_move
+                .as_ref()
+                .is_some_and(|lock| lock.charging)
+        {
             return Ok(false);
         }
         let spec = self
@@ -894,7 +917,10 @@ impl Battle {
             return Ok(false);
         }
         // A Pokémon that hid through a script comes back when it next acts.
-        if self.get(actor).semi_invulnerable && self.get(actor).locked_move.is_none() {
+        if self.get(actor).semi_invulnerable
+            && self.get(actor).locked_move.is_none()
+            && self.get(actor).carrying.is_none()
+        {
             self.get_mut(actor).semi_invulnerable = false;
         }
         self.active_power_multiplier = self
@@ -1020,10 +1046,10 @@ impl Battle {
             self.clear_consecutive(actor);
             return Ok(true);
         }
-        let mut target = ParticipantId {
+        let mut target = self.get(actor).carrying.unwrap_or(ParticipantId {
             side: choice.target.side,
             index: self.active[choice.target.side.index()][choice.target_position],
-        };
+        });
         // Forced turns pick a new opponent too when the script asked for one. This shares the
         // roll below, so a move that is random in both ways still rolls once.
         let random_continuation = forced_script
@@ -1062,12 +1088,13 @@ impl Battle {
         if self.get(target).hp == 0 && spec.target == Target::UserOrAlly {
             target = actor;
         }
-        let redirected =
-            if self.switching_target == Some(target) && spec.has_flag("intercepts_switch") {
-                target
-            } else {
-                self.redirect_target(actor, target, &spec)
-            };
+        let redirected = if self.get(actor).carrying == Some(target)
+            || (self.switching_target == Some(target) && spec.has_flag("intercepts_switch"))
+        {
+            target
+        } else {
+            self.redirect_target(actor, target, &spec)
+        };
         if redirected != target {
             target = redirected;
             events.push(BattleEvent::Message(format!(
@@ -1105,6 +1132,7 @@ impl Battle {
             }
             let mut hit = self.execute_script(actor, target, &spec, events, ScriptHook::Main)?;
             let charging = spec.has_flag("charge")
+                && !spec.has_flag("no_power_herb")
                 && self
                     .get(actor)
                     .script_continuation
@@ -1146,7 +1174,7 @@ impl Battle {
             .as_ref()
             .is_some_and(|lock| lock.charging);
         let mut first_charge = !second_turn && spec.effects.iter().any(|e| matches!(e, Effect::TwoTurn { skip_in_sun, .. } if !skip_in_sun || self.weather.as_ref().is_none_or(|w| w.kind != WeatherKind::Sun)));
-        if first_charge && self.try_skip_charge(actor, events) {
+        if first_charge && !spec.has_flag("no_power_herb") && self.try_skip_charge(actor, events) {
             first_charge = false;
             second_turn = true;
         }
@@ -1246,6 +1274,7 @@ impl Battle {
             }
             self.get_mut(actor).script_continuation = None;
         }
+        self.release_carry(actor, events);
         Ok(())
     }
     fn clear_consecutive(&mut self, actor: ParticipantId) {
@@ -2044,6 +2073,7 @@ impl Battle {
         let name = p.name.clone();
         events.push(BattleEvent::Damage { target, amount, hp });
         if was_alive && hp == 0 {
+            self.release_carry(target, events);
             self.release_links(target);
             self.restore_form(target, events);
             self.get_mut(target).conditions.clear();
@@ -2180,6 +2210,7 @@ impl Battle {
         while self.get(who).hp > 0 && self.is_active(who) && self.winner.is_none() {
             let Some(index) = self.turn_queue.iter().position(|entry| {
                 self.get(entry.actor).hp > 0 && self.is_active(entry.actor)
+                    && self.get(entry.actor).carried_by.is_none()
                     && entry.actor.side != who.side && self.adjacent(entry.actor,who)
                     && matches!(&entry.action, SelectedAction::Move(choice)
                         if self.catalog.get(&choice.move_id).is_some_and(|spec| spec.has_flag("intercepts_switch")))
