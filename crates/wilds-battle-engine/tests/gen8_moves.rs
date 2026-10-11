@@ -2721,3 +2721,24 @@ fn follow_me_draws_opposing_attacks_for_one_turn_but_not_snipe_shot() {
     turn(&mut b);
     assert!(b.participants(Side::Allies)[0].last_move_failed);
 }
+
+#[test]
+fn rage_powder_draws_attacks_except_from_grass_or_overcoat_attackers() {
+    for (kind, ability, redirects) in [
+        (PokemonType::Normal, None, true),
+        (PokemonType::Grass, None, false),
+        (PokemonType::Normal, Some("overcoat"), false),
+    ] {
+        let mut b = attention_game("rage-powder", "tackle", kind, ability);
+        attention_turn(&mut b, "rage-powder");
+        assert_eq!(b.participants(Side::Allies)[0].hp < 1000, redirects);
+        assert_eq!(b.participants(Side::Allies)[1].hp < 1000, !redirects);
+    }
+    let mut b = game(
+        mon("User", &["rage-powder"]),
+        vec![mon("Foe", &["splash"])],
+        0.5,
+    );
+    turn(&mut b);
+    assert!(b.participants(Side::Allies)[0].last_move_failed);
+}

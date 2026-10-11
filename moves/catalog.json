@@ -4214,6 +4214,17 @@
       "limitations": []
     },
     {
+      "id": 476,
+      "slug": "rage-powder",
+      "name": "Rage Powder",
+      "sheet_row": null,
+      "runtime_id": "rage-powder",
+      "file": "moves/rage-powder.lua",
+      "status": "implemented",
+      "limitations": [],
+      "parameter_source": "https://pokeapi.co/api/v2/move/476/"
+    },
+    {
       "id": 479,
       "slug": "smack-down",
       "name": "Smack Down",
@@ -7152,7 +7163,8 @@
       "reflect-type",
       "after-you",
       "quash",
-      "follow-me"
+      "follow-me",
+      "rage-powder"
     ]
   }
 }
