@@ -188,6 +188,10 @@ pub(crate) enum HpAmount {
 
 #[derive(Clone, Debug, PartialEq)]
 pub(crate) enum ScriptOperation {
+    CanApplyStatus {
+        who: ParticipantId,
+        status: AppliedStatus,
+    },
     Damage {
         power: u16,
         options: DamageOptions,
@@ -811,6 +815,7 @@ fn rule_of(value: &Value) -> mlua::Result<Rule> {
     };
     let allowed: &[&str] = match kind {
         RuleKind::StatEachTurn => &["kind", "stat", "stages", "by"],
+        RuleKind::StatusOnExpiry => &["kind", "status", "by"],
         RuleKind::DamageEachTurn => &["kind", "fraction", "except_types", "message"],
         RuleKind::HealEachTurn => &["kind", "fraction", "message"],
         RuleKind::DrainEachTurn => &["kind", "fraction", "to", "message"],
@@ -874,6 +879,10 @@ fn rule_of(value: &Value) -> mlua::Result<Rule> {
         }
     };
     Ok(match kind {
+        RuleKind::StatusOnExpiry => Rule::StatusOnExpiry {
+            status: status_of(&required("status")?, "expiry status")?,
+            source: pokemon_of(&required("by")?, "expiry source")?,
+        },
         RuleKind::StatEachTurn => Rule::StatEachTurn {
             stat: stat_of(&required("stat")?, "residual stat")?,
             stages: whole(&required("stages")?, "residual stages", -12.0, 12.0)? as i8,
@@ -1043,6 +1052,10 @@ fn parse_op(name: &str, args: &[Value]) -> mlua::Result<ScriptOperation> {
                 min_target_hp: options.whole("min_target_hp", 0.0, 65535.0)?.unwrap_or(0.0) as u16,
             }
         }
+        "can_apply_status" => ScriptOperation::CanApplyStatus {
+            who: who(0)?,
+            status: status_of(arg(1), "can_apply_status")?,
+        },
         "check_protection" => ScriptOperation::CheckProtection,
         "succeed" => ScriptOperation::Succeed,
         "redirect_target" => ScriptOperation::RedirectTarget { who: who(0)? },

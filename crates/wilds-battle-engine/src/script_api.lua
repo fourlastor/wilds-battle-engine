@@ -144,6 +144,7 @@ return function(api, fields, roster)
   function ctx:heal(who, amount) return op("heal", who, amount) end
 
   -- Conditions of a Pokémon
+  function ctx:can_apply_status(who, status) return op("can_apply_status", who, status) end
   function ctx:apply_status(who, status, options) return op("apply_status", who, status, options) end
   function ctx:cure_status(who, status) return op("cure_status", who, status) end
   function ctx:confuse(who, options) return op("confuse", who, options) end

@@ -1,9 +1,9 @@
 # Wilds battle engine
 
 `wilds-battle-engine` is the Rust battle simulation. Move definitions are loaded
-from Lua; `MoveCatalog::builtin()` embeds the 690 files under `moves/`,
+from Lua; `MoveCatalog::builtin()` embeds the 691 files under `moves/`,
 and `MoveCatalog::from_directory(path)` reads them from disk at runtime.
-Both catalogs also include the system move Struggle, for 691 moves in total.
+Both catalogs also include the system move Struggle, for 692 moves in total.
 The [move catalog](moves/README.md) includes 538 entries from the Saved moves sheet,
 plus support moves, additional local JSON moves and the original moves outside the sheet. Its manifest
 records the 34 excluded Z/Max Moves. Files use canonical slugs and source display
@@ -269,6 +269,7 @@ ctx:end_effect(ctx.target.team, "reflect")                  -- Brick Break
 
 | Rule | Options |
 |---|---|
+| `StatusOnExpiry` | `status`, `by`; inflicts status when a Pokémon condition times out, checking current immunities. Switching or explicit removal cancels it. |
 | `StatEachTurn` | `stat`, `stages`, `by`; changes a stage at turn end, respecting stat abilities and prevention. Ends when its source leaves or faints. |
 | `DamageEachTurn`, `HealEachTurn` | `fraction` of max HP, `message` (`{name}` is the Pokémon); `except_types` for damage |
 | `DrainEachTurn` | `fraction`, `to` (who gets the HP), `message` |
@@ -460,3 +461,5 @@ Lua exposes `pokemon.substitute_hp` and `ctx:substitute()`. Damage reports inclu
 reports whether it reached the owner. The C ABI and Move Lab state include
 `substitute_hp`, and `substitute` events carry the target, absorbed amount and
 remaining pool HP. Move Lab displays that pool separately from ordinary HP.
+
+`ctx:can_apply_status(who, status)` checks current status and immunities without mutation.

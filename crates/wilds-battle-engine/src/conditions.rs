@@ -563,9 +563,11 @@ impl Battle {
             };
             let conditions = self.conditions_mut(scope);
             let mut ended = Vec::new();
+            let mut expired_rules = Vec::new();
             conditions.retain_mut(|condition| match &mut condition.turns_left {
                 Some(turns) if *turns <= 1 => {
                     ended.extend(condition.end_message.take());
+                    expired_rules.extend(condition.rules.clone());
                     false
                 }
                 Some(turns) => {
@@ -574,6 +576,21 @@ impl Battle {
                 }
                 None => true,
             });
+            if let Scope::Pokemon(id) = scope {
+                for rule in expired_rules {
+                    if let Rule::StatusOnExpiry { status, source } = rule {
+                        self.inflict_status(
+                            source,
+                            id,
+                            status,
+                            false,
+                            PokemonType::None,
+                            false,
+                            events,
+                        );
+                    }
+                }
+            }
             for message in ended {
                 events.push(BattleEvent::Message(named(&message, &name)));
             }

@@ -1118,6 +1118,20 @@ impl Battle {
         }
     }
 
+    pub(crate) fn status_immune_to(
+        &self,
+        actor: ParticipantId,
+        who: ParticipantId,
+        status: Status,
+        move_type: crate::model::PokemonType,
+    ) -> bool {
+        type_chart::status_immune(status, move_type, &self.types_of(who))
+            || (who != actor && self.blocks_status(who, status))
+            || (status == Status::Asleep
+                && (self.has_ability(who, "insomnia") || self.has_ability(who, "vitalspirit")))
+            || self.has_ability(who, "comatose")
+    }
+
     /// Gives `who` a status the way `Effect::Status` does. Returns whether it took.
     #[allow(clippy::too_many_arguments)]
     pub(crate) fn inflict_status(
@@ -1133,8 +1147,7 @@ impl Battle {
         let new_status = status.battle_status();
         let current = self.get(who).status;
         let name = self.get(who).name.clone();
-        let immune = type_chart::status_immune(new_status, move_type, &self.types_of(who))
-            || (who != actor && self.blocks_status(who, new_status));
+        let immune = self.status_immune_to(actor, who, new_status, move_type);
         if self.get(who).hp > 0 && (current.is_none() || replace) && !immune {
             let turns = match status {
                 AppliedStatus::RestSleep => 2,
@@ -1537,6 +1550,11 @@ impl Battle {
                 }
                 Value::Integer(i64::from(points))
             }
+            ScriptOperation::CanApplyStatus { who, status } => Value::Boolean(
+                self.get(who).hp > 0
+                    && self.get(who).status.is_none()
+                    && !self.status_immune_to(actor, who, status.battle_status(), spec.move_type),
+            ),
             ScriptOperation::ApplyStatus {
                 who,
                 status,
@@ -1873,7 +1891,8 @@ impl Battle {
 fn reaction_may(operation: &ScriptOperation, hook: ScriptHook) -> bool {
     use ScriptOperation as Op;
     match operation {
-        Op::Message(_)
+        Op::CanApplyStatus { .. }
+        | Op::Message(_)
         | Op::ChangeSelfStat { .. }
         | Op::ChangeStat { .. }
         | Op::ResetStats { .. }

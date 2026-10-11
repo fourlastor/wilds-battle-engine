@@ -3918,3 +3918,52 @@ fn octolock_repeatedly_drops_both_defenses_respects_immunities_and_releases_with
         assert!(b.participants(Side::Foes)[0].conditions.is_empty());
     }
 }
+
+#[test]
+fn yawn_sleeps_at_the_end_of_the_next_turn_and_cannot_be_refreshed() {
+    use wilds_battle_engine::Status;
+    let mut b = game(mon("User", &["yawn"]), vec![mon("Foe", &["splash"])], 0.5);
+    turn(&mut b);
+    assert_eq!(b.participants(Side::Foes)[0].status, None);
+    turn(&mut b);
+    assert!(b.participants(Side::Allies)[0].last_move_failed);
+    assert_eq!(b.participants(Side::Foes)[0].status, Some(Status::Asleep));
+    for ability in ["insomnia", "vital-spirit", "comatose"] {
+        let mut foe = mon("Foe", &["splash"]);
+        foe.ability = Some(ability.into());
+        let mut b = game(mon("User", &["yawn"]), vec![foe], 0.5);
+        turn(&mut b);
+        assert!(b.participants(Side::Foes)[0].conditions.is_empty());
+        assert!(b.participants(Side::Allies)[0].last_move_failed);
+    }
+}
+
+#[test]
+fn yawn_is_cancelled_by_switching_and_rechecks_safeguard_at_expiry() {
+    for switch in [false, true] {
+        let mut b = game(
+            mon("User", &["yawn", "splash"]),
+            vec![
+                mon("Foe", &["splash", "safeguard"]),
+                mon("Bench", &["splash"]),
+            ],
+            0.5,
+        );
+        b.set_active([vec![0], vec![0]]).unwrap();
+        turn(&mut b);
+        turn_with(&mut b, |p| {
+            if p.actor.side == Side::Foes && switch {
+                p.choices
+                    .iter()
+                    .find(|c| matches!(c, Choice::Switch { .. }))
+                    .unwrap()
+                    .id()
+            } else {
+                choose_move(p, "splash", "safeguard")
+            }
+        });
+        assert_eq!(b.participants(Side::Foes)[0].status, None);
+        assert_eq!(b.participants(Side::Foes)[1].status, None);
+        assert!(b.participants(Side::Foes)[0].conditions.is_empty());
+    }
+}

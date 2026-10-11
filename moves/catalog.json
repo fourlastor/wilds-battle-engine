@@ -2622,6 +2622,17 @@
       "limitations": []
     },
     {
+      "id": 281,
+      "slug": "yawn",
+      "name": "Yawn",
+      "sheet_row": null,
+      "runtime_id": "yawn",
+      "file": "moves/yawn.lua",
+      "status": "implemented",
+      "limitations": [],
+      "parameter_source": "https://pokeapi.co/api/v2/move/281/"
+    },
+    {
       "id": 282,
       "slug": "knock-off",
       "name": "Knock Off",
@@ -7452,7 +7463,8 @@
       "helping-hand",
       "hold-hands",
       "happy-hour",
-      "octolock"
+      "octolock",
+      "yawn"
     ]
   }
 }

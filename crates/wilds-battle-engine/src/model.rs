@@ -153,6 +153,11 @@ pub enum Scope {
 /// A rule on a side applies to every Pokémon of that side, one on the field to everyone.
 #[derive(Clone, Debug, PartialEq)]
 pub enum Rule {
+    /// Inflicts a status when a timed Pokemon condition expires naturally.
+    StatusOnExpiry {
+        status: AppliedStatus,
+        source: ParticipantId,
+    },
     /// Changes a stat at turn end while the source stays on the field.
     StatEachTurn {
         stat: Stat,
