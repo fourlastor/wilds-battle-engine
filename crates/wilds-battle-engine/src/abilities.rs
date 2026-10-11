@@ -495,6 +495,16 @@ impl Battle {
         }
     }
 
+    pub(crate) fn finish_ability_faints(&mut self, events: &mut Vec<BattleEvent>) {
+        for _ in std::mem::take(&mut self.pending_faints) {
+            for who in self.actors() {
+                if self.has_ability(who, "soulheart") {
+                    self.change_stat(who, crate::model::Stat::SpAttack, 1, events);
+                }
+            }
+        }
+    }
+
     pub(crate) fn finish_ability_knockouts(&mut self, events: &mut Vec<BattleEvent>) {
         // All targets and recoil resolve before knockout rewards change attacking stats.
         for actor in std::mem::take(&mut self.pending_knockouts) {

@@ -2996,3 +2996,25 @@ fn beast_boost_uses_highest_raw_stat_with_attack_first_ties() {
         assert_eq!(ally(&battle).stage(Stat::Speed), 5);
     }
 }
+
+#[test]
+fn soul_heart_rewards_any_faint_including_allies_and_residual_damage() {
+    use wilds_battle_engine::Stat;
+    check_knockout_boost("soul-heart", Stat::SpAttack);
+    let mut user = mon("User", &["splash"]);
+    user.ability = Some("soul-heart".into());
+    let mut partner = mon("Partner", &["splash"]);
+    partner.hp = 1;
+    partner.status = Some(Status::Poisoned);
+    let mut target = mon("Target", &["splash"]);
+    target.hp = 1;
+    target.status = Some(Status::Poisoned);
+    let mut battle = Battle::with_rng(
+        Fixed(0.5),
+        [vec![user, partner], vec![target]],
+        MoveCatalog::builtin().unwrap(),
+    )
+    .unwrap();
+    turn(&mut battle, "splash", "splash");
+    assert_eq!(ally(&battle).stage(Stat::SpAttack), 2);
+}

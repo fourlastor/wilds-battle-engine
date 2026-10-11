@@ -30,6 +30,7 @@ pub struct Battle {
     pub(crate) active_power_multiplier: f32,
     pub(crate) active_gem: Option<(ParticipantId, PokemonType)>,
     pub(crate) pending_knockouts: Vec<ParticipantId>,
+    pub(crate) pending_faints: Vec<ParticipantId>,
     pub(crate) item_hits: Vec<(ParticipantId, ParticipantId, HitMeta)>,
     pub(crate) hit_reactions: Vec<HitReaction>,
     pub(crate) reaction_hit: Option<HitInfo>,
@@ -255,6 +256,7 @@ impl Battle {
             active_gem: None,
             item_hits: Vec::new(),
             pending_knockouts: Vec::new(),
+            pending_faints: Vec::new(),
             hit_reactions: Vec::new(),
             reaction_hit: None,
             ignored_ability: None,
@@ -2985,6 +2987,7 @@ impl Battle {
         let name = p.name.clone();
         events.push(BattleEvent::Damage { target, amount, hp });
         if was_alive && hp == 0 {
+            self.pending_faints.push(target);
             if self
                 .baton_pass
                 .as_ref()
@@ -3127,6 +3130,7 @@ impl Battle {
         }
     }
     pub(crate) fn resolve_outcome(&mut self, events: &mut Vec<BattleEvent>) {
+        self.finish_ability_faints(events);
         let alive: Vec<_> = self
             .sides
             .iter()
