@@ -5266,6 +5266,16 @@
       "limitations": []
     },
     {
+      "id": 782,
+      "slug": "behemoth-bash",
+      "name": "Behemoth Bash",
+      "sheet_row": null,
+      "runtime_id": "behemoth-bash",
+      "file": "moves/behemoth-bash.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
       "id": 784,
       "slug": "breaking-swipe",
       "name": "Breaking Swipe",
@@ -5921,7 +5931,8 @@
       "clangorous-soul",
       "body-press",
       "decorate",
-      "behemoth-blade"
+      "behemoth-blade",
+      "behemoth-bash"
     ]
   }
 }

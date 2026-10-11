@@ -11,10 +11,12 @@ Of the 572 entries in the [Saved moves sheet](https://docs.google.com/spreadshee
 excluded while Z-Moves and Dynamax are outside the project scope. They are listed
 under `excluded_moves` in the manifest and have no loadable Lua files here.
 Dynamax Cannon remains an ordinary attack; its Dynamax-only bonus is out of scope.
+Behemoth Blade and Behemoth Bash also implement their ordinary attacks without
+the Dynamax-only damage bonus.
 
-With seven additional support moves, 9 further moves from the local JSON data,
-and the nine original moves outside the sheet, the runtime catalog has 563 moves:
-562 files here and Struggle in `src/system_moves.lua` inside the crate.
+With seven additional support moves, 10 further moves from the local JSON data,
+and the nine original moves outside the sheet, the runtime catalog has 564 moves:
+563 files here and Struggle in `src/system_moves.lua` inside the crate.
 The 22 original filenames containing underscores have been renamed with hyphens.
 
 New move IDs equal their filename slugs. Original runtime IDs retain underscores

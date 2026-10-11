@@ -535,3 +535,45 @@ fn behemoth_blade_makes_contact() {
         Some(wilds_battle_engine::Status::Burned)
     );
 }
+
+#[test]
+fn behemoth_bash_has_ordinary_steel_damage_without_form_or_item_requirements() {
+    for kind in [PokemonType::Normal, PokemonType::Fairy, PokemonType::Fire] {
+        let bash = steel_damage("behemoth-bash", kind, "splash", 0.5);
+        let same_power = steel_damage("iron-tail", kind, "splash", 0.5);
+        assert_eq!(
+            bash.participants(Side::Foes)[0].hp,
+            same_power.participants(Side::Foes)[0].hp
+        );
+        assert_eq!(
+            bash.participants(Side::Allies)[0].move_pp["behemoth-bash"],
+            4
+        );
+    }
+    assert!(
+        steel_damage("behemoth-bash", PokemonType::Normal, "splash", 0.99).participants(Side::Foes)
+            [0]
+        .hp < 1000
+    );
+    assert_eq!(
+        steel_damage("behemoth-bash", PokemonType::Normal, "protect", 0.5).participants(Side::Foes)
+            [0]
+        .hp,
+        1000
+    );
+}
+
+#[test]
+fn behemoth_bash_makes_contact_and_hits_substitute() {
+    let battle = steel_damage("behemoth-bash", PokemonType::Normal, "beak-blast", 0.5);
+    assert_eq!(
+        battle.participants(Side::Allies)[0].status,
+        Some(wilds_battle_engine::Status::Burned)
+    );
+    let mut foe = mon("Foe", &["splash"]);
+    foe.substitute_hp = 1;
+    let mut battle = game(mon("User", &["behemoth-bash"]), vec![foe], 0.5);
+    turn(&mut battle);
+    assert_eq!(battle.participants(Side::Foes)[0].hp, 1000);
+    assert_eq!(battle.participants(Side::Foes)[0].substitute_hp, 0);
+}
