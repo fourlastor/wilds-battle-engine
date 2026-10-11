@@ -396,14 +396,20 @@ impl Battle {
         _target: ParticipantId,
         category: crate::moves::Category,
     ) -> f32 {
-        if self.has_ability(actor, "compoundeyes") {
-            return 1.3;
-        }
-        if category == crate::moves::Category::Physical && self.has_ability(actor, "hustle") {
+        let mut factor = if self.has_ability(actor, "compoundeyes") {
+            1.3
+        } else if category == crate::moves::Category::Physical && self.has_ability(actor, "hustle")
+        {
             0.8
         } else {
             1.0
+        };
+        for ally in self.actors() {
+            if ally.side == actor.side && self.has_ability(ally, "victorystar") {
+                factor *= 1.1;
+            }
         }
+        factor
     }
 
     pub(crate) fn status_power_factor(

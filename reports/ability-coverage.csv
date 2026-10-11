@@ -160,7 +160,7 @@ id,ability,status,verification
 159,sand-force,MISSING,No native battle behavior
 160,iron-barbs,MISSING,No native battle behavior
 161,zen-mode,MISSING,No native battle behavior
-162,victory-star,MISSING,No native battle behavior
+162,victory-star,IMPLEMENTED,ability_rules::victory_star_boosts_self_and_allies_and_stacks
 163,turboblaze,IMPLEMENTED,Source inventory; existing tests only
 164,teravolt,IMPLEMENTED,Source inventory; existing tests only
 165,aroma-veil,IMPLEMENTED,Source inventory; existing tests only

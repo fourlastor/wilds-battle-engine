@@ -943,3 +943,26 @@ fn compound_eyes_boosts_damage_and_status_accuracy_only_when_active() {
         }
     }
 }
+
+#[test]
+fn victory_star_boosts_self_and_allies_and_stacks() {
+    for (user_star, ally_star, expected) in [
+        (false, false, false),
+        (true, false, false),
+        (false, true, false),
+        (true, true, true),
+    ] {
+        let mut user = mon("User", &["focus-blast"]);
+        user.ability = user_star.then(|| "victory-star".into());
+        let mut partner = mon("Partner", &["splash"]);
+        partner.ability = ally_star.then(|| "victory-star".into());
+        let mut battle = Battle::with_rng(
+            Fixed(0.8),
+            [vec![user, partner], vec![mon("Target", &["splash"])]],
+            MoveCatalog::builtin().unwrap(),
+        )
+        .unwrap();
+        turn(&mut battle, "focus-blast", "splash");
+        assert_eq!(foe(&battle).hp < 1000, expected);
+    }
+}
