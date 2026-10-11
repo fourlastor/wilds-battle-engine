@@ -562,3 +562,31 @@ fn overcoat_prevents_sand_and_hail_damage_only_while_active() {
         }
     }
 }
+
+#[test]
+fn dry_skin_absorbs_status_water_and_responds_to_sun_rain_and_fire() {
+    for (move_id, expected) in [("soak", 750), ("rain-dance", 625), ("sunny_day", 375)] {
+        let mut target = mon("Target", &["splash"]);
+        target.hp = 500;
+        target.ability = Some("dry-skin".into());
+        let mut battle = game(mon("User", &[move_id]), target, 0.5);
+        turn(&mut battle, move_id, "splash");
+        assert_eq!(foe(&battle).hp, expected, "{move_id}");
+        assert_eq!(foe(&battle).types, vec![PokemonType::Normal]);
+    }
+    let base = ability_damage("ember", "", "", false);
+    assert!(ability_damage("ember", "", "dry-skin", false) > base);
+    assert_eq!(
+        ability_damage("ember", "mold-breaker", "dry-skin", false),
+        base
+    );
+    for ability in ["cloud-nine", "air-lock"] {
+        let mut user = mon("User", &["sunny_day"]);
+        user.ability = Some(ability.into());
+        let mut target = mon("Target", &["splash"]);
+        target.ability = Some("dry-skin".into());
+        let mut battle = game(user, target, 0.5);
+        turn(&mut battle, "sunny_day", "splash");
+        assert_eq!(foe(&battle).hp, 1000);
+    }
+}

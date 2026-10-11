@@ -750,20 +750,28 @@ impl Battle {
         move_id: &str,
         kind: PokemonType,
     ) -> f32 {
-        self.rules(id).fold(1.0, |factor, rule| match rule {
-            Rule::IncomingBasePower {
-                moves,
-                move_type,
-                factor: by,
-                grounded_only,
-            } if (moves.is_empty() || moves.iter().any(|name| name == move_id))
-                && move_type.is_none_or(|t| t == kind)
-                && (!grounded_only || (self.on_ground(id) && self.get(id).hidden().is_none())) =>
-            {
-                factor * by
-            }
-            _ => factor,
-        })
+        self.rules(id).fold(
+            if kind == PokemonType::Fire && self.has_ability(id, "dryskin") {
+                1.25
+            } else {
+                1.0
+            },
+            |factor, rule| match rule {
+                Rule::IncomingBasePower {
+                    moves,
+                    move_type,
+                    factor: by,
+                    grounded_only,
+                } if (moves.is_empty() || moves.iter().any(|name| name == move_id))
+                    && move_type.is_none_or(|t| t == kind)
+                    && (!grounded_only
+                        || (self.on_ground(id) && self.get(id).hidden().is_none())) =>
+                {
+                    factor * by
+                }
+                _ => factor,
+            },
+        )
     }
 
     pub(crate) fn base_power_factor(&self, id: ParticipantId, kind: PokemonType) -> f32 {

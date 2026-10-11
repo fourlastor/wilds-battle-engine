@@ -85,7 +85,7 @@ id,ability,status,verification
 84,unburden,MISSING,No native battle behavior
 85,heatproof,IMPLEMENTED,ability_rules::heatproof_halves_fire_damage_and_is_bypassable
 86,simple,IMPLEMENTED,Source inventory; existing tests only
-87,dry-skin,PARTIAL,Source inventory; existing tests only
+87,dry-skin,IMPLEMENTED,ability_rules::dry_skin_absorbs_status_water_and_responds_to_sun_rain_and_fire
 88,download,MISSING,No native battle behavior
 89,iron-fist,MISSING,No native battle behavior
 90,poison-heal,IMPLEMENTED,Source inventory; existing tests only

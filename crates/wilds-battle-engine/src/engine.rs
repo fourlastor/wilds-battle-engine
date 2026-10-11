@@ -2940,6 +2940,19 @@ impl Battle {
         if self.effective_weather().is_none() {
             return;
         }
+        for &id in order {
+            if self.has_ability(id, "dryskin") {
+                match weather.kind {
+                    WeatherKind::Rain => {
+                        self.heal(id, (self.get(id).max_hp / 8).max(1), events);
+                    }
+                    WeatherKind::Sun => {
+                        self.damage(id, (self.get(id).max_hp / 8).max(1), events);
+                    }
+                    _ => {}
+                }
+            }
+        }
         let (spared, name): (&[PokemonType], &str) = match weather.kind {
             WeatherKind::Sandstorm => (
                 &[PokemonType::Rock, PokemonType::Ground, PokemonType::Steel],
