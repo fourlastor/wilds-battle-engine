@@ -496,6 +496,9 @@ impl Battle {
         if attack.move_type == Water && self.has_ability(actor, "waterbubble") {
             factor *= 2.0;
         }
+        if attack.sound && self.has_ability(actor, "punkrock") {
+            factor *= 1.3;
+        }
         if attack.sound && self.has_ability(target, "punkrock") {
             factor *= 0.5;
         }

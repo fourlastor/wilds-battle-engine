@@ -310,3 +310,20 @@ fn water_bubble_boosts_water_and_resists_fire() {
         ability_damage("tackle", "", "", false)
     );
 }
+
+#[test]
+fn punk_rock_boosts_only_sound_attacks_and_reduces_incoming_sound() {
+    let base = ability_damage("hyper-voice", "", "", false);
+    let boosted = ability_damage("hyper-voice", "punk-rock", "", false);
+    assert!((f32::from(boosted) - f32::from(base) * 1.3).abs() < 2.0);
+    let reduced = ability_damage("hyper-voice", "", "punk-rock", false);
+    assert!((i32::from(base) - 2 * i32::from(reduced)).abs() <= 1);
+    assert_eq!(
+        base,
+        ability_damage("hyper-voice", "mold-breaker", "punk-rock", false)
+    );
+    assert_eq!(
+        ability_damage("tackle", "punk-rock", "", false),
+        ability_damage("tackle", "", "", false)
+    );
+}

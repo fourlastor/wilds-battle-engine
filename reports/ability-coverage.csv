@@ -242,7 +242,7 @@ id,ability,status,verification
 241,gulp-missile,MISSING,No native battle behavior
 242,stalwart,MISSING,No native battle behavior
 243,steam-engine,MISSING,No native battle behavior
-244,punk-rock,PARTIAL,Source inventory; existing tests only
+244,punk-rock,IMPLEMENTED,ability_rules::punk_rock_boosts_only_sound_attacks_and_reduces_incoming_sound
 245,sand-spit,MISSING,No native battle behavior
 246,ice-scales,IMPLEMENTED,Source inventory; existing tests only
 247,ripen,IMPLEMENTED,Source inventory; existing tests only
