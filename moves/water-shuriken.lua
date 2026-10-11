@@ -5,7 +5,9 @@ local move = {script = function(ctx)
 
   local connected = false
   for _, pokemon in ipairs(ctx.targets) do
-    local hit = ctx:multi_hit(15, 2, 5, {target = pokemon})
+    local ash = ctx.user.form == "greninja-ash" and not ctx.user.transformed
+      and ctx.user.ability ~= nil and ctx.user.ability_id == "battlebond"
+    local hit = ctx:multi_hit(ash and 20 or 15, ash and 3 or 2, ash and 3 or 5, {target = pokemon})
     if hit.hit then
       connected = true
     end

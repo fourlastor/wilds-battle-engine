@@ -96,7 +96,7 @@ impl Battle {
         }
     }
 
-    fn persistent_ability_form(
+    pub(crate) fn persistent_ability_form(
         &mut self,
         who: ParticipantId,
         form: &str,
@@ -213,6 +213,24 @@ impl Battle {
                     events,
                 );
             }
+        }
+    }
+
+    pub(crate) fn battle_bond_knockout(
+        &mut self,
+        who: ParticipantId,
+        events: &mut Vec<BattleEvent>,
+    ) {
+        if self.has_ability(who, "battlebond")
+            && self.species_is(who, 658, "greninja")
+            && !self.get(who).transformed()
+            && self.get(who).form.as_deref() != Some("greninja-ash")
+            && self
+                .participants(who.side.opposite())
+                .iter()
+                .any(|p| p.hp > 0)
+        {
+            self.persistent_ability_form(who, "greninja-ash", events);
         }
     }
 

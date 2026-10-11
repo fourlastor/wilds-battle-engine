@@ -4444,3 +4444,55 @@ fn delta_stream_removes_only_flying_weaknesses_and_preserves_hazard_damage() {
     turn(&mut battle, "switch:1", "splash");
     assert_eq!(battle.participants(Side::Allies)[1].hp, 750);
 }
+
+#[test]
+fn battle_bond_changes_to_ash_after_a_knockout_and_strengthens_water_shuriken() {
+    let mut user = mon("Greninja", &["water-shuriken", "splash"]);
+    user.species_id = 658;
+    user.form = Some("greninja-battle-bond".into());
+    user.ability = Some("battle-bond".into());
+    add_form(&mut user, "greninja-ash", PokemonType::Water);
+    user.forms.get_mut("greninja-ash").unwrap().speed = 234;
+    let mut weak = mon("Weak", &["splash"]);
+    weak.hp = 1;
+    for reserve in [false, true] {
+        let foes = if reserve {
+            vec![weak.clone(), mon("Reserve", &["splash"])]
+        } else {
+            vec![weak.clone()]
+        };
+        let mut battle = Battle::with_rng(
+            Fixed(0.5),
+            [vec![user.clone()], foes],
+            MoveCatalog::builtin().unwrap(),
+        )
+        .unwrap();
+        battle.set_active([vec![0], vec![0]]).unwrap();
+        turn(&mut battle, "water-shuriken", "splash");
+        assert_eq!(
+            ally(&battle).form.as_deref(),
+            Some(if reserve {
+                "greninja-ash"
+            } else {
+                "greninja-battle-bond"
+            })
+        );
+        if reserve {
+            assert_eq!(ally(&battle).speed, 234);
+        }
+    }
+    user.form = Some("greninja-ash".into());
+    let mut battle = game(user, mon("Target", &["splash"]), 0.5);
+    let events = turn(&mut battle, "water-shuriken", "splash");
+    assert!(
+        events
+            .iter()
+            .any(|e| matches!(e, BattleEvent::Message(m) if m == "Hit 3 times!"))
+    );
+    let ash_damage = 1000 - foe(&battle).hp;
+    let mut ordinary = mon("Ordinary", &["water-shuriken"]);
+    ordinary.ability = Some("skill-link".into());
+    let mut battle = game(ordinary, mon("Target", &["splash"]), 0.5);
+    turn(&mut battle, "water-shuriken", "splash");
+    assert!(ash_damage * 5 > (1000 - foe(&battle).hp) * 3);
+}
