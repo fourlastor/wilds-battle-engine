@@ -410,7 +410,15 @@ impl Battle {
 
     /// The type a move of `move_type` has when `id` uses it.
     pub(crate) fn converted_type(&self, id: ParticipantId, move_type: PokemonType) -> PokemonType {
-        let move_type = if self.has_ability(id, "normalize")
+        let move_type = if self.has_ability(id, "liquidvoice")
+            && self
+                .current_move
+                .as_deref()
+                .and_then(|id| self.catalog.get(id))
+                .is_some_and(|spec| spec.has_flag("sound"))
+        {
+            PokemonType::Water
+        } else if self.has_ability(id, "normalize")
             && Self::normalizable_move(self.current_move.as_deref().unwrap_or(""))
         {
             PokemonType::Normal

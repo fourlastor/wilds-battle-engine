@@ -2555,3 +2555,34 @@ fn pixilate_converts_normal_moves_to_fairy_and_boosts_power() {
 fn galvanize_converts_normal_moves_to_electric_and_boosts_power() {
     check_normal_conversion("galvanize", PokemonType::Electric);
 }
+
+#[test]
+fn liquid_voice_converts_sound_moves_without_an_extra_power_boost() {
+    for (move_id, expected_type, damaging) in [
+        ("hyper-voice", PokemonType::Water, true),
+        ("growl", PokemonType::Water, false),
+        ("swift", PokemonType::Normal, true),
+    ] {
+        let mut user = mon("User", &[move_id]);
+        user.ability = Some("liquid-voice".into());
+        let mut target = mon("Target", &["splash"]);
+        target.ability = Some("water-absorb".into());
+        let mut battle = game(user, target, 0.5);
+        turn(&mut battle, move_id, "splash");
+        assert_eq!(ally(&battle).last_move_type, Some(expected_type));
+        assert_eq!(
+            foe(&battle).hp < 1000,
+            damaging && expected_type != PokemonType::Water
+        );
+        assert_eq!(foe(&battle).stage(wilds_battle_engine::Stat::Attack), 0);
+    }
+    let run = |ability: &str| {
+        let mut user = mon("User", &["hyper-voice"]);
+        user.types = vec![PokemonType::None];
+        user.ability = Some(ability.into());
+        let mut battle = game(user, mon("Target", &["splash"]), 0.5);
+        turn(&mut battle, "hyper-voice", "splash");
+        foe(&battle).hp
+    };
+    assert_eq!(run("liquid-voice"), run(""));
+}
