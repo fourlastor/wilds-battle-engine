@@ -926,6 +926,7 @@ impl Battle {
         self.substitute_hits.clear();
         let result = self.op_damage(&mut frame, power, &options, events);
         self.finish_item_hits(events);
+        self.finish_ability_hits(events);
         self.finish_ability_knockouts(events);
         self.substitute_hits.clear();
         self.active_power_multiplier = old_power;

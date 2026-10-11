@@ -27,6 +27,30 @@ fn cannot_suppress(ability: &str) -> bool {
 }
 
 impl Battle {
+    pub(crate) fn finish_ability_hits(&mut self, events: &mut Vec<BattleEvent>) {
+        let hits = std::mem::take(&mut self.ability_hits);
+        let mut seen = std::collections::BTreeSet::new();
+        for (target, hit) in hits.into_iter().rev() {
+            if !seen.insert(target) {
+                continue;
+            }
+            if hit.attacker != target
+                && hit.category != crate::moves::Category::Status
+                && hit.move_type != crate::model::PokemonType::None
+                && self.has_ability(target, "colorchange")
+                && !self.types_of(target).contains(&hit.move_type)
+            {
+                self.get_mut(target).types = vec![hit.move_type];
+                self.get_mut(target).added_type = None;
+                events.push(BattleEvent::Message(format!(
+                    "{} changed to the {:?} type!",
+                    self.get(target).name,
+                    hit.move_type
+                )));
+            }
+        }
+    }
+
     pub(crate) fn imposter_on_entry(
         &mut self,
         who: ParticipantId,

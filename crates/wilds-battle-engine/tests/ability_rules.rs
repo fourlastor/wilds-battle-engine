@@ -3600,3 +3600,21 @@ fn imposter_transforms_on_entry_into_the_opposite_slot_and_respects_substitute()
         }
     }
 }
+
+#[test]
+fn color_change_waits_until_all_hits_finish_and_substitutes_block_it() {
+    let run = |ability: &str, substitute| {
+        let user = mon("User", &["double_kick"]);
+        let mut target = mon("Target", &["splash"]);
+        target.ability = Some(ability.into());
+        target.substitute_hp = substitute;
+        let mut battle = game(user, target, 0.5);
+        turn(&mut battle, "double_kick", "splash");
+        (foe(&battle).hp, foe(&battle).types.clone())
+    };
+    let base = run("", 0);
+    let changed = run("color-change", 0);
+    assert_eq!(base.0, changed.0);
+    assert_eq!(changed.1, [PokemonType::Fighting]);
+    assert_eq!(run("color-change", 999).1, [PokemonType::Normal]);
+}

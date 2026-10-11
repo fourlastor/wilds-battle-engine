@@ -14,7 +14,7 @@ id,ability,status,verification
 13,cloud-nine,IMPLEMENTED,ability_rules::cloud_nine_suppresses_weather_damage_modifiers_and_lua_weather_without_clearing_it
 14,compound-eyes,IMPLEMENTED,ability_rules::compound_eyes_boosts_damage_and_status_accuracy_only_when_active
 15,insomnia,IMPLEMENTED,Source inventory; existing tests only
-16,color-change,MISSING,No native battle behavior
+16,color-change,IMPLEMENTED,ability_rules::color_change_waits_until_all_hits_finish_and_substitutes_block_it
 17,immunity,IMPLEMENTED,Source inventory; existing tests only
 18,flash-fire,IMPLEMENTED,ability_rules::flash_fire_activates_from_will_o_wisp_and_boosts_fire_damage
 19,shield-dust,IMPLEMENTED,Source inventory; existing tests only

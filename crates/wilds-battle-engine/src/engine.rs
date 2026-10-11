@@ -32,6 +32,7 @@ pub struct Battle {
     pub(crate) pending_knockouts: Vec<ParticipantId>,
     pub(crate) pending_faints: Vec<(ParticipantId, crate::model::AbilityState)>,
     pub(crate) item_hits: Vec<(ParticipantId, ParticipantId, HitMeta)>,
+    pub(crate) ability_hits: Vec<(ParticipantId, HitInfo)>,
     pub(crate) hit_reactions: Vec<HitReaction>,
     pub(crate) reaction_hit: Option<HitInfo>,
     pub(crate) ignored_ability: Option<ParticipantId>,
@@ -258,6 +259,7 @@ impl Battle {
             active_power_multiplier: 1.0,
             active_gem: None,
             item_hits: Vec::new(),
+            ability_hits: Vec::new(),
             pending_knockouts: Vec::new(),
             pending_faints: Vec::new(),
             hit_reactions: Vec::new(),
@@ -1185,6 +1187,7 @@ impl Battle {
         self.expire_action_conditions(actor, Some(&choice.move_id));
         let result = self.perform_move(actor, choice, false, events);
         self.finish_item_hits(events);
+        self.finish_ability_hits(events);
         self.finish_ability_knockouts(events);
         self.substitute_hits.clear();
         self.ignored_ability = None;
@@ -2974,6 +2977,7 @@ impl Battle {
             contact: meta.contact,
         };
         if lost > 0 {
+            self.ability_hits.push((target, hit.clone()));
             let pokemon = self.get_mut(target);
             pokemon.damage_taken = pokemon.damage_taken.saturating_add(lost);
             pokemon.last_hit = Some(hit.clone());
