@@ -5487,6 +5487,17 @@
       "limitations": []
     },
     {
+      "id": 668,
+      "slug": "strength-sap",
+      "name": "Strength Sap",
+      "sheet_row": null,
+      "runtime_id": "strength-sap",
+      "file": "moves/strength-sap.lua",
+      "status": "implemented",
+      "limitations": [],
+      "parameter_source": "https://pokeapi.co/api/v2/move/668/"
+    },
+    {
       "id": 669,
       "slug": "solar-blade",
       "name": "Solar Blade",
@@ -7032,7 +7043,8 @@
       "recycle",
       "power-split",
       "guard-split",
-      "speed-swap"
+      "speed-swap",
+      "strength-sap"
     ]
   }
 }

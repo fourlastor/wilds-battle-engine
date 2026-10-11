@@ -2318,3 +2318,36 @@ fn speed_swap_exchanges_raw_speed_through_substitute_and_keeps_stages() {
         assert_eq!(theirs.stage(Stat::Speed), -2);
     }
 }
+
+#[test]
+fn strength_sap_heals_from_attack_with_stages_but_without_huge_power() {
+    use wilds_battle_engine::Stat;
+    for (stage, sub, response, healed, after) in [
+        (2, 0, "splash", 300, 1),
+        (-2, 0, "splash", 75, -3),
+        (-6, 0, "splash", 0, -6),
+        (0, 50, "splash", 0, 0),
+        (0, 0, "protect", 0, 0),
+    ] {
+        let mut user = mon("User", &["strength-sap"]);
+        user.hp = 100;
+        let mut foe = mon("Foe", &[response]);
+        foe.attack = 150;
+        foe.change_stage(Stat::Attack, stage);
+        foe.substitute_hp = sub;
+        foe.ability = Some("huge-power".into());
+        let mut b = game(user, vec![foe], 0.5);
+        turn(&mut b);
+        assert_eq!(b.participants(Side::Allies)[0].hp, 100 + healed);
+        assert_eq!(b.participants(Side::Foes)[0].stage(Stat::Attack), after);
+    }
+    let mut user = mon("User", &["strength-sap"]);
+    user.hp = 100;
+    let mut foe = mon("Foe", &["splash"]);
+    foe.ability = Some("clear-body".into());
+    foe.attack = 123;
+    let mut b = game(user, vec![foe], 0.5);
+    turn(&mut b);
+    assert_eq!(b.participants(Side::Allies)[0].hp, 223);
+    assert_eq!(b.participants(Side::Foes)[0].stage(Stat::Attack), 0);
+}
