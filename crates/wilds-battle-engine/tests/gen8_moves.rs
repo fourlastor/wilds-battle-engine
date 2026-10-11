@@ -1189,3 +1189,32 @@ fn power_swap_swaps_stages_through_substitute_without_ability_scaling() {
         }
     }
 }
+
+#[test]
+fn guard_swap_swaps_stages_through_substitute_without_ability_scaling() {
+    use wilds_battle_engine::Stat;
+    let stats = [Stat::Defense, Stat::SpDefense];
+    for (response, success) in [("splash", true), ("protect", false)] {
+        let mut user = mon("User", &["guard-swap"]);
+        user.ability = Some("contrary".into());
+        let mut foe = mon("Foe", &[response]);
+        foe.substitute_hp = 50;
+        foe.ability = Some("simple".into());
+        for stat in stats {
+            user.stages.insert(stat, 3);
+            foe.stages.insert(stat, -2);
+        }
+        let mut b = game(user, vec![foe], 0.5);
+        turn(&mut b);
+        for stat in stats {
+            assert_eq!(
+                b.participants(Side::Allies)[0].stage(stat),
+                if success { -2 } else { 3 }
+            );
+            assert_eq!(
+                b.participants(Side::Foes)[0].stage(stat),
+                if success { 3 } else { -2 }
+            );
+        }
+    }
+}

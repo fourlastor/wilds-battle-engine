@@ -3118,6 +3118,17 @@
       "parameter_source": "https://pokeapi.co/api/v2/move/384/"
     },
     {
+      "id": 385,
+      "slug": "guard-swap",
+      "name": "Guard Swap",
+      "sheet_row": null,
+      "runtime_id": "guard-swap",
+      "file": "moves/guard-swap.lua",
+      "status": "implemented",
+      "limitations": [],
+      "parameter_source": "https://pokeapi.co/api/v2/move/385/"
+    },
+    {
       "id": 386,
       "slug": "punishment",
       "name": "Punishment",
@@ -6588,7 +6599,8 @@
       "hail",
       "flatter",
       "shell-smash",
-      "power-swap"
+      "power-swap",
+      "guard-swap"
     ]
   }
 }
