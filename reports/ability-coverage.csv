@@ -98,7 +98,7 @@ id,ability,status,verification
 97,sniper,IMPLEMENTED,ability_rules::sniper_only_boosts_critical_damage
 98,magic-guard,IMPLEMENTED,ability_rules::magic_guard_blocks_indirect_damage_but_keeps_hp_costs_and_struggle_recoil
 99,no-guard,IMPLEMENTED,ability_rules::no_guard_hits_from_either_side_and_reaches_hidden_targets
-100,stall,MISSING,No native battle behavior
+100,stall,IMPLEMENTED,ability_rules::stall_moves_last_within_its_priority_bracket_even_in_trick_room
 101,technician,IMPLEMENTED,ability_rules::technician_boosts_matching_moves_only
 102,leaf-guard,IMPLEMENTED,Source inventory; existing tests only
 103,klutz,IMPLEMENTED,Source inventory; existing tests only

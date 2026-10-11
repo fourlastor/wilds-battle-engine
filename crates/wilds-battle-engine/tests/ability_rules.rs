@@ -3323,3 +3323,26 @@ fn truant_skips_alternate_actions_without_spending_pp_and_shares_recharge() {
     turn(&mut battle, "tackle", "splash");
     assert!(foe(&battle).hp < before);
 }
+
+#[test]
+fn stall_moves_last_within_its_priority_bracket_even_in_trick_room() {
+    for (move_id, trick_room, first) in [
+        ("tackle", false, false),
+        ("tackle", true, false),
+        ("quick-attack", false, true),
+    ] {
+        let mut user = mon("User", &[move_id, "trick-room"]);
+        user.speed = 200;
+        user.ability = Some("stall".into());
+        let mut target = mon("Target", &["tackle", "splash"]);
+        target.speed = 100;
+        let mut battle = game(user, target, 0.5);
+        if trick_room {
+            turn(&mut battle, "trick-room", "splash");
+        }
+        assert_eq!(
+            first_move_is_user(&turn(&mut battle, move_id, "tackle")),
+            first
+        );
+    }
+}

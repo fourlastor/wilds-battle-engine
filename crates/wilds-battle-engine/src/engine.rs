@@ -159,6 +159,7 @@ struct QueuedAction {
     position: usize,
     action: SelectedAction,
     priority: i8,
+    fractional_priority: i8,
     speed: i32,
     tie: u64,
     custap: bool,
@@ -169,6 +170,7 @@ impl QueuedAction {
     fn order(a: &Self, b: &Self) -> std::cmp::Ordering {
         b.priority
             .cmp(&a.priority)
+            .then(b.fractional_priority.cmp(&a.fractional_priority))
             .then(b.speed.cmp(&a.speed))
             .then(b.tie.cmp(&a.tie))
     }
@@ -718,11 +720,21 @@ impl Battle {
                 } else {
                     self.action_speed(actor)
                 };
+                let fractional_priority = if custap {
+                    1
+                } else if !matches!(choice, SelectedAction::Switch(_))
+                    && self.has_ability(actor, "stall")
+                {
+                    -1
+                } else {
+                    0
+                };
                 QueuedAction {
                     actor,
                     position: self.position(actor).expect("active choice"),
                     action: choice,
                     priority,
+                    fractional_priority,
                     speed,
                     tie: self.rng.next_u64(),
                     custap,
@@ -864,6 +876,15 @@ impl Battle {
                     self.catalog.get(&choice.move_id).expect("queued move"),
                 );
             }
+            entry.fractional_priority = if entry.custap {
+                1
+            } else if !matches!(entry.action, SelectedAction::Switch(_))
+                && self.has_ability(entry.actor, "stall")
+            {
+                -1
+            } else {
+                0
+            };
             if !entry.custap {
                 entry.speed = self.action_speed(entry.actor);
             }
@@ -919,6 +940,7 @@ impl Battle {
                 target_position,
             }),
             priority: spec.priority,
+            fractional_priority: 0,
             speed: self.action_speed(actor),
             tie: 0,
             custap: false,
