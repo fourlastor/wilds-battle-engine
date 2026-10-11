@@ -1717,3 +1717,38 @@ fn prankster_prioritizes_status_and_dark_immunity_includes_called_attacks() {
         assert_eq!(foe(&battle).hp == 1000, ability == "prankster");
     }
 }
+
+fn first_move_is_user(events: &[BattleEvent]) -> bool {
+    events
+        .iter()
+        .find_map(|e| match e {
+            BattleEvent::Message(m) if m.contains(" used ") => Some(m.starts_with("User")),
+            _ => None,
+        })
+        .unwrap()
+}
+
+#[test]
+fn gale_wings_only_prioritizes_flying_moves_at_full_health() {
+    for (move_id, hp, suppressed, expected) in [
+        ("aerial-ace", 1000, false, true),
+        ("tailwind", 1000, false, true),
+        ("aerial-ace", 999, false, false),
+        ("aerial-ace", 1000, true, false),
+        ("tackle", 1000, false, false),
+    ] {
+        let mut user = mon("User", &[move_id]);
+        user.ability = Some("gale-wings".into());
+        user.ability_suppressed = suppressed;
+        user.hp = hp;
+        user.speed = 10;
+        let mut target = mon("Target", &["tackle"]);
+        target.speed = 100;
+        let mut battle = game(user, target, 0.5);
+        assert_eq!(
+            first_move_is_user(&turn(&mut battle, move_id, "tackle")),
+            expected,
+            "{move_id}/{hp}/{suppressed}"
+        );
+    }
+}

@@ -636,6 +636,11 @@ impl Battle {
             .saturating_add(i8::from(
                 spec.category == Category::Status && self.has_ability(id, "prankster"),
             ))
+            .saturating_add(i8::from(
+                spec.move_type == PokemonType::Flying
+                    && self.get(id).hp == self.get(id).max_hp
+                    && self.has_ability(id, "galewings"),
+            ))
     }
 
     pub(crate) fn move_priority(&self, id: ParticipantId, base: i8) -> i8 {

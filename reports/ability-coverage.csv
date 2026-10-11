@@ -175,7 +175,7 @@ id,ability,status,verification
 174,refrigerate,MISSING,No native battle behavior
 175,sweet-veil,IMPLEMENTED,Source inventory; existing tests only
 176,stance-change,MISSING,No native battle behavior
-177,gale-wings,MISSING,No native battle behavior
+177,gale-wings,IMPLEMENTED,ability_rules::gale_wings_only_prioritizes_flying_moves_at_full_health
 178,mega-launcher,IMPLEMENTED,ability_rules::mega_launcher_boosts_pulses_and_heal_pulse
 179,grass-pelt,MISSING,No native battle behavior
 180,symbiosis,MISSING,No native battle behavior
