@@ -210,6 +210,10 @@ impl Battle {
     }
 
     pub(crate) fn ability_on_entry(&mut self, who: ParticipantId, events: &mut Vec<BattleEvent>) {
+        // Sword/Shield activates this on every entry, unlike the once-per-battle Gen 9 rule.
+        if self.has_ability(who, "intrepidsword") {
+            self.change_stat(who, crate::model::Stat::Attack, 1, events);
+        }
         if self.has_ability(who, "snowwarning") {
             self.start_weather(crate::model::WeatherKind::Hail, 5, events);
         }

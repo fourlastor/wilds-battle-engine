@@ -1469,3 +1469,44 @@ fn sand_force_boosts_only_rock_ground_and_steel_in_sand() {
         ability_damage("iron-head", "", "", false)
     );
 }
+
+fn check_repeated_entry_boost(ability: &str, stat: wilds_battle_engine::Stat) {
+    let mut lead = mon("Lead", &["splash"]);
+    lead.ability = Some(ability.into());
+    let mut battle = Battle::with_rng(
+        Fixed(0.5),
+        [
+            vec![lead, mon("Reserve", &["splash"])],
+            vec![mon("Target", &["splash"])],
+        ],
+        MoveCatalog::builtin().unwrap(),
+    )
+    .unwrap();
+    battle.set_active([vec![0], vec![0]]).unwrap();
+    battle.advance().unwrap();
+    assert_eq!(ally(&battle).stage(stat), 1);
+    turn(&mut battle, "switch:1", "splash");
+    // Choose the switch explicitly because the helper defaults other active slots to Splash.
+    let result = battle.advance().unwrap();
+    let AdvanceStatus::Awaiting(prompt) = result.status else {
+        panic!("no switch prompt");
+    };
+    let choice = prompt
+        .choices
+        .iter()
+        .find(|c| matches!(c, Choice::Switch { to, .. } if to.index == 0))
+        .unwrap();
+    battle
+        .set_response(ActionSelection {
+            prompt_id: prompt.id,
+            choice_id: choice.id(),
+        })
+        .unwrap();
+    turn(&mut battle, "splash", "splash");
+    assert_eq!(ally(&battle).stage(stat), 1);
+}
+
+#[test]
+fn intrepid_sword_boosts_attack_on_every_gen8_entry() {
+    check_repeated_entry_boost("intrepid-sword", wilds_battle_engine::Stat::Attack);
+}
