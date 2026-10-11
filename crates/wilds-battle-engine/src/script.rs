@@ -1890,7 +1890,16 @@ impl Battle {
                 let points = if pokemon.hp == 0 || self.healing_blocked(who) {
                     0
                 } else {
-                    self.hp_points(who, amount, true).min(missing)
+                    {
+                        let points = u32::from(self.hp_points(who, amount, true));
+                        let points =
+                            if spec.has_flag("pulse") && self.has_ability(actor, "megalauncher") {
+                                points * 3 / 2
+                            } else {
+                                points
+                            };
+                        points.min(u32::from(missing)) as u16
+                    }
                 };
                 if points > 0 {
                     self.heal(who, points, events);

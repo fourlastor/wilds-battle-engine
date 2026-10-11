@@ -834,3 +834,24 @@ fn swarm_boosts_matching_moves_only() {
     check_power_ability("swarm", &["bug-bite"], "tackle", 1.5, 333);
     check_power_ability("swarm", &[], "bug-bite", 1.0, 334);
 }
+
+#[test]
+fn mega_launcher_boosts_pulses_and_heal_pulse() {
+    check_power_ability(
+        "mega-launcher",
+        &["aura-sphere", "dark-pulse"],
+        "water-gun",
+        1.5,
+        1000,
+    );
+    for suppressed in [false, true] {
+        let mut user = mon("User", &["heal-pulse"]);
+        user.ability = Some("mega-launcher".into());
+        user.ability_suppressed = suppressed;
+        let mut target = mon("Target", &["splash"]);
+        target.hp = 1;
+        let mut battle = game(user, target, 0.5);
+        turn(&mut battle, "heal-pulse", "splash");
+        assert_eq!(foe(&battle).hp, if suppressed { 501 } else { 751 });
+    }
+}

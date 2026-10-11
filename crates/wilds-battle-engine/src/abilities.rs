@@ -577,6 +577,14 @@ impl Battle {
         {
             return 1.5;
         }
+        if self.has_ability(actor, "megalauncher")
+            && self
+                .catalog
+                .get(attack.move_id)
+                .is_some_and(|m| m.has_flag("pulse"))
+        {
+            return 1.5;
+        }
         if self.has_ability(actor, "normalize") && Self::normalizable_move(attack.move_id) {
             1.2
         } else {
