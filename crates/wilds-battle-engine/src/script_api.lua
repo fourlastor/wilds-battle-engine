@@ -120,6 +120,7 @@ return function(api, fields, roster)
 
   function ctx:call_move(id, target) return op("call_move", id, target) end
   function ctx:move_ids() return op("move_ids") end
+  function ctx:schedule_heal(who, amount, delay) return op("schedule_heal", who, amount, delay) end
   function ctx:move_info(id) return op("move_info", id) end
 
   -- Hitting and damage

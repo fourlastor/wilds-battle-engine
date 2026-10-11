@@ -37,6 +37,7 @@ pub struct Battle {
     pub(crate) substitute_hits: std::collections::BTreeSet<ParticipantId>,
     pub(crate) side_conditions: [Vec<Condition>; 2],
     pub(crate) field_conditions: Vec<Condition>,
+    pub(crate) delayed_heals: Vec<crate::slots::DelayedHeal>,
     pub(crate) last_faint_turn: [Option<u64>; 2],
     pub(crate) payout: [u32; 2],
     pub(crate) payout_multiplier: [u8; 2],
@@ -254,6 +255,7 @@ impl Battle {
             substitute_hits: std::collections::BTreeSet::new(),
             side_conditions: [Vec::new(), Vec::new()],
             field_conditions: Vec::new(),
+            delayed_heals: Vec::new(),
             last_faint_turn: [None, None],
             payout: [0, 0],
             payout_multiplier: [1, 1],
@@ -958,6 +960,7 @@ impl Battle {
             })
             .collect();
         if self.winner.is_none() {
+            self.resolve_delayed_heals(events);
             for actor in &order {
                 self.post_turn_status(*actor, events);
                 self.update_berries(events);

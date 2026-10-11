@@ -6791,3 +6791,60 @@ fn beat_up_fails_explicitly_without_base_stats_and_respects_protection() {
     turn(&mut b);
     assert_eq!(b.participants(Side::Foes)[0].hp, 1000);
 }
+
+#[test]
+fn wish_waits_until_the_next_turn_and_cannot_stack_on_the_same_slot() {
+    let mut user = mon("User", &["wish"]);
+    user.hp = 300;
+    user.max_hp = 1001;
+    let mut b = game(user, vec![mon("Foe", &["splash"])], 0.5);
+    turn(&mut b);
+    assert_eq!(b.participants(Side::Allies)[0].hp, 300);
+    turn(&mut b);
+    assert_eq!(b.participants(Side::Allies)[0].hp, 800);
+    assert!(b.participants(Side::Allies)[0].last_move_failed);
+}
+#[test]
+fn wish_heals_the_replacement_using_the_original_users_max_hp() {
+    let user = mon("User", &["wish"]);
+    let mut bench = mon("Bench", &["splash"]);
+    bench.max_hp = 2000;
+    bench.hp = 100;
+    let mut b = Battle::with_rng(
+        Fixed(0.5),
+        [vec![user, bench], vec![mon("Foe", &["splash"])]],
+        MoveCatalog::builtin().unwrap(),
+    )
+    .unwrap();
+    b.set_active([vec![0], vec![0]]).unwrap();
+    turn(&mut b);
+    turn_with(&mut b, |p| {
+        if p.actor.side == Side::Allies {
+            p.choices
+                .iter()
+                .find(|c| matches!(c, Choice::Switch { .. }))
+                .unwrap()
+                .id()
+        } else {
+            choose_move(p, "splash", "splash")
+        }
+    });
+    assert_eq!(b.participants(Side::Allies)[1].hp, 600);
+}
+#[test]
+fn wish_resolves_before_poison_and_checks_heal_block_when_it_arrives() {
+    let mut user = mon("User", &["wish", "splash"]);
+    user.hp = 160;
+    user.status = Some(wilds_battle_engine::Status::Poisoned);
+    let mut b = game(user, vec![mon("Foe", &["splash"])], 0.5);
+    turn(&mut b);
+    assert_eq!(b.participants(Side::Allies)[0].hp, 35);
+    turn_with(&mut b, |p| choose_move(p, "splash", "splash"));
+    assert_eq!(b.participants(Side::Allies)[0].hp, 410);
+    let mut user = mon("User", &["wish", "splash"]);
+    user.hp = 300;
+    let mut b = game(user, vec![mon("Foe", &["splash", "heal-block"])], 0.5);
+    turn(&mut b);
+    turn_with(&mut b, |p| choose_move(p, "splash", "heal-block"));
+    assert_eq!(b.participants(Side::Allies)[0].hp, 300);
+}

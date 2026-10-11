@@ -2735,6 +2735,17 @@
       "parameter_source": "https://pokeapi.co/api/v2/move/272/"
     },
     {
+      "id": 273,
+      "slug": "wish",
+      "name": "Wish",
+      "sheet_row": null,
+      "runtime_id": "wish",
+      "file": "moves/wish.lua",
+      "status": "implemented",
+      "limitations": [],
+      "parameter_source": "https://pokeapi.co/api/v2/move/273/"
+    },
+    {
       "id": 274,
       "slug": "assist",
       "name": "Assist",
@@ -8100,7 +8111,8 @@
       "copycat",
       "me-first",
       "encore",
-      "beat-up"
+      "beat-up",
+      "wish"
     ]
   }
 }

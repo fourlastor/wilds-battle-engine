@@ -196,6 +196,11 @@ pub(crate) enum ScriptOperation {
         who: ParticipantId,
         amount: u16,
     },
+    ScheduleHeal {
+        who: ParticipantId,
+        amount: u16,
+        delay: u8,
+    },
     MoveInfo(String),
     MoveIds,
     CallMove {
@@ -1395,6 +1400,11 @@ fn parse_op(name: &str, args: &[Value]) -> mlua::Result<ScriptOperation> {
             },
         },
         "move_ids" => ScriptOperation::MoveIds,
+        "schedule_heal" => ScriptOperation::ScheduleHeal {
+            who: who(0)?,
+            amount: floored(arg(1), "schedule_heal amount")?,
+            delay: whole(arg(2), "schedule_heal delay", 1.0, 255.0)? as u8,
+        },
         "move_info" => ScriptOperation::MoveInfo(text_of(arg(0), name)?),
         "set_types" => {
             let Value::Table(list) = arg(1) else {
