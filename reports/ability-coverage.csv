@@ -201,7 +201,7 @@ id,ability,status,verification
 200,steelworker,MISSING,No native battle behavior
 201,berserk,MISSING,No native battle behavior
 202,slush-rush,MISSING,No native battle behavior
-203,long-reach,PARTIAL,Source inventory; existing tests only
+203,long-reach,IMPLEMENTED,ability_rules::long_reach_removes_contact_for_hit_reactions_and_fluffy
 204,liquid-voice,MISSING,No native battle behavior
 205,triage,MISSING,No native battle behavior
 206,galvanize,MISSING,No native battle behavior

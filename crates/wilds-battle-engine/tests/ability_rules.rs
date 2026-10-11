@@ -451,3 +451,28 @@ fn rattled_boosts_speed_from_bug_dark_and_ghost_hits_except_substitutes() {
         }
     }
 }
+
+#[test]
+fn long_reach_removes_contact_for_hit_reactions_and_fluffy() {
+    for (ability, suppressed, burned) in [
+        ("", false, true),
+        ("long-reach", false, false),
+        ("long-reach", true, true),
+    ] {
+        let mut user = mon("User", &["tackle"]);
+        user.ability = Some(ability.into());
+        user.ability_suppressed = suppressed;
+        user.speed = 200;
+        let mut battle = game(user, mon("Target", &["beak-blast"]), 0.5);
+        turn(&mut battle, "tackle", "beak-blast");
+        assert_eq!(ally(&battle).status, burned.then_some(Status::Burned));
+        assert_eq!(foe(&battle).last_hit.as_ref().unwrap().contact, burned);
+    }
+    assert_eq!(
+        ability_damage("tackle", "long-reach", "fluffy", false),
+        ability_damage("tackle", "", "", false)
+    );
+    assert!(
+        ability_damage("tackle", "", "fluffy", false) < ability_damage("tackle", "", "", false)
+    );
+}

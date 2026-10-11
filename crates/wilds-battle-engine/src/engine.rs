@@ -2643,6 +2643,9 @@ impl Battle {
         meta: &HitMeta,
         events: &mut Vec<BattleEvent>,
     ) -> Result<u16, BattleError> {
+        let mut resolved_meta = meta.clone();
+        resolved_meta.contact &= !self.has_ability(actor, "longreach");
+        let meta = &resolved_meta;
         let before = self.get(target).hp;
         if before == 0 {
             return Ok(0);

@@ -484,7 +484,7 @@ impl Battle {
             factor *= 0.5;
         }
         if self.has_ability(target, "fluffy") {
-            if attack.contact {
+            if attack.contact && !self.has_ability(actor, "longreach") {
                 factor *= 0.5;
             }
             if attack.move_type == Fire {
