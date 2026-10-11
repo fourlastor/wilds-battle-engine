@@ -353,6 +353,8 @@ impl Battle {
         let weight = self.get(who).weight;
         if self.has_ability(who, "heavymetal") {
             (weight * 2.0).max(0.1)
+        } else if self.has_ability(who, "lightmetal") {
+            ((weight * 5.0).floor() / 10.0).max(0.1)
         } else {
             weight.max(0.1)
         }

@@ -1217,3 +1217,16 @@ fn heavy_metal_modifies_battle_weight_without_compounding_autotomize() {
     turn(&mut battle, "autotomize", "splash");
     assert_eq!(ally(&battle).weight, 20.0);
 }
+
+#[test]
+fn light_metal_halves_weight_and_respects_suppression_and_mold_breaker() {
+    assert!(weight_damage("light-metal", false, false) < weight_damage("", false, false));
+    assert_eq!(
+        weight_damage("light-metal", true, false),
+        weight_damage("", false, false)
+    );
+    assert_eq!(
+        weight_damage("light-metal", false, true),
+        weight_damage("", false, false)
+    );
+}
