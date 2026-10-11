@@ -469,3 +469,29 @@ fn return_uses_host_supplied_happiness() {
         );
     }
 }
+
+#[test]
+fn frustration_uses_host_supplied_happiness() {
+    for (happiness, power) in [
+        (255, 1),
+        (254, 1),
+        (253, 1),
+        (252, 1),
+        (250, 2),
+        (155, 40),
+        (1, 101),
+        (0, 102),
+    ] {
+        let mut user = mon("User", &["frustration"]);
+        user.happiness = Some(happiness);
+        let foe = mon("Foe", &["splash"]);
+        let expected = control_damage(power, "Normal", "Physical", user.clone(), foe.clone());
+        let mut b = game(user, vec![foe], 0.5);
+        turn(&mut b);
+        assert_eq!(
+            1000 - b.participants(Side::Foes)[0].hp,
+            expected,
+            "happiness {happiness}"
+        );
+    }
+}

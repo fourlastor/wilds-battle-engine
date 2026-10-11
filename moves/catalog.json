@@ -1855,6 +1855,17 @@
       "parameter_source": "https://pokeapi.co/api/v2/move/216/"
     },
     {
+      "id": 218,
+      "slug": "frustration",
+      "name": "Frustration",
+      "sheet_row": null,
+      "runtime_id": "frustration",
+      "file": "moves/frustration.lua",
+      "status": "implemented",
+      "limitations": [],
+      "parameter_source": "https://pokeapi.co/api/v2/move/218/"
+    },
+    {
       "id": 221,
       "slug": "sacred-fire",
       "name": "Sacred Fire",
@@ -6216,7 +6227,8 @@
       "haze",
       "flail",
       "reversal",
-      "return"
+      "return",
+      "frustration"
     ]
   }
 }
