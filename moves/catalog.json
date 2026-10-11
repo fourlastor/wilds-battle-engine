@@ -5216,6 +5216,16 @@
       "limitations": []
     },
     {
+      "id": 776,
+      "slug": "body-press",
+      "name": "Body Press",
+      "sheet_row": null,
+      "runtime_id": "body-press",
+      "file": "moves/body-press.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
       "id": 778,
       "slug": "drum-beating",
       "name": "Drum Beating",
@@ -5888,7 +5898,8 @@
       "dragon-darts",
       "bolt-beak",
       "fishious-rend",
-      "clangorous-soul"
+      "clangorous-soul",
+      "body-press"
     ]
   }
 }

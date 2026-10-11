@@ -378,3 +378,55 @@ fn clangorous_soul_checks_hp_and_actual_stage_changes_before_payment() {
         }
     }
 }
+
+fn body_press_damage(
+    attack: u16,
+    defense: u16,
+    stages: (i8, i8),
+    ability: Option<&str>,
+    burn: bool,
+    dice: f32,
+) -> u16 {
+    use wilds_battle_engine::{Stat, Status};
+    let mut user = mon("User", &["body-press"]);
+    user.attack = attack;
+    user.defense = defense;
+    user.stages.insert(Stat::Attack, stages.0);
+    user.stages.insert(Stat::Defense, stages.1);
+    user.ability = ability.map(str::to_owned);
+    if burn {
+        user.status = Some(Status::Burned);
+    }
+    let mut battle = game(user, vec![mon("Foe", &["splash"])], dice);
+    turn(&mut battle);
+    1000 - battle.participants(Side::Foes)[0].hp
+}
+
+#[test]
+fn body_press_uses_defense_and_its_stages_but_attack_modifiers() {
+    let base = body_press_damage(1, 100, (0, 0), None, false, 0.5);
+    assert!(base > 0);
+    assert_eq!(body_press_damage(999, 100, (6, 0), None, false, 0.5), base);
+    assert!(body_press_damage(1, 200, (0, 0), None, false, 0.5) > base);
+    assert!(body_press_damage(1, 100, (0, 2), None, false, 0.5) > base);
+    assert_eq!(
+        body_press_damage(1, 100, (0, 0), Some("fur-coat"), false, 0.5),
+        base
+    );
+    assert!(body_press_damage(1, 100, (0, 0), Some("huge-power"), false, 0.5) > base);
+    let burned = body_press_damage(1, 100, (0, 0), None, true, 0.5);
+    assert!(burned < base);
+    assert_eq!(
+        body_press_damage(1, 100, (0, 0), Some("marvel-scale"), true, 0.5),
+        burned
+    );
+}
+
+#[test]
+fn body_press_critical_hits_ignore_negative_defense_stages() {
+    let critical = body_press_damage(1, 100, (0, 0), None, false, 0.0);
+    assert_eq!(
+        body_press_damage(1, 100, (6, -6), None, false, 0.0),
+        critical
+    );
+}

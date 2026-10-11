@@ -1992,9 +1992,19 @@ impl Battle {
             Category::Physical => (CombatStat::Attack, CombatStat::Defense),
             _ => (CombatStat::SpAttack, CombatStat::SpDefense),
         };
+        let category_attack_stat = atk_name;
         let atk_name = attack.attack_stat.unwrap_or(atk_name);
         let def_name = attack.defense_stat.unwrap_or(def_name);
-        let attack_value = if crit && source.stage(atk_name.into()) < 0 {
+        let attack_value = if attack.attack_stat.is_some() {
+            // An offensive-stat override changes the base stat and stages, not
+            // the user's category-based modifiers (Body Press still uses ModifyAtk).
+            let value = if crit && source.stage(atk_name.into()) < 0 {
+                raw_stat(&source, atk_name)
+            } else {
+                source.effective_stat(atk_name)
+            };
+            (value * self.stat_factor(actor, category_attack_stat)).trunc()
+        } else if crit && source.stage(atk_name.into()) < 0 {
             raw_stat(&source, atk_name) * self.stat_factor(attack.attack_from, atk_name)
         } else {
             self.stat_value(attack.attack_from, atk_name)
