@@ -677,3 +677,27 @@ fn normalize_changes_damage_and_status_types_and_boosts_power_except_variable_ty
     };
     assert_eq!(run("normalize"), run(""));
 }
+
+fn check_knockout_boost(ability: &str, stat: wilds_battle_engine::Stat) {
+    for (hp, suppressed, boosts) in [(1, false, 2), (1000, false, 0), (1, true, 0)] {
+        let mut user = mon("User", &["surf"]);
+        user.ability = Some(ability.into());
+        user.ability_suppressed = suppressed;
+        user.speed = 200;
+        let mut target = mon("Target", &["splash"]);
+        target.hp = hp;
+        let mut battle = Battle::with_rng(
+            Fixed(0.5),
+            [vec![user], vec![target.clone(), target]],
+            MoveCatalog::builtin().unwrap(),
+        )
+        .unwrap();
+        turn(&mut battle, "surf", "splash");
+        assert_eq!(ally(&battle).stage(stat), boosts, "{ability} hp={hp}");
+    }
+}
+
+#[test]
+fn as_one_glastrier_gains_attack_for_each_move_knockout() {
+    check_knockout_boost("as-one-glastrier", wilds_battle_engine::Stat::Attack);
+}

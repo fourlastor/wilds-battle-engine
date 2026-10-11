@@ -131,6 +131,12 @@ impl Battle {
         }
     }
 
+    pub(crate) fn ability_knockout(&mut self, actor: ParticipantId, events: &mut Vec<BattleEvent>) {
+        if self.has_ability(actor, "asoneglastrier") {
+            self.change_stat(actor, crate::model::Stat::Attack, 1, events);
+        }
+    }
+
     pub(crate) fn ability_on_exit(&mut self, who: ParticipantId, events: &mut Vec<BattleEvent>) {
         // Run before volatile state and suppression are cleared, and only while alive.
         if self.has_ability(who, "regenerator") {

@@ -2807,6 +2807,9 @@ impl Battle {
             )));
             self.damage(actor, self.get(actor).hp, events);
         }
+        if lost > 0 && self.get(target).hp == 0 && actor != target {
+            self.ability_knockout(actor, events);
+        }
         Ok(lost)
     }
 

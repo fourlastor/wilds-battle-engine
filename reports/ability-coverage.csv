@@ -264,5 +264,5 @@ id,ability,status,verification
 263,dragons-maw,MISSING,No native battle behavior
 264,chilling-neigh,MISSING,No native battle behavior
 265,grim-neigh,MISSING,No native battle behavior
-266,as-one-glastrier,PARTIAL,Source inventory; existing tests only
+266,as-one-glastrier,IMPLEMENTED,ability_rules::as_one_glastrier_gains_attack_for_each_move_knockout
 267,as-one-spectrier,PARTIAL,Source inventory; existing tests only
