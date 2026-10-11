@@ -219,7 +219,7 @@ id,ability,status,verification
 218,fluffy,IMPLEMENTED,Source inventory; existing tests only
 219,dazzling,IMPLEMENTED,ability_rules::dazzling_protects_allies_from_priority_and_allows_mold_breaker
 220,soul-heart,MISSING,No native battle behavior
-221,tangling-hair,MISSING,No native battle behavior
+221,tangling-hair,IMPLEMENTED,ability_rules::tangling_hair_lowers_contact_attackers_speed_with_stat_protection
 222,receiver,MISSING,No native battle behavior
 223,power-of-alchemy,MISSING,No native battle behavior
 224,beast-boost,MISSING,No native battle behavior

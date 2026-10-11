@@ -1999,3 +1999,8 @@ fn check_contact_speed_drop(ability: &str) {
 fn gooey_lowers_contact_attackers_speed_with_stat_protection() {
     check_contact_speed_drop("gooey");
 }
+
+#[test]
+fn tangling_hair_lowers_contact_attackers_speed_with_stat_protection() {
+    check_contact_speed_drop("tangling-hair");
+}

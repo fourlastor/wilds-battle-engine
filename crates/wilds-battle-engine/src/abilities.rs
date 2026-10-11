@@ -37,7 +37,10 @@ impl Battle {
         if hit.damage == 0 || hit.attacker == target {
             return;
         }
-        if ability == "gooey" && hit.contact && self.get(hit.attacker).hp > 0 {
+        if matches!(ability, "gooey" | "tanglinghair")
+            && hit.contact
+            && self.get(hit.attacker).hp > 0
+        {
             self.change_stat_from(target, hit.attacker, crate::model::Stat::Speed, -1, events);
         }
         if ability == "cutecharm" && hit.contact && self.rng.chance(0.3) {
