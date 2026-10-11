@@ -87,7 +87,7 @@ id,ability,status,verification
 86,simple,IMPLEMENTED,Source inventory; existing tests only
 87,dry-skin,IMPLEMENTED,ability_rules::dry_skin_absorbs_status_water_and_responds_to_sun_rain_and_fire
 88,download,MISSING,No native battle behavior
-89,iron-fist,MISSING,No native battle behavior
+89,iron-fist,IMPLEMENTED,ability_rules::ironfist_boosts_matching_moves_only
 90,poison-heal,IMPLEMENTED,Source inventory; existing tests only
 91,adaptability,MISSING,No native battle behavior
 92,skill-link,MISSING,No native battle behavior

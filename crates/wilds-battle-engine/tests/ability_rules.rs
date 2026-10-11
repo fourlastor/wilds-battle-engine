@@ -784,3 +784,14 @@ fn transistor_boosts_matching_moves_only() {
 fn dragonsmaw_boosts_matching_moves_only() {
     check_power_ability("dragons-maw", &["dragon-breath"], "tackle", 1.5, 1000);
 }
+
+#[test]
+fn ironfist_boosts_matching_moves_only() {
+    check_power_ability(
+        "iron-fist",
+        &["mach-punch", "ice-punch"],
+        "tackle",
+        1.2,
+        1000,
+    );
+}
