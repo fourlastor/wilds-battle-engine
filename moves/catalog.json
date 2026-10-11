@@ -4287,6 +4287,17 @@
       "parameter_source": "https://pokeapi.co/api/v2/move/486/"
     },
     {
+      "id": 487,
+      "slug": "soak",
+      "name": "Soak",
+      "sheet_row": null,
+      "runtime_id": "soak",
+      "file": "moves/soak.lua",
+      "status": "implemented",
+      "limitations": [],
+      "parameter_source": "https://pokeapi.co/api/v2/move/487/"
+    },
+    {
       "id": 488,
       "slug": "flame-charge",
       "name": "Flame Charge",
@@ -7056,7 +7067,8 @@
       "guard-split",
       "speed-swap",
       "strength-sap",
-      "power-trick"
+      "power-trick",
+      "soak"
     ]
   }
 }

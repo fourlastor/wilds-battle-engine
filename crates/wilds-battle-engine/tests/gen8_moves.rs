@@ -2370,3 +2370,33 @@ fn power_trick_swaps_raw_attack_and_defense_and_toggles_without_changing_stages(
         assert_eq!(p.stage(Stat::Defense), -2);
     }
 }
+
+#[test]
+fn soak_replaces_types_but_respects_immutable_species_and_protection() {
+    for (species, response, sub, lands) in [
+        (0, "splash", 0, true),
+        (493, "splash", 0, false),
+        (773, "splash", 0, false),
+        (0, "protect", 0, false),
+        (0, "splash", 50, false),
+    ] {
+        let mut foe = mon("Foe", &[response]);
+        foe.types = vec![PokemonType::Fire, PokemonType::Flying];
+        foe.species_id = species;
+        foe.substitute_hp = sub;
+        let mut b = game(mon("User", &["soak"]), vec![foe], 0.5);
+        turn(&mut b);
+        assert_eq!(
+            b.participants(Side::Foes)[0].types,
+            if lands {
+                vec![PokemonType::Water]
+            } else {
+                vec![PokemonType::Fire, PokemonType::Flying]
+            }
+        );
+        if lands {
+            turn(&mut b);
+            assert!(b.participants(Side::Allies)[0].last_move_failed);
+        }
+    }
+}
