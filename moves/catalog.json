@@ -3094,6 +3094,17 @@
       "parameter_source": "Pokemon Showdown 942cda71, data/moves.ts"
     },
     {
+      "id": 392,
+      "slug": "aqua-ring",
+      "name": "Aqua Ring",
+      "sheet_row": null,
+      "runtime_id": "aqua-ring",
+      "file": "moves/aqua-ring.lua",
+      "status": "implemented",
+      "limitations": [],
+      "parameter_source": "https://pokeapi.co/api/v2/move/392/"
+    },
+    {
       "id": 394,
       "slug": "flare-blitz",
       "name": "Flare Blitz",
@@ -6480,7 +6491,8 @@
       "spider-web",
       "mean-look",
       "block",
-      "ingrain"
+      "ingrain",
+      "aqua-ring"
     ]
   }
 }

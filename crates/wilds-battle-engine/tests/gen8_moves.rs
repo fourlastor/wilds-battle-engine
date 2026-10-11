@@ -1004,3 +1004,15 @@ fn ingrain_heals_each_turn_and_cannot_stack() {
         index: 0
     }));
 }
+
+#[test]
+fn aqua_ring_heals_each_turn_and_cannot_stack() {
+    let mut user = mon("User", &["aqua-ring"]);
+    user.hp = 500;
+    let mut b = game(user, vec![mon("Foe", &["splash"])], 0.5);
+    turn(&mut b);
+    assert_eq!(b.participants(Side::Allies)[0].hp, 562);
+    turn(&mut b);
+    assert_eq!(b.participants(Side::Allies)[0].hp, 624);
+    assert!(b.participants(Side::Allies)[0].last_move_failed);
+}
