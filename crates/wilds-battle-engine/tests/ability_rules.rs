@@ -3681,3 +3681,39 @@ fn magician_steals_after_damage_but_not_with_fling_gems_or_substitutes() {
     turn(&mut battle, "surf", "splash");
     assert_eq!(ally(&battle).item.as_deref(), Some("sitrus-berry"));
 }
+
+#[test]
+fn symbiosis_transfers_a_neighbors_item_after_consumption_but_not_removal() {
+    for (consume, suppressed, transferred) in [
+        (true, false, true),
+        (true, true, false),
+        (false, false, false),
+    ] {
+        let mut user = mon("User", &["stuff-cheeks", "splash"]);
+        user.item = Some("oran-berry".into());
+        let mut donor = mon("Donor", &["splash"]);
+        donor.item = Some("power-herb".into());
+        donor.ability = Some("symbiosis".into());
+        donor.ability_suppressed = suppressed;
+        let target = mon("Target", &["splash", "knock-off"]);
+        let mut battle = Battle::with_rng(
+            Fixed(0.5),
+            [vec![user, donor], vec![target]],
+            MoveCatalog::builtin().unwrap(),
+        )
+        .unwrap();
+        turn(
+            &mut battle,
+            if consume { "stuff-cheeks" } else { "splash" },
+            if consume { "splash" } else { "knock-off" },
+        );
+        assert_eq!(
+            ally(&battle).item.as_deref() == Some("power-herb"),
+            transferred
+        );
+        assert_eq!(
+            battle.participants(Side::Allies)[1].item.is_none(),
+            transferred
+        );
+    }
+}

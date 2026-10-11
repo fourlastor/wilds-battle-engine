@@ -3,6 +3,31 @@ use crate::engine::Battle;
 use crate::model::{BattleEvent, ParticipantId};
 
 impl Battle {
+    pub(crate) fn symbiosis_after_use(&mut self, who: ParticipantId) {
+        if self.get(who).item.is_some() || self.pivot == Some(who) {
+            return;
+        }
+        let mut donors: Vec<_> = self
+            .actors()
+            .into_iter()
+            .filter(|&donor| {
+                donor.side == who.side
+                    && self.adjacent(who, donor)
+                    && self.has_ability(donor, "symbiosis")
+                    && self.item_removable(donor)
+                    && self
+                        .get(donor)
+                        .item
+                        .as_deref()
+                        .is_some_and(|item| self.can_receive_item(who, item))
+            })
+            .collect();
+        donors.sort_by_key(|&donor| std::cmp::Reverse(self.action_speed(donor)));
+        if let Some(donor) = donors.first() {
+            self.get_mut(who).item = self.take_item(*donor, *donor);
+        }
+    }
+
     pub(crate) fn ability_lost_item(&mut self, who: ParticipantId) {
         if self.has_ability(who, "unburden") {
             self.set_mark(crate::model::Scope::Pokemon(who), "unburden", 1, None);
@@ -41,6 +66,7 @@ impl Battle {
         pokemon.last_consumed_item = Some(item.clone());
         pokemon.consumed_items.insert(item.clone());
         self.ability_lost_item(who);
+        self.symbiosis_after_use(who);
         Some(item)
     }
 

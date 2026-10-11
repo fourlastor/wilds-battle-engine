@@ -124,6 +124,7 @@ impl Battle {
         self.get_mut(who).item = None;
         self.ability_lost_item(who);
         self.berry_effect(who, item, false, events);
+        self.symbiosis_after_use(who);
         true
     }
 
