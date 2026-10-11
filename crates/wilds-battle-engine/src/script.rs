@@ -752,6 +752,10 @@ impl Battle {
         if self.get(recipient).hp == 0 {
             return HitOutcome::Fainted;
         }
+        if self.prankster_blocked(actor, recipient, frame.spec) {
+            self.immune_message(recipient, events);
+            return HitOutcome::Protected;
+        }
         if self.priority_blocked(actor, recipient, frame.spec) {
             events.push(BattleEvent::Message(format!(
                 "{} is protected from priority moves!",

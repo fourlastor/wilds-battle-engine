@@ -611,12 +611,31 @@ impl Battle {
             && self.rules(target).any(|rule| matches!(rule, Rule::BlockPriority {grounded_only} if !grounded_only || (self.on_ground(target) && self.get(target).hidden().is_none())))
     }
 
+    pub(crate) fn prankster_blocked(
+        &self,
+        actor: ParticipantId,
+        target: ParticipantId,
+        spec: &MoveSpec,
+    ) -> bool {
+        self.prankster_boosted
+            && self.has_ability(actor, "prankster")
+            && actor.side != target.side
+            && self.types_of(target).contains(&PokemonType::Dark)
+            && !matches!(
+                spec.target,
+                Target::Field | Target::All | Target::User | Target::UserAndAllies
+            )
+    }
+
     pub(crate) fn effective_move_priority(&self, id: ParticipantId, spec: &MoveSpec) -> i8 {
         let bonus = spec.priority_terrain.as_ref().is_some_and(|name| {
             self.on_ground(id) && self.field_conditions.iter().any(|c| &c.name == name)
         });
         self.move_priority(id, spec.priority)
             .saturating_add(i8::from(bonus))
+            .saturating_add(i8::from(
+                spec.category == Category::Status && self.has_ability(id, "prankster"),
+            ))
     }
 
     pub(crate) fn move_priority(&self, id: ParticipantId, base: i8) -> i8 {

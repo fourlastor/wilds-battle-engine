@@ -36,6 +36,7 @@ pub struct Battle {
     pub(crate) ignored_ability: Option<ParticipantId>,
     pub(crate) ability_bypass: bool,
     pub(crate) reflecting: bool,
+    pub(crate) prankster_boosted: bool,
     pub(crate) substitute_hits: std::collections::BTreeSet<ParticipantId>,
     pub(crate) side_conditions: [Vec<Condition>; 2],
     pub(crate) field_conditions: Vec<Condition>,
@@ -259,6 +260,7 @@ impl Battle {
             ignored_ability: None,
             ability_bypass: false,
             reflecting: false,
+            prankster_boosted: false,
             substitute_hits: std::collections::BTreeSet::new(),
             side_conditions: [Vec::new(), Vec::new()],
             field_conditions: Vec::new(),
@@ -1436,6 +1438,10 @@ impl Battle {
             pokemon.last_move_target = Some((choice.target.side, choice.target_position));
             pokemon.moves_used.insert(spec.id.clone());
         }
+        if !called {
+            self.prankster_boosted =
+                spec.category == Category::Status && self.has_ability(actor, "prankster");
+        }
         self.current_move = Some(spec.id.clone());
         self.get_mut(actor).last_move_type = Some(self.converted_type(actor, spec.move_type));
         if spec.effects.iter().any(|e| matches!(e, Effect::Protect))
@@ -1674,6 +1680,10 @@ impl Battle {
                 "{user_name} used {}!",
                 spec.name
             )));
+        }
+        if !first_charge && self.prankster_blocked(actor, target, &spec) {
+            self.immune_message(target, events);
+            return Ok(true);
         }
         if !first_charge && self.priority_blocked(actor, target, &spec) {
             events.push(BattleEvent::Message(format!(
@@ -3080,6 +3090,7 @@ impl Battle {
         events: &mut Vec<BattleEvent>,
     ) -> Result<bool, BattleError> {
         if self.reflecting
+            || self.prankster_blocked(actor, reflector, spec)
             || self.priority_blocked(actor, reflector, spec)
             || self.guarded(actor, reflector, spec, false)
             || actor == reflector

@@ -156,7 +156,7 @@ id,ability,status,verification
 155,rattled,IMPLEMENTED,ability_rules::rattled_boosts_speed_from_bug_dark_and_ghost_hits_except_substitutes
 156,magic-bounce,IMPLEMENTED,Source inventory; existing tests only
 157,sap-sipper,IMPLEMENTED,ability_rules::sap_sipper_blocks_grass_status_moves_without_secondary_effects
-158,prankster,MISSING,No native battle behavior
+158,prankster,IMPLEMENTED,ability_rules::prankster_prioritizes_status_and_dark_immunity_includes_called_attacks
 159,sand-force,IMPLEMENTED,ability_rules::sand_force_boosts_only_rock_ground_and_steel_in_sand
 160,iron-barbs,MISSING,No native battle behavior
 161,zen-mode,MISSING,No native battle behavior

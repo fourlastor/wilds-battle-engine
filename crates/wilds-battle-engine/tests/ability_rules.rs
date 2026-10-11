@@ -1682,3 +1682,38 @@ fn magnet_pull_traps_only_steel_types_even_when_airborne() {
     check_trap("magnet-pull", PokemonType::Steel, "levitate", false, true);
     check_trap("magnet-pull", PokemonType::Steel, "", true, false);
 }
+
+#[test]
+fn prankster_prioritizes_status_and_dark_immunity_includes_called_attacks() {
+    for kind in [PokemonType::Normal, PokemonType::Dark] {
+        let mut user = mon("User", &["thunder-wave"]);
+        user.speed = 10;
+        user.ability = Some("prankster".into());
+        let mut target = mon("Target", &["tackle"]);
+        target.speed = 100;
+        target.types = vec![kind];
+        let mut battle = game(user, target, 0.5);
+        let events = turn(&mut battle, "thunder-wave", "tackle");
+        let first = events
+            .iter()
+            .find_map(|e| match e {
+                BattleEvent::Message(m) if m.contains(" used ") => Some(m),
+                _ => None,
+            })
+            .unwrap();
+        assert!(first.starts_with("User"));
+        assert_eq!(
+            foe(&battle).status,
+            (kind != PokemonType::Dark).then_some(Status::Paralyzed)
+        );
+    }
+    for ability in ["prankster", ""] {
+        let mut user = mon("User", &["nature-power"]);
+        user.ability = Some(ability.into());
+        let mut target = mon("Target", &["splash"]);
+        target.types = vec![PokemonType::Dark];
+        let mut battle = game(user, target, 0.5);
+        turn(&mut battle, "nature-power", "splash");
+        assert_eq!(foe(&battle).hp == 1000, ability == "prankster");
+    }
+}
