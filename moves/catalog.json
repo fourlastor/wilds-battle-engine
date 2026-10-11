@@ -2917,6 +2917,17 @@
       "parameter_source": "https://pokeapi.co/api/v2/move/288/"
     },
     {
+      "id": 289,
+      "slug": "snatch",
+      "name": "Snatch",
+      "sheet_row": null,
+      "runtime_id": "snatch",
+      "file": "moves/snatch.lua",
+      "status": "implemented",
+      "limitations": [],
+      "parameter_source": "https://pokeapi.co/api/v2/move/289/"
+    },
+    {
       "id": 290,
       "slug": "secret-power",
       "name": "Secret Power",
@@ -8160,7 +8171,8 @@
       "healing-wish",
       "lunar-dance",
       "future-sight",
-      "doom-desire"
+      "doom-desire",
+      "snatch"
     ]
   }
 }

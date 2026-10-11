@@ -153,6 +153,10 @@ pub enum Scope {
 /// A rule on a side applies to every Pokémon of that side, one on the field to everyone.
 #[derive(Clone, Debug, PartialEq)]
 pub enum Rule {
+    /// Intercepts another user's eligible beneficial move once this turn.
+    Snatch {
+        moves: Vec<String>,
+    },
     /// Restricts selected actions to this learned move while it has PP.
     OnlyMove {
         id: String,

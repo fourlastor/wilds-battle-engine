@@ -53,6 +53,7 @@ pub struct Battle {
     /// Whether the move being used right now failed, missed or had no effect.
     pub(crate) move_failed: bool,
     call_depth: u8,
+    snatching: bool,
     pub(crate) last_battle_move: Option<String>,
     current_move: Option<String>,
 }
@@ -269,6 +270,7 @@ impl Battle {
             hurry: Vec::new(),
             move_failed: false,
             call_depth: 0,
+            snatching: false,
             last_battle_move: None,
             current_move: None,
         })
@@ -1120,6 +1122,21 @@ impl Battle {
         }
         Ok(())
     }
+    fn snatcher(&mut self, actor: ParticipantId, spec: &MoveSpec) -> Option<ParticipantId> {
+        if self.snatching {
+            return None;
+        }
+        let mut candidates: Vec<_> = self.actors().into_iter().filter(|who| *who != actor && self.get(*who).carried_by.is_none() && self.rules(*who).any(|rule| matches!(rule,Rule::Snatch{moves} if spec.has_flag("snatch") || moves.contains(&spec.id)))).collect();
+        candidates.sort_by(|a, b| {
+            self.stat_value(*b, CombatStat::Speed)
+                .total_cmp(&self.stat_value(*a, CombatStat::Speed))
+        });
+        let first = *candidates.first()?;
+        let fastest = self.stat_value(first, CombatStat::Speed);
+        candidates.retain(|who| self.stat_value(*who, CombatStat::Speed) == fastest);
+        Some(candidates[self.rng.index(candidates.len())])
+    }
+
     pub(crate) fn call_move(
         &mut self,
         actor: ParticipantId,
@@ -1444,6 +1461,36 @@ impl Battle {
             || self.has_ability(actor, "teravolt")
             || self.has_ability(actor, "turboblaze");
         self.ignored_ability = self.ability_bypass.then_some(target);
+        if let Some(snatcher) = self.snatcher(actor, &spec) {
+            if !called
+                && !spec.auto_only
+                && !forced_script
+                && self.get(actor).locked_move.is_none()
+                && let Some(pp) = self.get_mut(actor).move_pp.get_mut(&spec.id)
+            {
+                *pp = pp.saturating_sub(1);
+            }
+            self.get_mut(snatcher).conditions.retain(|condition| {
+                !condition
+                    .rules
+                    .iter()
+                    .any(|rule| matches!(rule, Rule::Snatch { .. }))
+            });
+            events.push(BattleEvent::Message(format!(
+                "{user_name} used {}!",
+                spec.name
+            )));
+            events.push(BattleEvent::Message(format!(
+                "{} snatched {}!",
+                self.get(snatcher).name,
+                spec.name
+            )));
+            self.snatching = true;
+            let result = self.call_move(snatcher, &spec.id, None, events);
+            self.snatching = false;
+            self.move_failed = !result?;
+            return Ok(true);
+        }
         if spec.fail_on_full_hp && self.get(target).hp == self.get(target).max_hp {
             events.push(BattleEvent::Message(format!(
                 "{user_name} used {}!",

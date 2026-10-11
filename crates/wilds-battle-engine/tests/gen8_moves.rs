@@ -7142,3 +7142,80 @@ fn delayed_attacks_do_not_trigger_destiny_bond_or_grudge() {
         assert_eq!(b.participants(Side::Allies)[0].move_pp["splash"], 18);
     }
 }
+
+#[test]
+fn snatch_steals_healing_even_from_a_full_health_user_and_spends_only_original_pp() {
+    for hp in [300, 1000] {
+        let mut user = mon("User", &["snatch"]);
+        user.hp = 200;
+        let mut foe = mon("Foe", &["recover"]);
+        foe.hp = hp;
+        let mut b = game(user, vec![foe], 0.5);
+        turn(&mut b);
+        assert_eq!(b.participants(Side::Allies)[0].hp, 700);
+        assert_eq!(b.participants(Side::Foes)[0].hp, hp);
+        assert_eq!(b.participants(Side::Foes)[0].move_pp["recover"], 4);
+        assert_eq!(b.participants(Side::Allies)[0].move_pp["snatch"], 9);
+        assert_eq!(
+            b.participants(Side::Allies)[0].last_used.as_deref(),
+            Some("snatch")
+        );
+    }
+}
+#[test]
+fn snatch_is_consumed_after_one_move_and_expires_at_turn_end() {
+    let mut user = mon("User", &["snatch", "splash"]);
+    user.hp = 200;
+    let mut a = mon("A", &["recover"]);
+    a.hp = 300;
+    a.speed = 90;
+    let mut b = mon("B", &["recover"]);
+    b.hp = 300;
+    b.speed = 80;
+    let mut battle = game(user, vec![a, b], 0.5);
+    turn(&mut battle);
+    assert_eq!(battle.participants(Side::Allies)[0].hp, 700);
+    assert_eq!(battle.participants(Side::Foes)[0].hp, 300);
+    assert_eq!(battle.participants(Side::Foes)[1].hp, 800);
+    let mut user = mon("User", &["snatch", "splash"]);
+    user.hp = 200;
+    let mut foe = mon("Foe", &["splash", "recover"]);
+    foe.hp = 300;
+    let mut battle = game(user, vec![foe], 0.5);
+    turn(&mut battle);
+    turn_with(&mut battle, |p| choose_move(p, "splash", "recover"));
+    assert_eq!(battle.participants(Side::Allies)[0].hp, 200);
+    assert_eq!(battle.participants(Side::Foes)[0].hp, 800);
+}
+#[test]
+fn snatch_uses_the_fastest_snatcher_and_the_recipients_ability() {
+    use wilds_battle_engine::Stat;
+    let mut fast = mon("Fast", &["snatch"]);
+    fast.speed = 200;
+    fast.ability = Some("simple".into());
+    let mut slow = mon("Slow", &["snatch"]);
+    slow.speed = 50;
+    let mut b = Battle::with_rng(
+        Fixed(0.5),
+        [vec![fast, slow], vec![mon("Foe", &["swords-dance"])]],
+        MoveCatalog::builtin().unwrap(),
+    )
+    .unwrap();
+    turn(&mut b);
+    assert_eq!(b.participants(Side::Allies)[0].stage(Stat::Attack), 4);
+    assert_eq!(b.participants(Side::Allies)[1].stage(Stat::Attack), 0);
+    assert_eq!(b.participants(Side::Foes)[0].stage(Stat::Attack), 0);
+}
+#[test]
+fn snatch_does_not_steal_geomancy() {
+    use wilds_battle_engine::Stat;
+    let mut b = game(
+        mon("User", &["snatch"]),
+        vec![mon("Foe", &["geomancy"])],
+        0.5,
+    );
+    turn(&mut b);
+    turn(&mut b);
+    assert_eq!(b.participants(Side::Allies)[0].stage(Stat::SpAttack), 0);
+    assert_eq!(b.participants(Side::Foes)[0].stage(Stat::SpAttack), 2);
+}

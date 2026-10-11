@@ -927,6 +927,7 @@ fn rule_of(value: &Value) -> mlua::Result<Rule> {
         | RuleKind::FaintOnExpiry
         | RuleKind::NoRepeat
         | RuleKind::SealMoves => &["kind"],
+        RuleKind::Snatch => &["kind", "moves"],
         RuleKind::OnlyMove => &["kind", "id"],
         RuleKind::BlockMove => &["kind", "id", "message"],
         RuleKind::BlockCategory => &["kind", "category", "except", "message"],
@@ -1003,6 +1004,9 @@ fn rule_of(value: &Value) -> mlua::Result<Rule> {
         RuleKind::FaintOnExpiry => Rule::FaintOnExpiry,
         RuleKind::NoRepeat => Rule::NoRepeat,
         RuleKind::SealMoves => Rule::SealMoves,
+        RuleKind::Snatch => Rule::Snatch {
+            moves: options.list("moves", name_of)?,
+        },
         RuleKind::OnlyMove => Rule::OnlyMove {
             id: name_of(&required("id")?, "required move id")?,
         },
