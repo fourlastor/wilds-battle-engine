@@ -225,6 +225,10 @@ pub enum Rule {
         except: Vec<String>,
         message: Option<String>,
     },
+    BlockMove {
+        id: String,
+        message: Option<String>,
+    },
     /// Stats cannot be lowered by others.
     BlockStatDrops,
     /// Flinching cannot interrupt the holder.

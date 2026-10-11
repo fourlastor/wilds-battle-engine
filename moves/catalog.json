@@ -509,6 +509,17 @@
       "limitations": []
     },
     {
+      "id": 50,
+      "slug": "disable",
+      "name": "Disable",
+      "sheet_row": null,
+      "runtime_id": "disable",
+      "file": "moves/disable.lua",
+      "status": "implemented",
+      "limitations": [],
+      "parameter_source": "https://pokeapi.co/api/v2/move/50/"
+    },
+    {
       "id": 51,
       "slug": "acid",
       "name": "Acid",
@@ -7332,7 +7343,8 @@
       "magnitude",
       "nightmare",
       "attract",
-      "taunt"
+      "taunt",
+      "disable"
     ]
   }
 }

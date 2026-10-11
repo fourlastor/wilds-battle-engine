@@ -3411,3 +3411,59 @@ fn taunt_is_blocked_by_oblivious_and_protect() {
         assert!(b.participants(Side::Allies)[0].last_move_failed);
     }
 }
+
+#[test]
+fn disable_blocks_the_last_move_including_a_pending_repeat_and_expires_after_four_actions() {
+    for fast in [true, false] {
+        let mut user = mon("User", &["disable", "splash"]);
+        user.speed = if fast { 200 } else { 50 };
+        let mut foe = mon("Foe", &["tackle", "splash"]);
+        foe.substitute_hp = 50;
+        let mut b = game(user, vec![foe], 0.5);
+        turn_with(&mut b, |p| choose_move(p, "splash", "tackle"));
+        let pp = b.participants(Side::Foes)[0].move_pp["tackle"];
+        turn_with(&mut b, |p| choose_move(p, "disable", "tackle"));
+        assert_eq!(
+            b.participants(Side::Foes)[0].move_pp["tackle"],
+            pp - u8::from(!fast)
+        );
+        let remaining = if fast { 3 } else { 4 };
+        assert_eq!(
+            b.participants(Side::Foes)[0]
+                .condition("disable")
+                .unwrap()
+                .turns_left,
+            Some(remaining)
+        );
+        for _ in 0..remaining {
+            turn_with(&mut b, |p| {
+                if p.actor.side == Side::Foes {
+                    assert!(
+                        !p.choices
+                            .iter()
+                            .any(|c| matches!(c,Choice::UseMove{move_id,..} if move_id=="tackle"))
+                    );
+                }
+                choose_move(p, "splash", "splash")
+            });
+        }
+        assert!(b.participants(Side::Foes)[0].condition("disable").is_none());
+        turn_with(&mut b, |p| choose_move(p, "splash", "tackle"));
+    }
+}
+
+#[test]
+fn disable_fails_without_a_previous_move_or_when_that_move_has_no_pp() {
+    let mut user = mon("User", &["disable", "splash"]);
+    user.speed = 200;
+    let mut b = game(user.clone(), vec![mon("Foe", &["splash"])], 0.5);
+    turn(&mut b);
+    assert!(b.participants(Side::Allies)[0].last_move_failed);
+    let mut foe = mon("Foe", &["tackle", "splash"]);
+    foe.move_pp.insert("tackle".into(), 1);
+    let mut b = game(user, vec![foe], 0.5);
+    turn_with(&mut b, |p| choose_move(p, "splash", "tackle"));
+    turn_with(&mut b, |p| choose_move(p, "disable", "splash"));
+    assert!(b.participants(Side::Allies)[0].last_move_failed);
+    assert!(b.participants(Side::Foes)[0].condition("disable").is_none());
+}

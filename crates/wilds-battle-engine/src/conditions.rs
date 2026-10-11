@@ -302,6 +302,14 @@ impl Battle {
             return Some("{name} needs to hold a berry to use that move!");
         }
         self.rules(id).find_map(|rule| match rule {
+            Rule::BlockMove {
+                id: blocked,
+                message,
+            } if *blocked == spec.id => Some(
+                message
+                    .as_deref()
+                    .unwrap_or("{name} cannot use the disabled move!"),
+            ),
             Rule::BlockCategory {
                 category,
                 except,
