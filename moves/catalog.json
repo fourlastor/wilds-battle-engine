@@ -1202,6 +1202,17 @@
       "parameter_source": "https://pokeapi.co/api/v2/move/117/"
     },
     {
+      "id": 118,
+      "slug": "metronome",
+      "name": "Metronome",
+      "sheet_row": null,
+      "runtime_id": "metronome",
+      "file": "moves/metronome.lua",
+      "status": "implemented",
+      "limitations": [],
+      "parameter_source": "https://pokeapi.co/api/v2/move/118/"
+    },
+    {
       "id": 120,
       "slug": "self-destruct",
       "name": "Self-Destruct",
@@ -8028,7 +8039,8 @@
       "sketch",
       "nature-power",
       "sleep-talk",
-      "assist"
+      "assist",
+      "metronome"
     ]
   }
 }

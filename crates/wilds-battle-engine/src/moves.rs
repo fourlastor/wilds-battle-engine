@@ -196,6 +196,7 @@ pub(crate) enum ScriptOperation {
         amount: u16,
     },
     MoveInfo(String),
+    MoveIds,
     CallMove {
         id: String,
         target: Option<ParticipantId>,
@@ -260,8 +261,8 @@ pub(crate) enum ScriptOperation {
     },
     BreakSequence,
     RandomInt {
-        min: u8,
-        max: u8,
+        min: u16,
+        max: u16,
     },
     Message(String),
     Announce,
@@ -1380,6 +1381,7 @@ fn parse_op(name: &str, args: &[Value]) -> mlua::Result<ScriptOperation> {
                 Some(who(1)?)
             },
         },
+        "move_ids" => ScriptOperation::MoveIds,
         "move_info" => ScriptOperation::MoveInfo(text_of(arg(0), name)?),
         "set_types" => {
             let Value::Table(list) = arg(1) else {
@@ -1689,7 +1691,7 @@ impl MoveCatalog {
         )?;
         api.set(
             "random_int",
-            self.lua.create_function(|lua, (min, max): (u8, u8)| {
+            self.lua.create_function(|lua, (min, max): (u16, u16)| {
                 if min > max {
                     return Err(mlua::Error::external("random_int minimum exceeds maximum"));
                 }

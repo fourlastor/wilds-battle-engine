@@ -1377,6 +1377,15 @@ impl Battle {
                 frame.failed |= !success;
                 Value::Boolean(success)
             }
+            ScriptOperation::MoveIds => {
+                let mut ids: Vec<_> = self.catalog.ids().collect();
+                ids.sort_unstable();
+                let table = self.catalog.lua().create_table()?;
+                for id in ids {
+                    table.raw_push(id)?;
+                }
+                Value::Table(table)
+            }
             ScriptOperation::MoveInfo(id) => match self.catalog.get(&id) {
                 None => Value::Nil,
                 Some(info) => {
@@ -1469,7 +1478,11 @@ impl Battle {
                 Value::Nil
             }
             ScriptOperation::RandomInt { min, max } => {
-                Value::Integer(self.rng.range(min, max) as i64)
+                Value::Integer(if max <= u16::from(u8::MAX) {
+                    i64::from(self.rng.range(min as u8, max as u8))
+                } else {
+                    i64::from(min) + self.rng.index(usize::from(max - min) + 1) as i64
+                })
             }
             ScriptOperation::Message(message) => {
                 events.push(BattleEvent::Message(message));

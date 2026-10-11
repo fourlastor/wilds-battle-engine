@@ -6467,3 +6467,49 @@ fn assist_excludes_its_own_moves_and_forbidden_party_moves() {
     assert_eq!(b.participants(Side::Foes)[0].hp, 1000);
     assert!(b.participants(Side::Allies)[0].last_move_failed);
 }
+
+#[test]
+fn metronome_calls_an_eligible_move_and_spends_only_its_own_pp() {
+    let mut user = mon("User", &["metronome", "pound"]);
+    user.move_pp.insert("pound".into(), 0);
+    let foe = mon("Foe", &["splash"]);
+    let expected = control_damage(40, "Normal", "Physical", user.clone(), foe.clone());
+    let mut b = game(user, vec![foe], 0.5);
+    turn(&mut b);
+    assert_eq!(1000 - b.participants(Side::Foes)[0].hp, expected);
+    assert_eq!(b.participants(Side::Allies)[0].move_pp["pound"], 0);
+    assert_eq!(b.participants(Side::Allies)[0].move_pp["metronome"], 9);
+    assert_eq!(
+        b.participants(Side::Allies)[0].last_used.as_deref(),
+        Some("metronome")
+    );
+}
+#[test]
+fn metronome_filters_the_loaded_catalog_and_rejects_an_empty_eligible_pool() {
+    for include_pound in [false, true] {
+        let pound = if include_pound {
+            ", {id='pound',name='Pound',type=Type.Normal,category=Category.Physical,pp=35,accuracy=Accuracy.Always,script=function(ctx)ctx:damage(40)end}"
+        } else {
+            ""
+        };
+        let source = format!(
+            "return {{(function() {} end)(),{{id='protect',name='Protect',type=Type.Normal,category=Category.Status,pp=10,target=Target.User,script=function(_)end}}{pound}}}",
+            include_str!("../../../moves/metronome.lua")
+        );
+        let mut b = Battle::with_rng(
+            Fixed(0.5),
+            [
+                vec![mon("User", &["metronome"])],
+                vec![mon("Foe", &["protect"])],
+            ],
+            MoveCatalog::from_lua(&source).unwrap(),
+        )
+        .unwrap();
+        turn(&mut b);
+        assert_eq!(b.participants(Side::Foes)[0].hp < 1000, include_pound);
+        assert_eq!(
+            b.participants(Side::Allies)[0].last_move_failed,
+            !include_pound
+        );
+    }
+}
