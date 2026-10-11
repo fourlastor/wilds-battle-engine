@@ -2785,12 +2785,6 @@ impl Battle {
         {
             defense *= 1.5;
         }
-        if weather == Some(WeatherKind::Hail)
-            && def_name == CombatStat::Defense
-            && defender.types.contains(&PokemonType::Ice)
-        {
-            defense *= 1.5;
-        }
         defense = defense.max(1.0);
         let gem = if typeless || attack.no_gem || actor == target {
             1.0

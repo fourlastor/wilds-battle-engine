@@ -3976,3 +3976,17 @@ fn ice_face_blocks_physical_damage_once_and_repairs_only_when_hail_starts() {
     turn(&mut battle, "tackle", "splash");
     assert_eq!(foe(&battle).hp, hp);
 }
+
+#[test]
+fn sword_shield_hail_does_not_apply_the_later_generations_snow_defense_boost() {
+    let run = |hail| {
+        let user = mon("User", &["splash", "tackle"]);
+        let mut target = mon("Target", &["hail", "splash"]);
+        target.types = vec![PokemonType::Ice];
+        let mut battle = game(user, target, 0.5);
+        turn(&mut battle, "splash", if hail { "hail" } else { "splash" });
+        turn(&mut battle, "tackle", "splash");
+        1000 - foe(&battle).hp
+    };
+    assert_eq!(run(true), run(false));
+}
