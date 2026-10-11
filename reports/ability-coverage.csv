@@ -63,7 +63,7 @@ id,ability,status,verification
 62,guts,IMPLEMENTED,Source inventory; existing tests only
 63,marvel-scale,IMPLEMENTED,Source inventory; existing tests only
 64,liquid-ooze,MISSING,No native battle behavior
-65,overgrow,MISSING,No native battle behavior
+65,overgrow,IMPLEMENTED,ability_rules::overgrow_boosts_matching_moves_only
 66,blaze,MISSING,No native battle behavior
 67,torrent,MISSING,No native battle behavior
 68,swarm,MISSING,No native battle behavior

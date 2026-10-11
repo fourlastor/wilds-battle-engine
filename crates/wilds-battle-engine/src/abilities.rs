@@ -553,6 +553,12 @@ impl Battle {
         if self.has_ability(actor, "technician") && (attack.power <= 60) {
             return 1.5;
         }
+        if self.has_ability(actor, "overgrow")
+            && (attack.move_type == crate::model::PokemonType::Grass
+                && u32::from(self.get(actor).hp) * 3 <= u32::from(self.get(actor).max_hp))
+        {
+            return 1.5;
+        }
         if self.has_ability(actor, "normalize") && Self::normalizable_move(attack.move_id) {
             1.2
         } else {

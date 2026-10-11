@@ -810,3 +810,9 @@ fn toughclaws_boosts_matching_moves_only() {
 fn technician_boosts_matching_moves_only() {
     check_power_ability("technician", &["tackle", "swift"], "hyper_beam", 1.5, 1000);
 }
+
+#[test]
+fn overgrow_boosts_matching_moves_only() {
+    check_power_ability("overgrow", &["mega-drain"], "tackle", 1.5, 333);
+    check_power_ability("overgrow", &[], "mega-drain", 1.0, 334);
+}
