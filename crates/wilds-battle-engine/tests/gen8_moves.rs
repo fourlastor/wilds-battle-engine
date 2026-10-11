@@ -7111,3 +7111,34 @@ fn future_sight_still_hits_after_the_user_faints_without_its_old_stat_boosts() {
     assert_eq!(b.participants(Side::Allies)[0].hp, 0);
     assert_eq!(1000 - b.participants(Side::Foes)[0].hp, expected);
 }
+
+#[test]
+fn doom_desire_deals_delayed_steel_damage_and_shares_future_sights_slot() {
+    let user = mon("User", &["doom-desire", "future-sight", "splash"]);
+    let mut foe = mon("Foe", &["splash"]);
+    foe.types = vec![PokemonType::Dark];
+    let expected = control_damage(140, "Steel", "Special", user.clone(), foe.clone());
+    let mut b = game(user, vec![foe], 0.5);
+    turn(&mut b);
+    turn_with(&mut b, |p| choose_move(p, "future-sight", "splash"));
+    assert!(b.participants(Side::Allies)[0].last_move_failed);
+    assert_eq!(b.participants(Side::Foes)[0].hp, 1000);
+    turn_with(&mut b, |p| choose_move(p, "splash", "splash"));
+    assert_eq!(1000 - b.participants(Side::Foes)[0].hp, expected);
+}
+#[test]
+fn delayed_attacks_do_not_trigger_destiny_bond_or_grudge() {
+    for response in ["destiny-bond", "grudge"] {
+        let mut foe = mon("Foe", &[response]);
+        foe.hp = 1;
+        let mut b = game(mon("User", &["doom-desire", "splash"]), vec![foe], 0.5);
+        turn(&mut b);
+        for _ in 0..2 {
+            turn_with(&mut b, |p| choose_move(p, "splash", response));
+        }
+        assert_eq!(b.participants(Side::Foes)[0].hp, 0);
+        assert_eq!(b.participants(Side::Allies)[0].hp, 1000);
+        assert_eq!(b.participants(Side::Allies)[0].move_pp["doom-desire"], 4);
+        assert_eq!(b.participants(Side::Allies)[0].move_pp["splash"], 18);
+    }
+}
