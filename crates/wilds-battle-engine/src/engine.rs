@@ -2092,6 +2092,7 @@ impl Battle {
                     false,
                     &mut details,
                 ) {
+                    let ooze = self.has_ability(target, "liquidooze");
                     let amount = self.damage_from_move(
                         actor,
                         target,
@@ -2115,13 +2116,12 @@ impl Battle {
                     if let Some(fraction) = drain
                         && amount > 0
                     {
-                        if self.get(actor).hp < self.get(actor).max_hp {
-                            self.heal(
-                                actor,
-                                ((amount as f32 * fraction).floor() as u16).max(1),
-                                events,
-                            );
-                        }
+                        self.drain_health(
+                            actor,
+                            ((amount as f32 * fraction).floor() as u16).max(1),
+                            ooze,
+                            events,
+                        );
                         events.push(BattleEvent::Message(format!(
                             "{} had its energy drained!",
                             self.get(target).name

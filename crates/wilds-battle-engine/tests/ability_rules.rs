@@ -2470,3 +2470,25 @@ fn reckless_boosts_recoil_and_crash_attacks_only() {
         1000,
     );
 }
+
+#[test]
+fn liquid_ooze_reverses_drain_seed_and_strength_sap_even_at_full_hp() {
+    for move_id in ["mega-drain", "draining_kiss", "leech-seed", "strength-sap"] {
+        for hp in [500, 1000] {
+            let mut user = mon("User", &[move_id]);
+            user.hp = hp;
+            let mut target = mon("Target", &["splash"]);
+            target.ability = Some("liquid-ooze".into());
+            let mut battle = game(user, target, 0.5);
+            turn(&mut battle, move_id, "splash");
+            assert!(ally(&battle).hp < hp, "{move_id}/{hp}");
+        }
+    }
+    let mut user = mon("User", &["mega-drain"]);
+    user.ability = Some("magic-guard".into());
+    let mut target = mon("Target", &["splash"]);
+    target.ability = Some("liquid-ooze".into());
+    let mut battle = game(user, target, 0.5);
+    turn(&mut battle, "mega-drain", "splash");
+    assert_eq!(ally(&battle).hp, 1000);
+}

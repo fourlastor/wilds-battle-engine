@@ -1011,10 +1011,9 @@ impl Battle {
                         if let Some(message) = message {
                             events.push(BattleEvent::Message(named(&message, &name)));
                         }
+                        let ooze = self.has_ability(id, "liquidooze");
                         self.damage(id, amount, events);
-                        if self.get(to).hp > 0 && self.get(to).hp < self.get(to).max_hp {
-                            self.heal(to, amount, events);
-                        }
+                        self.drain_health(to, amount, ooze, events);
                     }
                     _ => {}
                 }

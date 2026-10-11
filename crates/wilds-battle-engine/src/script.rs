@@ -981,6 +981,7 @@ impl Battle {
                 frame.spec,
                 options.min_target_hp,
             ));
+            let ooze = self.has_ability(recipient, "liquidooze");
             let actual = self.damage_from_move(
                 actor,
                 recipient,
@@ -1016,10 +1017,11 @@ impl Battle {
                 )));
             }
             if let Some(fraction) = options.drain {
-                if actual > 0 && self.get(actor).hp < self.get(actor).max_hp {
-                    self.heal(
+                if actual > 0 {
+                    self.drain_health(
                         actor,
                         ((actual as f32 * fraction).floor() as u16).max(1),
+                        ooze,
                         events,
                     );
                 }
@@ -1905,28 +1907,38 @@ impl Battle {
                 Value::Integer(i64::from(restored))
             }
             ScriptOperation::Heal { who, amount } => {
-                let pokemon = self.get(who);
-                let missing = pokemon.max_hp - pokemon.hp;
-                let points = if pokemon.hp == 0 || self.healing_blocked(who) {
-                    0
+                if who == actor
+                    && spec.id == "strength-sap"
+                    && self.has_ability(frame.target, "liquidooze")
+                {
+                    let points = self.hp_points(who, amount, true);
+                    self.drain_health(who, points, true, events);
+                    Value::Integer(0)
                 } else {
-                    {
-                        let points = u32::from(self.hp_points(who, amount, true));
-                        let points =
-                            if spec.has_flag("pulse") && self.has_ability(actor, "megalauncher") {
+                    let pokemon = self.get(who);
+                    let missing = pokemon.max_hp - pokemon.hp;
+                    let points = if pokemon.hp == 0 || self.healing_blocked(who) {
+                        0
+                    } else {
+                        {
+                            let points = u32::from(self.hp_points(who, amount, true));
+                            let points = if spec.has_flag("pulse")
+                                && self.has_ability(actor, "megalauncher")
+                            {
                                 points * 3 / 2
                             } else {
                                 points
                             };
-                        points.min(u32::from(missing)) as u16
+                            points.min(u32::from(missing)) as u16
+                        }
+                    };
+                    if points > 0 {
+                        self.heal(who, points, events);
+                        // A team heal succeeds even when another recipient could not be hit.
+                        frame.any_hit = true;
                     }
-                };
-                if points > 0 {
-                    self.heal(who, points, events);
-                    // A team heal succeeds even when another recipient could not be hit.
-                    frame.any_hit = true;
+                    Value::Integer(i64::from(points))
                 }
-                Value::Integer(i64::from(points))
             }
             ScriptOperation::CanApplyStatus {
                 who,

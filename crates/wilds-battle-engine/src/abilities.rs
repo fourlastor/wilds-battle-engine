@@ -27,6 +27,23 @@ fn cannot_suppress(ability: &str) -> bool {
 }
 
 impl Battle {
+    pub(crate) fn drain_health(
+        &mut self,
+        who: ParticipantId,
+        amount: u16,
+        ooze: bool,
+        events: &mut Vec<BattleEvent>,
+    ) {
+        if self.get(who).hp == 0 {
+            return;
+        }
+        if ooze {
+            self.indirect_damage(who, amount, events);
+        } else if self.get(who).hp < self.get(who).max_hp {
+            self.heal(who, amount, events);
+        }
+    }
+
     pub(crate) fn roll_hit_count(&mut self, actor: ParticipantId, min: u8, max: u8) -> u8 {
         if self.has_ability(actor, "skilllink") {
             return max;

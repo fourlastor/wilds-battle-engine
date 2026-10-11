@@ -62,7 +62,7 @@ id,ability,status,verification
 61,shed-skin,IMPLEMENTED,Source inventory; existing tests only
 62,guts,IMPLEMENTED,Source inventory; existing tests only
 63,marvel-scale,IMPLEMENTED,Source inventory; existing tests only
-64,liquid-ooze,MISSING,No native battle behavior
+64,liquid-ooze,IMPLEMENTED,ability_rules::liquid_ooze_reverses_drain_seed_and_strength_sap_even_at_full_hp
 65,overgrow,IMPLEMENTED,ability_rules::overgrow_boosts_matching_moves_only
 66,blaze,IMPLEMENTED,ability_rules::blaze_boosts_matching_moves_only
 67,torrent,IMPLEMENTED,ability_rules::torrent_boosts_matching_moves_only
