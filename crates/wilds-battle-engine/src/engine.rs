@@ -1042,6 +1042,35 @@ impl Battle {
         choice: &MoveAction,
         events: &mut Vec<BattleEvent>,
     ) -> Result<(), BattleError> {
+        // The queued action retains its original priority. Encore changes its move at execution.
+        let mut overridden = choice.clone();
+        if !choice.forced
+            && choice.move_id != "struggle"
+            && let Some(required) = self.only_move(actor)
+        {
+            overridden.move_id = required.to_owned();
+            let spec = self.catalog.get(required).expect("learned move");
+            let kind = self.move_target_kind(actor, spec);
+            if matches!(
+                kind,
+                Target::User | Target::UserOrAlly | Target::UserAndAllies
+            ) {
+                overridden.target = actor;
+                overridden.target_position = self.position(actor).expect("active actor");
+            } else if overridden.target == actor {
+                let foes: Vec<_> = self
+                    .actors()
+                    .into_iter()
+                    .filter(|id| id.side != actor.side)
+                    .collect();
+                if !foes.is_empty() {
+                    overridden.target = foes[self.rng.index(foes.len())];
+                    overridden.target_position =
+                        self.position(overridden.target).expect("active foe");
+                }
+            }
+        }
+        let choice = &overridden;
         self.move_failed = false;
         self.current_move = None;
         self.substitute_hits.clear();

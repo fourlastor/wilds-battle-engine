@@ -2269,6 +2269,17 @@
       "limitations": []
     },
     {
+      "id": 227,
+      "slug": "encore",
+      "name": "Encore",
+      "sheet_row": null,
+      "runtime_id": "encore",
+      "file": "moves/encore.lua",
+      "status": "implemented",
+      "limitations": [],
+      "parameter_source": "https://pokeapi.co/api/v2/move/227/"
+    },
+    {
       "id": 228,
       "slug": "pursuit",
       "name": "Pursuit",
@@ -8076,7 +8087,8 @@
       "metronome",
       "mirror-move",
       "copycat",
-      "me-first"
+      "me-first",
+      "encore"
     ]
   }
 }

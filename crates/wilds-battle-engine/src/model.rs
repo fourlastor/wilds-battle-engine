@@ -153,6 +153,10 @@ pub enum Scope {
 /// A rule on a side applies to every Pokémon of that side, one on the field to everyone.
 #[derive(Clone, Debug, PartialEq)]
 pub enum Rule {
+    /// Restricts selected actions to this learned move while it has PP.
+    OnlyMove {
+        id: String,
+    },
     /// Suppresses ordinary held-item effects without removing the item.
     BlockItems,
     /// Expires when the holder attempts its next action, except an optional move id.

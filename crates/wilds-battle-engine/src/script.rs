@@ -285,7 +285,13 @@ impl Battle {
             .turn_choices
             .iter()
             .find(|(own, _)| *own == id)
-            .and_then(|(_, move_id)| self.catalog.get(move_id));
+            .and_then(|(_, move_id)| {
+                self.catalog.get(if move_id == "struggle" {
+                    move_id
+                } else {
+                    self.only_move(id).unwrap_or(move_id)
+                })
+            });
         match selected {
             Some(spec) => {
                 let chosen = lua.create_table()?;

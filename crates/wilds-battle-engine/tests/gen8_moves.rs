@@ -6633,3 +6633,91 @@ fn me_first_copies_through_substitute_but_the_attack_damages_the_substitute() {
     assert_eq!(b.participants(Side::Foes)[0].hp, 1000);
     assert!(b.participants(Side::Foes)[0].substitute_hp < 500);
 }
+
+#[test]
+fn encore_overrides_a_pending_self_targeted_move_and_lasts_three_actions() {
+    let mut user = mon("User", &["splash", "encore"]);
+    user.speed = 200;
+    let foe = mon("Foe", &["pound", "recover"]);
+    let damage = control_damage(40, "Normal", "Physical", foe.clone(), user.clone());
+    let mut b = game(user, vec![foe], 0.5);
+    turn(&mut b);
+    turn_with(&mut b, |p| choose_move(p, "encore", "recover"));
+    assert_eq!(1000 - b.participants(Side::Allies)[0].hp, damage * 2);
+    assert_eq!(b.participants(Side::Foes)[0].move_pp["recover"], 5);
+    assert_eq!(b.participants(Side::Foes)[0].move_pp["pound"], 33);
+    for _ in 0..2 {
+        turn_with(&mut b, |p| {
+            if p.actor.side == Side::Foes {
+                assert!(
+                    p.choices
+                        .iter()
+                        .all(|c| !matches!(c,Choice::UseMove{move_id,..} if move_id=="recover"))
+                );
+            }
+            choose_move(p, "splash", "pound")
+        });
+    }
+    turn_with(&mut b, |p| choose_move(p, "splash", "recover"));
+    assert_eq!(b.participants(Side::Foes)[0].move_pp["recover"], 5);
+    assert_eq!(
+        b.participants(Side::Foes)[0].last_used.as_deref(),
+        Some("recover")
+    );
+}
+#[test]
+fn encore_ends_when_pp_runs_out_and_fails_for_missing_history() {
+    let mut user = mon("User", &["splash", "encore"]);
+    user.speed = 200;
+    let mut foe = mon("Foe", &["pound", "growl"]);
+    foe.move_pp.insert("pound".into(), 2);
+    let mut b = game(user, vec![foe], 0.5);
+    turn(&mut b);
+    turn_with(&mut b, |p| choose_move(p, "encore", "growl"));
+    assert_eq!(b.participants(Side::Foes)[0].move_pp["pound"], 0);
+    assert!(
+        !b.participants(Side::Foes)[0]
+            .conditions
+            .iter()
+            .any(|c| c.name == "encore")
+    );
+    turn_with(&mut b, |p| choose_move(p, "splash", "growl"));
+    let mut user = mon("User", &["encore"]);
+    user.speed = 200;
+    let mut b = game(user, vec![mon("Foe", &["pound"])], 0.5);
+    turn(&mut b);
+    assert!(b.participants(Side::Allies)[0].last_move_failed);
+}
+#[test]
+fn encore_preserves_the_priority_of_the_originally_selected_action() {
+    let mut user = mon("User", &["splash", "encore"]);
+    user.speed = 200;
+    let mut ally = mon("Ally", &["splash"]);
+    ally.speed = 50;
+    let mut foe = mon("Foe", &["pound", "dragon-tail"]);
+    foe.speed = 100;
+    let mut b = Battle::with_rng(
+        Fixed(0.5),
+        [vec![user, ally], vec![foe]],
+        MoveCatalog::builtin().unwrap(),
+    )
+    .unwrap();
+    turn(&mut b);
+    let events = turn_with(&mut b, |p| {
+        if p.actor.side == Side::Allies && p.actor.index == 1 {
+            choose_move(p, "splash", "dragon-tail")
+        } else {
+            if p.actor.side == Side::Allies {
+                p.choices.iter().find(|c| matches!(c,Choice::UseMove {move_id,target,..} if move_id=="encore" && target.side==Side::Foes)).unwrap().id()
+            } else {
+                choose_move(p, "encore", "dragon-tail")
+            }
+        }
+    });
+    assert_eq!(used_names(&events), ["User", "Ally", "Foe"]);
+    assert_eq!(
+        b.participants(Side::Foes)[0].last_used.as_deref(),
+        Some("pound")
+    );
+    assert_eq!(b.participants(Side::Foes)[0].move_pp["dragon-tail"], 10);
+}

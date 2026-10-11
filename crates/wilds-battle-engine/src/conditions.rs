@@ -547,7 +547,26 @@ impl Battle {
         })
     }
 
+    pub(crate) fn only_move(&self, who: ParticipantId) -> Option<&str> {
+        let p = self.get(who);
+        self.rules(who).find_map(|rule| match rule {
+            Rule::OnlyMove { id }
+                if p.moves.contains(id) && p.move_pp.get(id).is_some_and(|pp| *pp > 0) =>
+            {
+                Some(id.as_str())
+            }
+            _ => None,
+        })
+    }
+
     pub(crate) fn move_block(&self, id: ParticipantId, spec: &MoveSpec) -> Option<&str> {
+        if spec.id != "struggle"
+            && self
+                .only_move(id)
+                .is_some_and(|required| required != spec.id)
+        {
+            return Some("{name} must repeat its encored move!");
+        }
         if spec.has_flag("requires_eaten_berry") && !self.has_eaten_berry(id) {
             return Some("{name} must eat a berry before using that move!");
         }
@@ -755,10 +774,12 @@ impl Battle {
     pub(crate) fn remove_expired_status_conditions(&mut self, id: ParticipantId) {
         let status = self.get(id).status;
         let comatose = self.has_ability(id, "comatose");
-        self.get_mut(id).conditions.retain(|condition| {
+        let p = self.get_mut(id);
+        p.conditions.retain(|condition| {
             !condition.rules.iter().any(|rule| {
                 matches!(rule, Rule::RequiresStatus(required) if status != Some(*required)
                 && !(*required == Status::Asleep && comatose))
+                    || matches!(rule, Rule::OnlyMove {id} if !p.moves.contains(id) || p.move_pp.get(id).is_none_or(|pp| *pp == 0))
             })
         });
     }

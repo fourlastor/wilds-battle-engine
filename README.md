@@ -1,9 +1,9 @@
 # Wilds battle engine
 
 `wilds-battle-engine` is the Rust battle simulation. Move definitions are loaded
-from Lua; `MoveCatalog::builtin()` embeds the 742 files under `moves/`,
+from Lua; `MoveCatalog::builtin()` embeds the 743 files under `moves/`,
 and `MoveCatalog::from_directory(path)` reads them from disk at runtime.
-Both catalogs also include the system move Struggle, for 743 moves in total.
+Both catalogs also include the system move Struggle, for 744 moves in total.
 The [move catalog](moves/README.md) includes 538 entries from the Saved moves sheet,
 plus support moves, additional local JSON moves and the original moves outside the sheet. Its manifest
 records the 34 excluded Z/Max Moves. Files use canonical slugs and source display
@@ -224,6 +224,7 @@ before turn-start hooks; capped changes and resetting stages do not trigger them
 | `who.last_move_type` | Actual type of the last attempted move, including Weather Ball and other dynamic damage types; cleared on withdrawal. |
 | `who.team.roster` | The complete read-only party, including fainted members; `team.pokemon` continues to contain living members. |
 | `ctx:call_move(id, target)` | Executes another catalog move immediately with its targeting, hit checks and effects, spending only the caller's PP. An omitted target is selected by the engine; nesting is bounded. |
+| `Rule.OnlyMove {id}` | Restricts choices and overrides an already queued move while the required slot has PP, preserving that action's priority. The effect expires when its slot is gone or depleted. |
 | `ctx.last_move` | The battle's last attempted move before the current action, including the actual move produced by a caller. Actions prevented by sleep, flinching, etc. leave it unchanged. |
 | `ctx:move_ids()` | Reads every ID in the loaded catalog, sorted for deterministic scripted selection. |
 | `ctx:move_info(id)` | Reads catalog identity, base type, category, priority, PP and flags; returns nil for an unknown ID. |
