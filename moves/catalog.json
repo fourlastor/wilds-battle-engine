@@ -2763,6 +2763,17 @@
       "parameter_source": "https://pokeapi.co/api/v2/move/287/"
     },
     {
+      "id": 288,
+      "slug": "grudge",
+      "name": "Grudge",
+      "sheet_row": null,
+      "runtime_id": "grudge",
+      "file": "moves/grudge.lua",
+      "status": "implemented",
+      "limitations": [],
+      "parameter_source": "https://pokeapi.co/api/v2/move/288/"
+    },
+    {
       "id": 290,
       "slug": "secret-power",
       "name": "Secret Power",
@@ -7884,7 +7895,8 @@
       "obstruct",
       "spiky-shield",
       "baneful-bunker",
-      "destiny-bond"
+      "destiny-bond",
+      "grudge"
     ]
   }
 }

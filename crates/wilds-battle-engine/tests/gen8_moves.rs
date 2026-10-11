@@ -5628,3 +5628,44 @@ fn destiny_bond_persists_between_turns_until_its_user_acts_again() {
     assert_eq!(b.participants(Side::Allies)[0].hp, 0);
     assert_eq!(b.participants(Side::Foes)[0].hp, 0);
 }
+
+#[test]
+fn grudge_empties_only_the_knockout_moves_pp_and_persists_until_the_next_action() {
+    let mut user = mon("User", &["grudge", "splash"]);
+    user.hp = 1;
+    user.speed = 200;
+    let mut b = game(
+        user,
+        vec![mon("Foe", &["splash", "quick-attack", "pound"])],
+        0.5,
+    );
+    turn(&mut b);
+    turn_with(&mut b, |p| choose_move(p, "splash", "quick-attack"));
+    assert_eq!(b.participants(Side::Allies)[0].hp, 0);
+    assert_eq!(b.participants(Side::Foes)[0].hp, 1000);
+    assert_eq!(b.participants(Side::Foes)[0].move_pp["quick-attack"], 0);
+    assert_eq!(b.participants(Side::Foes)[0].move_pp["pound"], 35);
+}
+
+#[test]
+fn grudge_can_be_reused_but_ends_when_another_action_or_residual_damage_occurs() {
+    use wilds_battle_engine::Status;
+    for next_move in ["grudge", "splash"] {
+        let mut user = mon("User", &["grudge", "splash"]);
+        user.hp = 1;
+        user.speed = 200;
+        let mut b = game(user, vec![mon("Foe", &["splash", "pound"])], 0.5);
+        turn(&mut b);
+        turn_with(&mut b, |p| choose_move(p, next_move, "pound"));
+        assert_eq!(
+            b.participants(Side::Foes)[0].move_pp["pound"],
+            if next_move == "grudge" { 0 } else { 34 }
+        );
+    }
+    let mut user = mon("User", &["grudge"]);
+    user.hp = 1;
+    user.status = Some(Status::Burned);
+    let mut b = game(user, vec![mon("Foe", &["splash"])], 0.5);
+    turn(&mut b);
+    assert_eq!(b.participants(Side::Foes)[0].move_pp["splash"], 19);
+}

@@ -844,7 +844,7 @@ fn rule_of(value: &Value) -> mlua::Result<Rule> {
     };
     let allowed: &[&str] = match kind {
         RuleKind::ExpiresOnAction => &["kind", "except_move"],
-        RuleKind::FaintAttacker => &["kind"],
+        RuleKind::FaintAttacker | RuleKind::DepleteAttackerPp => &["kind"],
         RuleKind::Guard => &[
             "kind",
             "spread_only",
@@ -939,6 +939,7 @@ fn rule_of(value: &Value) -> mlua::Result<Rule> {
             except_move: options.text("except_move")?,
         },
         RuleKind::FaintAttacker => Rule::FaintAttacker,
+        RuleKind::DepleteAttackerPp => Rule::DepleteAttackerPp,
         RuleKind::StatusOnExpiry => Rule::StatusOnExpiry {
             status: status_of(&required("status")?, "expiry status")?,
             source: pokemon_of(&required("by")?, "expiry source")?,

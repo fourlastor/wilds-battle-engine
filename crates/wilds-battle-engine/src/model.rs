@@ -159,6 +159,8 @@ pub enum Rule {
     },
     /// Takes an opposing direct attacker down if its hit knocks the holder out.
     FaintAttacker,
+    /// Empties the PP of the direct attacker's selected move after the holder faints.
+    DepleteAttackerPp,
     /// Hit protection, removed by moves that break Protect. Filters are combined.
     Guard {
         spread_only: bool,

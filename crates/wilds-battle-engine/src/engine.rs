@@ -2383,6 +2383,13 @@ impl Battle {
             )));
             return Ok(lost);
         }
+        let deplete_pp = self
+            .rules(target)
+            .any(|rule| matches!(rule, Rule::DepleteAttackerPp))
+            && !self
+                .catalog
+                .get(&meta.move_id)
+                .is_some_and(|spec| spec.has_flag("future_move"));
         let faint_attacker = actor.side != target.side
             && self
                 .rules(target)
@@ -2448,6 +2455,19 @@ impl Battle {
             let result = self.execute_script(target, actor, &spec, events, ScriptHook::Hit);
             self.reaction_hit = previous;
             result?;
+        }
+        if deplete_pp
+            && self.get(target).hp == 0
+            && self.get(actor).hp > 0
+            && let Some(move_id) = self.get(actor).last_used.clone()
+            && let Some(pp) = self.get_mut(actor).move_pp.get_mut(&move_id)
+        {
+            *pp = 0;
+            events.push(BattleEvent::Message(format!(
+                "{} lost all PP for {} due to Grudge!",
+                self.get(actor).name,
+                move_id
+            )));
         }
         if faint_attacker && self.get(target).hp == 0 && self.get(actor).hp > 0 {
             events.push(BattleEvent::Message(format!(

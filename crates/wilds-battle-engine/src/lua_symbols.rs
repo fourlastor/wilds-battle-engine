@@ -36,6 +36,7 @@ pub(crate) enum AccuracyKind {
 pub(crate) enum RuleKind {
     ExpiresOnAction,
     FaintAttacker,
+    DepleteAttackerPp,
     Guard,
     BlockPriority,
     IncomingBasePower,
@@ -212,6 +213,7 @@ pub(crate) fn install(lua: &Lua) -> Result<(), BattleError> {
         ("DamageEachTurn", RuleKind::DamageEachTurn),
         ("ExpiresOnAction", RuleKind::ExpiresOnAction),
         ("FaintAttacker", RuleKind::FaintAttacker),
+        ("DepleteAttackerPp", RuleKind::DepleteAttackerPp),
         ("Guard", RuleKind::Guard),
         ("BlockPriority", RuleKind::BlockPriority),
         ("IncomingBasePower", RuleKind::IncomingBasePower),
