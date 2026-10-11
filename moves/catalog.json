@@ -3781,6 +3781,17 @@
       "limitations": []
     },
     {
+      "id": 486,
+      "slug": "electro-ball",
+      "name": "Electro Ball",
+      "sheet_row": null,
+      "runtime_id": "electro-ball",
+      "file": "moves/electro-ball.lua",
+      "status": "implemented",
+      "limitations": [],
+      "parameter_source": "https://pokeapi.co/api/v2/move/486/"
+    },
+    {
       "id": 488,
       "slug": "flame-charge",
       "name": "Flame Charge",
@@ -6300,7 +6311,8 @@
       "grass-knot",
       "heavy-slam",
       "heat-crash",
-      "gyro-ball"
+      "gyro-ball",
+      "electro-ball"
     ]
   }
 }

@@ -672,3 +672,30 @@ fn gyro_ball_uses_modified_speed_and_caps_at_150_power() {
         );
     }
 }
+
+#[test]
+fn electro_ball_obeys_all_speed_ratio_thresholds() {
+    for (speed, power) in [
+        (99, 40),
+        (100, 60),
+        (199, 60),
+        (200, 80),
+        (299, 80),
+        (300, 120),
+        (399, 120),
+        (400, 150),
+        (1000, 150),
+    ] {
+        let mut user = mon("User", &["electro-ball"]);
+        user.speed = speed;
+        let foe = mon("Foe", &["splash"]);
+        let expected = control_damage(power, "Electric", "Special", user.clone(), foe.clone());
+        let mut b = game(user, vec![foe], 0.5);
+        turn(&mut b);
+        assert_eq!(
+            1000 - b.participants(Side::Foes)[0].hp,
+            expected,
+            "speed {speed}"
+        );
+    }
+}
