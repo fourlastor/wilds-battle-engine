@@ -4221,3 +4221,25 @@ fn ally_switch_fails_in_singles_and_the_middle_of_triples_but_swaps_the_edges() 
         );
     }
 }
+
+#[test]
+fn ion_deluge_converts_normal_attacks_status_and_fixed_damage_for_one_turn() {
+    use wilds_battle_engine::Status;
+    for move_id in ["pound", "super-fang", "glare"] {
+        let mut user = mon("User", &["ion-deluge", "splash"]);
+        user.types = vec![PokemonType::Ground];
+        let mut b = game(user, vec![mon("Foe", &[move_id])], 0.5);
+        turn(&mut b);
+        assert_eq!(b.participants(Side::Allies)[0].hp, 1000);
+        assert_eq!(b.participants(Side::Allies)[0].status, None);
+        turn_with(&mut b, |p| choose_move(p, "splash", move_id));
+        if move_id == "glare" {
+            assert_eq!(
+                b.participants(Side::Allies)[0].status,
+                Some(Status::Paralyzed)
+            );
+        } else {
+            assert!(b.participants(Side::Allies)[0].hp < 1000);
+        }
+    }
+}

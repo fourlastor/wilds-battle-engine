@@ -5342,6 +5342,17 @@
       "limitations": []
     },
     {
+      "id": 569,
+      "slug": "ion-deluge",
+      "name": "Ion Deluge",
+      "sheet_row": null,
+      "runtime_id": "ion-deluge",
+      "file": "moves/ion-deluge.lua",
+      "status": "implemented",
+      "limitations": [],
+      "parameter_source": "https://pokeapi.co/api/v2/move/569/"
+    },
+    {
       "id": 570,
       "slug": "parabolic-charge",
       "name": "Parabolic Charge",
@@ -7512,7 +7523,8 @@
       "perish-song",
       "trick-room",
       "wonder-room",
-      "ally-switch"
+      "ally-switch",
+      "ion-deluge"
     ]
   }
 }

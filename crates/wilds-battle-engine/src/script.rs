@@ -778,10 +778,14 @@ impl Battle {
             contact: options.contact.unwrap_or(frame.spec.has_flag("contact")),
             consecutive_boost: 0,
             typeless: options.typeless,
-            move_type: self.converted_type(
-                frame.actor,
-                options.move_type.unwrap_or(frame.spec.move_type),
-            ),
+            move_type: if frame.spec.auto_only {
+                frame.spec.move_type
+            } else {
+                self.converted_type(
+                    frame.actor,
+                    options.move_type.unwrap_or(frame.spec.move_type),
+                )
+            },
             also_type: options.also_type,
             effective: &options.effective,
             category: options.category.unwrap_or(frame.spec.category),
@@ -1126,8 +1130,11 @@ impl Battle {
         status: Status,
         move_type: crate::model::PokemonType,
     ) -> bool {
-        type_chart::status_immune(status, move_type, &self.types_of(who))
-            || (who != actor && self.blocks_status(who, status))
+        type_chart::status_immune(
+            status,
+            self.converted_type(actor, move_type),
+            &self.types_of(who),
+        ) || (who != actor && self.blocks_status(who, status))
             || (status == Status::Asleep
                 && (self.has_ability(who, "insomnia") || self.has_ability(who, "vitalspirit")))
             || self.has_ability(who, "comatose")
@@ -1457,14 +1464,15 @@ impl Battle {
                 if self.ability_bypass {
                     self.ignored_ability = Some(who);
                 }
-                let effectiveness = self.effectiveness(who, spec.move_type);
+                let move_type = self.converted_type(actor, spec.move_type);
+                let effectiveness = self.effectiveness(who, move_type);
                 if self.get(who).hp == 0 {
                     report.missed = true;
                 } else if !typeless
                     && self.ability_blocks_damage(
                         actor,
                         who,
-                        spec.move_type,
+                        move_type,
                         effectiveness,
                         spec.has_flag("sound"),
                         spec.has_flag("bullet"),
@@ -1481,7 +1489,7 @@ impl Battle {
                     let mut actual =
                         amount.min(self.move_damage_limit(actor, who, spec, min_target_hp));
                     if actual > 0 {
-                        let meta = HitMeta::of(spec, spec.category, spec.move_type);
+                        let meta = HitMeta::of(spec, spec.category, move_type);
                         actual = self.damage_from_move(actor, who, actual, &meta, events)?;
                     }
                     report.substitute = self.substitute_hits.contains(&who);
