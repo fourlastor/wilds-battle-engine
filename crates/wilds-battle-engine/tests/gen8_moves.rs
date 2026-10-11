@@ -3967,3 +3967,73 @@ fn yawn_is_cancelled_by_switching_and_rechecks_safeguard_at_expiry() {
         assert!(b.participants(Side::Foes)[0].conditions.is_empty());
     }
 }
+
+#[test]
+fn perish_song_bypasses_protect_and_substitute_counts_three_turns_and_respects_soundproof() {
+    let mut user = mon("User", &["perish-song", "splash"]);
+    user.ability = Some("soundproof".into());
+    let mut foe = mon("Foe", &["protect", "splash"]);
+    foe.substitute_hp = 100;
+    let mut b = game(user, vec![foe], 0.5);
+    let events = turn(&mut b);
+    assert!(
+        events
+            .iter()
+            .any(|e| matches!(e, BattleEvent::Message(m) if m.contains("count fell to 3")))
+    );
+    assert!(b.participants(Side::Allies)[0].conditions.is_empty());
+    for _ in 0..2 {
+        turn_with(&mut b, |p| choose_move(p, "splash", "splash"));
+        assert_eq!(b.participants(Side::Foes)[0].hp, 1000);
+    }
+    turn_with(&mut b, |p| choose_move(p, "splash", "splash"));
+    assert_eq!(b.participants(Side::Foes)[0].hp, 0);
+    assert_eq!(b.participants(Side::Allies)[0].hp, 1000);
+}
+
+#[test]
+fn perish_song_does_not_refresh_cancels_on_switch_and_resolves_faster_pokemon_first() {
+    let mut b = game(
+        mon("User", &["perish-song", "splash"]),
+        vec![mon("Foe", &["splash"]), mon("Bench", &["splash"])],
+        0.5,
+    );
+    b.set_active([vec![0], vec![0]]).unwrap();
+    turn(&mut b);
+    turn(&mut b);
+    assert!(b.participants(Side::Allies)[0].last_move_failed);
+    turn_with(&mut b, |p| {
+        if p.actor.side == Side::Foes {
+            p.choices
+                .iter()
+                .find(|c| matches!(c, Choice::Switch { .. }))
+                .unwrap()
+                .id()
+        } else {
+            choose_move(p, "splash", "splash")
+        }
+    });
+    turn_with(&mut b, |p| choose_move(p, "splash", "splash"));
+    assert_eq!(b.participants(Side::Allies)[0].hp, 0);
+    assert_eq!(b.participants(Side::Foes)[0].hp, 1000);
+    for fast_side in [Side::Allies, Side::Foes] {
+        let mut user = mon("User", &["perish-song", "splash"]);
+        let mut foe = mon("Foe", &["splash"]);
+        if fast_side == Side::Allies {
+            user.speed = 200;
+        } else {
+            foe.speed = 200;
+        }
+        let mut b = game(user, vec![foe], 0.5);
+        turn(&mut b);
+        let mut events = vec![];
+        for _ in 0..3 {
+            events = turn_with(&mut b, |p| choose_move(p, "splash", "splash"));
+        }
+        assert!(
+            events
+                .iter()
+                .any(|e| matches!(e, BattleEvent::End {winner: Some(w)} if *w != fast_side))
+        );
+    }
+}

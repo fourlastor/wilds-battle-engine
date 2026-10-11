@@ -832,7 +832,7 @@ fn rule_of(value: &Value) -> mlua::Result<Rule> {
         RuleKind::StatMultiplier => &["kind", "stat", "factor"],
         RuleKind::BlockStatus => &["kind", "statuses", "confusion"],
         RuleKind::BlockMoves => &["kind", "flags", "message"],
-        RuleKind::NoRepeat | RuleKind::SealMoves => &["kind"],
+        RuleKind::FaintOnExpiry | RuleKind::NoRepeat | RuleKind::SealMoves => &["kind"],
         RuleKind::BlockMove => &["kind", "id", "message"],
         RuleKind::BlockCategory => &["kind", "category", "except", "message"],
         RuleKind::MovePriority => &["kind", "amount"],
@@ -888,6 +888,7 @@ fn rule_of(value: &Value) -> mlua::Result<Rule> {
             stages: whole(&required("stages")?, "residual stages", -12.0, 12.0)? as i8,
             source: pokemon_of(&required("by")?, "residual source")?,
         },
+        RuleKind::FaintOnExpiry => Rule::FaintOnExpiry,
         RuleKind::NoRepeat => Rule::NoRepeat,
         RuleKind::SealMoves => Rule::SealMoves,
         RuleKind::BlockMove => Rule::BlockMove {

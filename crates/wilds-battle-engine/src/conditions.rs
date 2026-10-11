@@ -556,11 +556,28 @@ impl Battle {
             Scope::Side(Side::Foes),
         ];
         scopes.extend(order.iter().map(|&id| Scope::Pokemon(id)));
+        let mut perish = Vec::new();
         for scope in scopes {
             let name = match scope {
                 Scope::Pokemon(id) => self.get(id).name.clone(),
                 _ => String::new(),
             };
+            if let Scope::Pokemon(id) = scope {
+                for condition in self.conditions(scope) {
+                    if condition.rules.contains(&Rule::FaintOnExpiry)
+                        && let Some(turns) = condition.turns_left
+                    {
+                        events.push(BattleEvent::Message(format!(
+                            "{}'s perish count fell to {}!",
+                            name,
+                            turns - 1
+                        )));
+                        if turns == 1 {
+                            perish.push(id);
+                        }
+                    }
+                }
+            }
             let conditions = self.conditions_mut(scope);
             let mut ended = Vec::new();
             let mut expired_rules = Vec::new();
@@ -594,6 +611,17 @@ impl Battle {
             for message in ended {
                 events.push(BattleEvent::Message(named(&message, &name)));
             }
+        }
+        // Perish countdowns expire in Speed order, independent of the moves' priorities.
+        perish.sort_by_key(|&id| std::cmp::Reverse(self.stat_value(id, CombatStat::Speed) as i32));
+        for id in perish {
+            if self.winner.is_some() {
+                break;
+            }
+            if self.get(id).hp > 0 {
+                self.damage(id, self.get(id).hp, events);
+            }
+            self.resolve_outcome(events);
         }
     }
 }
