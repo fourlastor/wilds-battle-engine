@@ -471,6 +471,7 @@ impl Battle {
         }
         let ability = match move_type {
             PokemonType::Electric => "lightningrod",
+            PokemonType::Water => "stormdrain",
             _ => return target,
         };
         let mut candidates: Vec<_> = self
