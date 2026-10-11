@@ -1,7 +1,7 @@
 id,ability,status,verification
 1,stench,MISSING,No native battle behavior
 2,drizzle,MISSING,No native battle behavior
-3,speed-boost,MISSING,No native battle behavior
+3,speed-boost,IMPLEMENTED,ability_rules::speed_boost_triggers_each_turn_except_the_switch_in_turn
 4,battle-armor,IMPLEMENTED,Source inventory; existing tests only
 5,sturdy,IMPLEMENTED,Source inventory; existing tests only
 6,damp,MISSING,No native battle behavior

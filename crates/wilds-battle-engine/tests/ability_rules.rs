@@ -1230,3 +1230,29 @@ fn light_metal_halves_weight_and_respects_suppression_and_mold_breaker() {
         weight_damage("", false, false)
     );
 }
+
+#[test]
+fn speed_boost_triggers_each_turn_except_the_switch_in_turn() {
+    let mut lead = mon("Lead", &["splash"]);
+    lead.ability = Some("speed-boost".into());
+    let reserve = lead.clone();
+    let mut battle = Battle::with_rng(
+        Fixed(0.5),
+        [vec![lead, reserve], vec![mon("Target", &["splash"])]],
+        MoveCatalog::builtin().unwrap(),
+    )
+    .unwrap();
+    battle.set_active([vec![0], vec![0]]).unwrap();
+    turn(&mut battle, "splash", "splash");
+    assert_eq!(ally(&battle).stage(wilds_battle_engine::Stat::Speed), 1);
+    turn(&mut battle, "switch:1", "splash");
+    assert_eq!(
+        battle.participants(Side::Allies)[1].stage(wilds_battle_engine::Stat::Speed),
+        0
+    );
+    turn(&mut battle, "splash", "splash");
+    assert_eq!(
+        battle.participants(Side::Allies)[1].stage(wilds_battle_engine::Stat::Speed),
+        1
+    );
+}

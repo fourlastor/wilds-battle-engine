@@ -146,6 +146,16 @@ impl Battle {
         }
     }
 
+    pub(crate) fn ability_residual(&mut self, events: &mut Vec<BattleEvent>) {
+        let mut order = self.actors();
+        order.sort_by_key(|&who| std::cmp::Reverse(self.action_speed(who)));
+        for who in order {
+            if self.has_ability(who, "speedboost") && self.get(who).entered_turn < self.turn {
+                self.change_stat(who, crate::model::Stat::Speed, 1, events);
+            }
+        }
+    }
+
     pub(crate) fn ability_on_exit(&mut self, who: ParticipantId, events: &mut Vec<BattleEvent>) {
         // Run before volatile state and suppression are cleared, and only while alive.
         if self.has_ability(who, "regenerator") {

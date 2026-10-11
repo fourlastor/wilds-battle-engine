@@ -1048,6 +1048,7 @@ impl Battle {
         if self.winner.is_none() {
             self.tick_conditions(&order, events);
             self.bad_dreams_residual(events);
+            self.ability_residual(events);
             self.residual_berries(events);
             self.update_berries(events);
             self.resolve_outcome(events);
