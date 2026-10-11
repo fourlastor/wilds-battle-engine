@@ -3465,6 +3465,17 @@
       "parameter_source": "Pokemon Showdown 942cda71, data/moves.ts"
     },
     {
+      "id": 447,
+      "slug": "grass-knot",
+      "name": "Grass Knot",
+      "sheet_row": null,
+      "runtime_id": "grass-knot",
+      "file": "moves/grass-knot.lua",
+      "status": "implemented",
+      "limitations": [],
+      "parameter_source": "https://pokeapi.co/api/v2/move/447/"
+    },
+    {
       "id": 448,
       "slug": "chatter",
       "name": "Chatter",
@@ -6252,7 +6263,8 @@
       "return",
       "frustration",
       "pika-papow",
-      "veevee-volley"
+      "veevee-volley",
+      "grass-knot"
     ]
   }
 }

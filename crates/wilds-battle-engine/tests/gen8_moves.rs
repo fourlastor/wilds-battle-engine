@@ -547,3 +547,31 @@ fn veevee_volley_uses_host_supplied_happiness() {
         );
     }
 }
+
+#[test]
+fn grass_knot_obeys_all_weight_brackets() {
+    for (weight, power) in [
+        (9.9, 20),
+        (10.0, 40),
+        (24.9, 40),
+        (25.0, 60),
+        (49.9, 60),
+        (50.0, 80),
+        (99.9, 80),
+        (100.0, 100),
+        (199.9, 100),
+        (200.0, 120),
+    ] {
+        let user = mon("User", &["grass-knot"]);
+        let mut foe = mon("Foe", &["splash"]);
+        foe.weight = weight;
+        let expected = control_damage(power, "Grass", "Special", user.clone(), foe.clone());
+        let mut b = game(user, vec![foe], 0.5);
+        turn(&mut b);
+        assert_eq!(
+            1000 - b.participants(Side::Foes)[0].hp,
+            expected,
+            "weight {weight}"
+        );
+    }
+}
