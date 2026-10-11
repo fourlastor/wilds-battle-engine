@@ -107,6 +107,35 @@ impl Battle {
         })
     }
 
+    pub(crate) fn explode_on_type(
+        &mut self,
+        actor: ParticipantId,
+        move_type: PokemonType,
+        events: &mut Vec<BattleEvent>,
+    ) -> bool {
+        let rule = self.rules(actor).find_map(|r| match r {
+            Rule::ExplodeOnType {
+                move_type: kind,
+                fraction,
+                message,
+            } if *kind == move_type => Some((*fraction, message.clone())),
+            _ => None,
+        });
+        let Some((fraction, message)) = rule else {
+            return false;
+        };
+        if let Some(message) = message {
+            events.push(BattleEvent::Message(named(&message, &self.get(actor).name)));
+        }
+        if !self.has_ability(actor, "magicguard") {
+            let damage = (f32::from(self.get(actor).max_hp) * fraction)
+                .round()
+                .max(1.0) as u16;
+            self.damage(actor, damage, events);
+        }
+        true
+    }
+
     pub(crate) fn action_speed(&self, id: ParticipantId) -> i32 {
         let speed = (self.stat_value(id, CombatStat::Speed) as i32).clamp(0, 10000);
         let speed = if self

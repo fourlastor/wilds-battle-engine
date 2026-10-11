@@ -4316,3 +4316,50 @@ fn magic_coat_reflects_side_hazards_without_stopping_attacks() {
     turn(&mut b);
     assert!(b.participants(Side::Allies)[0].hp < 1000);
 }
+
+#[test]
+fn powder_cancels_fire_moves_after_spending_pp_and_bypasses_substitute() {
+    for ability in [None, Some("magic-guard")] {
+        let mut foe = mon("Foe", &["ember"]);
+        foe.substitute_hp = 100;
+        foe.ability = ability.map(str::to_owned);
+        let mut b = game(mon("User", &["powder"]), vec![foe], 0.5);
+        turn(&mut b);
+        assert_eq!(b.participants(Side::Allies)[0].hp, 1000);
+        assert_eq!(
+            b.participants(Side::Foes)[0].hp,
+            if ability.is_some() { 1000 } else { 750 }
+        );
+        assert_eq!(b.participants(Side::Foes)[0].substitute_hp, 100);
+        assert_eq!(b.participants(Side::Foes)[0].move_pp["ember"], 24);
+        assert!(b.participants(Side::Foes)[0].last_move_failed);
+    }
+    for (kind, ability) in [
+        (PokemonType::Grass, None),
+        (PokemonType::Normal, Some("overcoat")),
+    ] {
+        let mut foe = mon("Foe", &["ember"]);
+        foe.types = vec![kind];
+        foe.ability = ability.map(str::to_owned);
+        let mut b = game(mon("User", &["powder"]), vec![foe], 0.5);
+        turn(&mut b);
+        assert!(b.participants(Side::Allies)[0].hp < 1000);
+        assert_eq!(b.participants(Side::Foes)[0].hp, 1000);
+    }
+}
+
+#[test]
+fn powder_uses_weather_balls_actual_type_and_expires_after_the_turn() {
+    let mut b = game(
+        mon("User", &["sunny_day", "powder", "splash"]),
+        vec![mon("Foe", &["splash", "weather-ball"])],
+        0.5,
+    );
+    turn(&mut b);
+    turn_with(&mut b, |p| choose_move(p, "powder", "weather-ball"));
+    assert_eq!(b.participants(Side::Allies)[0].hp, 1000);
+    assert_eq!(b.participants(Side::Foes)[0].hp, 750);
+    turn_with(&mut b, |p| choose_move(p, "splash", "weather-ball"));
+    assert!(b.participants(Side::Allies)[0].hp < 1000);
+    assert_eq!(b.participants(Side::Foes)[0].hp, 750);
+}

@@ -820,6 +820,7 @@ fn rule_of(value: &Value) -> mlua::Result<Rule> {
     let allowed: &[&str] = match kind {
         RuleKind::StatEachTurn => &["kind", "stat", "stages", "by"],
         RuleKind::StatusOnExpiry => &["kind", "status", "by"],
+        RuleKind::ExplodeOnType => &["kind", "type", "fraction", "message"],
         RuleKind::DamageEachTurn => &["kind", "fraction", "except_types", "message"],
         RuleKind::HealEachTurn => &["kind", "fraction", "message"],
         RuleKind::DrainEachTurn => &["kind", "fraction", "to", "message"],
@@ -896,6 +897,11 @@ fn rule_of(value: &Value) -> mlua::Result<Rule> {
             stat: stat_of(&required("stat")?, "residual stat")?,
             stages: whole(&required("stages")?, "residual stages", -12.0, 12.0)? as i8,
             source: pokemon_of(&required("by")?, "residual source")?,
+        },
+        RuleKind::ExplodeOnType => Rule::ExplodeOnType {
+            move_type: type_of(&required("type")?, "explosion type")?,
+            fraction: fraction_of(&required("fraction")?, "explosion fraction")?,
+            message: options.text("message")?,
         },
         RuleKind::ReflectMoves => Rule::ReflectMoves,
         RuleKind::SwapDefenses => Rule::SwapDefenses,

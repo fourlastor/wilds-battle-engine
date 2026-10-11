@@ -704,6 +704,15 @@ impl Battle {
         if self.get(recipient).hp == 0 {
             return HitOutcome::Fainted;
         }
+        if frame.spec.has_flag("powder")
+            && (self
+                .types_of(recipient)
+                .contains(&crate::model::PokemonType::Grass)
+                || self.has_ability(recipient, "overcoat"))
+        {
+            self.immune_message(recipient, events);
+            return HitOutcome::Protected;
+        }
         if frame.spec.category == crate::moves::Category::Status
             && self.substitute_blocks_effect(actor, recipient, frame.spec)
         {
@@ -1439,6 +1448,16 @@ impl Battle {
             }
             ScriptOperation::Substitute => Value::Boolean(self.create_substitute(actor, events)),
             ScriptOperation::Damage { power, options } => {
+                if !spec.auto_only
+                    && self.explode_on_type(
+                        actor,
+                        self.converted_type(actor, options.move_type.unwrap_or(spec.move_type)),
+                        events,
+                    )
+                {
+                    frame.failed = true;
+                    return Ok(Flow::Stop);
+                }
                 let report = self.op_damage(frame, power, &options, events)?;
                 self.report_table(&report)?
             }

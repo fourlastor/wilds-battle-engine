@@ -1307,6 +1307,18 @@ impl Battle {
         {
             *pp = pp.saturating_sub(1);
         }
+        if !spec.auto_only
+            && self.explode_on_type(actor, self.converted_type(actor, spec.move_type), events)
+        {
+            events.push(BattleEvent::Message(format!(
+                "{user_name} used {}!",
+                spec.name
+            )));
+            self.move_failed = true;
+            self.clear_consecutive(actor);
+            self.interrupt_script(actor, target, &spec, events)?;
+            return Ok(true);
+        }
         if target_kind == Target::Ally && (target == actor || !self.adjacent(actor, target)) {
             events.push(BattleEvent::Message(format!(
                 "{user_name} used {}!",

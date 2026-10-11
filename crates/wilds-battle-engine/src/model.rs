@@ -153,6 +153,12 @@ pub enum Scope {
 /// A rule on a side applies to every Pokémon of that side, one on the field to everyone.
 #[derive(Clone, Debug, PartialEq)]
 pub enum Rule {
+    /// Cancels a move of this type and inflicts residual damage on its user.
+    ExplodeOnType {
+        move_type: PokemonType,
+        fraction: f32,
+        message: Option<String>,
+    },
     /// Reflects moves explicitly marked reflectable, without recursive rebounds.
     ReflectMoves,
     /// Exchanges raw Defense and Sp. Defense before their own stage modifiers.

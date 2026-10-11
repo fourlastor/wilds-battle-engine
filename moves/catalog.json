@@ -5621,6 +5621,17 @@
       "limitations": []
     },
     {
+      "id": 600,
+      "slug": "powder",
+      "name": "Powder",
+      "sheet_row": null,
+      "runtime_id": "powder",
+      "file": "moves/powder.lua",
+      "status": "implemented",
+      "limitations": [],
+      "parameter_source": "https://pokeapi.co/api/v2/move/600/"
+    },
+    {
       "id": 601,
       "slug": "geomancy",
       "name": "Geomancy",
@@ -7548,7 +7559,8 @@
       "ally-switch",
       "ion-deluge",
       "electrify",
-      "magic-coat"
+      "magic-coat",
+      "powder"
     ]
   }
 }
