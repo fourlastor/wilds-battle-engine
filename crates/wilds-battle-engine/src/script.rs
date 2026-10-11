@@ -944,6 +944,14 @@ impl Battle {
     ) -> Result<DamageReport, BattleError> {
         self.update_berries(events);
         let actor = frame.actor;
+        if frame.hook == ScriptHook::Main {
+            self.ability_prepare_type(
+                actor,
+                frame.spec,
+                self.attack(frame, power, options).move_type,
+                events,
+            );
+        }
         let targets = match options.target {
             Some(one) => vec![one],
             None => self.recipients(frame),

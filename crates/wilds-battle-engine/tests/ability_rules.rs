@@ -3537,3 +3537,32 @@ fn pickup_reclaims_a_neighbors_item_used_this_turn_only_once() {
     turn(&mut battle, "splash", "splash");
     assert!(ally(&battle).item.is_none());
 }
+
+fn check_changing_move_type(ability: &str) {
+    let mut user = mon(
+        "User",
+        &["water-gun", "ember", "hidden-power", "future-sight"],
+    );
+    user.ability = Some(ability.into());
+    let mut battle = game(user, mon("Target", &["splash"]), 0.5);
+    turn(&mut battle, "water-gun", "splash");
+    assert_eq!(ally(&battle).types, [PokemonType::Water]);
+    turn(&mut battle, "ember", "splash");
+    assert_eq!(ally(&battle).types, [PokemonType::Fire]);
+    turn(&mut battle, "hidden-power", "splash");
+    assert_eq!(ally(&battle).types, [PokemonType::Dark]);
+    turn(&mut battle, "future-sight", "splash");
+    assert_eq!(ally(&battle).types, [PokemonType::Dark]);
+    let mut user = mon("User", &["sleep-talk", "water-gun"]);
+    user.ability = Some(ability.into());
+    user.status = Some(Status::Asleep);
+    user.status_turns = 3;
+    let mut battle = game(user, mon("Target", &["splash"]), 0.5);
+    turn(&mut battle, "sleep-talk", "splash");
+    assert_eq!(ally(&battle).types, [PokemonType::Water]);
+}
+
+#[test]
+fn protean_changes_type_on_each_move_under_generation_eight_rules() {
+    check_changing_move_type("protean");
+}

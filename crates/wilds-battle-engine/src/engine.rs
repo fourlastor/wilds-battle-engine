@@ -57,7 +57,7 @@ pub struct Battle {
     /// Whether the move being used right now failed, missed or had no effect.
     pub(crate) move_failed: bool,
     call_depth: u8,
-    snatching: bool,
+    pub(crate) snatching: bool,
     pub(crate) last_battle_move: Option<String>,
     pub(crate) current_move: Option<String>,
 }
@@ -1479,6 +1479,14 @@ impl Battle {
                 spec.category == Category::Status && self.has_ability(actor, "prankster");
         }
         self.current_move = Some(spec.id.clone());
+        if Self::normalizable_move(&spec.id) {
+            self.ability_prepare_type(
+                actor,
+                &spec,
+                self.converted_type(actor, spec.move_type),
+                events,
+            );
+        }
         self.get_mut(actor).last_move_type = Some(self.converted_type(actor, spec.move_type));
         if spec.effects.iter().any(|e| matches!(e, Effect::Protect))
             && !self.protection_check(actor)

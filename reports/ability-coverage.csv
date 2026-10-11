@@ -166,7 +166,7 @@ id,ability,status,verification
 165,aroma-veil,IMPLEMENTED,Source inventory; existing tests only
 166,flower-veil,IMPLEMENTED,ability_rules::flower_veil_protects_grass_teammate_stats_with_bypass_and_type_checks
 167,cheek-pouch,IMPLEMENTED,Source inventory; existing tests only
-168,protean,MISSING,No native battle behavior
+168,protean,IMPLEMENTED,ability_rules::protean_changes_type_on_each_move_under_generation_eight_rules
 169,fur-coat,IMPLEMENTED,Source inventory; existing tests only
 170,magician,MISSING,No native battle behavior
 171,bulletproof,IMPLEMENTED,Source inventory; existing tests only

@@ -27,6 +27,31 @@ fn cannot_suppress(ability: &str) -> bool {
 }
 
 impl Battle {
+    pub(crate) fn ability_prepare_type(
+        &mut self,
+        who: ParticipantId,
+        spec: &crate::moves::MoveSpec,
+        kind: crate::model::PokemonType,
+        events: &mut Vec<BattleEvent>,
+    ) {
+        if self.reflecting
+            || self.snatching
+            || spec.auto_only
+            || spec.has_flag("future_move")
+            || spec.has_flag("calls_move")
+            || !self.has_ability(who, "protean")
+            || self.types_of(who) == [kind]
+        {
+            return;
+        }
+        self.get_mut(who).types = vec![kind];
+        self.get_mut(who).added_type = None;
+        events.push(BattleEvent::Message(format!(
+            "{} changed to the {kind:?} type!",
+            self.get(who).name
+        )));
+    }
+
     pub(crate) fn pressure_cost(
         &self,
         actor: ParticipantId,
