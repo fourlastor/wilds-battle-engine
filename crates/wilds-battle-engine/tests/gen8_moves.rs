@@ -1638,3 +1638,33 @@ fn gastro_acid_suppresses_ordinary_abilities_but_respects_protected_ones_and_sub
         );
     }
 }
+
+#[test]
+fn acupressure_chooses_only_stats_below_the_cap() {
+    use wilds_battle_engine::Stat;
+    let stats = [
+        Stat::Attack,
+        Stat::Defense,
+        Stat::SpAttack,
+        Stat::SpDefense,
+        Stat::Speed,
+        Stat::Accuracy,
+        Stat::Evasion,
+    ];
+    for capped in [false, true] {
+        let mut user = mon("User", &["acupressure"]);
+        for stat in stats {
+            user.stages.insert(stat, 6);
+        }
+        if !capped {
+            user.stages.insert(Stat::Evasion, 3);
+        }
+        let mut b = game(user, vec![mon("Foe", &["splash"])], 0.5);
+        turn(&mut b);
+        assert_eq!(
+            b.participants(Side::Allies)[0].stage(Stat::Evasion),
+            if capped { 6 } else { 5 }
+        );
+        assert_eq!(b.participants(Side::Allies)[0].last_move_failed, capped);
+    }
+}

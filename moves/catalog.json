@@ -3144,6 +3144,17 @@
       "parameter_source": "https://pokeapi.co/api/v2/move/366/"
     },
     {
+      "id": 367,
+      "slug": "acupressure",
+      "name": "Acupressure",
+      "sheet_row": null,
+      "runtime_id": "acupressure",
+      "file": "moves/acupressure.lua",
+      "status": "implemented",
+      "limitations": [],
+      "parameter_source": "https://pokeapi.co/api/v2/move/367/"
+    },
+    {
       "id": 369,
       "slug": "u-turn",
       "name": "U-turn",
@@ -6792,7 +6803,8 @@
       "spit-up",
       "whirlpool",
       "spite",
-      "gastro-acid"
+      "gastro-acid",
+      "acupressure"
     ]
   }
 }
