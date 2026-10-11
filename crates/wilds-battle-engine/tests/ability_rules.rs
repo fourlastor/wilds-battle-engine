@@ -779,3 +779,8 @@ fn steelworker_boosts_steel_attacks_only() {
 fn transistor_boosts_matching_moves_only() {
     check_power_ability("transistor", &["thunderbolt"], "tackle", 1.5, 1000);
 }
+
+#[test]
+fn dragonsmaw_boosts_matching_moves_only() {
+    check_power_ability("dragons-maw", &["dragon-breath"], "tackle", 1.5, 1000);
+}

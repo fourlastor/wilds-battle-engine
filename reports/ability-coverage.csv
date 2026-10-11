@@ -261,7 +261,7 @@ id,ability,status,verification
 260,unseen-fist,MISSING,No native battle behavior
 261,curious-medicine,MISSING,No native battle behavior
 262,transistor,IMPLEMENTED,ability_rules::transistor_boosts_matching_moves_only
-263,dragons-maw,MISSING,No native battle behavior
+263,dragons-maw,IMPLEMENTED,ability_rules::dragonsmaw_boosts_matching_moves_only
 264,chilling-neigh,IMPLEMENTED,ability_rules::chillingneigh_rewards_move_knockouts
 265,grim-neigh,IMPLEMENTED,ability_rules::grimneigh_rewards_move_knockouts
 266,as-one-glastrier,IMPLEMENTED,ability_rules::as_one_glastrier_gains_attack_for_each_move_knockout
