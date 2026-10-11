@@ -2004,6 +2004,14 @@ impl Battle {
         } else {
             1.0
         };
+        let value = if category == Category::Status
+            && actor != target
+            && self.has_ability(target, "wonderskin")
+        {
+            value.min(0.5)
+        } else {
+            value
+        };
         let probability = value
             * self.get(actor).accuracy_factor()
             * evasion

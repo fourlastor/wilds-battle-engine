@@ -2341,3 +2341,26 @@ fn serene_grace_doubles_opponent_and_self_secondary_chances() {
         );
     }
 }
+
+#[test]
+fn wonder_skin_caps_status_accuracy_but_not_always_hit_moves() {
+    for (move_id, attacker_ability, dice, expected) in [
+        ("thunder-wave", "", 0.6, false),
+        ("thunder-wave", "", 0.4, true),
+        ("thunder-wave", "mold-breaker", 0.6, true),
+        ("thunder-wave", "no-guard", 0.6, true),
+        ("toxic", "", 0.6, false),
+        ("toxic-thread", "", 0.6, false),
+        ("yawn", "", 0.6, true),
+    ] {
+        let mut user = mon("User", &[move_id]);
+        user.ability = Some(attacker_ability.into());
+        let mut target = mon("Target", &["splash"]);
+        target.ability = Some("wonder-skin".into());
+        let mut battle = game(user, target, dice);
+        turn(&mut battle, move_id, "splash");
+        let hit = foe(&battle).status.is_some()
+            || foe(&battle).conditions.iter().any(|c| c.name == "yawn");
+        assert_eq!(hit, expected, "{move_id}/{attacker_ability}/{dice}");
+    }
+}
