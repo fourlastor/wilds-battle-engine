@@ -3351,3 +3351,63 @@ fn attract_ends_when_its_source_switches_out() {
     assert!(b.participants(Side::Foes)[0].condition("attract").is_none());
     assert!(b.participants(Side::Allies)[1].hp < 1000);
 }
+
+#[test]
+fn taunt_interrupts_a_selected_status_move_and_restricts_the_next_three_actions() {
+    use wilds_battle_engine::Stat;
+    for fast in [true, false] {
+        let mut user = mon("User", &["taunt", "splash"]);
+        user.speed = if fast { 200 } else { 50 };
+        let mut foe = mon("Foe", &["growl", "tackle"]);
+        foe.substitute_hp = 50;
+        let mut b = game(user, vec![foe], 0.5);
+        let pp = b.participants(Side::Foes)[0].move_pp["growl"];
+        turn_with(&mut b, |p| choose_move(p, "taunt", "growl"));
+        assert_eq!(
+            b.participants(Side::Foes)[0].move_pp["growl"],
+            pp - u8::from(!fast)
+        );
+        assert_eq!(
+            b.participants(Side::Allies)[0].stage(Stat::Attack),
+            if fast { 0 } else { -1 }
+        );
+        let remaining = if fast { 2 } else { 3 };
+        assert_eq!(
+            b.participants(Side::Foes)[0]
+                .condition("taunt")
+                .unwrap()
+                .turns_left,
+            Some(remaining)
+        );
+        for _ in 0..remaining {
+            turn_with(&mut b, |p| {
+                if p.actor.side == Side::Foes {
+                    assert!(
+                        !p.choices
+                            .iter()
+                            .any(|c| matches!(c,Choice::UseMove{move_id,..} if move_id=="growl"))
+                    );
+                }
+                choose_move(p, "splash", "tackle")
+            });
+        }
+        assert!(b.participants(Side::Foes)[0].condition("taunt").is_none());
+        turn_with(&mut b, |p| choose_move(p, "splash", "growl"));
+        assert_eq!(
+            b.participants(Side::Foes)[0].move_pp["growl"],
+            pp - u8::from(!fast) - 1
+        );
+    }
+}
+
+#[test]
+fn taunt_is_blocked_by_oblivious_and_protect() {
+    for (ability, response) in [(Some("oblivious"), "splash"), (None, "protect")] {
+        let mut foe = mon("Foe", &[response]);
+        foe.ability = ability.map(str::to_owned);
+        let mut b = game(mon("User", &["taunt"]), vec![foe], 0.5);
+        turn(&mut b);
+        assert!(b.participants(Side::Foes)[0].condition("taunt").is_none());
+        assert!(b.participants(Side::Allies)[0].last_move_failed);
+    }
+}

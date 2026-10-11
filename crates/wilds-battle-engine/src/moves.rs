@@ -822,6 +822,7 @@ fn rule_of(value: &Value) -> mlua::Result<Rule> {
         RuleKind::StatMultiplier => &["kind", "stat", "factor"],
         RuleKind::BlockStatus => &["kind", "statuses", "confusion"],
         RuleKind::BlockMoves => &["kind", "flags", "message"],
+        RuleKind::BlockCategory => &["kind", "category", "except", "message"],
         RuleKind::MovePriority => &["kind", "amount"],
         RuleKind::CriticalStage => &["kind", "stages"],
         RuleKind::Attention => &["kind", "to", "priority", "powder", "allow_carried"],
@@ -866,6 +867,11 @@ fn rule_of(value: &Value) -> mlua::Result<Rule> {
         }
     };
     Ok(match kind {
+        RuleKind::BlockCategory => Rule::BlockCategory {
+            category: category()?.ok_or_else(|| bad("BlockCategory requires a category"))?,
+            except: options.list("except", name_of)?,
+            message: options.text("message")?,
+        },
         RuleKind::DamageEachTurn => Rule::DamageEachTurn {
             fraction: fraction_of(&required("fraction")?, "rule option fraction")?,
             except_types: options.list("except_types", type_of)?,

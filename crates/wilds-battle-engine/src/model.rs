@@ -220,6 +220,11 @@ pub enum Rule {
         flags: Vec<String>,
         message: Option<String>,
     },
+    BlockCategory {
+        category: crate::moves::Category,
+        except: Vec<String>,
+        message: Option<String>,
+    },
     /// Stats cannot be lowered by others.
     BlockStatDrops,
     /// Flinching cannot interrupt the holder.

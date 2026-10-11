@@ -2504,6 +2504,17 @@
       ]
     },
     {
+      "id": 269,
+      "slug": "taunt",
+      "name": "Taunt",
+      "sheet_row": null,
+      "runtime_id": "taunt",
+      "file": "moves/taunt.lua",
+      "status": "implemented",
+      "limitations": [],
+      "parameter_source": "https://pokeapi.co/api/v2/move/269/"
+    },
+    {
       "id": 271,
       "slug": "trick",
       "name": "Trick",
@@ -7320,7 +7331,8 @@
       "tar-shot",
       "magnitude",
       "nightmare",
-      "attract"
+      "attract",
+      "taunt"
     ]
   }
 }
