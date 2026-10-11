@@ -4256,3 +4256,25 @@ fn wimp_out_offers_a_switch_after_crossing_half_hp_with_berry_and_pivot_timing()
 fn emergency_exit_offers_a_switch_after_crossing_half_hp_with_berry_and_pivot_timing() {
     check_exit_ability("emergency-exit");
 }
+
+#[test]
+fn multitype_uses_plates_despite_magic_room_and_only_for_untransformed_arceus() {
+    for (species, item, expected) in [
+        (493, Some("flame-plate"), PokemonType::Fire),
+        (493, Some("pixie_plate"), PokemonType::Fairy),
+        (493, None, PokemonType::Normal),
+        (1, Some("flame-plate"), PokemonType::Normal),
+    ] {
+        let mut user = mon("User", &["magic-room", "splash"]);
+        user.species_id = species;
+        user.item = item.map(str::to_owned);
+        user.ability = Some("multitype".into());
+        let mut battle = game(user, mon("Target", &["splash", "soak"]), 0.5);
+        turn(&mut battle, "magic-room", "splash");
+        assert_eq!(ally(&battle).types, [expected]);
+        if species == 493 {
+            turn(&mut battle, "splash", "soak");
+            assert_eq!(ally(&battle).types, [expected]);
+        }
+    }
+}

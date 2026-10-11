@@ -4,6 +4,38 @@ use crate::items::item_key;
 use crate::model::{BattleEvent, ParticipantId, WeatherKind};
 
 impl Battle {
+    pub(crate) fn item_form_type(&self, who: ParticipantId) -> Option<crate::model::PokemonType> {
+        use crate::model::PokemonType::*;
+        if self.get(who).transformed() {
+            return Option::None;
+        }
+        if self.has_ability(who, "multitype") && self.species_is(who, 493, "arceus") {
+            return Some(
+                match item_key(self.get(who).item.as_deref().unwrap_or_default()).as_str() {
+                    "flameplate" => Fire,
+                    "splashplate" => Water,
+                    "meadowplate" => Grass,
+                    "zapplate" => Electric,
+                    "icicleplate" => Ice,
+                    "fistplate" => Fighting,
+                    "toxicplate" => Poison,
+                    "earthplate" => Ground,
+                    "skyplate" => Flying,
+                    "mindplate" => Psychic,
+                    "insectplate" => Bug,
+                    "stoneplate" => Rock,
+                    "spookyplate" => Ghost,
+                    "dracoplate" => Dragon,
+                    "dreadplate" => Dark,
+                    "ironplate" => Steel,
+                    "pixieplate" => Fairy,
+                    _ => Normal,
+                },
+            );
+        }
+        Option::None
+    }
+
     pub(crate) fn form_shields_hit(
         &self,
         who: ParticipantId,
@@ -263,6 +295,9 @@ impl Battle {
         events: &mut Vec<BattleEvent>,
     ) {
         self.update_mimicry(who, events);
+        if let Some(kind) = self.item_form_type(who) {
+            self.get_mut(who).types = vec![kind];
+        }
         if self.get(who).transformed() {
             return;
         }

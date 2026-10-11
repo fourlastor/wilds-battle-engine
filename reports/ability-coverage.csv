@@ -119,7 +119,7 @@ id,ability,status,verification
 118,honey-gather,MISSING,No native battle behavior
 119,frisk,IMPLEMENTED,ability_rules::frisk_reveals_all_active_opponents_items_even_when_inactive
 120,reckless,IMPLEMENTED,ability_rules::reckless_boosts_recoil_and_crash_attacks_only
-121,multitype,MISSING,No native battle behavior
+121,multitype,IMPLEMENTED,ability_rules::multitype_uses_plates_despite_magic_room_and_only_for_untransformed_arceus
 122,flower-gift,IMPLEMENTED,ability_rules::flower_gift_changes_cherrim_and_boosts_allied_attack_and_special_defense_in_sun
 123,bad-dreams,IMPLEMENTED,Source inventory; existing tests only
 124,pickpocket,IMPLEMENTED,ability_rules::pickpocket_steals_on_contact_after_the_move_with_existing_item_restrictions

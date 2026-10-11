@@ -902,7 +902,9 @@ impl Battle {
 
     /// The types a Pokémon counts as having right now.
     pub(crate) fn types_of(&self, id: ParticipantId) -> Vec<PokemonType> {
-        let mut types = self.get(id).types.clone();
+        let mut types = self
+            .item_form_type(id)
+            .map_or_else(|| self.get(id).types.clone(), |kind| vec![kind]);
         if let Some(added) = self.get(id).added_type
             && !types.contains(&added)
         {
