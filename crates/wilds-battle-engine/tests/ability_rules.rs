@@ -1045,3 +1045,42 @@ fn adaptability_increases_stab_to_double_without_boosting_other_types() {
         ability_damage("water-gun", "", "", false)
     );
 }
+
+#[test]
+fn no_guard_hits_from_either_side_and_reaches_hidden_targets() {
+    for on_user in [true, false] {
+        let mut user = mon("User", &["fire-blast"]);
+        user.speed = 200;
+        let mut target = mon("Target", &["splash"]);
+        target.semi_invulnerable = true;
+        target.hidden_kind = wilds_battle_engine::HiddenKind::Air;
+        if on_user {
+            user.ability = Some("no-guard".into());
+        } else {
+            target.ability = Some("no-guard".into());
+        }
+        let mut battle = game(user, target, 0.99);
+        turn(&mut battle, "fire-blast", "splash");
+        assert!(foe(&battle).hp < 1000);
+    }
+    for (target_level, kind, ko) in [
+        (50, PokemonType::Normal, true),
+        (51, PokemonType::Normal, false),
+        (50, PokemonType::Ghost, false),
+    ] {
+        let mut user = mon("User", &["guillotine"]);
+        user.level = 50;
+        user.ability = Some("no-guard".into());
+        let mut target = mon("Target", &["splash"]);
+        target.level = target_level;
+        target.types = vec![kind];
+        let mut battle = game(user, target, 0.99);
+        turn(&mut battle, "guillotine", "splash");
+        assert_eq!(foe(&battle).hp == 0, ko);
+    }
+    let mut user = mon("User", &["tackle"]);
+    user.ability = Some("no-guard".into());
+    let mut battle = game(user, mon("Target", &["protect"]), 0.5);
+    turn(&mut battle, "tackle", "protect");
+    assert_eq!(foe(&battle).hp, 1000);
+}

@@ -828,10 +828,12 @@ impl Battle {
     }
 
     pub(crate) fn always_hits(&self, actor: ParticipantId, target: ParticipantId) -> bool {
-        self.rules(actor).any(|rule| {
-            matches!(rule, Rule::AlwaysHit { against }
+        self.has_ability(actor, "noguard")
+            || self.has_ability(target, "noguard")
+            || self.rules(actor).any(|rule| {
+                matches!(rule, Rule::AlwaysHit { against }
                 if against.is_none_or(|only| only == target))
-        })
+            })
     }
 
     /// The types a Pokémon counts as having right now.
