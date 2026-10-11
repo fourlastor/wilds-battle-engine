@@ -430,3 +430,61 @@ fn body_press_critical_hits_ignore_negative_defense_stages() {
         critical
     );
 }
+
+#[test]
+fn decorate_can_boost_an_ally_through_protect_without_reflection() {
+    use wilds_battle_engine::Stat;
+    let mut partner = mon("Partner", &["protect"]);
+    partner.ability = Some("magic-bounce".into());
+    let mut battle = Battle::with_rng(
+        Fixed(0.5),
+        [
+            vec![mon("User", &["decorate"]), partner],
+            vec![mon("Foe", &["splash"])],
+        ],
+        MoveCatalog::builtin().unwrap(),
+    )
+    .unwrap();
+    turn_with(&mut battle, |p| {
+        if p.actor.side == Side::Allies && p.actor.index == 0 {
+            assert!(
+                !p.choices
+                    .iter()
+                    .any(|c| matches!(c, Choice::UseMove { target, .. } if *target == p.actor))
+            );
+            p.choices.iter().find(|c| matches!(c, Choice::UseMove { target, .. } if target.side == Side::Allies && target.index == 1)).unwrap().id()
+        } else {
+            p.choices[0].id()
+        }
+    });
+    let allies = battle.participants(Side::Allies);
+    assert_eq!(allies[0].stage(Stat::Attack), 0);
+    assert_eq!(allies[1].stage(Stat::Attack), 2);
+    assert_eq!(allies[1].stage(Stat::SpAttack), 2);
+}
+
+#[test]
+fn decorate_respects_substitute_caps_and_contrary() {
+    use wilds_battle_engine::Stat;
+    for (sub, stage, ability, expected, failed) in [
+        (20, 0, None, 0, true),
+        (0, 6, None, 6, true),
+        (0, 5, None, 6, false),
+        (0, 0, Some("contrary"), -2, false),
+    ] {
+        let mut foe = mon("Foe", &["splash"]);
+        foe.substitute_hp = sub;
+        foe.stages.insert(Stat::Attack, stage);
+        foe.stages.insert(Stat::SpAttack, stage);
+        foe.ability = ability.map(str::to_owned);
+        let mut battle = game(mon("User", &["decorate"]), vec![foe], 0.99);
+        turn(&mut battle);
+        let foe = &battle.participants(Side::Foes)[0];
+        assert_eq!(foe.stage(Stat::Attack), expected);
+        assert_eq!(foe.stage(Stat::SpAttack), expected);
+        assert_eq!(
+            battle.participants(Side::Allies)[0].last_move_failed,
+            failed
+        );
+    }
+}
