@@ -240,7 +240,7 @@ id,ability,status,verification
 239,propeller-tail,MISSING,No native battle behavior
 240,mirror-armor,IMPLEMENTED,ability_rules::mirror_armor_reflects_stat_drops_once_and_respects_mold_breaker
 241,gulp-missile,MISSING,No native battle behavior
-242,stalwart,MISSING,No native battle behavior
+242,stalwart,IMPLEMENTED,ability_rules::stalwart_ignores_redirection_without_ignoring_type_absorption
 243,steam-engine,IMPLEMENTED,ability_rules::steam_engine_raises_speed_six_stages_after_water_or_fire_damage
 244,punk-rock,IMPLEMENTED,ability_rules::punk_rock_boosts_only_sound_attacks_and_reduces_incoming_sound
 245,sand-spit,IMPLEMENTED,ability_rules::sand_spit_starts_sandstorm_after_damage_but_not_status_moves

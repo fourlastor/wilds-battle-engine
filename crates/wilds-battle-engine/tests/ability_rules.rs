@@ -2836,3 +2836,35 @@ fn grass_pelt_boosts_defense_in_grassy_terrain_and_is_bypassable() {
     let reduced = run("grassy-terrain", false, false);
     assert!((f32::from(reduced) - f32::from(base) / 1.5).abs() <= 2.0);
 }
+
+fn check_redirection_bypass(ability: &str) {
+    for suppressed in [false, true] {
+        let mut user = mon("User", &["thunderbolt"]);
+        user.ability = Some(ability.into());
+        user.ability_suppressed = suppressed;
+        let target = mon("Target", &["splash"]);
+        let mut redirector = mon("Redirector", &["splash"]);
+        redirector.ability = Some("lightning-rod".into());
+        let mut battle = Battle::with_rng(
+            Fixed(0.5),
+            [vec![user], vec![target, redirector]],
+            MoveCatalog::builtin().unwrap(),
+        )
+        .unwrap();
+        turn(&mut battle, "thunderbolt", "splash");
+        assert_eq!(foe(&battle).hp == 1000, suppressed);
+        assert_eq!(
+            battle.participants(Side::Foes)[1].stage(wilds_battle_engine::Stat::SpAttack),
+            i8::from(suppressed)
+        );
+    }
+    assert_eq!(
+        ability_damage("thunderbolt", ability, "lightning-rod", false),
+        0
+    );
+}
+
+#[test]
+fn stalwart_ignores_redirection_without_ignoring_type_absorption() {
+    check_redirection_bypass("stalwart");
+}
