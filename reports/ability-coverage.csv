@@ -69,7 +69,7 @@ id,ability,status,verification
 68,swarm,IMPLEMENTED,ability_rules::swarm_boosts_matching_moves_only
 69,rock-head,MISSING,No native battle behavior
 70,drought,IMPLEMENTED,ability_rules::drought_starts_weather_on_entry_only_when_active
-71,arena-trap,MISSING,No native battle behavior
+71,arena-trap,IMPLEMENTED,ability_rules::arena_trap_only_prevents_grounded_non_ghost_switches
 72,vital-spirit,IMPLEMENTED,Source inventory; existing tests only
 73,white-smoke,IMPLEMENTED,Source inventory; existing tests only
 74,pure-power,IMPLEMENTED,Source inventory; existing tests only

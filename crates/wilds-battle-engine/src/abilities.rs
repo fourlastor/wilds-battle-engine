@@ -466,8 +466,8 @@ impl Battle {
         self.actors().into_iter().any(|source| {
             source.side != who.side
                 && self.adjacent(source, who)
-                && self.has_ability(source, "shadowtag")
-                && !self.has_ability(who, "shadowtag")
+                && ((self.has_ability(source, "shadowtag") && !self.has_ability(who, "shadowtag"))
+                    || (self.has_ability(source, "arenatrap") && self.on_ground(who)))
         })
     }
 

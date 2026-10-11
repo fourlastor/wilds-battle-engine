@@ -1665,3 +1665,12 @@ fn shadow_tag_blocks_voluntary_switches_except_ghosts_and_other_shadow_tag_users
     );
     check_trap("shadow-tag", PokemonType::Normal, "", true, false);
 }
+
+#[test]
+fn arena_trap_only_prevents_grounded_non_ghost_switches() {
+    check_trap("arena-trap", PokemonType::Normal, "", false, true);
+    check_trap("arena-trap", PokemonType::Flying, "", false, false);
+    check_trap("arena-trap", PokemonType::Normal, "levitate", false, false);
+    check_trap("arena-trap", PokemonType::Ghost, "", false, false);
+    check_trap("arena-trap", PokemonType::Normal, "", true, false);
+}
