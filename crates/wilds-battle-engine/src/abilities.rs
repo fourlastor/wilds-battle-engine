@@ -62,7 +62,12 @@ impl Battle {
             {
                 continue;
             }
-            let immune = (self.ability_stage_delta(target, -1) < 0
+            let amount = if self.has_ability(target, "guarddog") {
+                1
+            } else {
+                -1
+            };
+            let immune = (self.ability_stage_delta(target, amount) < 0
                 && self.blocks_stat_drops(target))
                 || [
                     "hypercutter",
@@ -80,11 +85,6 @@ impl Battle {
                 )));
                 continue;
             }
-            let amount = if self.has_ability(target, "guarddog") {
-                1
-            } else {
-                -1
-            };
             let changed = self.change_stat(target, crate::model::Stat::Attack, amount, events);
             if changed != 0 && self.has_ability(target, "rattled") {
                 self.change_stat(target, crate::model::Stat::Speed, 1, events);

@@ -1598,3 +1598,49 @@ fn a_substitute_prevents_beak_blast_contact_reactions() {
     assert!(b.participants(Side::Foes)[0].substitute_hp < 250);
     assert_eq!(b.participants(Side::Allies)[0].status, None);
 }
+
+#[test]
+fn initial_abilities_do_not_repeat_when_the_first_turn_has_no_choices() {
+    let mut lead = mon("Lead", &["splash"]);
+    lead.ability = Some("intimidate".into());
+    lead.recharging = true;
+    let mut foe = mon("Foe", &["splash"]);
+    foe.recharging = true;
+    let mut b = game(vec![lead], vec![foe], [vec![0], vec![0]]);
+    let result = b.advance().unwrap();
+    assert_eq!(b.turn(), 1);
+    assert_eq!(b.participants(Side::Foes)[0].stage(Stat::Attack), -1);
+    assert_eq!(
+        result
+            .events
+            .iter()
+            .filter(|e| matches!(e,BattleEvent::Message(s) if s.contains("Intimidate activated")))
+            .count(),
+        1
+    );
+}
+
+#[test]
+fn intimidate_reversals_are_not_blocked_by_mist() {
+    for ability in ["guard-dog", "contrary"] {
+        let mut lead = mon("Lead", &["splash"]);
+        lead.ability = Some("intimidate".into());
+        let mut foe = mon("Foe", &["splash"]);
+        foe.ability = Some(ability.into());
+        foe.conditions.push(Condition {
+            name: "mist".into(),
+            value: 1,
+            turns_left: None,
+            rules: vec![Rule::BlockStatDrops],
+            group: None,
+            end_message: None,
+        });
+        let mut b = game(vec![lead], vec![foe], [vec![0], vec![0]]);
+        b.advance().unwrap();
+        assert_eq!(
+            b.participants(Side::Foes)[0].stage(Stat::Attack),
+            1,
+            "{ability}"
+        );
+    }
+}

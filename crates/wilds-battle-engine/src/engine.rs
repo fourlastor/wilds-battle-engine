@@ -22,6 +22,7 @@ pub struct Battle {
     turn_queue: std::collections::VecDeque<QueuedAction>,
     completed_slots: Vec<(Side, usize)>,
     resolving_turn: bool,
+    entry_abilities_started: bool,
     next_prompt_id: u64,
     pub(crate) winner: Option<Option<Side>>,
     pub(crate) turn: u64,
@@ -241,6 +242,7 @@ impl Battle {
             turn_queue: std::collections::VecDeque::new(),
             completed_slots: Vec::new(),
             resolving_turn: false,
+            entry_abilities_started: false,
             next_prompt_id: 1,
             winner: None,
             turn: 0,
@@ -265,7 +267,7 @@ impl Battle {
         })
     }
     pub(crate) fn has_started(&self) -> bool {
-        self.next_prompt_id != 1 || self.winner.is_some()
+        self.entry_abilities_started || self.next_prompt_id != 1 || self.winner.is_some()
     }
     pub fn participants(&self, side: Side) -> &[Pokemon] {
         &self.sides[side.index()]
@@ -468,7 +470,8 @@ impl Battle {
             });
         }
         let mut events = std::mem::take(&mut self.pending_events);
-        if !self.has_started() {
+        if !self.entry_abilities_started {
+            self.entry_abilities_started = true;
             let mut entrants = self.actors();
             entrants.sort_by_key(|&id| {
                 std::cmp::Reverse(self.stat_value(id, CombatStat::Speed) as i32)
