@@ -213,7 +213,7 @@ id,ability,status,verification
 212,corrosion,IMPLEMENTED,Source inventory; existing tests only
 213,comatose,IMPLEMENTED,Source inventory; existing tests only
 214,queenly-majesty,IMPLEMENTED,ability_rules::queenly_majesty_protects_allies_from_priority_and_allows_mold_breaker
-215,innards-out,MISSING,No native battle behavior
+215,innards-out,IMPLEMENTED,ability_rules::innards_out_returns_actual_hp_lost_only_on_a_direct_knockout
 216,dancer,MISSING,No native battle behavior
 217,battery,MISSING,No native battle behavior
 218,fluffy,IMPLEMENTED,Source inventory; existing tests only

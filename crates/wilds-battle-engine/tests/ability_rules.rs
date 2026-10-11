@@ -2205,3 +2205,23 @@ fn damp_stops_explosive_moves_and_aftermath_but_is_bypassable() {
     turn(&mut battle, "tackle", "splash");
     assert_eq!(ally(&battle).hp, 1000);
 }
+
+#[test]
+fn innards_out_returns_actual_hp_lost_only_on_a_direct_knockout() {
+    for (move_id, ability, hp, expected) in [
+        ("tackle", "", 17, 17),
+        ("swift", "", 17, 17),
+        ("tackle", "", 1000, 0),
+        ("tackle", "magic-guard", 17, 0),
+        ("tackle", "damp", 17, 17),
+    ] {
+        let mut user = mon("User", &[move_id]);
+        user.ability = Some(ability.into());
+        let mut target = mon("Target", &["splash"]);
+        target.hp = hp;
+        target.ability = Some("innards-out".into());
+        let mut battle = game(user, target, 0.5);
+        turn(&mut battle, move_id, "splash");
+        assert_eq!(1000 - ally(&battle).hp, expected);
+    }
+}

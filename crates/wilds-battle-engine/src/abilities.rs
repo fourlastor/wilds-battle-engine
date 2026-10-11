@@ -45,6 +45,9 @@ impl Battle {
         if hit.damage == 0 || hit.attacker == target {
             return;
         }
+        if ability == "innardsout" && self.get(target).hp == 0 {
+            self.indirect_damage(hit.attacker, hit.damage, events);
+        }
         if ability == "aftermath" && self.get(target).hp == 0 && hit.contact && !self.damp_active()
         {
             self.indirect_damage(
