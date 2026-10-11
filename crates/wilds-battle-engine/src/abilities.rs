@@ -154,6 +154,7 @@ impl Battle {
     pub(crate) fn ability_active(&self, who: ParticipantId) -> bool {
         let pokemon = self.get(who);
         pokemon.hp > 0
+            && self.is_active(who)
             && !pokemon.ability_suppressed
             && pokemon.ability.as_deref().is_some_and(|id| {
                 if id.is_empty() {

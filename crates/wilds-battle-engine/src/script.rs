@@ -217,12 +217,13 @@ impl Battle {
             },
         )?;
         table.raw_set("grounded", self.is_grounded(id))?;
-        table.raw_set("trapped", self.is_trapped(id) || pokemon.bound.is_some())?;
+        table.raw_set("trapped", self.trapped(id))?;
         let (marks, effects) = self.conditions_tables(lua, Scope::Pokemon(id))?;
         table.raw_set("marks", marks)?;
         table.raw_set("effects", effects)?;
         table.raw_set("acted", pokemon.acted)?;
-        table.raw_set("position", id.index)?;
+        table.raw_set("position", self.position(id))?;
+        table.raw_set("active", self.is_active(id))?;
         let selected = self
             .turn_choices
             .iter()
@@ -387,9 +388,11 @@ impl Battle {
             table.raw_set(
                 "pokemon",
                 list(
-                    self.actors()
-                        .into_iter()
-                        .filter(|id| id.side == side)
+                    self.participants(side)
+                        .iter()
+                        .enumerate()
+                        .filter(|(_, p)| p.hp > 0)
+                        .map(|(index, _)| ParticipantId { side, index })
                         .collect(),
                 )?,
             )?;

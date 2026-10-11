@@ -1,7 +1,7 @@
 // Runs a test battle in the engine and turns its events into what the battle panel shows:
 // the combatants, a turn-by-turn log, and which blocks of the edited move produced what.
 import type { EffectRole } from '../blocks/generate.ts';
-import type { Advance, Battle, Engine, EngineChoice, EngineEvent, EngineMon, EngineSetup, EngineState, Ref, Side } from '../engine/engine.ts';
+import type { Advance, Battle, Engine, EngineChoice, MoveChoice, SwitchChoice, EngineEvent, EngineMon, EngineSetup, EngineState, Ref, Side } from '../engine/engine.ts';
 import type { FoePolicy } from '../model.ts';
 
 /** How to recognise the edited move's blocks in the event stream. */
@@ -15,10 +15,12 @@ export interface TraceSource {
 }
 
 /** A choice made in the battle, remembered so the battle can be replayed after an edit. */
-export interface Pick {
-  actor: Ref;
-  moveId: string;
-  target: Ref;
+export type Pick = { actor: Ref; kind?: 'move'; moveId: string; target: Ref }
+  | { actor: Ref; kind: 'switch'; to: Ref; moveId?: never; target?: never };
+
+function remember(actor: Ref, choice: EngineChoice): Pick {
+  return choice.kind === 'switch' ? {actor, kind: 'switch', to: choice.to}
+    : {actor, moveId: choice.move_id, target: choice.target};
 }
 
 export interface LogEntry {
@@ -34,6 +36,7 @@ export interface LogEntry {
 }
 
 export interface MonView extends EngineMon {
+  active: boolean;
   side: Side;
   index: number;
 }
@@ -42,7 +45,8 @@ export interface PromptView {
   id: number;
   actor: Ref;
   actorName: string;
-  moves: { moveId: string; targets: EngineChoice[] }[];
+  moves: { moveId: string; targets: MoveChoice[] }[];
+  switches: SwitchChoice[];
 }
 
 export interface Summary {
@@ -155,7 +159,7 @@ export class Bench {
   choose(choice: EngineChoice): void {
     const prompt = this.view.prompt;
     if (!this.battle || !prompt || this.view.phase !== 'awaiting') return;
-    this.view.picks.push({ actor: prompt.actor, moveId: choice.move_id, target: choice.target });
+    this.view.picks.push(remember(prompt.actor, choice));
     this.view.changes = [];
     try {
       this.battle.respond(prompt.id, choice.id);
@@ -221,23 +225,26 @@ export class Bench {
     }
     const next = this.queue[0];
     if (!next) return null;
-    const match =
-      choices.find((choice) => choice.move_id === next.moveId && sameRef(choice.target, next.target)) ??
-      choices.find((choice) => choice.move_id === next.moveId);
+    const match = next.kind === 'switch'
+      ? choices.find((choice) => choice.kind === 'switch' && sameRef(choice.to, next.to))
+      : choices.find((choice) => choice.kind === 'use_move' && choice.move_id === next.moveId && sameRef(choice.target, next.target)) ??
+        choices.find((choice) => choice.kind === 'use_move' && choice.move_id === next.moveId);
     if (!match || !sameRef(next.actor, actor)) return null;
     this.queue.shift();
-    this.view.picks.push({ actor, moveId: match.move_id, target: match.target });
+    this.view.picks.push(remember(actor, match));
     return match;
   }
 
   private promptView(id: number, actor: Ref, choices: EngineChoice[], state: EngineState): PromptView {
     const moves: PromptView['moves'] = [];
+    const switches: SwitchChoice[] = [];
     for (const choice of choices) {
+      if (choice.kind === "switch") { switches.push(choice); continue; }
       const group = moves.find((move) => move.moveId === choice.move_id);
       if (group) group.targets.push(choice);
       else moves.push({ moveId: choice.move_id, targets: [choice] });
     }
-    return { id, actor, actorName: state[actor.side][actor.index]?.name ?? '?', moves };
+    return { id, actor, actorName: state[actor.side][actor.index]?.name ?? '?', moves, switches };
   }
 
   private consume(result: Advance, state: EngineState): void {
@@ -245,8 +252,8 @@ export class Bench {
     const view = this.view;
     view.turn = state.turn;
     view.weather = state.weather;
-    view.allies = state.allies.map((mon, index) => ({ ...mon, side: 'allies' as const, index }));
-    view.foes = state.foes.map((mon, index) => ({ ...mon, side: 'foes' as const, index }));
+    view.allies = state.allies.map((mon, index) => ({ ...mon, side: 'allies' as const, index, active: state.active.allies.includes(index) }));
+    view.foes = state.foes.map((mon, index) => ({ ...mon, side: 'foes' as const, index, active: state.active.foes.includes(index) }));
     view.field = state.field;
     view.sides = state.sides;
     view.payout = state.payout;

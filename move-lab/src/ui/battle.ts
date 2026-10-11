@@ -99,8 +99,8 @@ function screen(model: BattleModel, ui: BattleUi): HTMLElement {
       h('div', { class: 'stage-hills' }),
       h('div', { class: 'stage-ground' }),
       h('div', { class: 'stage-cards stage-foe-cards' }, view.foes.map(card)),
-      h('div', { class: 'stage-sprites stage-foe-sprites' }, view.foes.map(sprite)),
-      h('div', { class: 'stage-sprites stage-ally-sprites' }, view.allies.map(sprite)),
+      h('div', { class: 'stage-sprites stage-foe-sprites' }, view.foes.filter(mon => mon.active).map(sprite)),
+      h('div', { class: 'stage-sprites stage-ally-sprites' }, view.allies.filter(mon => mon.active).map(sprite)),
       h('div', { class: 'stage-cards stage-ally-cards' }, view.allies.map(card)),
     ),
     shown.length
@@ -130,6 +130,7 @@ function card(mon: MonView): HTMLElement {
   const color = part > 0.5 ? '#2E9E5B' : part > 0.2 ? '#D99A00' : '#C5372D';
   const chips: HTMLElement[] = [];
   const chip = (text: string, tone: string) => chips.push(h('span', { class: `chip chip-${tone}` }, text));
+  if (!mon.active) chip('BENCH', 'flag');
   if (mon.status) chip(STATUS_SHORT[mon.status] ?? mon.status, 'status');
   for (const [stat, stage] of mon.stages) chip(`${STAT_SHORT[stat] ?? stat} ${stage > 0 ? '+' : '−'}${Math.abs(stage)}`, stage > 0 ? 'up' : 'down');
   if (mon.confused) chip('CONF', 'flag');
@@ -181,6 +182,8 @@ function moves(model: BattleModel, on: BattleHandlers, ui: BattleUi, redraw: () 
     );
   }
   return h('div', { class: 'moves' },
+    prompt.switches.map((choice) => h('button', { type: 'button', class: 'move', onclick: () => on.choose(choice) },
+      h('span', { class: 'move-name' }, `Switch to ${name(view, choice.to)}`))),
     prompt.moves.map((move) => {
       const info = model.catalog.get(move.moveId);
       const editing = move.moveId === model.editedId;

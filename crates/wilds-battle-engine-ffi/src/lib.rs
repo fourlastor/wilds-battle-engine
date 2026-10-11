@@ -5,7 +5,7 @@ use std::panic::{AssertUnwindSafe, catch_unwind};
 use std::sync::Mutex;
 use wilds_battle_engine::{
     ActionSelection, AdvanceStatus, Battle, BattleEvent, Choice, CombatStat, Condition, Gender,
-    MoveCatalog, ParticipantId, Pokemon, PokemonForm, PokemonType, Side, Status,
+    MoveCatalog, ParticipantId, Pokemon, PokemonForm, PokemonType, PromptReason, Side, Status,
 };
 
 static LAST_ERROR: Mutex<String> = Mutex::new(String::new());
@@ -18,6 +18,12 @@ struct Setup {
     foes: Vec<SetupPokemon>,
     /// Where the battle takes place ("cave", "grass", ...), for moves that depend on it.
     environment: Option<String>,
+    active: Option<ActiveSetup>,
+}
+#[derive(Deserialize)]
+struct ActiveSetup {
+    allies: Vec<usize>,
+    foes: Vec<usize>,
 }
 fn one() -> u64 {
     1
@@ -267,6 +273,11 @@ pub unsafe extern "C" fn wbe_create(
             .collect::<Result<Vec<_>, _>>()?;
         let mut battle =
             Battle::new(setup.seed, [allies, foes], catalog).map_err(|error| error.to_string())?;
+        if let Some(active) = setup.active {
+            battle
+                .set_active([active.allies, active.foes])
+                .map_err(|error| error.to_string())?;
+        }
         battle.set_environment(setup.environment.filter(|place| !place.is_empty()));
         Ok(Box::into_raw(Box::new(battle)))
     })
@@ -289,12 +300,13 @@ pub unsafe extern "C" fn wbe_advance(ptr: *mut Battle) -> *mut c_char {
         let status = match result.status {
             AdvanceStatus::End { winner } => json!({"kind":"end", "winner":winner.map(side)}),
             AdvanceStatus::Awaiting(prompt) => json!({"kind":"awaiting", "prompt_id":prompt.id,
-                "actor":participant(prompt.actor),
+                "actor":participant(prompt.actor), "reason": match prompt.reason { PromptReason::Action => "action", PromptReason::Replacement => "replacement" },
                 "choices":prompt.choices.iter().map(choice).collect::<Vec<_>>() }),
         };
         Ok(output(json!({
             "events":result.events.iter().map(event).collect::<Vec<_>>(),
             "status":status, "turn":battle.turn(),
+            "active":{"allies":battle.active_indices(Side::Allies),"foes":battle.active_indices(Side::Foes)},
             "allies":battle.participants(Side::Allies).iter().map(snapshot).collect::<Vec<_>>(),
             "foes":battle.participants(Side::Foes).iter().map(snapshot).collect::<Vec<_>>(),
             "weather":battle.weather().map(|weather| format!("{:?}", weather.kind)),
@@ -352,6 +364,7 @@ fn participant(id: ParticipantId) -> Value {
 }
 fn choice(value: &Choice) -> Value {
     match value {
+        Choice::Switch { id, to } => json!({"id":id, "kind":"switch", "to":participant(*to)}),
         Choice::UseMove {
             id,
             move_id,
@@ -385,6 +398,9 @@ fn snapshot(value: &Pokemon) -> Value {
 }
 fn event(value: &BattleEvent) -> Value {
     match value {
+        BattleEvent::Switched { from, to, position } => {
+            json!({"kind":"switch", "from":participant(*from),"to":participant(*to),"position":position})
+        }
         BattleEvent::Message(text) => json!({"kind":"message", "text":text}),
         BattleEvent::Damage { target, amount, hp } => {
             json!({"kind":"damage", "target":participant(*target), "amount":amount, "hp":hp})
@@ -416,6 +432,42 @@ fn event(value: &BattleEvent) -> Value {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn c_api_exposes_bench_replacement_choices_and_switch_events() {
+        let setup = CString::new(r#"{"allies":[{"name":"Fainted","hp":0,"moves":["splash"]},{"name":"Reserve","moves":["splash"]}],"foes":[{"name":"Foe","moves":["splash"]}],"active":{"allies":[0],"foes":[0]}}"#).unwrap();
+        let directory = CString::new(concat!(env!("CARGO_MANIFEST_DIR"), "/../../moves")).unwrap();
+        let battle = unsafe { wbe_create(setup.as_ptr(), directory.as_ptr()) };
+        assert!(!battle.is_null());
+        let read = || {
+            let ptr = unsafe { wbe_advance(battle) };
+            let value: Value =
+                serde_json::from_str(unsafe { CStr::from_ptr(ptr) }.to_str().unwrap()).unwrap();
+            unsafe {
+                wbe_free_string(ptr);
+            }
+            value
+        };
+        let value = read();
+        assert_eq!(value["status"]["reason"], "replacement");
+        assert_eq!(value["status"]["choices"][0]["kind"], "switch");
+        assert_eq!(value["status"]["choices"][0]["to"]["index"], 1);
+        assert!(unsafe { wbe_respond(battle, value["status"]["prompt_id"].as_u64().unwrap(), 0) });
+        let value = read();
+        assert_eq!(value["active"]["allies"], json!([1]));
+        assert_eq!(value["status"]["actor"]["index"], 1);
+        assert_eq!(value["status"]["reason"], "action");
+        assert!(
+            value["events"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .any(|event| event["kind"] == "switch")
+        );
+        unsafe {
+            wbe_destroy(battle);
+        }
+    }
 
     #[test]
     fn setup_accepts_typed_ability_rules_and_bypass_metadata() {

@@ -59,7 +59,9 @@ impl Game {
                 .choices
                 .iter()
                 .find(|choice| {
-                    let Choice::UseMove { move_id, .. } = choice;
+                    let Choice::UseMove { move_id, .. } = choice else {
+                        return false;
+                    };
                     move_id == selected
                 })
                 .unwrap_or_else(|| panic!("missing {selected}: {:?}", prompt.choices));
@@ -1715,7 +1717,9 @@ fn gravity_filters_choices_and_allows_struggle_when_every_move_is_blocked() {
     };
     assert_eq!(prompt.choices.len(), 2);
     for choice in prompt.choices {
-        let Choice::UseMove { move_id, .. } = choice;
+        let Choice::UseMove { move_id, .. } = choice else {
+            panic!("unexpected switch without a bench");
+        };
         assert!(!blocked.contains(&move_id.as_str()));
     }
     let mut foe = mon("Foe", &["gravity"]);

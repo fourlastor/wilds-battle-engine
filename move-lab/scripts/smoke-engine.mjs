@@ -75,7 +75,26 @@ assert.equal(state.foes[0].hp, result.foes[0].hp);
 engine.FS.writeFile('/moves/broken.lua', 'return { id="broken", name="Broken", type=Type.Normal }');
 const broken = JSON.parse(withStrings(['/moves'], (dir) => text(engine._mlab_catalog(dir))));
 assert.match(broken.error, /broken\.lua/);
+engine.FS.unlink('/moves/broken.lua');
 
 engine._wbe_destroy(battle);
 console.log(`ok: ${catalog.moves.length} moves loaded, Solar Beam dealt ${158 - result.foes[0].hp} damage over ${state.turn} turns`);
 console.log(messages.map((message) => `  ${message}`).join('\n'));
+
+// Bench setup and replacement prompts cross both the C ABI and Move Lab's state API.
+const benchBattle = withStrings([JSON.stringify({
+  allies: [{ name: 'Fainted', hp: 0, moves: ['splash'] }, { name: 'Reserve', moves: ['splash'] }],
+  foes: [{ name: 'Foe', moves: ['splash'] }], active: { allies: [0], foes: [0] },
+}), '/moves'], (json, dir) => engine._wbe_create(json, dir));
+assert.notEqual(benchBattle, 0, lastError());
+const replacement = JSON.parse(text(engine._wbe_advance(benchBattle)));
+assert.equal(replacement.status.reason, 'replacement');
+assert.equal(replacement.status.choices[0].kind, 'switch');
+assert.equal(engine._wbe_respond(benchBattle, BigInt(replacement.status.prompt_id), replacement.status.choices[0].id), 1);
+const switched = JSON.parse(text(engine._wbe_advance(benchBattle)));
+assert.equal(switched.status.actor.index, 1);
+assert.deepEqual(switched.active.allies, [1]);
+assert.ok(switched.events.some(event => event.kind === 'switch' && event.to.index === 1));
+assert.deepEqual(JSON.parse(text(engine._mlab_state(benchBattle))).active.allies, [1]);
+engine._wbe_destroy(benchBattle);
+console.log('ok: bench replacement choices and active slots round-trip through wasm');

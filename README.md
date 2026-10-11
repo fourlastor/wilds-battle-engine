@@ -11,9 +11,9 @@ names. Unsupported mechanics are flagged in each affected file and in
 [catalog.json](moves/catalog.json).
 The host supplies choices for both sides.
 The Rust API uses enums for sides, Pokémon types, stats, statuses, and weather.
-Host-facing prompts contain `Choice` enum values. The only variant today is
-`Choice::UseMove { id, move_id, target }`; item, switch, and run variants can
-be added later without changing the prompt container.
+Host-facing prompts contain `Choice::UseMove { id, move_id, target }` or
+`Choice::Switch { id, to }`. `PromptReason` distinguishes action selection from
+faint replacement; the host selects an offered choice in either case.
 Rust exposes typed Lua constants for Pokémon types, stats, statuses, weather,
 categories, targets, effects, and special accuracy modes. Move IDs and display
 text remain strings. `MoveCatalog::from_lua` installs these constants before
@@ -277,9 +277,26 @@ ctx:end_effect(ctx.target.team, "reflect")                  -- Brick Break
 A rule on a side applies to every Pokémon of that side, and a rule on the field to
 everyone.
 
-The engine has no switching and no bench: `Trapped` is only reported
-(`Battle::trapped`), and nothing leaves the field except by fainting. Items and
-abilities are data that moves can read, take, give and suppress. Power Herb now
+The host can configure active slots with `Battle::set_active([allies, foes])`
+before advancing, or JSON `"active":{"allies":[0],"foes":[0]}`. These arrays
+contain party indices in field order; other party members are on the bench.
+Omitting them preserves the original all-active setup. `ParticipantId.index`
+always identifies the same party member; `Battle::position` returns its current
+field slot, and `active_indices` maps slots back to party members. Both JSON
+state APIs expose this map under `active`.
+
+Voluntary switches resolve before ordinary moves. Attacks aim at field slots,
+so they hit the incoming occupant. Fainted slots prompt for a replacement before
+the next turn. Switching resets stages and volatile effects, restores temporary
+forms/types, and preserves HP, nonvolatile status, PP, items and consumption history.
+Bench members do not act, receive residual effects or activate abilities/items.
+Lua `pokemon.team.pokemon` includes the living party, while `ctx.allies`, `foes`,
+`everyone`, and targets contain living active members. `pokemon.active` and
+`pokemon.position` distinguish the bench (`false`/`nil`) from a field slot.
+
+`Trapped` prevents voluntary switches; source-linked trapping and move-triggered
+switches are separate mechanics. Items and abilities are data that moves can
+read, take, give and suppress. Power Herb now
 activates when a move charges: `Effect.TwoTurn`, or a scripted move flagged `charge`
 that calls `force_move(2, ...)`. Its second phase runs immediately, paying PP once.
 Weather shortcuts preserve the item. Berry and gem activation also run in the engine. Other item and ability effects

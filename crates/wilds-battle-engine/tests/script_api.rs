@@ -72,7 +72,10 @@ impl Game {
                 .find(|choice| {
                     let Choice::UseMove {
                         move_id, target, ..
-                    } = choice;
+                    } = choice
+                    else {
+                        return false;
+                    };
                     move_id == id && slot.is_none_or(|slot| target.index == slot)
                 })
                 .unwrap_or_else(|| panic!("{pick} is not on offer: {:?}", prompt.choices));

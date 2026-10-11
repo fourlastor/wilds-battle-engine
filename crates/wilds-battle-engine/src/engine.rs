@@ -1,7 +1,7 @@
 use crate::model::{
     ActionSelection, AdvanceResult, AdvanceStatus, BattleError, BattleEvent, Bound, Choice,
     CombatStat, Condition, ContinuationTarget, HitInfo, LockedMove, ParticipantId, Pokemon,
-    PokemonType, Prompt, Scope, Side, Stat, Status, Weather, WeatherKind,
+    PokemonType, Prompt, PromptReason, Scope, Side, Stat, Status, Weather, WeatherKind,
 };
 use crate::moves::{Accuracy, Category, Effect, MoveCatalog, MoveSpec, ScriptHook, Target};
 use crate::rng::{BattleRng, SeededRng};
@@ -10,12 +10,14 @@ use crate::type_chart;
 pub struct Battle {
     pub(crate) catalog: MoveCatalog,
     pub(crate) sides: [Vec<Pokemon>; 2],
+    pub(crate) active: [Vec<usize>; 2],
+    pending_events: Vec<BattleEvent>,
     pub(crate) weather: Option<Weather>,
     pub(crate) rng: Box<dyn BattleRng>,
     pending: Option<Prompt>,
     selections: Vec<(ParticipantId, SelectedAction)>,
     turn_queue: std::collections::VecDeque<QueuedAction>,
-    completed_actors: Vec<ParticipantId>,
+    completed_slots: Vec<(Side, usize)>,
     resolving_turn: bool,
     next_prompt_id: u64,
     pub(crate) winner: Option<Option<Side>>,
@@ -128,16 +130,19 @@ fn raw_stat(pokemon: &Pokemon, stat: CombatStat) -> f32 {
 enum SelectedAction {
     Move(MoveAction),
     Recharge,
+    Switch(ParticipantId),
 }
 
 #[derive(Clone)]
 struct MoveAction {
     move_id: String,
     target: ParticipantId,
+    target_position: usize,
 }
 
 struct QueuedAction {
     actor: ParticipantId,
+    position: usize,
     action: SelectedAction,
     priority: i8,
     speed: i32,
@@ -209,15 +214,18 @@ impl Battle {
                 pokemon.move_pp.entry(id.clone()).or_insert(spec.pp);
             }
         }
+        let active = std::array::from_fn(|side| (0..sides[side].len()).collect());
         Ok(Self {
             catalog,
+            active,
+            pending_events: Vec::new(),
             sides,
             weather: None,
             rng: Box::new(rng),
             pending: None,
             selections: Vec::new(),
             turn_queue: std::collections::VecDeque::new(),
-            completed_actors: Vec::new(),
+            completed_slots: Vec::new(),
             resolving_turn: false,
             next_prompt_id: 1,
             winner: None,
@@ -239,6 +247,9 @@ impl Battle {
             hurry: Vec::new(),
             move_failed: false,
         })
+    }
+    pub(crate) fn has_started(&self) -> bool {
+        self.next_prompt_id != 1 || self.winner.is_some()
     }
     pub fn participants(&self, side: Side) -> &[Pokemon] {
         &self.sides[side.index()]
@@ -283,13 +294,16 @@ impl Battle {
         if a == b {
             return false;
         }
-        let width = self.sides.iter().map(Vec::len).max().unwrap_or(1);
+        let (Some(a_pos), Some(b_pos)) = (self.position(a), self.position(b)) else {
+            return false;
+        };
+        let width = self.active.iter().map(Vec::len).max().unwrap_or(1);
         if a.side == b.side {
-            a.index.abs_diff(b.index) == 1
+            a_pos.abs_diff(b_pos) == 1
         } else if width <= 2 {
             true
         } else {
-            a.index.abs_diff(width - 1 - b.index) <= 1
+            a_pos.abs_diff(width - 1 - b_pos) <= 1
         }
     }
     pub(crate) fn get_mut(&mut self, id: ParticipantId) -> &mut Pokemon {
@@ -299,7 +313,9 @@ impl Battle {
         Side::ALL
             .into_iter()
             .flat_map(|side| {
-                (0..self.sides[side.index()].len())
+                self.active[side.index()]
+                    .iter()
+                    .copied()
                     .filter(move |&index| self.sides[side.index()][index].hp > 0)
                     .map(move |index| ParticipantId { side, index })
             })
@@ -326,7 +342,9 @@ impl Battle {
                 vec![lock.target]
             } else {
                 let allies = |with_user: bool| -> Vec<ParticipantId> {
-                    (0..self.sides[actor.side.index()].len())
+                    self.active[actor.side.index()]
+                        .iter()
+                        .copied()
                         .filter(|&index| self.sides[actor.side.index()][index].hp > 0)
                         .filter(|&index| with_user || index != actor.index)
                         .map(|index| ParticipantId {
@@ -341,21 +359,16 @@ impl Battle {
                     | Target::AllOthers
                     | Target::RandomOpponent
                     | Target::AllOpponents
-                    | Target::All => self.sides[actor.side.opposite().index()]
-                        .iter()
-                        .position(|p| p.hp > 0)
-                        .map(|index| ParticipantId {
-                            side: actor.side.opposite(),
-                            index,
-                        })
+                    | Target::All => self
+                        .actors()
+                        .into_iter()
+                        .find(|id| id.side != actor.side)
                         .into_iter()
                         .collect(),
-                    Target::Selected => (0..self.sides[actor.side.opposite().index()].len())
-                        .filter(|&index| self.sides[actor.side.opposite().index()][index].hp > 0)
-                        .map(|index| ParticipantId {
-                            side: actor.side.opposite(),
-                            index,
-                        })
+                    Target::Selected => self
+                        .actors()
+                        .into_iter()
+                        .filter(|id| id.side != actor.side)
                         .collect(),
                     Target::Ally => allies(false),
                     Target::UserOrAlly => allies(true),
@@ -374,6 +387,40 @@ impl Battle {
                 });
             }
         }
+        if !self.trapped(actor) && pokemon.locked_move.is_none() {
+            let reserved: Vec<_> = self
+                .selections
+                .iter()
+                .filter_map(|(_, action)| {
+                    if let SelectedAction::Switch(to) = action {
+                        Some(*to)
+                    } else {
+                        None
+                    }
+                })
+                .collect();
+            let switches: Vec<_> = self
+                .bench(actor.side)
+                .into_iter()
+                .filter(|to| !reserved.contains(to))
+                .collect();
+            if result.is_empty()
+                && !switches.is_empty()
+                && let Some(target) = self.actors().into_iter().find(|id| id.side != actor.side)
+            {
+                result.push(Choice::UseMove {
+                    id: 0,
+                    move_id: "struggle".into(),
+                    target,
+                });
+            }
+            for to in switches {
+                result.push(Choice::Switch {
+                    id: result.len() as u32,
+                    to,
+                });
+            }
+        }
         result
     }
     pub fn advance(&mut self) -> Result<AdvanceResult, BattleError> {
@@ -389,7 +436,21 @@ impl Battle {
                 status: AdvanceStatus::Awaiting(prompt.clone()),
             });
         }
-        let mut events = Vec::new();
+        let mut events = std::mem::take(&mut self.pending_events);
+        self.resolve_outcome(&mut events);
+        if let Some(winner) = self.winner {
+            return Ok(AdvanceResult {
+                events,
+                status: AdvanceStatus::End { winner },
+            });
+        }
+        if let Some((actor, choices)) = self.replacement() {
+            let prompt = self.make_prompt(actor, choices, PromptReason::Replacement);
+            return Ok(AdvanceResult {
+                events,
+                status: AdvanceStatus::Awaiting(prompt),
+            });
+        }
         if self.selections.is_empty() {
             self.update_berries(&mut events);
         }
@@ -410,24 +471,24 @@ impl Battle {
                     SelectedAction::Move(MoveAction {
                         move_id: continuation.move_id,
                         target: continuation.target,
+                        target_position: self.target_position(continuation.target),
                     }),
                 ));
                 continue;
             }
             let choices = self.legal_choices(actor);
             if choices.is_empty() {
-                let target = self.sides[actor.side.opposite().index()]
-                    .iter()
-                    .position(|pokemon| pokemon.hp > 0)
+                let target = self
+                    .actors()
+                    .into_iter()
+                    .find(|id| id.side != actor.side)
                     .ok_or_else(|| BattleError::InvalidSetup("Struggle has no target".into()))?;
                 self.selections.push((
                     actor,
                     SelectedAction::Move(MoveAction {
                         move_id: "struggle".into(),
-                        target: ParticipantId {
-                            side: actor.side.opposite(),
-                            index: target,
-                        },
+                        target,
+                        target_position: self.target_position(target),
                     }),
                 ));
                 continue;
@@ -439,16 +500,10 @@ impl Battle {
                 .is_some_and(|lock| lock.charging)
             {
                 self.selections
-                    .push((actor, SelectedAction::Move(Self::move_action(&choices[0]))));
+                    .push((actor, self.selected_action(&choices[0])));
                 continue;
             }
-            let prompt = Prompt {
-                id: self.next_prompt_id,
-                actor,
-                choices,
-            };
-            self.next_prompt_id += 1;
-            self.pending = Some(prompt.clone());
+            let prompt = self.make_prompt(actor, choices, PromptReason::Action);
             return Ok(AdvanceResult {
                 events,
                 status: AdvanceStatus::Awaiting(prompt),
@@ -481,21 +536,50 @@ impl Battle {
             .iter()
             .find(|choice| choice.id() == selection.choice_id)
             .ok_or_else(|| BattleError::InvalidResponse("choice is not legal".into()))?;
-        self.selections.push((
-            prompt.actor,
-            SelectedAction::Move(Self::move_action(choice)),
-        ));
+        let actor = prompt.actor;
+        let reason = prompt.reason;
+        let action = self.selected_action(choice);
         self.pending = None;
+        if reason == PromptReason::Action {
+            self.selections.push((actor, action));
+        } else if let SelectedAction::Switch(to) = action {
+            let mut events = Vec::new();
+            self.switch_member(actor, to, &mut events);
+            self.pending_events.extend(events);
+        }
         Ok(())
     }
-    fn move_action(choice: &Choice) -> MoveAction {
+    fn make_prompt(
+        &mut self,
+        actor: ParticipantId,
+        choices: Vec<Choice>,
+        reason: PromptReason,
+    ) -> Prompt {
+        let prompt = Prompt {
+            id: self.next_prompt_id,
+            actor,
+            choices,
+            reason,
+        };
+        self.next_prompt_id += 1;
+        self.pending = Some(prompt.clone());
+        prompt
+    }
+    fn target_position(&self, target: ParticipantId) -> usize {
+        self.position(target)
+            .or(self.get(target).last_position)
+            .unwrap_or(0)
+    }
+    fn selected_action(&self, choice: &Choice) -> SelectedAction {
         match choice {
             Choice::UseMove {
                 move_id, target, ..
-            } => MoveAction {
+            } => SelectedAction::Move(MoveAction {
                 move_id: move_id.clone(),
                 target: *target,
-            },
+                target_position: self.target_position(*target),
+            }),
+            Choice::Switch { to, .. } => SelectedAction::Switch(*to),
         }
     }
     fn resolve_turn(&mut self) -> Result<Vec<BattleEvent>, BattleError> {
@@ -510,7 +594,7 @@ impl Battle {
     fn begin_turn(&mut self, events: &mut Vec<BattleEvent>) -> Result<(), BattleError> {
         self.turn += 1;
         self.resolving_turn = true;
-        self.completed_actors.clear();
+        self.completed_slots.clear();
         let mut ordered: Vec<_> = std::mem::take(&mut self.selections)
             .into_iter()
             .map(|(actor, choice)| {
@@ -523,6 +607,7 @@ impl Battle {
                             .priority,
                     ),
                     SelectedAction::Recharge => 0,
+                    SelectedAction::Switch(_) => 6,
                 };
                 let speed = if matches!(choice, SelectedAction::Move(_))
                     && self.custap_priority(actor, events)
@@ -533,6 +618,7 @@ impl Battle {
                 };
                 QueuedAction {
                     actor,
+                    position: self.position(actor).expect("active choice"),
                     action: choice,
                     priority,
                     speed,
@@ -553,7 +639,7 @@ impl Battle {
             .iter()
             .filter_map(|entry| match &entry.action {
                 SelectedAction::Move(choice) => Some((entry.actor, choice.move_id.clone())),
-                SelectedAction::Recharge => None,
+                SelectedAction::Recharge | SelectedAction::Switch(_) => None,
             })
             .collect();
         self.hurry.clear();
@@ -606,8 +692,18 @@ impl Battle {
                 .collect();
             self.hit_reactions
                 .retain(|reaction| reaction.owner != actor);
-            self.check_sleep(actor, events);
+            if !self.is_active(actor) {
+                continue;
+            }
+            if !matches!(choice, SelectedAction::Switch(_)) {
+                self.check_sleep(actor, events);
+            }
             match &choice {
+                SelectedAction::Switch(to) => {
+                    if self.get(actor).hp > 0 && !self.trapped(actor) {
+                        self.switch_member(actor, *to, events);
+                    }
+                }
                 SelectedAction::Move(choice) => self.execute_move(actor, choice, events)?,
                 SelectedAction::Recharge => {
                     self.get_mut(actor).recharging = false;
@@ -621,7 +717,7 @@ impl Battle {
             }
             self.update_berries(events);
             self.get_mut(actor).acted = true;
-            self.completed_actors.push(actor);
+            self.completed_slots.push((actor.side, entry.position));
             self.resolve_outcome(events);
             if !self.hurry.is_empty() {
                 // Only pending actions move; promoted actors retain their relative order.
@@ -634,7 +730,13 @@ impl Battle {
                 self.turn_queue.extend(later);
             }
         }
-        let order = std::mem::take(&mut self.completed_actors);
+        let order: Vec<_> = std::mem::take(&mut self.completed_slots)
+            .into_iter()
+            .map(|(side, pos)| ParticipantId {
+                side,
+                index: self.active[side.index()][pos],
+            })
+            .collect();
         if self.winner.is_none() {
             for actor in &order {
                 self.post_turn_status(*actor, events);
@@ -719,7 +821,7 @@ impl Battle {
         choice: &MoveAction,
         events: &mut Vec<BattleEvent>,
     ) -> Result<bool, BattleError> {
-        if self.get(actor).hp == 0 {
+        if self.get(actor).hp == 0 || !self.is_active(actor) {
             return Ok(false);
         }
         let spec = self
@@ -866,7 +968,10 @@ impl Battle {
             self.clear_consecutive(actor);
             return Ok(true);
         }
-        let mut target = choice.target;
+        let mut target = ParticipantId {
+            side: choice.target.side,
+            index: self.active[choice.target.side.index()][choice.target_position],
+        };
         // Forced turns pick a new opponent too when the script asked for one. This shares the
         // roll below, so a move that is random in both ways still rolls once.
         let random_continuation = forced_script
@@ -876,14 +981,10 @@ impl Battle {
                 .as_ref()
                 .is_some_and(|lock| lock.target_policy == ContinuationTarget::RandomOpponent);
         if spec.target == Target::RandomOpponent || random_continuation {
-            let foes: Vec<_> = self.sides[actor.side.opposite().index()]
-                .iter()
-                .enumerate()
-                .filter(|(_, pokemon)| pokemon.hp > 0)
-                .map(|(index, _)| ParticipantId {
-                    side: actor.side.opposite(),
-                    index,
-                })
+            let foes: Vec<_> = self
+                .actors()
+                .into_iter()
+                .filter(|id| id.side != actor.side)
                 .collect();
             if foes.is_empty() {
                 return Ok(false);
@@ -897,17 +998,14 @@ impl Battle {
             )
         {
             // The chosen Pokémon is gone: another one on its side takes its place, never the user.
-            let Some(index) =
-                self.sides[target.side.index()]
-                    .iter()
-                    .enumerate()
-                    .position(|(index, p)| {
-                        p.hp > 0 && (target.side != actor.side || index != actor.index)
-                    })
+            let Some(replacement) = self
+                .actors()
+                .into_iter()
+                .find(|id| id.side == target.side && *id != actor)
             else {
                 return Ok(false);
             };
-            target.index = index;
+            target = replacement;
         }
         if self.get(target).hp == 0 && spec.target == Target::UserOrAlly {
             target = actor;

@@ -14,7 +14,7 @@ impl PokemonForm {
             weight: pokemon.weight,
         }
     }
-    fn apply(&self, pokemon: &mut Pokemon) {
+    pub(crate) fn apply(&self, pokemon: &mut Pokemon) {
         pokemon.attack = self.attack;
         pokemon.defense = self.defense;
         pokemon.sp_attack = self.sp_attack;

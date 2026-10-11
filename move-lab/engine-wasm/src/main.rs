@@ -185,6 +185,7 @@ pub unsafe extern "C" fn mlab_state(battle: *const Battle) -> *mut c_char {
     };
     output(json!({
         "turn": battle.turn(),
+        "active": {"allies": battle.active_indices(Side::Allies), "foes": battle.active_indices(Side::Foes)},
         "weather": battle.weather().map(|weather|
             json!({"kind": format!("{:?}", weather.kind), "turns_left": weather.turns_left})),
         "allies": battle.participants(Side::Allies).iter().map(pokemon).collect::<Vec<_>>(),

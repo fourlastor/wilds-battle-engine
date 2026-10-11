@@ -228,7 +228,7 @@ pub enum Rule {
     },
     /// Loses any immunity to Ground moves.
     Grounded,
-    /// Cannot leave the battle. The engine only reports this; it has no switching.
+    /// Cannot voluntarily switch out.
     Trapped,
     /// Survives damage from moves with 1 HP.
     Endure,
@@ -424,6 +424,7 @@ pub struct Pokemon {
     pub conditions: Vec<Condition>,
     /// The battle turn it entered on (0 at the start).
     pub entered_turn: u64,
+    pub(crate) last_position: Option<usize>,
     /// Whether it has finished its action this turn.
     pub acted: bool,
     /// HP lost to moves this turn.
@@ -495,6 +496,7 @@ impl Pokemon {
             hidden_kind: HiddenKind::Vanished,
             conditions: Vec::new(),
             entered_turn: 0,
+            last_position: None,
             acted: false,
             damage_taken: 0,
             hurt_this_turn: false,
@@ -575,6 +577,11 @@ pub struct Weather {
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum BattleEvent {
+    Switched {
+        from: ParticipantId,
+        to: ParticipantId,
+        position: usize,
+    },
     Message(String),
     Damage {
         target: ParticipantId,
@@ -608,6 +615,10 @@ pub enum BattleEvent {
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Choice {
+    Switch {
+        id: u32,
+        to: ParticipantId,
+    },
     UseMove {
         id: u32,
         move_id: String,
@@ -618,13 +629,20 @@ pub enum Choice {
 impl Choice {
     pub const fn id(&self) -> u32 {
         match self {
-            Self::UseMove { id, .. } => *id,
+            Self::UseMove { id, .. } | Self::Switch { id, .. } => *id,
         }
     }
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum PromptReason {
+    Action,
+    Replacement,
+}
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Prompt {
+    pub reason: PromptReason,
     pub id: u64,
     pub actor: ParticipantId,
     pub choices: Vec<Choice>,

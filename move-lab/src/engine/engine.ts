@@ -13,20 +13,24 @@ export type EngineEvent =
   | { kind: 'heal'; target: Ref; amount: number; hp: number }
   | { kind: 'status'; target: Ref; status: string | null }
   | { kind: 'stat_change'; target: Ref; stat: string; stages: number }
+  | { kind: 'switch'; from: Ref; to: Ref; position: number }
   | { kind: 'form'; target: Ref; form: string | null }
   | { kind: 'weather'; weather: string | null }
   | { kind: 'fainted'; target: Ref }
   | { kind: 'end'; winner: Side | null };
 
-export interface EngineChoice {
+export interface MoveChoice {
   id: number;
   kind: 'use_move';
   move_id: string;
   target: Ref;
 }
 
+export type SwitchChoice = { id: number; kind: 'switch'; to: Ref };
+export type EngineChoice = MoveChoice | SwitchChoice;
+
 export type EngineStatus =
-  | { kind: 'awaiting'; prompt_id: number; actor: Ref; choices: EngineChoice[] }
+  | { kind: 'awaiting'; prompt_id: number; actor: Ref; reason: 'action' | 'replacement'; choices: EngineChoice[] }
   | { kind: 'end'; winner: Side | null };
 
 export interface Advance {
@@ -76,6 +80,7 @@ export interface EngineMon {
 }
 
 export interface EngineState {
+  active: Record<Side, number[]>;
   turn: number;
   weather: { kind: string; turns_left: number } | null;
   allies: EngineMon[];
@@ -140,6 +145,7 @@ export interface SetupMon {
 }
 
 export interface EngineSetup {
+  active?: Record<Side, number[]>;
   seed: number;
   allies: SetupMon[];
   foes: SetupMon[];

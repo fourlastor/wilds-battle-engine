@@ -7,7 +7,7 @@
   ],
   "parameter_policy": "JSON names and parameters; actual behavior for conflicting spreadsheet descriptions; original runtime IDs and behaviors retained for existing moves. Gravity and Stockpile have no local source JSON and use PokeAPI parameters.",
   "global_limitations": [
-    "The engine currently has no switching, benched party, held-item activation, ability execution, substitute, redirection or dynamic move-priority hooks.",
+    "The engine supports benches, voluntary switching, selected item/ability effects, redirection and move-priority hooks. Move-triggered switching, linked traps, carrying and substitute remain unsupported; the item and ability catalogs are not exhaustive.",
     "General battle interactions follow the current Rust engine; catalog coverage is not full official battle parity."
   ],
   "moves": [
@@ -5054,10 +5054,8 @@
       "sheet_row": 511,
       "runtime_id": "sparkly-swirl",
       "file": "moves/sparkly-swirl.lua",
-      "status": "partial",
-      "limitations": [
-        "Cures active teammates; the engine has no benched party members to cure."
-      ]
+      "status": "implemented",
+      "limitations": []
     },
     {
       "id": 742,

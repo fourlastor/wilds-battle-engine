@@ -75,7 +75,10 @@ impl Game {
                 .filter(|choice| {
                     let Choice::UseMove {
                         move_id, target, ..
-                    } = choice;
+                    } = choice
+                    else {
+                        return false;
+                    };
                     move_id == id
                         && match aim {
                             "foes" => target.side == Side::Foes,
@@ -241,7 +244,9 @@ fn every_move_plays_through_without_an_error() {
                         .choices
                         .iter()
                         .filter(|choice| {
-                            let Choice::UseMove { move_id, .. } = choice;
+                            let Choice::UseMove { move_id, .. } = choice else {
+                                return false;
+                            };
                             prompt.actor == lead && move_id == id
                         })
                         .collect();

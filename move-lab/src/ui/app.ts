@@ -646,7 +646,7 @@ class App {
     this.engine.setMoves(build.files);
     // Remembered choices name moves by id; follow the edited move if it was renamed since.
     const previousId = this.running?.editedId;
-    const picks = mode === 'replay' ? this.bench.view.picks.map((pick) => (pick.moveId === previousId ? { ...pick, moveId: build.editedId } : pick)) : [];
+    const picks = mode === 'replay' ? this.bench.view.picks.map((pick) => (pick.kind !== 'switch' && pick.moveId === previousId ? { ...pick, moveId: build.editedId } : pick)) : [];
     const before = mode === 'replay' && picks.length ? this.bench.summary() : null;
     this.setupError = null;
     this.battleUi.pendingMove = null;
