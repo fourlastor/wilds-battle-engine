@@ -114,3 +114,25 @@ fn check_binding(move_id: &str, immune: PokemonType) {
 fn wrap_binds_for_four_to_five_turns_only_after_reaching_the_target() {
     check_binding("wrap", PokemonType::Ghost);
 }
+
+#[test]
+fn roar_bypasses_protect_and_substitute_but_soundproof_blocks_it() {
+    for (ability, switched) in [
+        (None, true),
+        (Some("soundproof"), false),
+        (Some("suction-cups"), false),
+    ] {
+        let mut foe = mon("Foe", &["protect"]);
+        foe.substitute_hp = 50;
+        foe.ability = ability.map(str::to_owned);
+        let mut b = game(
+            mon("User", &["roar"]),
+            vec![foe, mon("Bench", &["splash"])],
+            0.5,
+        );
+        b.set_active([vec![0], vec![0]]).unwrap();
+        turn(&mut b);
+        assert_eq!(b.active_indices(Side::Foes), &[usize::from(switched)]);
+        assert_eq!(b.participants(Side::Foes)[0].hp, 1000);
+    }
+}

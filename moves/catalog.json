@@ -468,6 +468,17 @@
       "limitations": []
     },
     {
+      "id": 46,
+      "slug": "roar",
+      "name": "Roar",
+      "sheet_row": null,
+      "runtime_id": "roar",
+      "file": "moves/roar.lua",
+      "status": "implemented",
+      "limitations": [],
+      "parameter_source": "https://pokeapi.co/api/v2/move/46/"
+    },
+    {
       "id": 47,
       "slug": "sing",
       "name": "Sing",
@@ -6000,7 +6011,8 @@
       "apple-acid",
       "life-dew",
       "whirlwind",
-      "wrap"
+      "wrap",
+      "roar"
     ]
   }
 }
