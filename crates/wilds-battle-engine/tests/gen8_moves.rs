@@ -1142,3 +1142,21 @@ fn flatter_raises_special_attack_and_confuses_but_respects_protection() {
         );
     }
 }
+
+#[test]
+fn shell_smash_changes_five_stats_through_contrary_and_simple() {
+    use wilds_battle_engine::Stat;
+    for (ability, multiplier) in [(None, 1), (Some("contrary"), -1), (Some("simple"), 2)] {
+        let mut user = mon("User", &["shell-smash"]);
+        user.ability = ability.map(str::to_owned);
+        let mut b = game(user, vec![mon("Foe", &["splash"])], 0.5);
+        turn(&mut b);
+        let p = &b.participants(Side::Allies)[0];
+        for stat in [Stat::Attack, Stat::SpAttack, Stat::Speed] {
+            assert_eq!(p.stage(stat), 2 * multiplier);
+        }
+        for stat in [Stat::Defense, Stat::SpDefense] {
+            assert_eq!(p.stage(stat), -multiplier);
+        }
+    }
+}

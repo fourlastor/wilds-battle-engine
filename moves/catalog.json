@@ -4100,6 +4100,17 @@
       "limitations": []
     },
     {
+      "id": 504,
+      "slug": "shell-smash",
+      "name": "Shell Smash",
+      "sheet_row": null,
+      "runtime_id": "shell-smash",
+      "file": "moves/shell-smash.lua",
+      "status": "implemented",
+      "limitations": [],
+      "parameter_source": "https://pokeapi.co/api/v2/move/504/"
+    },
+    {
       "id": 505,
       "slug": "heal-pulse",
       "name": "Heal Pulse",
@@ -6564,7 +6575,8 @@
       "fairy-lock",
       "rain-dance",
       "hail",
-      "flatter"
+      "flatter",
+      "shell-smash"
     ]
   }
 }
