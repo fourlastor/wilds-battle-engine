@@ -329,3 +329,45 @@ fn teleport_requests_a_replacement_after_attacks_and_fails_without_a_bench() {
     turn(&mut b);
     assert!(b.participants(Side::Allies)[0].last_move_failed);
 }
+
+fn check_screen(move_id: &str, condition: &str, reduced: &str, unchanged: &str) {
+    for (attack, weakens) in [(reduced, true), (unchanged, false)] {
+        let mut user = mon("User", &[move_id]);
+        user.speed = 200;
+        let foe = mon("Foe", &[attack]);
+        let mut baseline = game(mon("Control", &["splash"]), vec![foe.clone()], 0.5);
+        turn(&mut baseline);
+        let normal = 1000 - baseline.participants(Side::Allies)[0].hp;
+        let mut b = game(user, vec![foe], 0.5);
+        turn(&mut b);
+        let actual = 1000 - b.participants(Side::Allies)[0].hp;
+        if weakens {
+            assert!(actual > 0 && actual < normal);
+        } else {
+            assert_eq!(actual, normal);
+        }
+        assert_eq!(
+            b.side_conditions(Side::Allies)
+                .iter()
+                .find(|c| c.name == condition)
+                .unwrap()
+                .turns_left,
+            Some(4)
+        );
+        turn(&mut b);
+        assert!(b.participants(Side::Allies)[0].last_move_failed);
+        assert_eq!(
+            b.side_conditions(Side::Allies)
+                .iter()
+                .find(|c| c.name == condition)
+                .unwrap()
+                .turns_left,
+            Some(3)
+        );
+    }
+}
+
+#[test]
+fn light_screen_reduces_its_damage_category_without_refreshing() {
+    check_screen("light-screen", "light_screen", "water-gun", "tackle");
+}

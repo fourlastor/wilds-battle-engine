@@ -1114,6 +1114,17 @@
       "limitations": []
     },
     {
+      "id": 113,
+      "slug": "light-screen",
+      "name": "Light Screen",
+      "sheet_row": null,
+      "runtime_id": "light-screen",
+      "file": "moves/light-screen.lua",
+      "status": "implemented",
+      "limitations": [],
+      "parameter_source": "https://pokeapi.co/api/v2/move/113/"
+    },
+    {
       "id": 120,
       "slug": "self-destruct",
       "name": "Self-Destruct",
@@ -6144,7 +6155,8 @@
       "infestation",
       "snap-trap",
       "thunder-cage",
-      "teleport"
+      "teleport",
+      "light-screen"
     ]
   }
 }
