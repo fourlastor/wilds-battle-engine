@@ -1430,6 +1430,17 @@
       "limitations": []
     },
     {
+      "id": 149,
+      "slug": "psywave",
+      "name": "Psywave",
+      "sheet_row": null,
+      "runtime_id": "psywave",
+      "file": "moves/psywave.lua",
+      "status": "implemented",
+      "limitations": [],
+      "parameter_source": "https://pokeapi.co/api/v2/move/149/"
+    },
+    {
       "id": 151,
       "slug": "acid-armor",
       "name": "Acid Armor",
@@ -6384,7 +6395,8 @@
       "trump-card",
       "punishment",
       "super-fang",
-      "natures-madness"
+      "natures-madness",
+      "psywave"
     ]
   }
 }

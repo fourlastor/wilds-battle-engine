@@ -815,3 +815,33 @@ fn natures_madness_halves_current_hp_with_a_minimum_of_one() {
         }
     }
 }
+
+struct Rolls(u64, f32);
+impl BattleRng for Rolls {
+    fn next_u64(&mut self) -> u64 {
+        self.0
+    }
+    fn fraction(&mut self) -> f32 {
+        self.1
+    }
+}
+#[test]
+fn psywave_scales_a_uniform_fifty_to_150_percent_by_level() {
+    for (roll, level, damage) in [(0, 50, 25), (50, 50, 50), (100, 50, 75), (0, 1, 1)] {
+        let mut user = mon("User", &["psywave"]);
+        user.level = level;
+        let mut b = Battle::with_rng(
+            Rolls(roll, 0.5),
+            [vec![user], vec![mon("Foe", &["splash"])]],
+            MoveCatalog::builtin().unwrap(),
+        )
+        .unwrap();
+        turn(&mut b);
+        assert_eq!(b.participants(Side::Foes)[0].hp, 1000 - damage);
+    }
+    let mut foe = mon("Foe", &["splash"]);
+    foe.types = vec![PokemonType::Dark];
+    let mut b = game(mon("User", &["psywave"]), vec![foe], 0.5);
+    turn(&mut b);
+    assert_eq!(b.participants(Side::Foes)[0].hp, 1000);
+}
