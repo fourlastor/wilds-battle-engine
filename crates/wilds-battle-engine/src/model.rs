@@ -233,6 +233,11 @@ pub enum Rule {
     NoRepeat,
     /// While the holder is active, foes cannot choose or use its currently learned moves.
     SealMoves,
+    /// Modifies base power before the damage formula, optionally for one move type.
+    BasePower {
+        move_type: Option<PokemonType>,
+        factor: f32,
+    },
     /// Stats cannot be lowered by others.
     BlockStatDrops,
     /// Flinching cannot interrupt the holder.

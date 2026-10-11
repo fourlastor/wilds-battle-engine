@@ -3628,3 +3628,59 @@ fn curse_rechecks_its_users_type_after_an_earlier_type_change() {
         );
     }
 }
+
+fn check_sport(move_id: &str, attack: &str, kind: &str) {
+    let mut user = mon("User", &[move_id, "splash"]);
+    user.speed = 200;
+    let foe = mon("Foe", &[attack]);
+    let weak = control_damage(13, kind, "Special", foe.clone(), user.clone());
+    let normal = control_damage(40, kind, "Special", foe.clone(), user.clone());
+    let mut b = game(user, vec![foe], 0.5);
+    let mut expected = 1000;
+    for index in 0..6 {
+        turn_with(&mut b, |p| {
+            choose_move(p, if index < 2 { move_id } else { "splash" }, attack)
+        });
+        expected -= if index < 5 { weak } else { normal };
+        assert_eq!(b.participants(Side::Allies)[0].hp, expected, "turn {index}");
+        if index == 1 {
+            assert!(b.participants(Side::Allies)[0].last_move_failed);
+        }
+    }
+}
+
+#[test]
+fn mud_sport_reduces_electric_base_power_for_five_turns_without_refreshing() {
+    check_sport("mud-sport", "thunder_shock", "Electric");
+}
+
+#[test]
+fn mud_sport_persists_after_its_user_switches_out() {
+    let mut user = mon("User", &["mud-sport"]);
+    user.speed = 200;
+    let foe = mon("Foe", &["thunder_shock"]);
+    let bench = mon("Bench", &["splash"]);
+    let expected = control_damage(13, "Electric", "Special", foe.clone(), bench.clone());
+    let mut b = Battle::with_rng(
+        Fixed(0.5),
+        [vec![user, bench], vec![foe]],
+        MoveCatalog::builtin().unwrap(),
+    )
+    .unwrap();
+    b.set_active([vec![0], vec![0]]).unwrap();
+    turn(&mut b);
+    turn_with(&mut b, |p| {
+        p.choices
+            .iter()
+            .find(|c| {
+                if p.actor.side == Side::Allies {
+                    matches!(c, Choice::Switch { .. })
+                } else {
+                    matches!(c, Choice::UseMove { .. })
+                }
+            })
+            .unwrap()
+            .id()
+    });
+    assert_eq!(1000 - b.participants(Side::Allies)[1].hp, expected);
+}

@@ -2756,6 +2756,17 @@
       "limitations": []
     },
     {
+      "id": 300,
+      "slug": "mud-sport",
+      "name": "Mud Sport",
+      "sheet_row": null,
+      "runtime_id": "mud-sport",
+      "file": "moves/mud-sport.lua",
+      "status": "implemented",
+      "limitations": [],
+      "parameter_source": "https://pokeapi.co/api/v2/move/300/"
+    },
+    {
       "id": 301,
       "slug": "ice-ball",
       "name": "Ice Ball",
@@ -7380,7 +7391,8 @@
       "disable",
       "torment",
       "imprison",
-      "curse"
+      "curse",
+      "mud-sport"
     ]
   }
 }

@@ -2118,8 +2118,12 @@ impl Battle {
         } else {
             self.gem_factor(actor, move_type, events)
         };
+        // Base-power conditions round halves down, before the existing damage modifiers.
+        let base_power = (f32::from(attack.power) * self.base_power_factor(actor, move_type) - 0.5)
+            .ceil()
+            .max(1.0);
         let adjusted_power = gem
-            * f32::from(attack.power)
+            * base_power
             * 2f32.powi(attack.consecutive_boost as i32)
             * self.active_power_multiplier;
         let mut damage =

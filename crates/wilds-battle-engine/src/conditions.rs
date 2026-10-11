@@ -367,6 +367,16 @@ impl Battle {
         true
     }
 
+    pub(crate) fn base_power_factor(&self, id: ParticipantId, kind: PokemonType) -> f32 {
+        self.rules(id).fold(1.0, |factor, rule| match rule {
+            Rule::BasePower {
+                move_type,
+                factor: by,
+            } if move_type.is_none_or(|own| own == kind) => factor * by,
+            _ => factor,
+        })
+    }
+
     pub(crate) fn effectiveness_factor(&self, id: ParticipantId, kind: PokemonType) -> f32 {
         self.rules(id).fold(1.0, |factor, rule| match rule {
             Rule::TypeEffectiveness {

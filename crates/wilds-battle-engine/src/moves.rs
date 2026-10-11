@@ -820,6 +820,7 @@ fn rule_of(value: &Value) -> mlua::Result<Rule> {
             "not_on_crit",
             "multi_battle_factor",
         ],
+        RuleKind::BasePower => &["kind", "type", "factor"],
         RuleKind::DamageDealt => &["kind", "factor", "category", "type"],
         RuleKind::StatMultiplier => &["kind", "stat", "factor"],
         RuleKind::BlockStatus => &["kind", "statuses", "confusion"],
@@ -905,6 +906,10 @@ fn rule_of(value: &Value) -> mlua::Result<Rule> {
                 .get("multi_battle_factor")?
                 .map(|_| factor("multi_battle_factor"))
                 .transpose()?,
+        },
+        RuleKind::BasePower => Rule::BasePower {
+            move_type: options.pokemon_type("type")?,
+            factor: factor("factor")?,
         },
         RuleKind::DamageDealt => Rule::DamageDealt {
             category: category()?,

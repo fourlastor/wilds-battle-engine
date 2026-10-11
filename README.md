@@ -1,9 +1,9 @@
 # Wilds battle engine
 
 `wilds-battle-engine` is the Rust battle simulation. Move definitions are loaded
-from Lua; `MoveCatalog::builtin()` embeds the 684 files under `moves/`,
+from Lua; `MoveCatalog::builtin()` embeds the 685 files under `moves/`,
 and `MoveCatalog::from_directory(path)` reads them from disk at runtime.
-Both catalogs also include the system move Struggle, for 685 moves in total.
+Both catalogs also include the system move Struggle, for 686 moves in total.
 The [move catalog](moves/README.md) includes 538 entries from the Saved moves sheet,
 plus support moves, additional local JSON moves and the original moves outside the sheet. Its manifest
 records the 34 excluded Z/Max Moves. Files use canonical slugs and source display
@@ -270,6 +270,7 @@ ctx:end_effect(ctx.target.team, "reflect")                  -- Brick Break
 |---|---|
 | `DamageEachTurn`, `HealEachTurn` | `fraction` of max HP, `message` (`{name}` is the Pokémon); `except_types` for damage |
 | `DrainEachTurn` | `fraction`, `to` (who gets the HP), `message` |
+| `BasePower` | `factor` and optional move `type`; modifies base power before the damage formula, rounding halves down |
 | `DamageTaken`, `DamageDealt` | `factor`, and optionally only for a `category` or `type`; `not_on_crit` and optional `multi_battle_factor` for damage taken (alternate factor when either side has multiple active positions) |
 | `AccuracyMultiplier` | `factor`; ordinary hit checks only, excludes OHKO and always-hit moves |
 | `StatMultiplier` | `stat`, `factor` |
