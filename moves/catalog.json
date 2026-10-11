@@ -5356,6 +5356,16 @@
       "limitations": []
     },
     {
+      "id": 791,
+      "slug": "life-dew",
+      "name": "Life Dew",
+      "sheet_row": null,
+      "runtime_id": "life-dew",
+      "file": "moves/life-dew.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
       "id": 793,
       "slug": "false-surrender",
       "name": "False Surrender",
@@ -5965,7 +5975,8 @@
       "behemoth-bash",
       "aura-wheel",
       "overdrive",
-      "apple-acid"
+      "apple-acid",
+      "life-dew"
     ]
   }
 }

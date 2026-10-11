@@ -757,3 +757,81 @@ fn apple_acid_secondary_respects_hit_results_and_stage_abilities() {
         }
     }
 }
+
+#[test]
+fn life_dew_heals_active_allies_through_protect_and_substitute_with_caps() {
+    let mut user = mon("User", &["life-dew"]);
+    user.max_hp = 1001;
+    user.hp = 500;
+    let mut partner = mon("Partner", &["protect"]);
+    partner.max_hp = 600;
+    partner.hp = 590;
+    partner.substitute_hp = 150;
+    let mut bench = mon("Bench", &["splash"]);
+    bench.hp = 500;
+    let mut fainted = mon("Fainted", &["splash"]);
+    fainted.hp = 0;
+    let mut foe = mon("Foe", &["splash"]);
+    foe.hp = 500;
+    let mut battle = Battle::with_rng(
+        Fixed(0.5),
+        [vec![user, partner, bench, fainted], vec![foe]],
+        MoveCatalog::builtin().unwrap(),
+    )
+    .unwrap();
+    battle.set_active([vec![0, 1], vec![0]]).unwrap();
+    turn(&mut battle);
+    let allies = battle.participants(Side::Allies);
+    assert_eq!(allies[0].hp, 750);
+    assert_eq!(allies[1].hp, 600);
+    assert_eq!(allies[1].substitute_hp, 150);
+    assert_eq!(allies[2].hp, 500);
+    assert_eq!(allies[3].hp, 0);
+    assert_eq!(battle.participants(Side::Foes)[0].hp, 500);
+    assert!(!allies[0].last_move_failed);
+}
+
+#[test]
+fn life_dew_can_heal_only_a_partner_and_fails_when_everyone_is_full() {
+    for wounded in [false, true] {
+        let mut partner = mon("Partner", &["splash"]);
+        if wounded {
+            partner.hp = 500;
+        }
+        let mut battle = Battle::with_rng(
+            Fixed(0.5),
+            [
+                vec![mon("User", &["life-dew"]), partner],
+                vec![mon("Foe", &["splash"])],
+            ],
+            MoveCatalog::builtin().unwrap(),
+        )
+        .unwrap();
+        turn(&mut battle);
+        let allies = battle.participants(Side::Allies);
+        assert_eq!(allies[0].hp, 1000);
+        assert_eq!(allies[1].hp, if wounded { 750 } else { 1000 });
+        assert_eq!(allies[0].last_move_failed, !wounded);
+        assert_eq!(allies[0].move_pp["life-dew"], 9);
+    }
+}
+
+#[test]
+fn life_dew_still_succeeds_when_a_partner_is_hidden() {
+    let mut user = mon("User", &["life-dew"]);
+    user.hp = 500;
+    let mut partner = mon("Partner", &["fly"]);
+    partner.hp = 500;
+    partner.speed = 200;
+    let mut battle = Battle::with_rng(
+        Fixed(0.5),
+        [vec![user, partner], vec![mon("Foe", &["splash"])]],
+        MoveCatalog::builtin().unwrap(),
+    )
+    .unwrap();
+    turn(&mut battle);
+    let allies = battle.participants(Side::Allies);
+    assert_eq!(allies[0].hp, 750);
+    assert_eq!(allies[1].hp, 500);
+    assert!(!allies[0].last_move_failed);
+}

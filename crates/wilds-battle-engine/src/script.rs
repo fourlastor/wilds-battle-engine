@@ -1480,6 +1480,8 @@ impl Battle {
                 };
                 if points > 0 {
                     self.heal(who, points, events);
+                    // A team heal succeeds even when another recipient could not be hit.
+                    frame.any_hit = true;
                 }
                 Value::Integer(i64::from(points))
             }
