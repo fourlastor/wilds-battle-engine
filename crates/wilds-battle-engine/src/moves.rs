@@ -244,6 +244,7 @@ pub(crate) enum ScriptOperation {
     Fail,
     Succeed,
     CheckProtection,
+    RecordProtection,
     ForceMove {
         total_turns: u8,
         target_policy: ContinuationTarget,
@@ -837,6 +838,14 @@ fn rule_of(value: &Value) -> mlua::Result<Rule> {
         _ => return Err(bad("rule kind requires a Rule value")),
     };
     let allowed: &[&str] = match kind {
+        RuleKind::Guard => &[
+            "kind",
+            "spread_only",
+            "priority_only",
+            "damaging_only",
+            "status_only",
+            "unbypassable",
+        ],
         RuleKind::StatEachTurn => &["kind", "stat", "stages", "by"],
         RuleKind::StatusOnExpiry => &["kind", "status", "by"],
         RuleKind::ExplodeOnType => &["kind", "type", "fraction", "message"],
@@ -979,6 +988,13 @@ fn rule_of(value: &Value) -> mlua::Result<Rule> {
             move_type: options.pokemon_type("type")?,
             factor: factor("factor")?,
             grounded_only: options.flag("grounded_only")?,
+        },
+        RuleKind::Guard => Rule::Guard {
+            spread_only: options.flag("spread_only")?,
+            priority_only: options.flag("priority_only")?,
+            damaging_only: options.flag("damaging_only")?,
+            status_only: options.flag("status_only")?,
+            unbypassable: options.flag("unbypassable")?,
         },
         RuleKind::BlockPriority => Rule::BlockPriority {
             grounded_only: options.flag("grounded_only")?,
@@ -1141,6 +1157,7 @@ fn parse_op(name: &str, args: &[Value]) -> mlua::Result<ScriptOperation> {
                 .collect::<mlua::Result<Vec<_>>>()?;
             ScriptOperation::SwapSideEffects { names }
         }
+        "record_protection" => ScriptOperation::RecordProtection,
         "check_protection" => ScriptOperation::CheckProtection,
         "succeed" => ScriptOperation::Succeed,
         "redirect_target" => ScriptOperation::RedirectTarget { who: who(0)? },

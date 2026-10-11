@@ -997,6 +997,17 @@ impl Battle {
             self.get_mut(id).status_turns -= 1;
         }
     }
+    pub(crate) fn record_protection(&mut self, actor: ParticipantId) {
+        let turn = self.turn;
+        let p = self.get_mut(actor);
+        p.protection_streak = if p.last_protection_turn.is_some_and(|last| last + 1 >= turn) {
+            p.protection_streak.saturating_add(1)
+        } else {
+            1
+        };
+        p.last_protection_turn = Some(turn);
+    }
+
     pub(crate) fn protection_check(&mut self, actor: ParticipantId) -> bool {
         let pokemon = self.get(actor);
         let streak = if pokemon
@@ -1420,6 +1431,14 @@ impl Battle {
         if !first_charge && self.priority_blocked(actor, target, &spec) {
             events.push(BattleEvent::Message(format!(
                 "{} is protected from priority moves!",
+                self.get(target).name
+            )));
+            self.move_failed = true;
+            return Ok(true);
+        }
+        if !first_charge && self.guarded(actor, target, &spec, false) {
+            events.push(BattleEvent::Message(format!(
+                "{} was protected!",
                 self.get(target).name
             )));
             self.move_failed = true;
@@ -2634,6 +2653,7 @@ impl Battle {
     ) -> Result<bool, BattleError> {
         if self.reflecting
             || self.priority_blocked(actor, reflector, spec)
+            || self.guarded(actor, reflector, spec, false)
             || actor == reflector
             || !spec.has_flag("reflectable")
             || !(self.has_ability(reflector, "magicbounce")

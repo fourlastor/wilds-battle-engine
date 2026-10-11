@@ -5277,3 +5277,54 @@ fn skill_swap_bypasses_substitute_but_cannot_partially_swap_a_protected_ability(
         );
     }
 }
+
+#[test]
+fn wide_guard_blocks_spread_damage_and_status_in_singles_but_not_single_target_moves() {
+    use wilds_battle_engine::Stat;
+    for attack in ["earthquake", "growl", "pound"] {
+        let mut b = game(
+            mon("User", &["wide-guard"]),
+            vec![mon("Foe", &[attack])],
+            0.5,
+        );
+        turn(&mut b);
+        assert_eq!(b.participants(Side::Allies)[0].hp < 1000, attack == "pound");
+        assert_eq!(b.participants(Side::Allies)[0].stage(Stat::Attack), 0);
+        turn(&mut b);
+        assert!(!b.participants(Side::Allies)[0].last_move_failed); // No escalating failure chance.
+    }
+}
+
+#[test]
+fn wide_guard_protects_teammates_and_feint_breaks_the_whole_sides_guard() {
+    for attack in ["splash", "feint"] {
+        let user = mon("Guard", &["wide-guard"]);
+        let ally = mon("Ally", &["splash"]);
+        let mut breaker = mon("Breaker", &[attack]);
+        breaker.speed = 200;
+        let quaker = mon("Quaker", &["earthquake"]);
+        let mut b = Battle::with_rng(
+            Fixed(0.5),
+            [vec![user, ally], vec![breaker, quaker]],
+            MoveCatalog::builtin().unwrap(),
+        )
+        .unwrap();
+        turn(&mut b);
+        assert_eq!(b.participants(Side::Allies)[0].hp < 1000, attack == "feint");
+        assert_eq!(b.participants(Side::Allies)[1].hp < 1000, attack == "feint");
+    }
+}
+
+#[test]
+fn wide_guard_shares_the_protect_failure_counter() {
+    let mut b = game(
+        mon("User", &["wide-guard", "detect"]),
+        vec![mon("Foe", &["pound"])],
+        0.5,
+    );
+    turn(&mut b);
+    let hp = b.participants(Side::Allies)[0].hp;
+    turn_with(&mut b, |p| choose_move(p, "detect", "pound"));
+    assert!(b.participants(Side::Allies)[0].last_move_failed);
+    assert!(b.participants(Side::Allies)[0].hp < hp);
+}

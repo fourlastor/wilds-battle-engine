@@ -153,6 +153,14 @@ pub enum Scope {
 /// A rule on a side applies to every Pokémon of that side, one on the field to everyone.
 #[derive(Clone, Debug, PartialEq)]
 pub enum Rule {
+    /// Hit protection, removed by moves that break Protect. Filters are combined.
+    Guard {
+        spread_only: bool,
+        priority_only: bool,
+        damaging_only: bool,
+        status_only: bool,
+        unbypassable: bool,
+    },
     /// Blocks opposing moves with positive priority, optionally only for grounded holders.
     BlockPriority {
         grounded_only: bool,

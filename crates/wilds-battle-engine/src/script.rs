@@ -761,7 +761,9 @@ impl Battle {
             )));
             return HitOutcome::Protected;
         }
-        if self.get(recipient).protected && recipient != actor && !options.ignore_protect {
+        if self.guarded(actor, recipient, frame.spec, options.ignore_protect)
+            || (self.get(recipient).protected && recipient != actor && !options.ignore_protect)
+        {
             events.push(BattleEvent::Message(format!(
                 "{} protected itself!",
                 self.get(recipient).name
@@ -1503,6 +1505,10 @@ impl Battle {
             ScriptOperation::SwapSideEffects { names } => {
                 Value::Boolean(self.swap_side_effects(&names))
             }
+            ScriptOperation::RecordProtection => {
+                self.record_protection(actor);
+                Value::Nil
+            }
             ScriptOperation::CheckProtection => Value::Boolean(self.protection_check(actor)),
             ScriptOperation::Succeed => {
                 frame.any_hit = true;
@@ -1794,9 +1800,7 @@ impl Battle {
                 }
                 Value::Boolean(protect)
             }
-            ScriptOperation::BreakProtect { who } => {
-                Value::Boolean(std::mem::take(&mut self.get_mut(who).protected))
-            }
+            ScriptOperation::BreakProtect { who } => Value::Boolean(self.break_protection(who)),
             ScriptOperation::Hide(kind) => {
                 let pokemon = self.get_mut(actor);
                 pokemon.semi_invulnerable = true;

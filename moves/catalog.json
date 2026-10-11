@@ -4503,6 +4503,17 @@
       "limitations": []
     },
     {
+      "id": 469,
+      "slug": "wide-guard",
+      "name": "Wide Guard",
+      "sheet_row": null,
+      "runtime_id": "wide-guard",
+      "file": "moves/wide-guard.lua",
+      "status": "implemented",
+      "limitations": [],
+      "parameter_source": "https://pokeapi.co/api/v2/move/469/"
+    },
+    {
       "id": 470,
       "slug": "guard-split",
       "name": "Guard Split",
@@ -7776,7 +7787,8 @@
       "worry-seed",
       "simple-beam",
       "entrainment",
-      "skill-swap"
+      "skill-swap",
+      "wide-guard"
     ]
   }
 }

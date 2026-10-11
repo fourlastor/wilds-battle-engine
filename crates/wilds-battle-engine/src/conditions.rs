@@ -409,6 +409,45 @@ impl Battle {
             .map_or(target, |(_, _, to)| to)
     }
 
+    pub(crate) fn guarded(
+        &self,
+        actor: ParticipantId,
+        target: ParticipantId,
+        spec: &MoveSpec,
+        ignore_protect: bool,
+    ) -> bool {
+        if actor == target || matches!(spec.target, Target::User | Target::Field | Target::All) {
+            return false;
+        }
+        self.rules(target).any(|rule| matches!(rule, Rule::Guard {spread_only, priority_only, damaging_only, status_only, unbypassable}
+            if (!ignore_protect || *unbypassable)
+                && (!*spread_only || matches!(spec.target, Target::AllOthers | Target::AllOpponents))
+                && (!*priority_only || self.effective_move_priority(actor,spec) > 0)
+                && (!*damaging_only || spec.category != Category::Status)
+                && (!*status_only || spec.category == Category::Status)))
+    }
+
+    pub(crate) fn break_protection(&mut self, who: ParticipantId) -> bool {
+        let mut changed = std::mem::take(&mut self.get_mut(who).protected);
+        for scope in [Scope::Pokemon(who), Scope::Side(who.side)] {
+            let list = self.conditions_mut(scope);
+            let before = list.len();
+            list.retain(|condition| {
+                !condition
+                    .rules
+                    .iter()
+                    .any(|r| matches!(r, Rule::Guard { .. }))
+            });
+            changed |= before != list.len();
+        }
+        if changed {
+            let pokemon = self.get_mut(who);
+            pokemon.protection_streak = 0;
+            pokemon.last_protection_turn = None;
+        }
+        changed
+    }
+
     pub(crate) fn priority_blocked(
         &self,
         actor: ParticipantId,

@@ -127,6 +127,7 @@ return function(api, fields, roster)
     return hit
   end
   function ctx:redirect_target(who) return roster[op("redirect_target", who)] end
+  function ctx:record_protection() return op("record_protection") end
   function ctx:check_protection() return op("check_protection") end
   function ctx:succeed() return op("succeed") end
   -- Whether the move has got through to `who` (the target if left out). The first thing a move
