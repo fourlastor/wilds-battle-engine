@@ -129,6 +129,7 @@ impl Battle {
     }
 
     pub(crate) fn ability_on_entry(&mut self, who: ParticipantId, events: &mut Vec<BattleEvent>) {
+        self.pastel_veil_entry(events);
         if self.has_ability(who, "owntempo") {
             self.get_mut(who).confused_turns = None;
         }

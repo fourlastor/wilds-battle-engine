@@ -314,8 +314,37 @@ impl Battle {
         self.on_ground(id) && self.get(id).hidden().is_none() && self.rules(id).any(|r| matches!(r, Rule::BlockGroundedStatus { statuses, .. } if statuses.is_empty() || statuses.contains(&status)))
     }
 
-    pub(crate) fn blocks_status(&self, id: ParticipantId, status: Status) -> bool {
-        self.rules(id).any(|rule| {
+    fn status_rules_from(
+        &self,
+        actor: ParticipantId,
+        id: ParticipantId,
+    ) -> impl Iterator<Item = &Rule> {
+        let infiltrates = actor.side != id.side && self.has_ability(actor, "infiltrator");
+        self.get(id)
+            .conditions
+            .iter()
+            .chain(
+                self.side_conditions[id.side.index()]
+                    .iter()
+                    .filter(move |c| !(infiltrates && c.name == "safeguard")),
+            )
+            .chain(self.field_conditions.iter())
+            .flat_map(|c| &c.rules)
+            .chain(
+                self.get(id)
+                    .ability_rules
+                    .iter()
+                    .filter(move |_| self.ability_active(id)),
+            )
+    }
+
+    pub(crate) fn blocks_status(
+        &self,
+        actor: ParticipantId,
+        id: ParticipantId,
+        status: Status,
+    ) -> bool {
+        self.status_rules_from(actor, id).any(|rule| {
             matches!(rule, Rule::BlockStatus { statuses, .. }
                 if statuses.is_empty() || statuses.contains(&status))
         })
@@ -335,11 +364,11 @@ impl Battle {
             })
     }
 
-    pub(crate) fn blocks_confusion(&self, id: ParticipantId) -> bool {
+    pub(crate) fn blocks_confusion(&self, actor: ParticipantId, id: ParticipantId) -> bool {
         if self.blocks_grounded_confusion(id) {
             return true;
         }
-        self.rules(id).any(|rule| {
+        self.status_rules_from(actor, id).any(|rule| {
             matches!(
                 rule,
                 Rule::BlockStatus {

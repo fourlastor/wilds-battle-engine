@@ -754,6 +754,227 @@ fn aroma_veil_also_prevents_the_related_mental_move_restrictions() {
 }
 
 #[test]
+fn synchronize_reflects_burn_paralysis_and_both_poison_kinds_once() {
+    for (move_id, status) in [
+        ("will-o-wisp", Status::Burned),
+        ("thunder-wave", Status::Paralyzed),
+        ("poison-powder", Status::Poisoned),
+        ("toxic", Status::BadlyPoisoned),
+    ] {
+        let mut user = mon("User", &[move_id]);
+        user.ability = Some("synchronize".into());
+        user.types = vec![PokemonType::Ground];
+        let mut target = mon("Target", &["splash"]);
+        target.ability = Some("synchronize".into());
+        let mut battle = game(user, target, 0.5);
+        let events = turn(&mut battle, move_id, "splash");
+        assert_eq!(ally(&battle).status, Some(status), "{move_id}");
+        assert_eq!(foe(&battle).status, Some(status));
+        assert_eq!(
+            events
+                .iter()
+                .filter(|e| matches!(
+                    e,
+                    BattleEvent::Status {
+                        status: Some(_),
+                        ..
+                    }
+                ))
+                .count(),
+            2
+        );
+    }
+}
+
+#[test]
+fn synchronize_respects_immunity_and_does_not_reflect_sleep_freeze_or_hazards() {
+    let mut user = mon("User", &["will-o-wisp"]);
+    user.types = vec![PokemonType::Fire];
+    let mut target = mon("Target", &["splash"]);
+    target.ability = Some("synchronize".into());
+    let mut battle = game(user, target.clone(), 0.5);
+    turn(&mut battle, "will-o-wisp", "splash");
+    assert_eq!(ally(&battle).status, None);
+    assert_eq!(foe(&battle).status, Some(Status::Burned));
+    for move_id in ["spore", "ice-beam"] {
+        let mut battle = game(mon("User", &[move_id]), target.clone(), 0.01);
+        turn(&mut battle, move_id, "splash");
+        assert_eq!(ally(&battle).status, None);
+    }
+    let mut battle = Battle::with_rng(
+        Fixed(0.5),
+        [
+            vec![mon("User", &["toxic-spikes", "splash"])],
+            vec![mon("Lead", &["splash"]), target],
+        ],
+        MoveCatalog::builtin().unwrap(),
+    )
+    .unwrap();
+    battle.set_active([vec![0], vec![0]]).unwrap();
+    turn(&mut battle, "toxic-spikes", "splash");
+    turn(&mut battle, "splash", "switch:1");
+    assert_eq!(
+        battle.participants(Side::Foes)[1].status,
+        Some(Status::Poisoned)
+    );
+    assert_eq!(ally(&battle).status, None);
+}
+
+#[test]
+fn shield_dust_blocks_secondary_statuses_and_confusion_but_not_status_moves() {
+    for (move_id, expect_status) in [
+        ("ember", None),
+        ("nuzzle", None),
+        ("sludge-bomb", None),
+        ("glare", Some(Status::Paralyzed)),
+    ] {
+        let mut target = mon("Target", &["splash"]);
+        target.ability = Some("shield-dust".into());
+        let mut battle = game(mon("User", &[move_id]), target, 0.01);
+        turn(&mut battle, move_id, "splash");
+        assert_eq!(foe(&battle).status, expect_status, "{move_id}");
+    }
+    for move_id in ["confusion", "confuse_ray"] {
+        let mut user = mon("User", &[move_id]);
+        user.speed = 200;
+        let mut target = mon("Target", &["splash"]);
+        target.ability = Some("shield-dust".into());
+        let mut battle = game(user, target, 0.01);
+        turn(&mut battle, move_id, "splash");
+        assert_eq!(
+            foe(&battle).confused_turns.is_some(),
+            move_id == "confuse_ray"
+        );
+    }
+}
+
+#[test]
+fn leaf_guard_prevents_status_in_effective_sun_without_curing_existing_status() {
+    for (weather_ability, blocked) in [(None, true), (Some("cloud-nine"), false)] {
+        let mut user = mon("User", &["sunny_day", "glare"]);
+        user.ability = weather_ability.map(str::to_owned);
+        let mut target = mon("Target", &["splash"]);
+        target.ability = Some("leaf-guard".into());
+        let mut battle = game(user, target, 0.5);
+        turn(&mut battle, "sunny_day", "splash");
+        turn(&mut battle, "glare", "splash");
+        assert_eq!(foe(&battle).status, (!blocked).then_some(Status::Paralyzed));
+    }
+    let mut target = mon("Target", &["splash"]);
+    target.status = Some(Status::Burned);
+    target.ability = Some("leaf-guard".into());
+    let mut battle = game(mon("User", &["sunny_day"]), target, 0.5);
+    turn(&mut battle, "sunny_day", "splash");
+    assert_eq!(foe(&battle).status, Some(Status::Burned));
+}
+
+#[test]
+fn flower_veil_protects_grass_from_external_status_and_yawn_but_allows_rest() {
+    for grass in [false, true] {
+        let mut target = mon("Target", &["splash", "rest"]);
+        target.ability = Some("flower-veil".into());
+        target.types = vec![if grass {
+            PokemonType::Grass
+        } else {
+            PokemonType::Normal
+        }];
+        target.hp = 500;
+        let mut battle = game(mon("User", &["glare", "yawn", "splash"]), target, 0.5);
+        turn(&mut battle, "yawn", "splash");
+        assert_eq!(foe(&battle).condition("yawn").is_none(), grass);
+        turn(&mut battle, "glare", "splash");
+        assert_eq!(foe(&battle).status, (!grass).then_some(Status::Paralyzed));
+        turn(&mut battle, "splash", "rest");
+        assert_eq!(foe(&battle).status, Some(Status::Asleep));
+        assert_eq!(foe(&battle).hp, 1000);
+    }
+}
+
+#[test]
+fn residual_cure_abilities_act_before_status_damage_and_respect_weather_suppression() {
+    for (ability, dice, rain, cloud, cured) in [
+        ("shed-skin", 0.1, false, false, true),
+        ("shed-skin", 0.5, false, false, false),
+        ("hydration", 0.5, true, false, true),
+        ("hydration", 0.5, false, false, false),
+        ("hydration", 0.5, true, true, false),
+    ] {
+        let move_id = if rain { "rain-dance" } else { "splash" };
+        let mut user = mon("User", &[move_id]);
+        if cloud {
+            user.ability = Some("cloud-nine".into());
+        }
+        let mut target = mon("Target", &["splash"]);
+        target.ability = Some(ability.into());
+        target.status = Some(Status::Burned);
+        let mut battle = game(user, target, dice);
+        turn(&mut battle, move_id, "splash");
+        assert_eq!(foe(&battle).status.is_none(), cured);
+        assert_eq!(foe(&battle).hp, if cured { 1000 } else { 938 });
+    }
+}
+
+#[test]
+fn healer_cures_adjacent_allies_but_not_itself() {
+    let mut healer = mon("Healer", &["splash"]);
+    healer.ability = Some("healer".into());
+    healer.status = Some(Status::Poisoned);
+    let mut patient = mon("Patient", &["splash"]);
+    patient.status = Some(Status::Burned);
+    let mut battle = Battle::with_rng(
+        Fixed(0.1),
+        [vec![mon("User", &["splash"])], vec![healer, patient]],
+        MoveCatalog::builtin().unwrap(),
+    )
+    .unwrap();
+    turn(&mut battle, "splash", "splash");
+    assert_eq!(foe(&battle).status, Some(Status::Poisoned));
+    assert_eq!(battle.participants(Side::Foes)[1].status, None);
+    assert_eq!(battle.participants(Side::Foes)[1].hp, 1000);
+}
+
+#[test]
+fn infiltrator_bypasses_safeguard_for_status_and_confusion() {
+    for move_id in ["glare", "confuse_ray"] {
+        for infiltrator in [false, true] {
+            let mut user = mon("User", &["splash", move_id]);
+            if infiltrator {
+                user.ability = Some("infiltrator".into());
+            }
+            let mut battle = game(user, mon("Target", &["safeguard", "splash"]), 0.5);
+            turn(&mut battle, "splash", "safeguard");
+            turn(&mut battle, move_id, "splash");
+            assert_eq!(
+                foe(&battle).status.is_some() || foe(&battle).confused_turns.is_some(),
+                infiltrator
+            );
+        }
+    }
+}
+
+#[test]
+fn pastel_veil_does_not_instantly_cure_an_ally_poisoned_through_ability_bypass() {
+    let mut user = mon("User", &["toxic"]);
+    user.ability = Some("mold-breaker".into());
+    let mut veil = mon("Veil", &["splash"]);
+    veil.ability = Some("pastel-veil".into());
+    let mut battle = Battle::with_rng(
+        Fixed(0.5),
+        [
+            vec![user, mon("Bench", &["splash"])],
+            vec![mon("Target", &["splash"]), veil],
+        ],
+        MoveCatalog::builtin().unwrap(),
+    )
+    .unwrap();
+    battle.set_active([vec![0], vec![0, 1]]).unwrap();
+    turn(&mut battle, "toxic", "splash");
+    assert_eq!(foe(&battle).status, Some(Status::BadlyPoisoned));
+    turn(&mut battle, "switch:1", "splash");
+    assert_eq!(foe(&battle).status, None);
+}
+
+#[test]
 fn freeze_fire_hits_thaw_before_the_targets_pending_action() {
     for attack in ["ember", "fire-punch", "fire-spin", "flamethrower"] {
         let mut user = mon("User", &[attack]);

@@ -1256,13 +1256,21 @@ impl Battle {
             &self.types_of(who),
         ) && !(matches!(status, Status::Poisoned | Status::BadlyPoisoned)
             && self.has_ability(actor, "corrosion")))
-            || (who != actor && self.blocks_status(who, status))
+            || (who != actor && self.blocks_status(actor, who, status))
             || (!ignore_terrain && self.blocks_grounded_status(who, status))
             || (status == Status::Asleep
                 && (self.team_status_ability(who, "sweetveil") || self.field_prevents_sleep()))
             || self.has_ability(who, "comatose")
             || self.status_ability_immunity(who, status)
             || (status == Status::Frozen && self.status_sun_active())
+            || (self.has_ability(who, "leafguard") && self.status_sun_active())
+            || (who != actor
+                && self
+                    .types_of(who)
+                    .contains(&crate::model::PokemonType::Grass)
+                && self.team_status_ability(who, "flowerveil"))
+            || (matches!(status, Status::Poisoned | Status::BadlyPoisoned)
+                && self.team_status_ability(who, "pastelveil"))
     }
 
     /// Gives `who` a status the way `Effect::Status` does. Returns whether it took.
@@ -1275,6 +1283,30 @@ impl Battle {
         replace: bool,
         move_type: crate::model::PokemonType,
         announce_failure: bool,
+        events: &mut Vec<BattleEvent>,
+    ) -> bool {
+        self.inflict_status_with_cause(
+            actor,
+            who,
+            status,
+            replace,
+            move_type,
+            announce_failure,
+            crate::statuses::StatusCause::Direct,
+            events,
+        )
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    pub(crate) fn inflict_status_with_cause(
+        &mut self,
+        actor: ParticipantId,
+        who: ParticipantId,
+        status: AppliedStatus,
+        replace: bool,
+        move_type: crate::model::PokemonType,
+        announce_failure: bool,
+        cause: crate::statuses::StatusCause,
         events: &mut Vec<BattleEvent>,
     ) -> bool {
         let new_status = status.battle_status();
@@ -1301,6 +1333,25 @@ impl Battle {
                 AppliedStatus::Frozen => format!("{name} was frozen solid!"),
                 _ => format!("{name} was {}!", status.description()),
             }));
+            if cause == crate::statuses::StatusCause::Direct
+                && actor != who
+                && self.has_ability(who, "synchronize")
+                && matches!(
+                    new_status,
+                    Status::Burned | Status::Paralyzed | Status::Poisoned | Status::BadlyPoisoned
+                )
+            {
+                self.inflict_status_with_cause(
+                    who,
+                    actor,
+                    status,
+                    false,
+                    crate::model::PokemonType::None,
+                    false,
+                    crate::statuses::StatusCause::Synchronize,
+                    events,
+                );
+            }
             return true;
         }
         if announce_failure {
@@ -1345,7 +1396,7 @@ impl Battle {
         if self.get(who).hp == 0
             || self.get(who).confused_turns.is_some()
             || self.has_ability(who, "owntempo")
-            || (who != actor && self.blocks_confusion(who))
+            || (who != actor && self.blocks_confusion(actor, who))
             || self.blocks_grounded_confusion(who)
         {
             return false;
@@ -1368,6 +1419,29 @@ impl Battle {
         let actor = frame.actor;
         let target = frame.target;
         let spec = frame.spec;
+        if spec.category != Category::Status {
+            let secondary = match &operation {
+                ScriptOperation::ApplyStatus { who, .. }
+                | ScriptOperation::Confuse { who, .. }
+                | ScriptOperation::Flinch { who, .. }
+                | ScriptOperation::ChangeStat { who, .. } => Some((*who, Value::Boolean(false))),
+                ScriptOperation::FlinchTarget(_) => Some((target, Value::Nil)),
+                _ => None,
+            };
+            if let Some((who, value)) = secondary
+                && who != actor
+                && self.has_ability(who, "shielddust")
+            {
+                // Numeric results must retain the script API's return type.
+                return Ok(Flow::Continue(
+                    if matches!(operation, ScriptOperation::ChangeStat { .. }) {
+                        Value::Integer(0)
+                    } else {
+                        value
+                    },
+                ));
+            }
+        }
         // Keep protection through the secondary effects of the hit that broke the
         // substitute. Indirect HP loss and field/side effects do not hit the doll.
         let blocked = match &operation {

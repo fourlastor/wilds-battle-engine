@@ -3,6 +3,10 @@
 The status audit targets Sword/Shield (including its expansions). These rules
 supersede the original PokeWilds compatibility behavior where it differs.
 They do not change the source move names, PP, power or accuracy parameters.
+The audited scope is the six major statuses (counting ordinary/toxic poison
+separately), confusion, flinch, infatuation, and the shared status interactions
+listed below. This is not a full ability-catalog or all-volatile-condition audit;
+no new items, Z-Moves, Max Moves or Legends: Arceus rules are introduced.
 
 References: Pokémon Showdown's pinned [status conditions](https://github.com/smogon/pokemon-showdown/blob/942cda71d14bf0618bd57991708a2e2734b6daba/data/conditions.ts)
 and [abilities](https://github.com/smogon/pokemon-showdown/blob/942cda71d14bf0618bd57991708a2e2734b6daba/data/abilities.ts),
@@ -44,7 +48,8 @@ Regression tests are in `crates/wilds-battle-engine/tests/status_rules.rs`.
 - Magic Guard prevents damage. Poison Heal replaces it with 1/8-HP healing,
   blocked by Heal Block; Toxic's counter still advances with either ability.
 - Immunity and Pastel Veil prevent and cure poison; Pastel Veil also protects
-  active allies. Corrosion bypasses Poison/Steel status immunity, but cannot
+  active allies and cures them on entry/switch-in, rather than continuously
+  curing an ally poisoned through ability bypass. Corrosion bypasses Poison/Steel status immunity, but cannot
   make Poison-type attacks damage Steel or make Toxic Spikes poison Steel.
 - A Poison-type Toxic user bypasses accuracy and semi-invulnerability.
 - Toxic Boost increases physical move power while poisoned. Merciless forces
@@ -103,3 +108,26 @@ Regression tests are in `crates/wilds-battle-engine/tests/status_rules.rs`.
   and active allies, respecting suppression and ability bypass. Aroma Veil also
   blocks Disable, Encore, Heal Block, Taunt and Torment.
 - Safeguard, Substitute and major-status immunity do not block Attract.
+
+## Shared prevention, reflection and cures
+
+- Only one major status can be held at a time. Rest explicitly replaces the
+  existing status; type changes alone do not cure one already present.
+- Leaf Guard prevents major statuses and Yawn in effective sunlight but does
+  not cure an existing status. Flower Veil prevents external major statuses and
+  Yawn for Grass-type team members; it allows self-inflicted Rest.
+- Synchronize reflects burn, paralysis, poison and toxic poison, retaining toxic
+  poison in Gen 8. It respects the recipient's immunity and does not reflect
+  sleep, freeze, Toxic Spikes or its own reflection.
+- Shield Dust prevents damaging moves' secondary statuses, confusion, flinch
+  and stat changes. It does not block status-category moves.
+- Infiltrator bypasses an opposing Safeguard's status/confusion protection.
+  Terrain, Substitute and ordinary ability immunity remain separate checks.
+- Shed Skin has a 33% end-of-turn cure chance; Hydration cures in effective rain;
+  Healer has a 30% chance to cure each adjacent ally. These cures occur before
+  poison/burn residual damage and use active abilities only.
+
+The regression suite covers the listed interactions, ability suppression/bypass,
+switching, damage rounding and turn order. General damage calculation and the
+ordering of unrelated weather/volatile residuals retain the engine's existing
+behavior; these tests do not establish full cartridge parity for all mechanics.

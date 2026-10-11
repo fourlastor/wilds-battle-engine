@@ -2,6 +2,13 @@
 use crate::engine::Battle;
 use crate::model::{BattleEvent, ParticipantId, Rule, Status, WeatherKind};
 
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub(crate) enum StatusCause {
+    Direct,
+    Hazard,
+    Synchronize,
+}
+
 impl Battle {
     pub(crate) fn team_status_ability(&self, who: ParticipantId, ability: &str) -> bool {
         self.ignored_ability != Some(who)
@@ -12,9 +19,11 @@ impl Battle {
     }
 
     pub(crate) fn status_sun_active(&self) -> bool {
-        self.weather
-            .as_ref()
-            .is_some_and(|w| w.kind == WeatherKind::Sun)
+        self.status_weather_active(WeatherKind::Sun)
+    }
+
+    pub(crate) fn status_weather_active(&self, kind: WeatherKind) -> bool {
+        self.weather.as_ref().is_some_and(|w| w.kind == kind)
             && !self
                 .actors()
                 .into_iter()
@@ -28,11 +37,49 @@ impl Battle {
                 self.has_ability(who, "waterveil") || self.has_ability(who, "waterbubble")
             }
             Status::Poisoned | Status::BadlyPoisoned => {
-                self.has_ability(who, "immunity") || self.team_status_ability(who, "pastelveil")
+                self.has_ability(who, "immunity") || self.has_ability(who, "pastelveil")
             }
             Status::Paralyzed => self.has_ability(who, "limber"),
             Status::Asleep => {
                 self.has_ability(who, "insomnia") || self.has_ability(who, "vitalspirit")
+            }
+        }
+    }
+
+    pub(crate) fn pastel_veil_entry(&mut self, events: &mut Vec<BattleEvent>) {
+        for who in self.actors() {
+            if matches!(
+                self.get(who).status,
+                Some(Status::Poisoned | Status::BadlyPoisoned)
+            ) && self.team_status_ability(who, "pastelveil")
+            {
+                self.cure_status(who, None, events);
+            }
+        }
+    }
+
+    pub(crate) fn residual_status_cures(&mut self, events: &mut Vec<BattleEvent>) {
+        let mut order = self.actors();
+        order.sort_by_key(|&who| std::cmp::Reverse(self.action_speed(who)));
+        for who in order {
+            if self.get(who).status.is_some()
+                && ((self.has_ability(who, "hydration")
+                    && self.status_weather_active(WeatherKind::Rain)
+                    && self.weather.as_ref().is_some_and(|w| w.turns_left > 0))
+                    || (self.has_ability(who, "shedskin") && self.rng.chance(0.33)))
+            {
+                self.cure_status(who, None, events);
+            }
+            if self.has_ability(who, "healer") {
+                for ally in self.actors() {
+                    if who.side == ally.side
+                        && self.adjacent(who, ally)
+                        && self.get(ally).status.is_some()
+                        && self.rng.chance(0.3)
+                    {
+                        self.cure_status(ally, None, events);
+                    }
+                }
             }
         }
     }

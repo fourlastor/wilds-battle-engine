@@ -1028,6 +1028,7 @@ impl Battle {
         }
         if self.winner.is_none() {
             self.resolve_delayed_heals(events);
+            self.residual_status_cures(events);
             for actor in &order {
                 self.post_turn_status(*actor, events);
                 self.update_berries(events);
@@ -1952,6 +1953,22 @@ impl Battle {
         second_turn: bool,
         events: &mut Vec<BattleEvent>,
     ) -> Result<(), BattleError> {
+        if has_damage
+            && actor != target
+            && self.has_ability(target, "shielddust")
+            && matches!(
+                effect,
+                Effect::Status { .. }
+                    | Effect::Confuse
+                    | Effect::Flinch(_)
+                    | Effect::Stats {
+                        self_target: false,
+                        ..
+                    }
+            )
+        {
+            return Ok(());
+        }
         if self.substitute_blocks_effect(actor, target, spec)
             && matches!(
                 effect,
@@ -2125,19 +2142,10 @@ impl Battle {
             }
             Effect::Confuse => {
                 self.rng.chance(1.0); // C# ConfuseEffect checks its default chance.
-                if (target != actor && self.blocks_confusion(target))
-                    || self.blocks_grounded_confusion(target)
+                if !self.confuse(actor, target, events)
+                    && single_effect
+                    && self.get(target).confused_turns.is_some()
                 {
-                    return Ok(());
-                }
-                if self.get(target).confused_turns.is_none() {
-                    let turns = self.rng.range(1, 4);
-                    self.get_mut(target).confused_turns = Some(turns);
-                    events.push(BattleEvent::Message(format!(
-                        "{} became confused!",
-                        self.get(target).name
-                    )));
-                } else if single_effect {
                     events.push(BattleEvent::Message(format!(
                         "{} was already confused!",
                         self.get(target).name

@@ -89,7 +89,7 @@ impl Battle {
                             self.get(who).name
                         )));
                     } else if !self.types_of(who).contains(&PokemonType::Steel) {
-                        self.inflict_status(
+                        self.inflict_status_with_cause(
                             source,
                             who,
                             if layers == 2 {
@@ -100,6 +100,7 @@ impl Battle {
                             false,
                             PokemonType::Poison,
                             false,
+                            crate::statuses::StatusCause::Hazard,
                             events,
                         );
                     }
