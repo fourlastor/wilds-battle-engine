@@ -159,3 +159,54 @@ fn mist_prevents_opposing_stat_drops_for_five_turns_without_refreshing() {
     });
     assert_eq!(b.participants(Side::Allies)[0].stage(Stat::Attack), -1);
 }
+
+fn control_damage(
+    power: u16,
+    kind: &str,
+    category: &str,
+    mut user: Pokemon,
+    mut foe: Pokemon,
+) -> u16 {
+    let source = format!(
+        "return {{{{id='control', name='Control', type=Type.{kind}, category=Category.{category}, pp=40, accuracy=Accuracy.Always, script=function(ctx) ctx:damage({power}) end}}, {{id='wait', name='Wait', type=Type.Normal, category=Category.Status, pp=40, target=Target.User, script=function(_) end}}}}"
+    );
+    user.moves = vec!["control".into()];
+    foe.moves = vec!["wait".into()];
+    let mut b = Battle::with_rng(
+        Fixed(0.5),
+        [vec![user], vec![foe]],
+        MoveCatalog::from_lua(&source).unwrap(),
+    )
+    .unwrap();
+    turn(&mut b);
+    1000 - b.participants(Side::Foes)[0].hp
+}
+
+#[test]
+fn low_kick_obeys_all_six_weight_brackets() {
+    for (weight, power) in [
+        (0.1, 20),
+        (9.9, 20),
+        (10.0, 40),
+        (24.9, 40),
+        (25.0, 60),
+        (49.9, 60),
+        (50.0, 80),
+        (99.9, 80),
+        (100.0, 100),
+        (199.9, 100),
+        (200.0, 120),
+    ] {
+        let user = mon("User", &["low-kick"]);
+        let mut foe = mon("Foe", &["splash"]);
+        foe.weight = weight;
+        let expected = control_damage(power, "Fighting", "Physical", user.clone(), foe.clone());
+        let mut b = game(user, vec![foe], 0.5);
+        turn(&mut b);
+        assert_eq!(
+            1000 - b.participants(Side::Foes)[0].hp,
+            expected,
+            "weight {weight}"
+        );
+    }
+}

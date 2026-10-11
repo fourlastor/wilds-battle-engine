@@ -672,6 +672,17 @@
       "limitations": []
     },
     {
+      "id": 67,
+      "slug": "low-kick",
+      "name": "Low Kick",
+      "sheet_row": null,
+      "runtime_id": "low-kick",
+      "file": "moves/low-kick.lua",
+      "status": "implemented",
+      "limitations": [],
+      "parameter_source": "https://pokeapi.co/api/v2/move/67/"
+    },
+    {
       "id": 69,
       "slug": "seismic-toss",
       "name": "Seismic Toss",
@@ -6024,7 +6035,8 @@
       "whirlwind",
       "wrap",
       "roar",
-      "mist"
+      "mist",
+      "low-kick"
     ]
   }
 }
