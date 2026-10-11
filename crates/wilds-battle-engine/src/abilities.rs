@@ -994,6 +994,9 @@ impl Battle {
             return;
         }
         self.ability_terrain_entry(who, events);
+        if self.has_ability(who, "deltastream") {
+            self.start_weather(crate::model::WeatherKind::StrongWinds, u8::MAX, events);
+        }
         if self.has_ability(who, "primordialsea") {
             self.start_weather(crate::model::WeatherKind::HeavyRain, u8::MAX, events);
         }

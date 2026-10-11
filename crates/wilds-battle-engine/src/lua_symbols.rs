@@ -187,6 +187,7 @@ pub(crate) fn install(lua: &Lua) -> Result<(), BattleError> {
         ("Hail", WeatherKind::Hail),
         ("HeavyRain", WeatherKind::HeavyRain),
         ("HarshSun", WeatherKind::HarshSun),
+        ("StrongWinds", WeatherKind::StrongWinds),
     ] {
         add(lua, &weather, name, LuaSymbol::Weather(value))?;
     }

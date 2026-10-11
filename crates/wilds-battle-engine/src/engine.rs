@@ -2599,6 +2599,22 @@ impl Battle {
         }
         types
     }
+    fn weather_type_factor(&self, defender: PokemonType, factor: f32) -> f32 {
+        if self.effective_weather() == Some(WeatherKind::StrongWinds)
+            && defender == PokemonType::Flying
+            && factor > 1.0
+        {
+            1.0
+        } else {
+            factor
+        }
+    }
+    fn move_type_multiplier(&self, kind: PokemonType, types: &[PokemonType]) -> f32 {
+        types
+            .iter()
+            .map(|t| self.weather_type_factor(*t, type_chart::multiplier(kind, &[*t])))
+            .product()
+    }
     pub(crate) fn move_effectiveness(
         &self,
         actor: ParticipantId,
@@ -2608,7 +2624,7 @@ impl Battle {
         if kind == PokemonType::Ground && self.floats_by_effect(target) {
             return 0.0;
         }
-        type_chart::multiplier(kind, &self.move_defending_types(actor, target, kind))
+        self.move_type_multiplier(kind, &self.move_defending_types(actor, target, kind))
             * self.effectiveness_factor(target, kind)
     }
     /// How well a hit does against a Pokémon's types, with the hit's own exceptions.
@@ -2621,7 +2637,7 @@ impl Battle {
         let against = |move_type: PokemonType, exceptions: &[(PokemonType, f32)]| -> f32 {
             if exceptions.is_empty() {
                 return if attack.hits_airborne {
-                    type_chart::multiplier(
+                    self.move_type_multiplier(
                         move_type,
                         &self.move_defending_types(actor, target, move_type),
                     ) * self.effectiveness_factor(target, move_type)
@@ -2632,13 +2648,16 @@ impl Battle {
             self.move_defending_types(actor, target, move_type)
                 .iter()
                 .map(|defender| {
-                    exceptions
-                        .iter()
-                        .find(|(own, _)| own == defender)
-                        .map_or_else(
-                            || type_chart::multiplier(move_type, &[*defender]),
-                            |(_, factor)| *factor,
-                        )
+                    self.weather_type_factor(
+                        *defender,
+                        exceptions
+                            .iter()
+                            .find(|(own, _)| own == defender)
+                            .map_or_else(
+                                || type_chart::multiplier(move_type, &[*defender]),
+                                |(_, factor)| *factor,
+                            ),
+                    )
                 })
                 .product::<f32>()
                 * self.effectiveness_factor(target, move_type)
@@ -3293,7 +3312,8 @@ impl Battle {
             WeatherKind::Sun
             | WeatherKind::Rain
             | WeatherKind::HeavyRain
-            | WeatherKind::HarshSun => return,
+            | WeatherKind::HarshSun
+            | WeatherKind::StrongWinds => return,
         };
         for id in order {
             let p = self.get(*id).clone();

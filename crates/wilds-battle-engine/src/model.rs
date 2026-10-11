@@ -95,6 +95,7 @@ pub enum WeatherKind {
     Hail,
     HeavyRain,
     HarshSun,
+    StrongWinds,
 }
 
 impl WeatherKind {
@@ -102,6 +103,7 @@ impl WeatherKind {
         match self {
             Self::HeavyRain => Some("primordialsea"),
             Self::HarshSun => Some("desolateland"),
+            Self::StrongWinds => Some("deltastream"),
             _ => None,
         }
     }
@@ -115,6 +117,11 @@ impl WeatherKind {
     /// The lines shown when the weather starts, at the end of each turn, and when it stops.
     pub const fn messages(self) -> (&'static str, &'static str, &'static str) {
         match self {
+            Self::StrongWinds => (
+                "Mysterious strong winds are protecting Flying-type Pokémon!",
+                "The mysterious strong winds blow on.",
+                "The mysterious strong winds dissipated.",
+            ),
             Self::HarshSun => (
                 "The sunlight turned extremely harsh!",
                 "The extremely harsh sunlight continues.",

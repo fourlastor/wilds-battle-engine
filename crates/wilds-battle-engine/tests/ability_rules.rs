@@ -4377,3 +4377,70 @@ fn desolate_land_blocks_water_damage_allows_status_moves_and_replaces_extreme_ra
     turn(&mut battle, "splash", "splash");
     assert_eq!(battle.weather().unwrap().kind, WeatherKind::HarshSun);
 }
+
+#[test]
+fn delta_stream_removes_only_flying_weaknesses_and_preserves_hazard_damage() {
+    for (types, attack, ratio) in [
+        (
+            vec![PokemonType::Dragon, PokemonType::Flying],
+            "ice-beam",
+            2,
+        ),
+        (
+            vec![PokemonType::Water, PokemonType::Flying],
+            "thunderbolt",
+            2,
+        ),
+        (vec![PokemonType::Flying], "rock-throw", 2),
+        (vec![PokemonType::Ground], "ice-beam", 1),
+    ] {
+        let mut damage = vec![];
+        for suppressed in [false, true] {
+            let mut user = mon("User", &[attack]);
+            user.ability = Some("mold-breaker".into());
+            let mut target = mon("Target", &["splash"]);
+            target.types = types.clone();
+            target.ability = Some("delta-stream".into());
+            target.ability_suppressed = suppressed;
+            let mut battle = game(user, target, 0.5);
+            turn(&mut battle, attack, "splash");
+            damage.push(1000 - foe(&battle).hp);
+        }
+        assert!((i32::from(damage[0]) * ratio - i32::from(damage[1])).abs() <= 2);
+    }
+    let mut user = mon("Wind", &["synthesis", "rain-dance", "splash"]);
+    user.ability = Some("delta-stream".into());
+    user.hp = 100;
+    user.types = vec![PokemonType::Flying];
+    let mut battle = game(
+        user,
+        mon("Target", &["earthquake", "gastro-acid", "splash"]),
+        0.5,
+    );
+    turn(&mut battle, "synthesis", "earthquake");
+    assert_eq!(ally(&battle).hp, 600);
+    turn(&mut battle, "rain-dance", "splash");
+    assert_eq!(
+        battle.weather().unwrap().kind,
+        wilds_battle_engine::WeatherKind::StrongWinds
+    );
+    turn(&mut battle, "splash", "gastro-acid");
+    assert!(battle.weather().is_none());
+
+    let mut wind = mon("Wind", &["splash"]);
+    wind.ability = Some("delta-stream".into());
+    let mut bird = mon("Bird", &["splash"]);
+    bird.types = vec![PokemonType::Flying];
+    let mut setter = mon("Target", &["stealth-rock", "splash"]);
+    setter.ability = Some("delta-stream".into());
+    let mut battle = Battle::with_rng(
+        Fixed(0.5),
+        [vec![wind, bird], vec![setter]],
+        MoveCatalog::builtin().unwrap(),
+    )
+    .unwrap();
+    battle.set_active([vec![0], vec![0]]).unwrap();
+    turn(&mut battle, "splash", "stealth-rock");
+    turn(&mut battle, "switch:1", "splash");
+    assert_eq!(battle.participants(Side::Allies)[1].hp, 750);
+}

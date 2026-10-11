@@ -4,7 +4,7 @@
 local move = {target = Target.User,
     script = function(ctx)
       if ctx.user.hp == ctx.user.max_hp then return ctx:fail() end
-      local share = ctx.weather == nil and 1/2 or ctx.weather == Weather.Sun and 2/3 or 1/4
+      local share = (ctx.weather == nil or ctx.weather == Weather.StrongWinds) and 1/2 or ctx.weather == Weather.Sun and 2/3 or 1/4
       ctx:heal(ctx.user, {fraction = share})
       ctx:message(ctx.user.name .. " regained health!")
     end}
