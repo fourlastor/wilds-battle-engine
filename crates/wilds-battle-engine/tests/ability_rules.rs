@@ -432,3 +432,22 @@ fn infiltrator_bypasses_mist_but_not_ability_stat_protection() {
         );
     }
 }
+
+#[test]
+fn rattled_boosts_speed_from_bug_dark_and_ghost_hits_except_substitutes() {
+    for move_id in ["bug-bite", "bite", "shadow-ball", "tackle"] {
+        for (suppressed, substitute) in [(false, false), (true, false), (false, true)] {
+            let mut target = mon("Target", &["splash"]);
+            target.types = vec![PokemonType::Water];
+            target.ability = Some("rattled".into());
+            target.ability_suppressed = suppressed;
+            target.substitute_hp = if substitute { 250 } else { 0 };
+            let mut battle = game(mon("User", &[move_id]), target, 0.5);
+            turn(&mut battle, move_id, "splash");
+            assert_eq!(
+                foe(&battle).stage(wilds_battle_engine::Stat::Speed),
+                i8::from(!suppressed && !substitute && move_id != "tackle")
+            );
+        }
+    }
+}

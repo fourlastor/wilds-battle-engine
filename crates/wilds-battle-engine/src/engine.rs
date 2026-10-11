@@ -2708,6 +2708,15 @@ impl Battle {
         if lost > 0 && meta.move_type == PokemonType::Fire && meta.category != Category::Status {
             self.thaw(target, events);
         }
+        if lost > 0
+            && self.has_ability(target, "rattled")
+            && matches!(
+                meta.move_type,
+                PokemonType::Bug | PokemonType::Dark | PokemonType::Ghost
+            )
+        {
+            self.change_stat(target, Stat::Speed, 1, events);
+        }
         self.item_hits.push((actor, target, meta.clone()));
         if !meta.defer_items {
             self.berry_hit(actor, target, meta, events);

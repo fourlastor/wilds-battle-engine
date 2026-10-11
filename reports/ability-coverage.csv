@@ -153,7 +153,7 @@ id,ability,status,verification
 152,mummy,MISSING,No native battle behavior
 153,moxie,MISSING,No native battle behavior
 154,justified,MISSING,No native battle behavior
-155,rattled,PARTIAL,Source inventory; existing tests only
+155,rattled,IMPLEMENTED,ability_rules::rattled_boosts_speed_from_bug_dark_and_ghost_hits_except_substitutes
 156,magic-bounce,IMPLEMENTED,Source inventory; existing tests only
 157,sap-sipper,IMPLEMENTED,ability_rules::sap_sipper_blocks_grass_status_moves_without_secondary_effects
 158,prankster,MISSING,No native battle behavior
