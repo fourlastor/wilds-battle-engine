@@ -234,7 +234,7 @@ id,ability,status,verification
 233,neuroforce,IMPLEMENTED,ability_rules::neuroforce_only_modifies_the_relevant_type_matchups
 234,intrepid-sword,IMPLEMENTED,ability_rules::intrepid_sword_boosts_attack_on_every_gen8_entry
 235,dauntless-shield,IMPLEMENTED,ability_rules::dauntless_shield_boosts_defense_on_every_gen8_entry
-236,libero,MISSING,No native battle behavior
+236,libero,IMPLEMENTED,ability_rules::libero_changes_type_on_each_move_under_generation_eight_rules
 237,ball-fetch,MISSING,No native battle behavior
 238,cotton-down,IMPLEMENTED,ability_rules::cotton_down_lowers_every_other_active_pokemons_speed
 239,propeller-tail,IMPLEMENTED,ability_rules::propeller_tail_ignores_redirection_without_ignoring_type_absorption

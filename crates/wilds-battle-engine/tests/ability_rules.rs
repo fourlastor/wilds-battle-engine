@@ -3566,3 +3566,8 @@ fn check_changing_move_type(ability: &str) {
 fn protean_changes_type_on_each_move_under_generation_eight_rules() {
     check_changing_move_type("protean");
 }
+
+#[test]
+fn libero_changes_type_on_each_move_under_generation_eight_rules() {
+    check_changing_move_type("libero");
+}

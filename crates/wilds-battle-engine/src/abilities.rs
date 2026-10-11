@@ -39,7 +39,7 @@ impl Battle {
             || spec.auto_only
             || spec.has_flag("future_move")
             || spec.has_flag("calls_move")
-            || !self.has_ability(who, "protean")
+            || !(self.has_ability(who, "protean") || self.has_ability(who, "libero"))
             || self.types_of(who) == [kind]
         {
             return;
