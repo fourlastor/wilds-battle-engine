@@ -56,7 +56,7 @@ id,ability,status,verification
 55,hustle,MISSING,No native battle behavior
 56,cute-charm,MISSING,No native battle behavior
 57,plus,IMPLEMENTED,ability_rules::plus_needs_an_active_plus_or_minus_teammate
-58,minus,MISSING,No native battle behavior
+58,minus,IMPLEMENTED,ability_rules::minus_needs_an_active_plus_or_minus_teammate
 59,forecast,MISSING,No native battle behavior
 60,sticky-hold,IMPLEMENTED,Source inventory; existing tests only
 61,shed-skin,IMPLEMENTED,Source inventory; existing tests only

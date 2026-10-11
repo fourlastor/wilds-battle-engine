@@ -886,3 +886,8 @@ fn check_plus_minus(ability: &str) {
 fn plus_needs_an_active_plus_or_minus_teammate() {
     check_plus_minus("plus");
 }
+
+#[test]
+fn minus_needs_an_active_plus_or_minus_teammate() {
+    check_plus_minus("minus");
+}

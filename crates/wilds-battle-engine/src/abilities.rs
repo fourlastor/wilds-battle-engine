@@ -356,7 +356,7 @@ impl Battle {
     ) -> f32 {
         use crate::model::CombatStat::*;
         if stat == SpAttack
-            && self.has_ability(who, "plus")
+            && (self.has_ability(who, "plus") || self.has_ability(who, "minus"))
             && self.actors().into_iter().any(|ally| {
                 ally != who
                     && ally.side == who.side
