@@ -190,7 +190,7 @@ mod tests {
     #[test]
     fn loads_original_and_scripted_moves() {
         let catalog = MoveCatalog::builtin().unwrap();
-        assert_eq!(catalog.len(), 634);
+        assert_eq!(catalog.len(), 635);
         let from_files =
             MoveCatalog::from_directory(concat!(env!("CARGO_MANIFEST_DIR"), "/../../moves"))
                 .unwrap();

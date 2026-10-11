@@ -1597,3 +1597,23 @@ fn whirlpool_binds_and_hits_diving_targets_at_double_power() {
     assert_eq!(1000 - b.participants(Side::Foes)[0].hp, expected);
     assert!(b.participants(Side::Foes)[0].bound.is_some());
 }
+
+#[test]
+fn spite_removes_four_pp_from_the_last_move_and_fails_at_zero() {
+    for (pp, sub, remaining, failed) in [
+        (35, 0, 30, false),
+        (3, 0, 0, false),
+        (1, 0, 0, true),
+        (35, 50, 30, false),
+    ] {
+        let mut user = mon("User", &["spite"]);
+        user.speed = 1;
+        let mut foe = mon("Foe", &["tackle"]);
+        foe.move_pp.insert("tackle".into(), pp);
+        foe.substitute_hp = sub;
+        let mut b = game(user, vec![foe], 0.5);
+        turn(&mut b);
+        assert_eq!(b.participants(Side::Foes)[0].move_pp["tackle"], remaining);
+        assert_eq!(b.participants(Side::Allies)[0].last_move_failed, failed);
+    }
+}

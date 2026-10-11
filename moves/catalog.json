@@ -1695,6 +1695,17 @@
       "parameter_source": "https://pokeapi.co/api/v2/move/179/"
     },
     {
+      "id": 180,
+      "slug": "spite",
+      "name": "Spite",
+      "sheet_row": null,
+      "runtime_id": "spite",
+      "file": "moves/spite.lua",
+      "status": "implemented",
+      "limitations": [],
+      "parameter_source": "https://pokeapi.co/api/v2/move/180/"
+    },
+    {
       "id": 181,
       "slug": "powder-snow",
       "name": "Powder Snow",
@@ -6768,7 +6779,8 @@
       "lock-on",
       "belly-drum",
       "spit-up",
-      "whirlpool"
+      "whirlpool",
+      "spite"
     ]
   }
 }
