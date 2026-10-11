@@ -346,3 +346,27 @@ fn oblivious_prevents_captivate_unless_suppressed_or_bypassed() {
         );
     }
 }
+
+#[test]
+fn hyper_cutter_blocks_external_attack_drops_only() {
+    for (suppressed, breaker) in [(false, false), (true, false), (false, true)] {
+        let mut user = mon("User", &["growl", "tail-whip"]);
+        user.ability = breaker.then(|| "mold-breaker".into());
+        let mut target = mon("Target", &["superpower", "splash"]);
+        target.ability = Some("hyper-cutter".into());
+        target.ability_suppressed = suppressed;
+        let mut battle = game(user, target, 0.5);
+        turn(&mut battle, "growl", "splash");
+        let external = if suppressed || breaker { -1 } else { 0 };
+        assert_eq!(
+            foe(&battle).stage(wilds_battle_engine::Stat::Attack),
+            external
+        );
+        turn(&mut battle, "tail-whip", "superpower");
+        assert_eq!(
+            foe(&battle).stage(wilds_battle_engine::Stat::Attack),
+            external - 1
+        );
+        assert_eq!(foe(&battle).stage(wilds_battle_engine::Stat::Defense), -2);
+    }
+}

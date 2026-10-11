@@ -1814,7 +1814,11 @@ impl Battle {
         events: &mut Vec<BattleEvent>,
     ) -> i8 {
         let delta = self.ability_stage_delta(recipient, delta);
-        if actor != recipient && delta < 0 && self.blocks_stat_drops(recipient) {
+        if actor != recipient
+            && delta < 0
+            && (self.blocks_stat_drops(recipient)
+                || (stat == Stat::Attack && self.has_ability(recipient, "hypercutter")))
+        {
             events.push(BattleEvent::Message(format!(
                 "{}'s stats were not lowered!",
                 self.get(recipient).name

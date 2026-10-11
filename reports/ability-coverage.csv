@@ -50,7 +50,7 @@ id,ability,status,verification
 49,flame-body,MISSING,No native battle behavior
 50,run-away,MISSING,No native battle behavior
 51,keen-eye,MISSING,No native battle behavior
-52,hyper-cutter,PARTIAL,Source inventory; existing tests only
+52,hyper-cutter,IMPLEMENTED,ability_rules::hyper_cutter_blocks_external_attack_drops_only
 53,pickup,MISSING,No native battle behavior
 54,truant,MISSING,No native battle behavior
 55,hustle,MISSING,No native battle behavior
