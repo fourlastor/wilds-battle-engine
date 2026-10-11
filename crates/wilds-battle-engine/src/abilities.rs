@@ -164,9 +164,21 @@ impl Battle {
                 _ => {}
             }
         }
+        if kind == Hail && self.has_ability(who, "icebody") {
+            self.heal(who, (self.get(who).max_hp / 16).max(1), events);
+        }
         if kind == Rain && self.has_ability(who, "raindish") {
             self.heal(who, (self.get(who).max_hp / 16).max(1), events);
         }
+    }
+
+    pub(crate) fn ability_weather_immunity(
+        &self,
+        who: ParticipantId,
+        kind: crate::model::WeatherKind,
+    ) -> bool {
+        self.has_ability(who, "overcoat")
+            || (kind == crate::model::WeatherKind::Hail && self.has_ability(who, "icebody"))
     }
 
     pub(crate) fn ability_residual(&mut self, events: &mut Vec<BattleEvent>) {

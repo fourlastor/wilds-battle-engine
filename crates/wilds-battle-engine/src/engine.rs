@@ -2993,7 +2993,7 @@ impl Battle {
             let p = self.get(*id).clone();
             if p.hp == 0
                 || p.types.iter().any(|kind| spared.contains(kind))
-                || self.has_ability(*id, "overcoat")
+                || self.ability_weather_immunity(*id, weather.kind)
             {
                 continue;
             }

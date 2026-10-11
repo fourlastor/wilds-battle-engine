@@ -1327,3 +1327,8 @@ fn check_weather_healing(ability: &str, weather_move: &str) {
 fn rain_dish_heals_one_sixteenth_in_effective_rain() {
     check_weather_healing("rain-dish", "rain-dance");
 }
+
+#[test]
+fn ice_body_heals_in_hail_and_prevents_hail_damage() {
+    check_weather_healing("ice-body", "hail");
+}
