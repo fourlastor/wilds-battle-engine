@@ -2979,17 +2979,7 @@ impl Battle {
             return;
         }
         for &id in order {
-            if self.has_ability(id, "dryskin") {
-                match weather.kind {
-                    WeatherKind::Rain => {
-                        self.heal(id, (self.get(id).max_hp / 8).max(1), events);
-                    }
-                    WeatherKind::Sun => {
-                        self.damage(id, (self.get(id).max_hp / 8).max(1), events);
-                    }
-                    _ => {}
-                }
-            }
+            self.ability_weather_residual(id, weather.kind, events);
         }
         let (spared, name): (&[PokemonType], &str) = match weather.kind {
             WeatherKind::Sandstorm => (

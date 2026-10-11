@@ -1304,3 +1304,26 @@ fn sandstream_starts_weather_on_entry_only_when_active() {
 fn snowwarning_starts_weather_on_entry_only_when_active() {
     check_weather_entry("snow-warning", wilds_battle_engine::WeatherKind::Hail);
 }
+
+fn check_weather_healing(ability: &str, weather_move: &str) {
+    for (suppressed, cloud, expected) in [
+        (false, false, 562),
+        (true, false, if weather_move == "hail" { 438 } else { 500 }),
+        (false, true, 500),
+    ] {
+        let mut user = mon("User", &[weather_move]);
+        user.ability = cloud.then(|| "cloud-nine".into());
+        let mut target = mon("Target", &["splash"]);
+        target.hp = 500;
+        target.ability = Some(ability.into());
+        target.ability_suppressed = suppressed;
+        let mut battle = game(user, target, 0.5);
+        turn(&mut battle, weather_move, "splash");
+        assert_eq!(foe(&battle).hp, expected);
+    }
+}
+
+#[test]
+fn rain_dish_heals_one_sixteenth_in_effective_rain() {
+    check_weather_healing("rain-dish", "rain-dance");
+}

@@ -42,7 +42,7 @@ id,ability,status,verification
 41,water-veil,IMPLEMENTED,Source inventory; existing tests only
 42,magnet-pull,MISSING,No native battle behavior
 43,soundproof,IMPLEMENTED,Source inventory; existing tests only
-44,rain-dish,MISSING,No native battle behavior
+44,rain-dish,IMPLEMENTED,ability_rules::rain_dish_heals_one_sixteenth_in_effective_rain
 45,sand-stream,IMPLEMENTED,ability_rules::sandstream_starts_weather_on_entry_only_when_active
 46,pressure,MISSING,No native battle behavior
 47,thick-fat,IMPLEMENTED,ability_rules::thickfat_halves_fire_and_ice_damage_and_is_bypassable

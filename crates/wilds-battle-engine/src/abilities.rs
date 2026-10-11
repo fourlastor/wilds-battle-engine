@@ -146,6 +146,29 @@ impl Battle {
         }
     }
 
+    pub(crate) fn ability_weather_residual(
+        &mut self,
+        who: ParticipantId,
+        kind: crate::model::WeatherKind,
+        events: &mut Vec<BattleEvent>,
+    ) {
+        use crate::model::WeatherKind::*;
+        if self.has_ability(who, "dryskin") {
+            match kind {
+                Rain => {
+                    self.heal(who, (self.get(who).max_hp / 8).max(1), events);
+                }
+                Sun => {
+                    self.indirect_damage(who, (self.get(who).max_hp / 8).max(1), events);
+                }
+                _ => {}
+            }
+        }
+        if kind == Rain && self.has_ability(who, "raindish") {
+            self.heal(who, (self.get(who).max_hp / 16).max(1), events);
+        }
+    }
+
     pub(crate) fn ability_residual(&mut self, events: &mut Vec<BattleEvent>) {
         let mut order = self.actors();
         order.sort_by_key(|&who| std::cmp::Reverse(self.action_speed(who)));
