@@ -983,3 +983,8 @@ fn spider_web_traps_until_the_source_leaves() {
 fn mean_look_traps_until_the_source_leaves() {
     check_source_trap("mean-look", true);
 }
+
+#[test]
+fn block_traps_until_the_source_leaves() {
+    check_source_trap("block", true);
+}

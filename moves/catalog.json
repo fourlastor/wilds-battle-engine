@@ -2714,6 +2714,17 @@
       "limitations": []
     },
     {
+      "id": 335,
+      "slug": "block",
+      "name": "Block",
+      "sheet_row": null,
+      "runtime_id": "block",
+      "file": "moves/block.lua",
+      "status": "implemented",
+      "limitations": [],
+      "parameter_source": "https://pokeapi.co/api/v2/move/335/"
+    },
+    {
       "id": 336,
       "slug": "howl",
       "name": "Howl",
@@ -6456,7 +6467,8 @@
       "endeavor",
       "final-gambit",
       "spider-web",
-      "mean-look"
+      "mean-look",
+      "block"
     ]
   }
 }
