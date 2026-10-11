@@ -210,3 +210,34 @@ fn low_kick_obeys_all_six_weight_brackets() {
         );
     }
 }
+
+#[test]
+fn leech_seed_drains_one_eighth_and_heals_its_source_but_respects_grass_and_substitute() {
+    for (kind, sub, response, seeded) in [
+        (PokemonType::Normal, 0, "splash", true),
+        (PokemonType::Grass, 0, "splash", false),
+        (PokemonType::Normal, 50, "splash", false),
+        (PokemonType::Normal, 0, "protect", false),
+    ] {
+        let mut user = mon("User", &["leech-seed"]);
+        user.hp = 500;
+        let mut foe = mon("Foe", &[response]);
+        foe.types = vec![kind];
+        foe.substitute_hp = sub;
+        let mut b = game(user, vec![foe], 0.5);
+        turn(&mut b);
+        assert_eq!(
+            b.participants(Side::Foes)[0].hp,
+            if seeded { 875 } else { 1000 }
+        );
+        assert_eq!(
+            b.participants(Side::Allies)[0].hp,
+            if seeded { 625 } else { 500 }
+        );
+        if seeded {
+            turn(&mut b);
+            assert!(b.participants(Side::Allies)[0].last_move_failed);
+            assert_eq!(b.participants(Side::Foes)[0].hp, 750);
+        }
+    }
+}

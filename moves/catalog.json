@@ -723,6 +723,17 @@
       "limitations": []
     },
     {
+      "id": 73,
+      "slug": "leech-seed",
+      "name": "Leech Seed",
+      "sheet_row": null,
+      "runtime_id": "leech-seed",
+      "file": "moves/leech-seed.lua",
+      "status": "implemented",
+      "limitations": [],
+      "parameter_source": "https://pokeapi.co/api/v2/move/73/"
+    },
+    {
       "id": 74,
       "slug": "growth",
       "name": "Growth",
@@ -6036,7 +6047,8 @@
       "wrap",
       "roar",
       "mist",
-      "low-kick"
+      "low-kick",
+      "leech-seed"
     ]
   }
 }
