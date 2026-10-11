@@ -2489,6 +2489,17 @@
       "limitations": []
     },
     {
+      "id": 328,
+      "slug": "sand-tomb",
+      "name": "Sand Tomb",
+      "sheet_row": null,
+      "runtime_id": "sand-tomb",
+      "file": "moves/sand-tomb.lua",
+      "status": "implemented",
+      "limitations": [],
+      "parameter_source": "https://pokeapi.co/api/v2/move/328/"
+    },
+    {
       "id": 329,
       "slug": "sheer-cold",
       "name": "Sheer Cold",
@@ -6072,7 +6083,8 @@
       "low-kick",
       "leech-seed",
       "fire-spin",
-      "clamp"
+      "clamp",
+      "sand-tomb"
     ]
   }
 }

@@ -274,3 +274,8 @@ fn fire_spin_damages_and_binds_only_after_a_reaching_hit() {
 fn clamp_damages_and_binds_only_after_a_reaching_hit() {
     check_partial_trap("clamp", 35, "Water", "Physical");
 }
+
+#[test]
+fn sand_tomb_damages_and_binds_only_after_a_reaching_hit() {
+    check_partial_trap("sand-tomb", 35, "Ground", "Physical");
+}
