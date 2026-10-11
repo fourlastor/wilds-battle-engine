@@ -658,6 +658,17 @@ impl Battle {
         if self.get(recipient).hp == 0 {
             return HitOutcome::Fainted;
         }
+        if frame.spec.category == crate::moves::Category::Status
+            && frame.spec.has_flag("sound")
+            && recipient != actor
+            && self.has_ability(recipient, "soundproof")
+        {
+            events.push(BattleEvent::Message(format!(
+                "{} is protected by its ability!",
+                self.get(recipient).name
+            )));
+            return HitOutcome::Protected;
+        }
         if self.get(recipient).protected && recipient != actor && !options.ignore_protect {
             events.push(BattleEvent::Message(format!(
                 "{} protected itself!",
@@ -1444,6 +1455,7 @@ impl Battle {
             ScriptOperation::EndGroup { scope, group } => {
                 Value::Boolean(self.end_group(scope, &group))
             }
+            ScriptOperation::SwitchOut => Value::Boolean(self.request_pivot(actor)),
             ScriptOperation::ForceSwitch { who } => {
                 Value::Boolean(self.request_forced_switch(actor, who))
             }

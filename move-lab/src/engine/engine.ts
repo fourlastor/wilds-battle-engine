@@ -30,7 +30,7 @@ export type SwitchChoice = { id: number; kind: 'switch'; to: Ref };
 export type EngineChoice = MoveChoice | SwitchChoice;
 
 export type EngineStatus =
-  | { kind: 'awaiting'; prompt_id: number; actor: Ref; reason: 'action' | 'replacement'; choices: EngineChoice[] }
+  | { kind: 'awaiting'; prompt_id: number; actor: Ref; reason: 'action' | 'replacement' | 'pivot'; choices: EngineChoice[] }
   | { kind: 'end'; winner: Side | null };
 
 export interface Advance {

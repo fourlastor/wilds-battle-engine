@@ -645,6 +645,7 @@ impl Choice {
 pub enum PromptReason {
     Action,
     Replacement,
+    Pivot,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]

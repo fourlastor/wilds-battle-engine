@@ -7,7 +7,7 @@
   ],
   "parameter_policy": "JSON names and parameters; actual behavior for conflicting spreadsheet descriptions; original runtime IDs and behaviors retained for existing moves. Gravity and Stockpile have no local source JSON and use PokeAPI parameters.",
   "global_limitations": [
-    "The engine supports benches, voluntary switching, selected item/ability effects, redirection and move-priority hooks. Pivot choices, switch interception, carrying and substitute remain unsupported; the item and ability catalogs are not exhaustive.",
+    "The engine supports benches, voluntary switching, selected item/ability effects, redirection and move-priority hooks. Switch interception, carrying and substitute remain unsupported; the item and ability catalogs are not exhaustive.",
     "General battle interactions follow the current Rust engine; catalog coverage is not full official battle parity."
   ],
   "moves": [
@@ -2670,10 +2670,8 @@
       "sheet_row": 259,
       "runtime_id": "u-turn",
       "file": "moves/u-turn.lua",
-      "status": "partial",
-      "limitations": [
-        "Switching, bench selection and switch interception are not implemented; only the on-field damage/stat effect runs."
-      ]
+      "status": "implemented",
+      "limitations": []
     },
     {
       "id": 370,
@@ -3728,10 +3726,8 @@
       "sheet_row": 364,
       "runtime_id": "volt-switch",
       "file": "moves/volt-switch.lua",
-      "status": "partial",
-      "limitations": [
-        "Switching, bench selection and switch interception are not implemented; only the on-field damage/stat effect runs."
-      ]
+      "status": "implemented",
+      "limitations": []
     },
     {
       "id": 522,
@@ -4210,10 +4206,8 @@
       "sheet_row": 412,
       "runtime_id": "parting-shot",
       "file": "moves/parting-shot.lua",
-      "status": "partial",
-      "limitations": [
-        "Switching, bench selection and switch interception are not implemented; only the on-field damage/stat effect runs."
-      ]
+      "status": "implemented",
+      "limitations": []
     },
     {
       "id": 577,
@@ -5367,10 +5361,8 @@
       "sheet_row": 561,
       "runtime_id": "flip-turn",
       "file": "moves/flip-turn.lua",
-      "status": "partial",
-      "limitations": [
-        "Switching, bench selection and switch interception are not implemented; only the on-field damage/stat effect runs."
-      ]
+      "status": "implemented",
+      "limitations": []
     },
     {
       "id": 813,

@@ -319,6 +319,7 @@ pub(crate) enum ScriptOperation {
         scope: Scope,
         group: String,
     },
+    SwitchOut,
     ForceSwitch {
         who: ParticipantId,
     },
@@ -1100,6 +1101,7 @@ fn parse_op(name: &str, args: &[Value]) -> mlua::Result<ScriptOperation> {
             move_id: name_of(arg(1), "reduce_pp move")?,
             amount: whole(arg(2), "reduce_pp amount", 0.0, 255.0)? as u8,
         },
+        "switch_out" => ScriptOperation::SwitchOut,
         "force_switch" => ScriptOperation::ForceSwitch { who: who(0)? },
         "adjacent" => ScriptOperation::Adjacent {
             a: who(0)?,

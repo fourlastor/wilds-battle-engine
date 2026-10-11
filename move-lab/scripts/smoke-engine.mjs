@@ -98,3 +98,29 @@ assert.ok(switched.events.some(event => event.kind === 'switch' && event.to.inde
 assert.deepEqual(JSON.parse(text(engine._mlab_state(benchBattle))).active.allies, [1]);
 engine._wbe_destroy(benchBattle);
 console.log('ok: bench replacement choices and active slots round-trip through wasm');
+
+const pivotBattle = withStrings([JSON.stringify({
+  allies: [{ name: 'Pivot', max_hp: 1000, speed: 200, moves: ['u-turn'] }, { name: 'Reserve', max_hp: 1000, moves: ['splash'] }],
+  foes: [{ name: 'Foe', max_hp: 1000, speed: 50, moves: ['tackle'] }], active: { allies: [0], foes: [0] },
+}), '/moves'], (json, dir) => engine._wbe_create(json, dir));
+assert.notEqual(pivotBattle, 0, lastError());
+for (let i = 0; i < 2; i++) {
+  const step = JSON.parse(text(engine._wbe_advance(pivotBattle)));
+  const move = step.status.choices.find(choice => choice.kind === 'use_move');
+  assert.ok(engine._wbe_respond(pivotBattle, BigInt(step.status.prompt_id), move.id), lastError());
+}
+const pivot = JSON.parse(text(engine._wbe_advance(pivotBattle)));
+assert.equal(pivot.status.reason, 'pivot');
+assert.equal(pivot.turn, 1);
+assert.equal(pivot.allies[1].hp, 1000);
+const repeated = JSON.parse(text(engine._wbe_advance(pivotBattle)));
+assert.equal(repeated.status.prompt_id, pivot.status.prompt_id);
+assert.deepEqual(repeated.events, []);
+assert.ok(engine._wbe_respond(pivotBattle, BigInt(pivot.status.prompt_id), pivot.status.choices[0].id));
+const resumed = JSON.parse(text(engine._wbe_advance(pivotBattle)));
+assert.equal(resumed.turn, 1);
+assert.equal(resumed.status.reason, 'action');
+assert.equal(resumed.allies[0].move_pp['u-turn'], 19);
+assert.ok(resumed.allies[1].hp < 1000);
+engine._wbe_destroy(pivotBattle);
+console.log('ok: a pivot pauses for a host choice and resumes the same turn');

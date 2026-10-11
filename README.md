@@ -12,8 +12,7 @@ names. Unsupported mechanics are flagged in each affected file and in
 The host supplies choices for both sides.
 The Rust API uses enums for sides, Pokémon types, stats, statuses, and weather.
 Host-facing prompts contain `Choice::UseMove { id, move_id, target }` or
-`Choice::Switch { id, to }`. `PromptReason` distinguishes action selection from
-faint replacement; the host selects an offered choice in either case.
+`Choice::Switch { id, to }`. `PromptReason` distinguishes action selection, faint replacement and move-triggered pivot choices; the host selects an offered choice in either case.
 Rust exposes typed Lua constants for Pokémon types, stats, statuses, weather,
 categories, targets, effects, and special accuracy modes. Move IDs and display
 text remain strings. `MoveCatalog::from_lua` installs these constants before
@@ -206,6 +205,7 @@ before turn-start hooks; capped changes and resetting stages do not trigger them
 | `ctx:hide(Hidden.X)`, `ctx:unhide(who)` | The user hides until it next acts. `unhide` also calls off what the Pokémon was doing. |
 | `ctx:set_weather(Weather.X, turns)`, `ctx:clear_weather()` | `Sun`, `Sandstorm`, `Rain`, `Hail`. |
 | `ctx:set_types(who, {Type.X})`, `ctx:set_weight(who, kg)`, `ctx:take_item(who)`, `ctx:give_item(who, item)`, `ctx:suppress_ability(who)` | Suppression returns false for absent, already suppressed, fainted, or protected abilities. Active-ability checks immediately respect suppression. |
+| `ctx:switch_out()` | Requests a host-selected bench replacement for the user after this move and its hit reactions. Bypasses ordinary traps. A `Pivot` prompt pauses the turn; responding resumes the remaining actions without rerolling order or repeating moves. |
 | `ctx:force_switch(who)` | Requests a random living bench replacement after this move and its hit reactions. Returns false when unavailable or blocked by Suction Cups, Guard Dog or `Rule.BlockForcedSwitch`. Cancels the outgoing member's pending action. |
 | `ctx:adjacent(a, b)` | Whether two Pokémon occupy neighboring field slots. `who.position` is its zero-based slot from its trainer's perspective; opposing rows face each other. Fainting does not collapse slots. |
 | `ctx:item_removable(who)` | Checks species-bound items independently of Sticky Hold, for damage bonuses such as Knock Off. Removal and atomic theft enforce both restrictions; fainted or suppressed Sticky Hold does not protect an item. |

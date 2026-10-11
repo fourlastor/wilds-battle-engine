@@ -300,7 +300,7 @@ pub unsafe extern "C" fn wbe_advance(ptr: *mut Battle) -> *mut c_char {
         let status = match result.status {
             AdvanceStatus::End { winner } => json!({"kind":"end", "winner":winner.map(side)}),
             AdvanceStatus::Awaiting(prompt) => json!({"kind":"awaiting", "prompt_id":prompt.id,
-                "actor":participant(prompt.actor), "reason": match prompt.reason { PromptReason::Action => "action", PromptReason::Replacement => "replacement" },
+                "actor":participant(prompt.actor), "reason": match prompt.reason { PromptReason::Action => "action", PromptReason::Replacement => "replacement", PromptReason::Pivot => "pivot" },
                 "choices":prompt.choices.iter().map(choice).collect::<Vec<_>>() }),
         };
         Ok(output(json!({

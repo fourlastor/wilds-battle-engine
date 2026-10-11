@@ -1,10 +1,9 @@
 -- Move 812: Flip Turn. Identity and parameters: pokemon_data/assets/moves/812.json.
 -- Behavior checked against PokeAPI; see catalog.json for scope and limitations.
--- INCOMPLETE: Switching, bench selection and switch interception are not implemented; only the on-field damage/stat effect runs.
 
-local move = {effects = {
-  {kind = Effect.Damage, power = 60}
-}}
+local move = {script = function(ctx)
+  if ctx:damage(60).hit then ctx:switch_out() end
+end}
 
 move.id = "flip-turn"
 move.name = "Flip Turn"
@@ -14,5 +13,5 @@ move.pp = 20
 move.accuracy = 1
 move.priority = 0
 move.target = Target.Selected
-move.flags = {"contact", "incomplete"}
+move.flags = {"contact"}
 return move

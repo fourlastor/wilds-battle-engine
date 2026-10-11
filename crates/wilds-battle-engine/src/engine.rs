@@ -12,6 +12,7 @@ pub struct Battle {
     pub(crate) sides: [Vec<Pokemon>; 2],
     pub(crate) active: [Vec<usize>; 2],
     pending_events: Vec<BattleEvent>,
+    pub(crate) pivot: Option<ParticipantId>,
     pub(crate) forced_switches: Vec<(ParticipantId, ParticipantId)>,
     pub(crate) weather: Option<Weather>,
     pub(crate) rng: Box<dyn BattleRng>,
@@ -221,6 +222,7 @@ impl Battle {
             active,
             pending_events: Vec::new(),
             forced_switches: Vec::new(),
+            pivot: None,
             sides,
             weather: None,
             rng: Box::new(rng),
@@ -456,6 +458,15 @@ impl Battle {
             return Ok(AdvanceResult {
                 events,
                 status: AdvanceStatus::End { winner },
+            });
+        }
+        if self.resolving_turn {
+            events.extend(self.resolve_turn()?);
+            let next = self.advance()?;
+            events.extend(next.events);
+            return Ok(AdvanceResult {
+                events,
+                status: next.status,
             });
         }
         if let Some((actor, choices)) = self.replacement() {
@@ -743,6 +754,22 @@ impl Battle {
                         .partition(|entry| promoted.contains(&entry.actor));
                 self.turn_queue = now;
                 self.turn_queue.extend(later);
+            }
+            if let Some(who) = self.pivot.take()
+                && self.winner.is_none()
+                && self.get(who).hp > 0
+                && self.is_active(who)
+            {
+                let choices: Vec<_> = self
+                    .bench(who.side)
+                    .into_iter()
+                    .enumerate()
+                    .map(|(id, to)| Choice::Switch { id: id as u32, to })
+                    .collect();
+                if !choices.is_empty() {
+                    self.make_prompt(who, choices, PromptReason::Pivot);
+                    return Ok(());
+                }
             }
         }
         let order: Vec<_> = std::mem::take(&mut self.completed_slots)

@@ -84,7 +84,7 @@ function screen(model: BattleModel, ui: BattleUi): HTMLElement {
   const weatherText = weather
     ? `${WEATHER_TEXT[weather.kind] ?? weather.kind} · ${weather.turns_left + 1} ${weather.turns_left === 0 ? 'turn' : 'turns'} left`
     : 'Clear skies';
-  const turnText = view.phase === 'ended' ? 'Battle over' : view.phase === 'crashed' ? 'Stopped' : `Turn ${view.turn + 1}`;
+  const turnText = view.phase === 'ended' ? 'Battle over' : view.phase === 'crashed' ? 'Stopped' : `Turn ${view.turn + (view.prompt?.reason === 'pivot' ? 0 : 1)}`;
   const sky = (weather && SKY[weather.kind]) || 'sky-clear';
   const around: [string, HTMLElement[]][] = [
     ['Everyone', view.field.map(conditionChip)],
@@ -121,6 +121,7 @@ function message(model: BattleModel, ui: BattleUi): string {
     return 'It’s a draw.';
   }
   if (!view.prompt) return '…';
+  if (view.prompt.reason !== 'action') return `Choose a replacement for ${view.prompt.actorName}.`;
   if (ui.pendingMove) return `Use ${model.catalog.get(ui.pendingMove)?.name ?? ui.pendingMove} on…`;
   return `What will ${view.prompt.actorName} do?`;
 }

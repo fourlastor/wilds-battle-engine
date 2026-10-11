@@ -137,7 +137,7 @@ impl Battle {
         let incoming = self.get_mut(to);
         incoming.entered_turn = turn;
         incoming.last_position = Some(position);
-        incoming.acted = true;
+        incoming.acted = false;
         events.push(BattleEvent::Switched { from, to, position });
         events.push(BattleEvent::Message(format!(
             "{} was replaced by {}!",
@@ -218,5 +218,15 @@ impl Battle {
                 self.switch_member(who, to, events);
             }
         }
+    }
+}
+
+impl Battle {
+    pub(crate) fn request_pivot(&mut self, who: ParticipantId) -> bool {
+        if self.get(who).hp == 0 || !self.is_active(who) || self.bench(who.side).is_empty() {
+            return false;
+        }
+        self.pivot = Some(who);
+        true
     }
 }

@@ -152,6 +152,7 @@ return function(api, fields, roster)
   function ctx:break_protect(who) return op("break_protect", who or ctx.target) end
   function ctx:hide(kind) return op("hide", kind) end
   function ctx:unhide(who) return op("unhide", who) end
+  function ctx:switch_out() return op("switch_out") end
   function ctx:force_switch(who) return op("force_switch", who) end
   function ctx:change_form(who, form) return op("change_form", who, form) end
   function ctx:restore_form(who) return op("restore_form", who) end

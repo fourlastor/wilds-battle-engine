@@ -520,3 +520,161 @@ fn phazing_needs_a_successful_hit_and_a_living_target_with_a_bench() {
         );
     }
 }
+
+#[test]
+fn pivots_pause_for_a_host_choice_and_resume_the_same_turn() {
+    for attack in ["u-turn", "volt-switch", "flip-turn", "parting-shot"] {
+        let mut lead = mon("Lead", &[attack]);
+        lead.speed = 200;
+        lead.conditions.push(Condition {
+            name: "trapped".into(),
+            value: 1,
+            turns_left: None,
+            rules: vec![Rule::Trapped],
+            group: None,
+            end_message: None,
+        });
+        let mut reserve = mon("Reserve", &["splash"]);
+        reserve.status = Some(Status::Poisoned);
+        let mut b = game(
+            vec![lead, reserve],
+            vec![mon("Foe", &["tackle"])],
+            [vec![0], vec![0]],
+        );
+        let initial_pp = b.participants(Side::Allies)[0].move_pp[attack];
+        pick(&mut b, id(Side::Allies, 0), attack);
+        pick(&mut b, id(Side::Foes, 0), "tackle");
+        let first = switch(&mut b, id(Side::Allies, 0), 1);
+        let AdvanceStatus::Awaiting(p) = first.status else {
+            panic!()
+        };
+        assert_eq!(p.reason, PromptReason::Pivot);
+        assert_eq!(b.turn(), 1);
+        assert_eq!(b.participants(Side::Allies)[1].hp, 1000);
+        assert_eq!(
+            b.participants(Side::Allies)[0].move_pp[attack],
+            initial_pp - 1
+        );
+        let second = b.advance().unwrap();
+        assert_eq!(b.turn(), 1);
+        assert!(b.participants(Side::Allies)[1].hp < 875);
+        assert_eq!(b.participants(Side::Allies)[0].hp, 1000);
+        assert_eq!(b.participants(Side::Foes)[0].move_pp["tackle"], 34);
+        assert!(
+            second
+                .events
+                .iter()
+                .any(|e| matches!(e,BattleEvent::Damage{target,..}if *target==id(Side::Allies,1)))
+        );
+    }
+}
+
+#[test]
+fn pivot_does_not_trigger_when_its_hit_is_blocked_or_immune() {
+    for (attack, kind) in [
+        ("u-turn", None),
+        (
+            "volt-switch",
+            Some(wilds_battle_engine::PokemonType::Ground),
+        ),
+        ("flip-turn", None),
+    ] {
+        let mut foe = mon("Foe", &["protect", "splash"]);
+        if let Some(kind) = kind {
+            foe.types = vec![kind];
+        }
+        let mut b = game(
+            vec![mon("Lead", &[attack]), mon("Reserve", &["splash"])],
+            vec![foe],
+            [vec![0], vec![0]],
+        );
+        pick(&mut b, id(Side::Allies, 0), attack);
+        pick(
+            &mut b,
+            id(Side::Foes, 0),
+            if kind.is_some() { "splash" } else { "protect" },
+        );
+        let result = b.advance().unwrap();
+        let AdvanceStatus::Awaiting(p) = result.status else {
+            panic!()
+        };
+        assert_eq!(p.reason, PromptReason::Action);
+        assert_eq!(b.active_indices(Side::Allies), &[0]);
+    }
+}
+
+#[test]
+fn parting_shot_needs_a_stat_change_and_respects_soundproof() {
+    for (capped, soundproof, blocked, mold, swaps) in [
+        (true, false, false, false, false),
+        (false, true, false, false, false),
+        (false, false, true, false, false),
+        (false, true, false, true, true),
+    ] {
+        let mut lead = mon("Lead", &["parting-shot"]);
+        lead.speed = 200;
+        if mold {
+            lead.ability = Some("mold-breaker".into());
+        }
+        let mut foe = mon("Foe", &["splash"]);
+        if capped {
+            foe.stages.insert(Stat::Attack, -6);
+            foe.stages.insert(Stat::SpAttack, -6);
+        }
+        if soundproof {
+            foe.ability = Some("soundproof".into());
+        }
+        if blocked {
+            foe.conditions.push(Condition {
+                name: "mist".into(),
+                value: 1,
+                turns_left: None,
+                rules: vec![Rule::BlockStatDrops],
+                group: None,
+                end_message: None,
+            });
+        }
+        let mut b = game(
+            vec![lead, mon("Reserve", &["splash"])],
+            vec![foe],
+            [vec![0], vec![0]],
+        );
+        pick(&mut b, id(Side::Allies, 0), "parting-shot");
+        pick(&mut b, id(Side::Foes, 0), "splash");
+        let result = b.advance().unwrap();
+        let AdvanceStatus::Awaiting(p) = result.status else {
+            panic!()
+        };
+        assert_eq!(p.reason == PromptReason::Pivot, swaps);
+    }
+}
+
+#[test]
+fn two_pivots_in_one_turn_resume_each_other_without_replaying_actions() {
+    let mut lead = mon("Lead", &["u-turn"]);
+    lead.speed = 200;
+    let mut b = game(
+        vec![lead, mon("Reserve", &["splash"])],
+        vec![
+            mon("Foe", &["volt-switch"]),
+            mon("Enemy reserve", &["splash"]),
+        ],
+        [vec![0], vec![0]],
+    );
+    pick(&mut b, id(Side::Allies, 0), "u-turn");
+    pick(&mut b, id(Side::Foes, 0), "volt-switch");
+    switch(&mut b, id(Side::Allies, 0), 1);
+    let second = switch(&mut b, id(Side::Foes, 0), 1);
+    let AdvanceStatus::Awaiting(p) = second.status else {
+        panic!()
+    };
+    assert_eq!(p.reason, PromptReason::Pivot);
+    b.advance().unwrap();
+    assert_eq!(b.turn(), 1);
+    assert_eq!(b.active_indices(Side::Allies), &[1]);
+    assert_eq!(b.active_indices(Side::Foes), &[1]);
+    assert_eq!(b.participants(Side::Allies)[0].move_pp["u-turn"], 19);
+    assert_eq!(b.participants(Side::Foes)[0].move_pp["volt-switch"], 19);
+    assert!(b.participants(Side::Allies)[1].hp < 1000);
+    assert_eq!(b.participants(Side::Foes)[1].hp, 1000);
+}

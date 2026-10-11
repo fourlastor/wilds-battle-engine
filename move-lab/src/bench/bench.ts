@@ -42,6 +42,7 @@ export interface MonView extends EngineMon {
 }
 
 export interface PromptView {
+  reason: 'action' | 'replacement' | 'pivot';
   id: number;
   actor: Ref;
   actorName: string;
@@ -203,7 +204,7 @@ export class Bench {
           continue;
         }
         this.view.phase = 'awaiting';
-        this.view.prompt = this.promptView(prompt.prompt_id, prompt.actor, prompt.choices, state);
+        this.view.prompt = this.promptView(prompt.prompt_id, prompt.actor, prompt.choices, state, prompt.reason);
         return;
       }
       throw new Error('The battle did not reach a choice after 400 steps.');
@@ -235,7 +236,7 @@ export class Bench {
     return match;
   }
 
-  private promptView(id: number, actor: Ref, choices: EngineChoice[], state: EngineState): PromptView {
+  private promptView(id: number, actor: Ref, choices: EngineChoice[], state: EngineState, reason: PromptView['reason']): PromptView {
     const moves: PromptView['moves'] = [];
     const switches: SwitchChoice[] = [];
     for (const choice of choices) {
@@ -244,7 +245,7 @@ export class Bench {
       if (group) group.targets.push(choice);
       else moves.push({ moveId: choice.move_id, targets: [choice] });
     }
-    return { id, actor, actorName: state[actor.side][actor.index]?.name ?? '?', moves, switches };
+    return { id, actor, reason, actorName: state[actor.side][actor.index]?.name ?? '?', moves, switches };
   }
 
   private consume(result: Advance, state: EngineState): void {
