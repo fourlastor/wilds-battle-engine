@@ -1556,6 +1556,17 @@
       "limitations": []
     },
     {
+      "id": 160,
+      "slug": "conversion",
+      "name": "Conversion",
+      "sheet_row": null,
+      "runtime_id": "conversion",
+      "file": "moves/conversion.lua",
+      "status": "implemented",
+      "limitations": [],
+      "parameter_source": "https://pokeapi.co/api/v2/move/160/"
+    },
+    {
       "id": 161,
       "slug": "tri-attack",
       "name": "Tri Attack",
@@ -7692,7 +7703,8 @@
       "misty-terrain",
       "grassy-terrain",
       "psychic-terrain",
-      "camouflage"
+      "camouflage",
+      "conversion"
     ]
   }
 }

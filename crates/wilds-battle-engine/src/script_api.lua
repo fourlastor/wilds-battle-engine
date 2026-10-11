@@ -118,6 +118,8 @@ return function(api, fields, roster)
     return coroutine.yield(api.flinch_target(chance))
   end
 
+  function ctx:move_info(id) return op("move_info", id) end
+
   -- Hitting and damage
   function ctx:try_hit(who, options)
     local hit = op("try_hit", who, options)

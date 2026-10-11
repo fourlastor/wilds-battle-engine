@@ -4976,3 +4976,41 @@ fn camouflage_uses_environment_and_terrain_overrides_even_while_airborne() {
     assert_eq!(b.participants(Side::Allies)[0].types, [PokemonType::Normal]);
     assert!(b.participants(Side::Allies)[0].last_move_failed);
 }
+
+#[test]
+fn conversion_uses_the_first_moves_base_type_and_rejects_an_existing_type() {
+    for (moves, types, expected, failed) in [
+        (
+            vec!["thunderbolt", "conversion"],
+            vec![PokemonType::Normal],
+            vec![PokemonType::Electric],
+            false,
+        ),
+        (
+            vec!["weather-ball", "conversion"],
+            vec![PokemonType::Fire],
+            vec![PokemonType::Normal],
+            false,
+        ),
+        (
+            vec!["thunderbolt", "conversion"],
+            vec![PokemonType::Electric, PokemonType::Flying],
+            vec![PokemonType::Electric, PokemonType::Flying],
+            true,
+        ),
+        (
+            vec!["conversion", "thunderbolt"],
+            vec![PokemonType::Normal],
+            vec![PokemonType::Normal],
+            true,
+        ),
+    ] {
+        let mut user = mon("User", &moves);
+        user.types = types;
+        let mut b = game(user, vec![mon("Foe", &["splash"])], 0.5);
+        turn_with(&mut b, |p| choose_move(p, "conversion", "splash"));
+        assert_eq!(b.participants(Side::Allies)[0].types, expected);
+        assert_eq!(b.participants(Side::Allies)[0].last_move_failed, failed);
+        assert_eq!(b.participants(Side::Allies)[0].move_pp["conversion"], 29);
+    }
+}

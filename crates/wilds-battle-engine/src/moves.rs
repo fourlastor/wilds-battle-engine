@@ -190,6 +190,7 @@ pub(crate) enum HpAmount {
 
 #[derive(Clone, Debug, PartialEq)]
 pub(crate) enum ScriptOperation {
+    MoveInfo(String),
     SwapSideEffects {
         names: Vec<String>,
     },
@@ -1287,6 +1288,7 @@ fn parse_op(name: &str, args: &[Value]) -> mlua::Result<ScriptOperation> {
             who: who(0)?,
             kind: type_of(arg(1), "add_type")?,
         },
+        "move_info" => ScriptOperation::MoveInfo(text_of(arg(0), name)?),
         "set_types" => {
             let Value::Table(list) = arg(1) else {
                 return Err(bad("set_types requires a list of Type values"));

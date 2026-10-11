@@ -1325,6 +1325,35 @@ impl Battle {
             return Ok(Flow::Continue(value));
         }
         let value = match operation {
+            ScriptOperation::MoveInfo(id) => match self.catalog.get(&id) {
+                None => Value::Nil,
+                Some(info) => {
+                    let lua = self.catalog.lua();
+                    let table = lua.create_table()?;
+                    let fill = || -> mlua::Result<()> {
+                        table.raw_set("id", info.id.as_str())?;
+                        table.raw_set("name", info.name.as_str())?;
+                        table.raw_set(
+                            "type",
+                            symbol(lua, "Type", &format!("{:?}", info.move_type))?,
+                        )?;
+                        table.raw_set(
+                            "category",
+                            symbol(lua, "Category", &format!("{:?}", info.category))?,
+                        )?;
+                        table.raw_set("priority", info.priority)?;
+                        table.raw_set("pp", info.pp)?;
+                        let flags = lua.create_table()?;
+                        for flag in &info.flags {
+                            flags.raw_set(flag.as_str(), true)?;
+                        }
+                        table.raw_set("flags", flags)?;
+                        Ok(())
+                    };
+                    fill()?;
+                    Value::Table(table)
+                }
+            },
             ScriptOperation::WatchHitsUntilNextAction
             | ScriptOperation::WatchContactsUntilNextAction => {
                 let contact_only =
