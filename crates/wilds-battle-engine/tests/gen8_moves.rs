@@ -2400,3 +2400,45 @@ fn soak_replaces_types_but_respects_immutable_species_and_protection() {
         }
     }
 }
+
+#[test]
+fn magic_powder_replaces_types_but_respects_immutable_species_and_protection() {
+    for (species, response, sub, lands) in [
+        (0, "splash", 0, true),
+        (493, "splash", 0, false),
+        (773, "splash", 0, false),
+        (0, "protect", 0, false),
+        (0, "splash", 50, false),
+    ] {
+        let mut foe = mon("Foe", &[response]);
+        foe.types = vec![PokemonType::Fire, PokemonType::Flying];
+        foe.species_id = species;
+        foe.substitute_hp = sub;
+        let mut b = game(mon("User", &["magic-powder"]), vec![foe], 0.5);
+        turn(&mut b);
+        assert_eq!(
+            b.participants(Side::Foes)[0].types,
+            if lands {
+                vec![PokemonType::Psychic]
+            } else {
+                vec![PokemonType::Fire, PokemonType::Flying]
+            }
+        );
+        if lands {
+            turn(&mut b);
+            assert!(b.participants(Side::Allies)[0].last_move_failed);
+        }
+    }
+}
+#[test]
+fn magic_powder_cannot_change_a_grass_targets_type() {
+    let mut foe = mon("Foe", &["splash"]);
+    foe.types = vec![PokemonType::Grass];
+    let mut b = game(mon("User", &["magic-powder"]), vec![foe], 0.5);
+    turn(&mut b);
+    assert_eq!(
+        b.participants(Side::Foes)[0].types,
+        vec![PokemonType::Grass]
+    );
+    assert!(b.participants(Side::Allies)[0].last_move_failed);
+}

@@ -6122,6 +6122,17 @@
       "limitations": []
     },
     {
+      "id": 750,
+      "slug": "magic-powder",
+      "name": "Magic Powder",
+      "sheet_row": null,
+      "runtime_id": "magic-powder",
+      "file": "moves/magic-powder.lua",
+      "status": "implemented",
+      "limitations": [],
+      "parameter_source": "https://pokeapi.co/api/v2/move/750/"
+    },
+    {
       "id": 751,
       "slug": "dragon-darts",
       "name": "Dragon Darts",
@@ -7068,7 +7079,8 @@
       "speed-swap",
       "strength-sap",
       "power-trick",
-      "soak"
+      "soak",
+      "magic-powder"
     ]
   }
 }
