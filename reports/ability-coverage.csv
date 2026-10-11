@@ -57,7 +57,7 @@ id,ability,status,verification
 56,cute-charm,IMPLEMENTED,ability_rules::cute_charm_infatuates_only_opposite_gender_contact_attackers
 57,plus,IMPLEMENTED,ability_rules::plus_needs_an_active_plus_or_minus_teammate
 58,minus,IMPLEMENTED,ability_rules::minus_needs_an_active_plus_or_minus_teammate
-59,forecast,MISSING,No native battle behavior
+59,forecast,IMPLEMENTED,ability_rules::forecast_tracks_weather_and_suppression_using_host_supplied_forms
 60,sticky-hold,IMPLEMENTED,Source inventory; existing tests only
 61,shed-skin,IMPLEMENTED,Source inventory; existing tests only
 62,guts,IMPLEMENTED,Source inventory; existing tests only

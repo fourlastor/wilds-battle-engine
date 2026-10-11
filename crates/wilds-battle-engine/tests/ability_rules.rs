@@ -3717,3 +3717,35 @@ fn symbiosis_transfers_a_neighbors_item_after_consumption_but_not_removal() {
         );
     }
 }
+
+fn add_form(p: &mut Pokemon, name: &str, kind: PokemonType) {
+    let mut form = wilds_battle_engine::PokemonForm::of(p);
+    form.types = vec![kind];
+    p.forms.insert(name.into(), form);
+}
+
+#[test]
+fn forecast_tracks_weather_and_suppression_using_host_supplied_forms() {
+    let mut user = mon("User", &["sunny_day", "rain-dance", "hail", "splash"]);
+    user.species_id = 351;
+    user.ability = Some("forecast".into());
+    for (form, kind) in [
+        ("castform-sunny", PokemonType::Fire),
+        ("castform-rainy", PokemonType::Water),
+        ("castform-snowy", PokemonType::Ice),
+    ] {
+        add_form(&mut user, form, kind);
+    }
+    let mut battle = game(user, mon("Target", &["splash", "gastro-acid"]), 0.5);
+    for (move_id, kind) in [
+        ("sunny_day", PokemonType::Fire),
+        ("rain-dance", PokemonType::Water),
+        ("hail", PokemonType::Ice),
+    ] {
+        turn(&mut battle, move_id, "splash");
+        assert_eq!(ally(&battle).types, [kind]);
+    }
+    turn(&mut battle, "splash", "gastro-acid");
+    assert_eq!(ally(&battle).types, [PokemonType::Normal]);
+    assert!(ally(&battle).form.is_none());
+}

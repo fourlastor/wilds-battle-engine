@@ -1,4 +1,5 @@
 mod abilities;
+mod ability_forms;
 mod baton_pass;
 mod berries;
 mod carrying;
