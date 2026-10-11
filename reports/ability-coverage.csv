@@ -67,7 +67,7 @@ id,ability,status,verification
 66,blaze,IMPLEMENTED,ability_rules::blaze_boosts_matching_moves_only
 67,torrent,IMPLEMENTED,ability_rules::torrent_boosts_matching_moves_only
 68,swarm,IMPLEMENTED,ability_rules::swarm_boosts_matching_moves_only
-69,rock-head,MISSING,No native battle behavior
+69,rock-head,IMPLEMENTED,ability_rules::rock_head_blocks_normal_recoil_but_not_crashes_or_struggle
 70,drought,IMPLEMENTED,ability_rules::drought_starts_weather_on_entry_only_when_active
 71,arena-trap,IMPLEMENTED,ability_rules::arena_trap_only_prevents_grounded_non_ghost_switches
 72,vital-spirit,IMPLEMENTED,Source inventory; existing tests only

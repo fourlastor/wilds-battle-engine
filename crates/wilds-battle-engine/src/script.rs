@@ -1006,6 +1006,7 @@ impl Battle {
             if let Some(fraction) = options.recoil
                 && actual > 0
                 && !self.has_ability(actor, "magicguard")
+                && !self.has_ability(actor, "rockhead")
             {
                 let recoil = ((f32::from(actual) * fraction).floor() as u16).max(1);
                 self.damage(actor, recoil, events);

@@ -2434,3 +2434,28 @@ fn skill_link_maximizes_variable_hits_and_checks_multi_accuracy_once() {
         }
     }
 }
+
+#[test]
+fn rock_head_blocks_normal_recoil_but_not_crashes_or_struggle() {
+    for suppressed in [false, true] {
+        let mut user = mon("User", &["double_edge"]);
+        user.ability = Some("rock-head".into());
+        user.ability_suppressed = suppressed;
+        let mut battle = game(user, mon("Target", &["splash"]), 0.5);
+        turn(&mut battle, "double_edge", "splash");
+        assert_eq!(ally(&battle).hp == 1000, !suppressed);
+    }
+    let mut user = mon("User", &["high-jump-kick"]);
+    user.ability = Some("rock-head".into());
+    let mut target = mon("Target", &["splash"]);
+    target.types = vec![PokemonType::Ghost];
+    let mut battle = game(user, target, 0.5);
+    turn(&mut battle, "high-jump-kick", "splash");
+    assert_eq!(ally(&battle).hp, 500);
+    let mut user = mon("User", &["splash"]);
+    user.ability = Some("rock-head".into());
+    user.move_pp.insert("splash".into(), 0);
+    let mut battle = game(user, mon("Target", &["splash"]), 0.5);
+    turn(&mut battle, "struggle", "splash");
+    assert_eq!(ally(&battle).hp, 750);
+}
