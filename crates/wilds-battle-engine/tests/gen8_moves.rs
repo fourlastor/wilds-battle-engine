@@ -2986,3 +2986,57 @@ fn endure_shares_protection_chance_and_does_not_block_status_moves() {
     assert!(!b.participants(Side::Allies)[0].last_move_failed);
     assert_eq!(b.participants(Side::Allies)[0].stage(Stat::Attack), -2);
 }
+
+fn check_foresight(move_id: &str) {
+    use wilds_battle_engine::Stat;
+    let mut foe = mon("Foe", &["splash"]);
+    foe.types = vec![PokemonType::Ghost, PokemonType::Steel];
+    foe.change_stage(Stat::Evasion, 6);
+    let mut b = game(mon("User", &[move_id, "tackle"]), vec![foe], 0.5);
+    turn_with(&mut b, |p| choose_move(p, move_id, "splash"));
+    turn_with(&mut b, |p| choose_move(p, "tackle", "splash"));
+    assert!(b.participants(Side::Foes)[0].hp < 1000);
+    assert_eq!(
+        b.participants(Side::Foes)[0].types,
+        vec![PokemonType::Ghost, PokemonType::Steel]
+    );
+    assert_eq!(b.participants(Side::Foes)[0].stage(Stat::Evasion), 6);
+    turn_with(&mut b, |p| choose_move(p, move_id, "splash"));
+    assert!(b.participants(Side::Allies)[0].last_move_failed);
+    for (response, lands) in [("splash", true), ("protect", false)] {
+        let mut foe = mon("Foe", &[response]);
+        foe.substitute_hp = 50;
+        let mut b = game(mon("User", &[move_id]), vec![foe], 0.5);
+        turn(&mut b);
+        assert_eq!(
+            b.participants(Side::Foes)[0]
+                .condition("foresight")
+                .is_some(),
+            lands
+        );
+    }
+    let user = mon("User", &[move_id, "shadow-ball"]);
+    let mut foe = mon("Foe", &["splash"]);
+    foe.types = vec![PokemonType::Ghost];
+    let expected = control_damage(80, "Ghost", "Special", user.clone(), foe.clone());
+    let mut b = game(user, vec![foe], 0.5);
+    turn_with(&mut b, |p| choose_move(p, move_id, "splash"));
+    turn_with(&mut b, |p| choose_move(p, "shadow-ball", "splash"));
+    assert_eq!(1000 - b.participants(Side::Foes)[0].hp, expected);
+}
+
+#[test]
+fn foresight_bypasses_ghost_immunities_and_positive_evasion_without_erasing_type() {
+    check_foresight("foresight");
+}
+
+#[test]
+fn foresight_preserves_negative_evasion_for_incoming_accuracy() {
+    use wilds_battle_engine::Stat;
+    let mut foe = mon("Foe", &["splash"]);
+    foe.change_stage(Stat::Evasion, -6);
+    let mut b = game(mon("User", &["foresight", "zap-cannon"]), vec![foe], 0.9);
+    turn_with(&mut b, |p| choose_move(p, "foresight", "splash"));
+    turn_with(&mut b, |p| choose_move(p, "zap-cannon", "splash"));
+    assert!(b.participants(Side::Foes)[0].hp < 1000);
+}

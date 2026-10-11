@@ -1487,7 +1487,12 @@ impl Battle {
         value: f32,
         ignore_evasion: bool,
     ) -> bool {
-        let evasion = if ignore_evasion {
+        let evasion = if ignore_evasion
+            || (self.get(target).stage(Stat::Evasion) > 0
+                && self
+                    .rules(target)
+                    .any(|rule| matches!(rule, Rule::IgnoreEvasionBoost)))
+        {
             1.0
         } else {
             self.get(target).evasion_factor()

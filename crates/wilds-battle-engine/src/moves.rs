@@ -831,6 +831,8 @@ fn rule_of(value: &Value) -> mlua::Result<Rule> {
         RuleKind::AlwaysHit => &["kind", "against"],
         RuleKind::Trapped => &["kind", "by"],
         RuleKind::WithoutType => &["kind", "type"],
+        RuleKind::NegateTypeImmunity => &["kind", "defending", "incoming"],
+        RuleKind::IgnoreEvasionBoost => &["kind"],
         RuleKind::BlockForcedSwitch
         | RuleKind::BlockCritical
         | RuleKind::BlockFlinch
@@ -911,6 +913,11 @@ fn rule_of(value: &Value) -> mlua::Result<Rule> {
             powder: options.flag("powder")?,
             allow_carried: options.flag("allow_carried")?,
         },
+        RuleKind::NegateTypeImmunity => Rule::NegateTypeImmunity {
+            defending: type_of(&required("defending")?, "defending type")?,
+            incoming: options.list("incoming", type_of)?,
+        },
+        RuleKind::IgnoreEvasionBoost => Rule::IgnoreEvasionBoost,
         RuleKind::Redirect => Rule::Redirect {
             to: pokemon_of(&required("to")?, "rule option to")?,
             move_type: options.pokemon_type("type")?,

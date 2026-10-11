@@ -257,6 +257,12 @@ pub enum Rule {
     },
     /// One of the holder's types is ignored.
     WithoutType(PokemonType),
+    /// Disregard this defending type only for the specified incoming move types.
+    NegateTypeImmunity {
+        defending: PokemonType,
+        incoming: Vec<PokemonType>,
+    },
+    IgnoreEvasionBoost,
 }
 
 /// A named mark or timed effect on a Pokémon, a side or the field.

@@ -1829,6 +1829,17 @@
       "limitations": []
     },
     {
+      "id": 193,
+      "slug": "foresight",
+      "name": "Foresight",
+      "sheet_row": null,
+      "runtime_id": "foresight",
+      "file": "moves/foresight.lua",
+      "status": "implemented",
+      "limitations": [],
+      "parameter_source": "https://pokeapi.co/api/v2/move/193/"
+    },
+    {
       "id": 196,
       "slug": "icy-wind",
       "name": "Icy Wind",
@@ -7236,7 +7247,8 @@
       "switcheroo",
       "bestow",
       "detect",
-      "endure"
+      "endure",
+      "foresight"
     ]
   }
 }

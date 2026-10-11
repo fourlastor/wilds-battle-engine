@@ -370,6 +370,16 @@ impl Battle {
         move_type: PokemonType,
     ) -> Vec<PokemonType> {
         let mut types = self.types_of(id);
+        for rule in self.rules(id) {
+            if let Rule::NegateTypeImmunity {
+                defending,
+                incoming,
+            } = rule
+                && incoming.contains(&move_type)
+            {
+                types.retain(|kind| kind != defending);
+            }
+        }
         if move_type == PokemonType::Ground && self.is_grounded(id) {
             types.retain(|own| *own != PokemonType::Flying);
         }
