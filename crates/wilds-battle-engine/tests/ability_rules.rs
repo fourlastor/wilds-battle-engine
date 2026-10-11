@@ -1164,3 +1164,25 @@ fn sniper_only_boosts_critical_damage() {
         ability_damage("frost-breath", "", "battle-armor", false)
     );
 }
+
+#[test]
+fn rivalry_scales_damage_by_gender_and_leaves_genderless_targets_unchanged() {
+    for (gender, factor) in [
+        (wilds_battle_engine::Gender::Male, 1.25),
+        (wilds_battle_engine::Gender::Female, 0.75),
+        (wilds_battle_engine::Gender::Genderless, 1.0),
+    ] {
+        let run = |suppressed| {
+            let mut user = mon("User", &["water-gun"]);
+            user.gender = wilds_battle_engine::Gender::Male;
+            user.ability = Some("rivalry".into());
+            user.ability_suppressed = suppressed;
+            let mut target = mon("Target", &["splash"]);
+            target.gender = gender;
+            let mut battle = game(user, target, 0.5);
+            turn(&mut battle, "water-gun", "splash");
+            1000 - foe(&battle).hp
+        };
+        assert!((f32::from(run(false)) - f32::from(run(true)) * factor).abs() <= 2.0);
+    }
+}

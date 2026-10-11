@@ -555,8 +555,16 @@ impl Battle {
     pub(crate) fn ability_base_power_factor(
         &self,
         actor: ParticipantId,
+        target: ParticipantId,
         attack: &crate::engine::Attack,
     ) -> f32 {
+        if self.has_ability(actor, "rivalry") {
+            let a = self.get(actor).gender;
+            let b = self.get(target).gender;
+            if a != crate::model::Gender::Genderless && b != crate::model::Gender::Genderless {
+                return if a == b { 1.25 } else { 0.75 };
+            }
+        }
         if self.has_ability(actor, "steelworker")
             && attack.move_type == crate::model::PokemonType::Steel
         {
