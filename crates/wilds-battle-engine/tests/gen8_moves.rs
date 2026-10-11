@@ -988,3 +988,19 @@ fn mean_look_traps_until_the_source_leaves() {
 fn block_traps_until_the_source_leaves() {
     check_source_trap("block", true);
 }
+
+#[test]
+fn ingrain_heals_each_turn_and_cannot_stack() {
+    let mut user = mon("User", &["ingrain"]);
+    user.hp = 500;
+    let mut b = game(user, vec![mon("Foe", &["splash"])], 0.5);
+    turn(&mut b);
+    assert_eq!(b.participants(Side::Allies)[0].hp, 562);
+    turn(&mut b);
+    assert_eq!(b.participants(Side::Allies)[0].hp, 624);
+    assert!(b.participants(Side::Allies)[0].last_move_failed);
+    assert!(b.trapped(wilds_battle_engine::ParticipantId {
+        side: Side::Allies,
+        index: 0
+    }));
+}

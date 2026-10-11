@@ -2240,6 +2240,17 @@
       ]
     },
     {
+      "id": 275,
+      "slug": "ingrain",
+      "name": "Ingrain",
+      "sheet_row": null,
+      "runtime_id": "ingrain",
+      "file": "moves/ingrain.lua",
+      "status": "implemented",
+      "limitations": [],
+      "parameter_source": "https://pokeapi.co/api/v2/move/275/"
+    },
+    {
       "id": 276,
       "slug": "superpower",
       "name": "Superpower",
@@ -6468,7 +6479,8 @@
       "final-gambit",
       "spider-web",
       "mean-look",
-      "block"
+      "block",
+      "ingrain"
     ]
   }
 }
