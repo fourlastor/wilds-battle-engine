@@ -2720,3 +2720,8 @@ fn check_aura(ability: &str, move_id: &str) {
 fn dark_aura_boosts_both_sides_without_stacking() {
     check_aura("dark-aura", "dark-pulse");
 }
+
+#[test]
+fn fairy_aura_boosts_both_sides_without_stacking() {
+    check_aura("fairy-aura", "moonblast");
+}
