@@ -774,3 +774,8 @@ fn check_power_ability(ability: &str, boosted: &[&str], neutral: &str, multiplie
 fn steelworker_boosts_steel_attacks_only() {
     check_power_ability("steelworker", &["iron-head"], "tackle", 1.5, 1000);
 }
+
+#[test]
+fn transistor_boosts_matching_moves_only() {
+    check_power_ability("transistor", &["thunderbolt"], "tackle", 1.5, 1000);
+}
