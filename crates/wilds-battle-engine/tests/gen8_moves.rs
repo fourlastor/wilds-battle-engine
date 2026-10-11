@@ -5917,3 +5917,42 @@ fn embargo_blocks_item_type_changes_but_allows_forced_berry_eating() {
     assert_eq!(b.participants(Side::Foes)[0].item, None);
     assert_eq!(b.participants(Side::Foes)[0].hp, 850);
 }
+
+#[test]
+fn magic_room_suppresses_both_sides_items_and_toggles_off() {
+    let mut user = mon("User", &["magic-room", "pound"]);
+    user.speed = 200;
+    user.item = Some("normal-gem".into());
+    let mut foe = mon("Foe", &["pound"]);
+    foe.item = Some("normal-gem".into());
+    let mut b = game(user, vec![foe], 0.5);
+    turn(&mut b);
+    assert!(b.participants(Side::Foes)[0].item.is_some());
+    turn_with(&mut b, |p| choose_move(p, "pound", "pound"));
+    assert!(b.participants(Side::Allies)[0].item.is_some());
+    assert!(b.participants(Side::Foes)[0].item.is_some());
+    turn_with(&mut b, |p| choose_move(p, "magic-room", "pound"));
+    assert!(b.participants(Side::Foes)[0].item.is_none());
+    turn_with(&mut b, |p| choose_move(p, "pound", "pound"));
+    assert!(b.participants(Side::Allies)[0].item.is_none());
+}
+
+#[test]
+fn magic_room_expires_after_five_turns_and_held_berries_resume() {
+    let mut user = mon("User", &["magic-room", "pound", "splash"]);
+    user.speed = 200;
+    let mut foe = mon("Foe", &["splash"]);
+    foe.hp = 520;
+    foe.item = Some("sitrus-berry".into());
+    let mut b = game(user, vec![foe], 0.5);
+    turn(&mut b);
+    turn_with(&mut b, |p| choose_move(p, "pound", "splash"));
+    let hp = b.participants(Side::Foes)[0].hp;
+    assert!(hp <= 500);
+    assert!(b.participants(Side::Foes)[0].item.is_some());
+    for _ in 0..3 {
+        turn_with(&mut b, |p| choose_move(p, "splash", "splash"));
+    }
+    assert!(b.participants(Side::Foes)[0].item.is_none());
+    assert_eq!(b.participants(Side::Foes)[0].hp, hp + 250);
+}
