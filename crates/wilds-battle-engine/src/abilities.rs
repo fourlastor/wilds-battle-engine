@@ -27,6 +27,11 @@ fn cannot_suppress(ability: &str) -> bool {
 }
 
 impl Battle {
+    pub(crate) fn record_ability_order(&mut self, who: ParticipantId) {
+        self.ability_serial += 1;
+        self.get_mut(who).ability_order = self.ability_serial;
+    }
+
     fn neutralizing_gas_suppresses(&self, who: ParticipantId) -> bool {
         let Some(ability) = self.get(who).ability.as_deref().map(item_key) else {
             return false;
@@ -773,6 +778,7 @@ impl Battle {
         state: crate::model::AbilityState,
         events: &mut Vec<BattleEvent>,
     ) {
+        self.record_ability_order(who);
         let original = self.ability_state(who);
         let pokemon = self.get_mut(who);
         pokemon.original_ability.get_or_insert(original);

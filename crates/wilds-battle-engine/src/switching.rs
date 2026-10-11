@@ -185,6 +185,7 @@ impl Battle {
         let hp_before = self.get(to).hp;
         self.entry_hazards(to, events);
         self.refresh_neutralizing_gas(events);
+        self.record_ability_order(to);
         if !self.imposter_on_entry(to, events) {
             self.ability_on_entry(to, events);
         }

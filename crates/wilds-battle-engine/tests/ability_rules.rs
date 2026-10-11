@@ -4758,3 +4758,77 @@ fn illusion_breaks_on_suppression_and_restarts_only_on_entry_with_current_party_
     turn(&mut battle, "splash", "splash");
     assert!(ally(&battle).illusion.is_none());
 }
+
+#[test]
+fn dancer_copies_successful_dances_without_pp_or_turn_cost_and_uses_correct_targets() {
+    use wilds_battle_engine::Stat;
+    let mut user = mon("User", &["dragon-dance", "feather-dance"]);
+    user.speed = 200;
+    let mut dancer = mon("Dancer", &["splash", "dragon-dance"]);
+    dancer.ability = Some("dancer".into());
+    let mut battle = game(user.clone(), dancer.clone(), 0.5);
+    let events = turn(&mut battle, "dragon-dance", "splash");
+    assert_eq!(ally(&battle).stage(Stat::Attack), 1);
+    assert_eq!(foe(&battle).stage(Stat::Attack), 1);
+    assert_eq!(foe(&battle).move_pp["dragon-dance"], 20);
+    assert_eq!(foe(&battle).last_used.as_deref(), Some("splash"));
+    assert!(
+        events
+            .iter()
+            .any(|e| matches!(e, BattleEvent::Message(m) if m == "Dancer used Splash!"))
+    );
+    let mut battle = game(user.clone(), dancer.clone(), 0.5);
+    turn(&mut battle, "feather-dance", "splash");
+    assert_eq!(ally(&battle).stage(Stat::Attack), -2);
+    assert_eq!(foe(&battle).stage(Stat::Attack), -2);
+    for status in [Status::Asleep, Status::Frozen] {
+        dancer.status = Some(status);
+        dancer.status_turns = 3;
+        let mut battle = game(user.clone(), dancer.clone(), 0.5);
+        turn(&mut battle, "dragon-dance", "splash");
+        assert_eq!(foe(&battle).stage(Stat::Attack), 0);
+    }
+    user.stages.insert(Stat::Attack, 6);
+    user.stages.insert(Stat::Speed, 6);
+    dancer.status = None;
+    let mut battle = game(user, dancer, 0.5);
+    turn(&mut battle, "dragon-dance", "splash");
+    assert_eq!(foe(&battle).stage(Stat::Attack), 0); // A failed dance cannot trigger Dancer.
+}
+
+#[test]
+fn dancers_use_unmodified_speed_order_do_not_chain_and_do_not_lock_into_petal_dance() {
+    use wilds_battle_engine::Stat;
+    let user = mon("User", &["swords-dance"]);
+    let mut slow = mon("Slow", &["splash"]);
+    slow.speed = 50;
+    slow.stages.insert(Stat::Speed, 6);
+    slow.ability = Some("dancer".into());
+    let mut fast = mon("Fast", &["splash"]);
+    fast.speed = 100;
+    fast.ability = Some("dancer".into());
+    let mut battle = Battle::with_rng(
+        Fixed(0.5),
+        [vec![user], vec![fast, slow]],
+        MoveCatalog::builtin().unwrap(),
+    )
+    .unwrap();
+    let events = turn(&mut battle, "swords-dance", "splash");
+    let copies: Vec<_> = events
+        .iter()
+        .filter_map(|e| match e {
+            BattleEvent::Message(m) if m.ends_with("copied the dance!") => Some(m.as_str()),
+            _ => None,
+        })
+        .collect();
+    assert_eq!(copies, ["Slow copied the dance!", "Fast copied the dance!"]);
+    for dancer in battle.participants(Side::Foes) {
+        assert_eq!(dancer.stage(Stat::Attack), 2);
+    }
+    let mut dancer = mon("Dancer", &["splash"]);
+    dancer.ability = Some("dancer".into());
+    let mut battle = game(mon("User", &["petal_dance"]), dancer, 0.5);
+    turn(&mut battle, "petal_dance", "splash");
+    assert!(foe(&battle).locked_move.is_none());
+    assert!(ally(&battle).hp < 1000);
+}

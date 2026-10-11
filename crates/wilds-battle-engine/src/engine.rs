@@ -65,6 +65,10 @@ pub struct Battle {
     pub(crate) snatching: bool,
     pub(crate) last_battle_move: Option<String>,
     pub(crate) current_move: Option<String>,
+    current_move_user: Option<ParticipantId>,
+    current_move_target: Option<ParticipantId>,
+    pub(crate) ability_serial: u64,
+    dancing: bool,
 }
 
 #[derive(Clone)]
@@ -294,6 +298,10 @@ impl Battle {
             snatching: false,
             last_battle_move: None,
             current_move: None,
+            current_move_user: None,
+            current_move_target: None,
+            ability_serial: 0,
+            dancing: false,
         })
     }
     pub(crate) fn has_started(&self) -> bool {
@@ -540,6 +548,7 @@ impl Battle {
             let mut entrants = self.actors();
             entrants.sort_by_key(|&id| std::cmp::Reverse(self.action_speed(id)));
             for who in entrants {
+                self.record_ability_order(who);
                 if !self.imposter_on_entry(who, &mut events) {
                     self.ability_on_entry(who, &mut events);
                 }
@@ -1246,6 +1255,16 @@ impl Battle {
         self.ignored_ability = None;
         self.ability_bypass = false;
         let used = result?;
+        let dance = if used && !self.move_failed {
+            self.current_move
+                .as_ref()
+                .filter(|id| self.catalog.get(id).is_some_and(|s| s.has_flag("dance")))
+                .cloned()
+                .zip(self.current_move_user)
+                .zip(self.current_move_target)
+        } else {
+            None
+        };
         if used && let Some(move_id) = self.current_move.take() {
             self.last_battle_move = Some(move_id);
         }
@@ -1269,6 +1288,63 @@ impl Battle {
         } else {
             pokemon.streak = 0;
             pokemon.streak_move = None;
+        }
+        if let Some(((move_id, source), target)) = dance {
+            self.copy_dance(source, target, &move_id, events)?;
+        }
+        Ok(())
+    }
+
+    fn copy_dance(
+        &mut self,
+        source: ParticipantId,
+        target: ParticipantId,
+        move_id: &str,
+        events: &mut Vec<BattleEvent>,
+    ) -> Result<(), BattleError> {
+        let mut dancers: Vec<_> = self
+            .actors()
+            .into_iter()
+            .filter(|id| {
+                *id != source && self.has_ability(*id, "dancer") && self.get(*id).hidden().is_none()
+            })
+            .collect();
+        dancers.sort_by_key(|id| {
+            (
+                self.get(*id).speed,
+                std::cmp::Reverse(self.get(*id).ability_order),
+            )
+        });
+        for dancer in dancers {
+            if self.get(dancer).hp == 0 || self.winner.is_some() {
+                continue;
+            }
+            let target = if target.side != dancer.side && source.side == dancer.side {
+                target
+            } else {
+                source
+            };
+            events.push(BattleEvent::Message(format!(
+                "{} copied the dance!",
+                self.get(dancer).display_name()
+            )));
+            let lock = self.get(dancer).locked_move.clone();
+            let continuation = self.get(dancer).script_continuation.clone();
+            self.dancing = true;
+            self.prankster_boosted = false;
+            self.substitute_hits.clear();
+            let result = self.call_move(dancer, move_id, Some(target), events);
+            self.dancing = false;
+            self.get_mut(dancer).locked_move = lock;
+            self.get_mut(dancer).script_continuation = continuation;
+            self.finish_ability_hits(events);
+            self.finish_item_hits(events);
+            self.finish_ability_knockouts(events);
+            self.ignored_ability = None;
+            self.ability_bypass = false;
+            self.update_berries(events);
+            self.finish_forced_switches(events);
+            result?;
         }
         Ok(())
     }
@@ -1386,7 +1462,7 @@ impl Battle {
             .get(&choice.move_id)
             .expect("validated choice")
             .clone();
-        if let Some(message) = if called {
+        if let Some(message) = if called && !self.dancing {
             self.called_move_block(actor, &spec)
         } else {
             self.move_block(actor, &spec)
@@ -1428,7 +1504,7 @@ impl Battle {
         let self_thaw = spec.usable_while_frozen
             && (!spec.has_flag("thaw_requires_fire")
                 || self.types_of(actor).contains(&PokemonType::Fire));
-        if !called {
+        if !called || self.dancing {
             let status = self.get(actor).status;
             match status {
                 Some(Status::Frozen) if self_thaw => {}
@@ -1523,7 +1599,7 @@ impl Battle {
             self.clear_consecutive(actor);
             return Ok(true);
         }
-        if !called && self_thaw {
+        if (!called || self.dancing) && self_thaw {
             self.thaw(actor, events);
         }
         if !called {
@@ -1537,6 +1613,7 @@ impl Battle {
                 spec.category == Category::Status && self.has_ability(actor, "prankster");
         }
         self.current_move = Some(spec.id.clone());
+        self.current_move_user = Some(actor);
         if spec.has_flag("sheer_force") && self.has_ability(actor, "sheerforce") {
             self.sheer_force_moves.insert((actor, spec.id.clone()));
         }
@@ -1625,6 +1702,7 @@ impl Battle {
                 self.get(target).display_name()
             )));
         }
+        self.current_move_target = Some(target);
         self.ability_bypass = spec.has_flag("ignore_ability")
             || self.has_ability(actor, "moldbreaker")
             || self.has_ability(actor, "teravolt")
@@ -1682,7 +1760,11 @@ impl Battle {
                 .ability_move_lock
                 .get_or_insert(spec.id.clone());
         }
-        if !spec.auto_only && !forced_script && self.get(actor).locked_move.is_none() {
+        if !self.dancing
+            && !spec.auto_only
+            && !forced_script
+            && self.get(actor).locked_move.is_none()
+        {
             let cost = self.pressure_cost(actor, target, &spec);
             let move_id = if called {
                 self.get(actor).last_used.clone()
@@ -2360,8 +2442,12 @@ impl Battle {
                 if self.get(recipient).hp == 0 {
                     return Ok(());
                 }
+                let mut changed = false;
                 for (stat, delta) in stages {
-                    self.change_stat_from(actor, recipient, *stat, *delta, events);
+                    changed |= self.change_stat_from(actor, recipient, *stat, *delta, events) != 0;
+                }
+                if !has_damage && !changed {
+                    self.move_failed = true;
                 }
             }
             Effect::Status {

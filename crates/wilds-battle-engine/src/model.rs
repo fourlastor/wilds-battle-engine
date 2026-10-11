@@ -615,6 +615,7 @@ pub struct Pokemon {
     pub(crate) original_ability: Option<AbilityState>,
     pub(crate) ability_move_lock: Option<String>,
     pub ability_suppressed: bool,
+    pub(crate) ability_order: u64,
     /// Optional host-defined rules belonging to the ability, gated by suppression and bypass.
     pub ability_rules: Vec<Rule>,
     /// Overrides the standard ability metadata for a host-defined ability.
@@ -710,6 +711,7 @@ impl Pokemon {
             original_ability: None,
             ability_move_lock: None,
             ability_suppressed: false,
+            ability_order: 0,
             ability_rules: Vec::new(),
             ability_bypassable: None,
             ivs: None,
