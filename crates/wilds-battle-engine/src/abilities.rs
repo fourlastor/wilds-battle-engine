@@ -40,6 +40,15 @@ impl Battle {
         if self.get(target).hp > 0 && ability == "stamina" {
             self.change_stat(target, crate::model::Stat::Defense, 1, events);
         }
+        let typed_boost = match (ability, hit.move_type) {
+            ("justified", crate::model::PokemonType::Dark) => Some((crate::model::Stat::Attack, 1)),
+            _ => None,
+        };
+        if self.get(target).hp > 0
+            && let Some((stat, stages)) = typed_boost
+        {
+            self.change_stat(target, stat, stages, events);
+        }
         if self.get(target).hp > 0
             && ability == "weakarmor"
             && hit.category == crate::moves::Category::Physical

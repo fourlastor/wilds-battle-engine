@@ -2039,3 +2039,11 @@ fn weak_armor_trades_defense_for_two_speed_per_physical_hit() {
     check_hit_stat_boost("weak-armor", "swift", Stat::Defense, 0);
     check_hit_stat_boost("weak-armor", "swift", Stat::Speed, 0);
 }
+
+#[test]
+fn justified_boosts_attack_when_damaged_by_dark_moves() {
+    use wilds_battle_engine::Stat;
+    check_hit_stat_boost("justified", "bite", Stat::Attack, 1);
+    check_hit_stat_boost("justified", "dark-pulse", Stat::Attack, 1);
+    check_hit_stat_boost("justified", "tackle", Stat::Attack, 0);
+}
