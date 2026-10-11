@@ -1061,3 +1061,27 @@ fn tailwind_doubles_team_speed_for_four_turns_without_refreshing() {
         .unwrap();
     assert_eq!(first, Side::Foes);
 }
+
+#[test]
+fn fairy_lock_traps_both_sides_for_the_next_turn_only() {
+    use wilds_battle_engine::ParticipantId;
+    let mut b = game(
+        mon("User", &["fairy-lock", "splash"]),
+        vec![mon("Foe", &["splash"])],
+        0.5,
+    );
+    turn(&mut b);
+    for side in [Side::Allies, Side::Foes] {
+        assert!(b.trapped(ParticipantId { side, index: 0 }));
+    }
+    turn_with(&mut b, |p| {
+        p.choices
+            .iter()
+            .find(|c| matches!(c,Choice::UseMove{move_id,..}if move_id=="splash"))
+            .unwrap()
+            .id()
+    });
+    for side in [Side::Allies, Side::Foes] {
+        assert!(!b.trapped(ParticipantId { side, index: 0 }));
+    }
+}

@@ -4762,6 +4762,17 @@
       "limitations": []
     },
     {
+      "id": 587,
+      "slug": "fairy-lock",
+      "name": "Fairy Lock",
+      "sheet_row": null,
+      "runtime_id": "fairy-lock",
+      "file": "moves/fairy-lock.lua",
+      "status": "implemented",
+      "limitations": [],
+      "parameter_source": "https://pokeapi.co/api/v2/move/587/"
+    },
+    {
       "id": 589,
       "slug": "play-nice",
       "name": "Play Nice",
@@ -6516,7 +6527,8 @@
       "ingrain",
       "aqua-ring",
       "safeguard",
-      "tailwind"
+      "tailwind",
+      "fairy-lock"
     ]
   }
 }
