@@ -1115,6 +1115,16 @@ impl Battle {
     ) -> f32 {
         use crate::model::PokemonType::*;
         let mut factor = 1.0;
+        if !self.ability_bypass {
+            for ally in self.actors() {
+                if ally != target
+                    && ally.side == target.side
+                    && self.has_ability(ally, "friendguard")
+                {
+                    factor *= 0.75;
+                }
+            }
+        }
         if self.has_ability(actor, "neuroforce") && effectiveness > 1.0 {
             factor *= 1.25;
         }

@@ -130,7 +130,7 @@ id,ability,status,verification
 129,defeatist,IMPLEMENTED,ability_rules::defeatist_halves_both_attacking_stats_at_half_hp
 130,cursed-body,IMPLEMENTED,ability_rules::cursed_body_disables_the_damaging_move_for_four_turns_including_the_hit
 131,healer,IMPLEMENTED,Source inventory; existing tests only
-132,friend-guard,MISSING,No native battle behavior
+132,friend-guard,IMPLEMENTED,ability_rules::friend_guard_reduces_ally_damage_and_is_bypassed_by_mold_breaker
 133,weak-armor,IMPLEMENTED,ability_rules::weak_armor_trades_defense_for_two_speed_per_physical_hit
 134,heavy-metal,IMPLEMENTED,ability_rules::heavy_metal_modifies_battle_weight_without_compounding_autotomize
 135,light-metal,IMPLEMENTED,ability_rules::light_metal_halves_weight_and_respects_suppression_and_mold_breaker

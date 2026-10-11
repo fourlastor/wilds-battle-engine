@@ -2586,3 +2586,36 @@ fn liquid_voice_converts_sound_moves_without_an_extra_power_boost() {
     };
     assert_eq!(run("liquid-voice"), run(""));
 }
+
+#[test]
+fn friend_guard_reduces_ally_damage_and_is_bypassed_by_mold_breaker() {
+    let run = |holder_on_target, suppressed, breaker| {
+        let mut user = mon("User", &["water-gun"]);
+        user.ability = if breaker {
+            Some("mold-breaker".into())
+        } else {
+            None
+        };
+        let mut target = mon("Target", &["splash"]);
+        let mut partner = mon("Partner", &["splash"]);
+        let holder = if holder_on_target {
+            &mut target
+        } else {
+            &mut partner
+        };
+        holder.ability = Some("friend-guard".into());
+        holder.ability_suppressed = suppressed;
+        let mut battle = Battle::with_rng(
+            Fixed(0.5),
+            [vec![user], vec![target, partner]],
+            MoveCatalog::builtin().unwrap(),
+        )
+        .unwrap();
+        turn(&mut battle, "water-gun", "splash");
+        1000 - foe(&battle).hp
+    };
+    let base = run(false, true, false);
+    assert_eq!(run(true, false, false), base);
+    assert_eq!(run(false, false, true), base);
+    assert!((f32::from(run(false, false, false)) - f32::from(base) * 0.75).abs() <= 1.0);
+}
