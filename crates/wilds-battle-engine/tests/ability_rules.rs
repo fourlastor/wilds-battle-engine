@@ -2459,3 +2459,14 @@ fn rock_head_blocks_normal_recoil_but_not_crashes_or_struggle() {
     turn(&mut battle, "struggle", "splash");
     assert_eq!(ally(&battle).hp, 750);
 }
+
+#[test]
+fn reckless_boosts_recoil_and_crash_attacks_only() {
+    check_power_ability(
+        "reckless",
+        &["double_edge", "high-jump-kick", "jump-kick", "flare-blitz"],
+        "tackle",
+        1.2,
+        1000,
+    );
+}

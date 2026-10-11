@@ -952,6 +952,22 @@ impl Battle {
         target: ParticipantId,
         attack: &crate::engine::Attack,
     ) -> f32 {
+        if self.has_ability(actor, "reckless")
+            && self.catalog.get(attack.move_id).is_some_and(|spec| {
+                spec.has_flag("crash_damage")
+                    || spec.effects.iter().any(|effect| {
+                        matches!(
+                            effect,
+                            crate::moves::Effect::Damage {
+                                recoil: Some(_),
+                                ..
+                            }
+                        )
+                    })
+            })
+        {
+            return 1.2;
+        }
         if self.has_ability(actor, "sandforce")
             && self.effective_weather() == Some(crate::model::WeatherKind::Sandstorm)
             && matches!(

@@ -118,7 +118,7 @@ id,ability,status,verification
 117,snow-warning,IMPLEMENTED,ability_rules::snowwarning_starts_weather_on_entry_only_when_active
 118,honey-gather,MISSING,No native battle behavior
 119,frisk,MISSING,No native battle behavior
-120,reckless,MISSING,No native battle behavior
+120,reckless,IMPLEMENTED,ability_rules::reckless_boosts_recoil_and_crash_attacks_only
 121,multitype,MISSING,No native battle behavior
 122,flower-gift,MISSING,No native battle behavior
 123,bad-dreams,IMPLEMENTED,Source inventory; existing tests only
