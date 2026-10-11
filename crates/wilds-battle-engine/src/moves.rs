@@ -143,6 +143,7 @@ impl MoveSpec {
 /// How one hit is resolved: what it ignores and what it can still reach.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub(crate) struct HitOptions {
+    pub contact: Option<bool>,
     pub accuracy: Option<f32>,
     /// Base OHKO probability before the level difference; ignores ordinary accuracy modifiers.
     pub ohko_accuracy: Option<f32>,
@@ -700,6 +701,7 @@ fn hit_options(options: &Options) -> mlua::Result<HitOptions> {
         _ => (options.list("hits_hidden", hidden_of)?, false),
     };
     Ok(HitOptions {
+        contact: None,
         accuracy: options.fraction("accuracy")?,
         ohko_accuracy: options.fraction("ohko_accuracy")?,
         never_miss: options.flag("never_miss")?,
@@ -781,8 +783,14 @@ fn damage_options(value: Option<&Value>) -> mlua::Result<DamageOptions> {
             _ => return Err(bad("damage option category requires a Category value")),
         },
     };
+    let contact = options
+        .get("contact")?
+        .map(|_| options.flag("contact"))
+        .transpose()?;
+    let mut hit = hit_options(&options)?;
+    hit.contact = contact;
     Ok(DamageOptions {
-        hit: hit_options(&options)?,
+        hit,
         drain: options.fraction("drain")?,
         recoil: options.fraction("recoil")?,
         min_target_hp: options.whole("min_target_hp", 0.0, 65535.0)?.unwrap_or(0.0) as u16,
@@ -795,10 +803,7 @@ fn damage_options(value: Option<&Value>) -> mlua::Result<DamageOptions> {
         also_type: options.pokemon_type("also_type")?,
         effective,
         category,
-        contact: options
-            .get("contact")?
-            .map(|_| options.flag("contact"))
-            .transpose()?,
+        contact,
         attack_from: options.pokemon("attack_from")?,
         attack_stat: options
             .get("attack_stat")?
@@ -845,6 +850,8 @@ fn rule_of(value: &Value) -> mlua::Result<Rule> {
             "damaging_only",
             "status_only",
             "unbypassable",
+            "contact_stat",
+            "contact_stages",
         ],
         RuleKind::StatEachTurn => &["kind", "stat", "stages", "by"],
         RuleKind::StatusOnExpiry => &["kind", "status", "by"],
@@ -995,6 +1002,15 @@ fn rule_of(value: &Value) -> mlua::Result<Rule> {
             damaging_only: options.flag("damaging_only")?,
             status_only: options.flag("status_only")?,
             unbypassable: options.flag("unbypassable")?,
+            contact_stat: options
+                .get("contact_stat")?
+                .map(|value| -> mlua::Result<_> {
+                    Ok((
+                        stat_of(&value, "contact_stat")?,
+                        whole(&required("contact_stages")?, "contact_stages", -6.0, 6.0)? as i8,
+                    ))
+                })
+                .transpose()?,
         },
         RuleKind::BlockPriority => Rule::BlockPriority {
             grounded_only: options.flag("grounded_only")?,

@@ -5406,3 +5406,51 @@ fn mat_block_protects_teammates_from_damage_only_on_the_first_turn() {
         assert_eq!(b.participants(Side::Allies)[0].hp < 1000, attack == "pound");
     }
 }
+
+#[test]
+fn kings_shield_blocks_damage_and_lowers_contact_attack_by_one_stage_only() {
+    use wilds_battle_engine::Stat;
+    for (attack, ability, drop) in [
+        ("pound", None, -1),
+        ("water-gun", None, 0),
+        ("pound", Some("contrary"), 1),
+        ("pound", Some("long-reach"), 0),
+        ("shell-side-arm", None, -1),
+    ] {
+        let mut foe = mon("Foe", &[attack]);
+        foe.ability = ability.map(str::to_owned);
+        foe.attack = 200;
+        let mut b = game(mon("User", &["kings-shield"]), vec![foe], 0.5);
+        turn(&mut b);
+        assert_eq!(b.participants(Side::Allies)[0].hp, 1000);
+        assert_eq!(b.participants(Side::Foes)[0].stage(Stat::Attack), drop);
+    }
+    let mut b = game(
+        mon("User", &["kings-shield"]),
+        vec![mon("Foe", &["growl"])],
+        0.5,
+    );
+    turn(&mut b);
+    assert_eq!(b.participants(Side::Allies)[0].stage(Stat::Attack), -1);
+}
+
+#[test]
+fn kings_shield_shares_protect_failure_chance_and_feint_bypasses_its_reaction() {
+    use wilds_battle_engine::Stat;
+    let mut b = game(
+        mon("User", &["kings-shield", "detect"]),
+        vec![mon("Foe", &["pound"])],
+        0.5,
+    );
+    turn(&mut b);
+    turn_with(&mut b, |p| choose_move(p, "detect", "pound"));
+    assert!(b.participants(Side::Allies)[0].last_move_failed);
+    let mut b = game(
+        mon("User", &["kings-shield"]),
+        vec![mon("Foe", &["feint"])],
+        0.5,
+    );
+    turn(&mut b);
+    assert!(b.participants(Side::Allies)[0].hp < 1000);
+    assert_eq!(b.participants(Side::Foes)[0].stage(Stat::Attack), 0);
+}

@@ -409,6 +409,25 @@ impl Battle {
             .map_or(target, |(_, _, to)| to)
     }
 
+    fn matching_guard(
+        &self,
+        actor: ParticipantId,
+        target: ParticipantId,
+        spec: &MoveSpec,
+        ignore_protect: bool,
+    ) -> Option<&Rule> {
+        if actor == target || matches!(spec.target, Target::User | Target::Field | Target::All) {
+            return None;
+        }
+        self.rules(target).filter(|rule| matches!(rule, Rule::Guard {spread_only, priority_only, damaging_only, status_only, unbypassable, ..}
+            if (!ignore_protect || *unbypassable)
+                && (!*spread_only || matches!(spec.target, Target::AllOthers | Target::AllOpponents))
+                && (!*priority_only || self.effective_move_priority(actor,spec) > 0)
+                && (!*damaging_only || spec.category != Category::Status)
+                && (!*status_only || spec.category == Category::Status)))
+            .max_by_key(|rule| matches!(rule,Rule::Guard{spread_only:true,..}|Rule::Guard{priority_only:true,..}))
+    }
+
     pub(crate) fn guarded(
         &self,
         actor: ParticipantId,
@@ -416,15 +435,31 @@ impl Battle {
         spec: &MoveSpec,
         ignore_protect: bool,
     ) -> bool {
-        if actor == target || matches!(spec.target, Target::User | Target::Field | Target::All) {
+        self.matching_guard(actor, target, spec, ignore_protect)
+            .is_some()
+    }
+
+    pub(crate) fn guard_hit(
+        &mut self,
+        actor: ParticipantId,
+        target: ParticipantId,
+        spec: &MoveSpec,
+        options: &crate::moves::HitOptions,
+        events: &mut Vec<BattleEvent>,
+    ) -> bool {
+        let Some(Rule::Guard { contact_stat, .. }) = self
+            .matching_guard(actor, target, spec, options.ignore_protect)
+            .cloned()
+        else {
             return false;
+        };
+        if options.contact.unwrap_or(spec.has_flag("contact"))
+            && !self.has_ability(actor, "longreach")
+            && let Some((stat, stages)) = contact_stat
+        {
+            self.change_stat_from(target, actor, stat, stages, events);
         }
-        self.rules(target).any(|rule| matches!(rule, Rule::Guard {spread_only, priority_only, damaging_only, status_only, unbypassable}
-            if (!ignore_protect || *unbypassable)
-                && (!*spread_only || matches!(spec.target, Target::AllOthers | Target::AllOpponents))
-                && (!*priority_only || self.effective_move_priority(actor,spec) > 0)
-                && (!*damaging_only || spec.category != Category::Status)
-                && (!*status_only || spec.category == Category::Status)))
+        true
     }
 
     pub(crate) fn break_protection(&mut self, who: ParticipantId) -> bool {

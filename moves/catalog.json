@@ -5719,6 +5719,17 @@
       "parameter_source": "https://pokeapi.co/api/v2/move/587/"
     },
     {
+      "id": 588,
+      "slug": "kings-shield",
+      "name": "King\u2019s Shield",
+      "sheet_row": null,
+      "runtime_id": "kings-shield",
+      "file": "moves/kings-shield.lua",
+      "status": "implemented",
+      "limitations": [],
+      "parameter_source": "https://pokeapi.co/api/v2/move/588/"
+    },
+    {
       "id": 589,
       "slug": "play-nice",
       "name": "Play Nice",
@@ -7824,7 +7835,8 @@
       "wide-guard",
       "quick-guard",
       "crafty-shield",
-      "mat-block"
+      "mat-block",
+      "kings-shield"
     ]
   }
 }

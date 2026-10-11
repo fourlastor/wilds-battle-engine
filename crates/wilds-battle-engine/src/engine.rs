@@ -1436,7 +1436,7 @@ impl Battle {
             self.move_failed = true;
             return Ok(true);
         }
-        if !first_charge && self.guarded(actor, target, &spec, false) {
+        if !first_charge && self.guard_hit(actor, target, &spec, &Default::default(), events) {
             events.push(BattleEvent::Message(format!(
                 "{} was protected!",
                 self.get(target).name

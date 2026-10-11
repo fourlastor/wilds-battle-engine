@@ -1,9 +1,9 @@
 # Wilds battle engine
 
 `wilds-battle-engine` is the Rust battle simulation. Move definitions are loaded
-from Lua; `MoveCatalog::builtin()` embeds the 721 files under `moves/`,
+from Lua; `MoveCatalog::builtin()` embeds the 722 files under `moves/`,
 and `MoveCatalog::from_directory(path)` reads them from disk at runtime.
-Both catalogs also include the system move Struggle, for 722 moves in total.
+Both catalogs also include the system move Struggle, for 723 moves in total.
 The [move catalog](moves/README.md) includes 538 entries from the Saved moves sheet,
 plus support moves, additional local JSON moves and the original moves outside the sheet. Its manifest
 records the 34 excluded Z/Max Moves. Files use canonical slugs and source display
@@ -491,7 +491,9 @@ remaining pool HP. Move Lab displays that pool separately from ordinary HP.
 
 `Rule.Guard` blocks incoming hits with optional `spread_only`, `priority_only`,
 `damaging_only`, or `status_only` filters. `unbypassable` also blocks moves that
-normally ignore protection. Apply it to a Pokémon or side for one-turn guards.
+normally ignore protection. `contact_stat` and `contact_stages` apply a stage change
+to a blocked contact attacker, including moves that decide contact dynamically.
+Apply it to a Pokémon or side for one-turn guards.
 `ctx:break_protect(who)` removes the target's protection and its side's guards;
 terrain protection remains separate. `ctx:record_protection()` advances the shared
 protection counter without rolling a failure chance (Wide Guard and Quick Guard).
