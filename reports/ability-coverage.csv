@@ -221,7 +221,7 @@ id,ability,status,verification
 220,soul-heart,IMPLEMENTED,ability_rules::soul_heart_rewards_any_faint_including_allies_and_residual_damage
 221,tangling-hair,IMPLEMENTED,ability_rules::tangling_hair_lowers_contact_attackers_speed_with_stat_protection
 222,receiver,IMPLEMENTED,ability_rules::receiver_inherits_eligible_fainted_ally_abilities_and_activates_them
-223,power-of-alchemy,MISSING,No native battle behavior
+223,power-of-alchemy,IMPLEMENTED,ability_rules::power_of_alchemy_inherits_eligible_fainted_ally_abilities_and_activates_them
 224,beast-boost,IMPLEMENTED,ability_rules::beast_boost_uses_highest_raw_stat_with_attack_first_ties
 225,rks-system,MISSING,No native battle behavior
 226,electric-surge,IMPLEMENTED,ability_rules::electric_surge_starts_five_turn_electric_terrain

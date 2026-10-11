@@ -3052,3 +3052,8 @@ fn check_ally_ability_inheritance(ability: &str) {
 fn receiver_inherits_eligible_fainted_ally_abilities_and_activates_them() {
     check_ally_ability_inheritance("receiver");
 }
+
+#[test]
+fn power_of_alchemy_inherits_eligible_fainted_ally_abilities_and_activates_them() {
+    check_ally_ability_inheritance("power-of-alchemy");
+}

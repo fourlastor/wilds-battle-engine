@@ -502,7 +502,8 @@ impl Battle {
                     self.change_stat(who, crate::model::Stat::SpAttack, 1, events);
                 }
                 if who.side == fainted.side
-                    && self.has_ability(who, "receiver")
+                    && (self.has_ability(who, "receiver")
+                        || self.has_ability(who, "powerofalchemy"))
                     && ability
                         .id
                         .as_deref()
