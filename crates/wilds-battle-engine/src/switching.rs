@@ -179,9 +179,11 @@ impl Battle {
         {
             conditions.retain_mut(|condition| {
                 let before = condition.rules.len();
-                condition.rules.retain(
-                    |rule| !matches!(rule, Rule::TrappedBy { source: by } if *by == source),
-                );
+                condition.rules.retain(|rule| {
+                    !matches!(rule,
+                        Rule::TrappedBy { source: by }
+                        | Rule::AlwaysHit { against: Some(by) } if *by == source)
+                });
                 condition.rules.len() == before || !condition.rules.is_empty()
             });
         }

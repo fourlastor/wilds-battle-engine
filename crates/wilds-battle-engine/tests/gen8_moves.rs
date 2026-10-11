@@ -1468,3 +1468,54 @@ fn psych_up_copies_focus_energy_critical_bonus() {
             .any(|e| matches!(e,BattleEvent::Message(s)if s=="A critical hit!"))
     );
 }
+
+fn check_lock_on(move_id: &str) {
+    let mut user = mon("User", &[move_id, "tackle"]);
+    user.speed = 200;
+    let mut b = game(user.clone(), vec![mon("Foe", &["dive", "splash"])], 0.99);
+    turn(&mut b);
+    turn_with(&mut b, |p| {
+        p.choices.iter().find(|c|matches!(c,Choice::UseMove{move_id,..}if move_id==if p.actor.side==Side::Allies {"tackle"}else{"dive"})).unwrap().id()
+    });
+    let hp = b.participants(Side::Foes)[0].hp;
+    assert!(hp < 1000);
+    turn_with(&mut b, |p| {
+        p.choices.iter().find(|c|matches!(c,Choice::UseMove{move_id,..}if move_id==if p.actor.side==Side::Allies {"tackle"}else{"splash"})).unwrap().id()
+    });
+    assert_eq!(b.participants(Side::Foes)[0].hp, hp);
+    let mut b = game(user.clone(), vec![mon("Foe", &["protect"])], 0.5);
+    turn(&mut b);
+    assert!(
+        b.participants(Side::Allies)[0]
+            .conditions
+            .iter()
+            .all(|c| c.name != "lock_on")
+    );
+    let mut b = game(
+        user,
+        vec![mon("Foe", &["splash"]), mon("Bench", &["splash"])],
+        0.5,
+    );
+    b.set_active([vec![0], vec![0]]).unwrap();
+    turn(&mut b);
+    turn_with(&mut b, |p| {
+        p.choices
+            .iter()
+            .find(|c| {
+                if p.actor.side == Side::Foes {
+                    matches!(c, Choice::Switch { .. })
+                } else {
+                    matches!(c, Choice::UseMove { .. })
+                }
+            })
+            .unwrap()
+            .id()
+    });
+    assert!(!b.participants(Side::Allies)[0].last_move_failed);
+    assert!(b.participants(Side::Allies)[0].conditions.iter().any(|c|c.name=="lock_on" && c.rules.iter().any(|r|matches!(r,wilds_battle_engine::Rule::AlwaysHit{against:Some(id)}if id.index==1))));
+}
+
+#[test]
+fn mind_reader_locks_on_for_one_turn_and_releases_when_target_switches() {
+    check_lock_on("mind-reader");
+}

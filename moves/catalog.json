@@ -1620,6 +1620,17 @@
       "parameter_source": "https://pokeapi.co/api/v2/move/169/"
     },
     {
+      "id": 170,
+      "slug": "mind-reader",
+      "name": "Mind Reader",
+      "sheet_row": null,
+      "runtime_id": "mind-reader",
+      "file": "moves/mind-reader.lua",
+      "status": "implemented",
+      "limitations": [],
+      "parameter_source": "https://pokeapi.co/api/v2/move/170/"
+    },
+    {
       "id": 172,
       "slug": "flame-wheel",
       "name": "Flame Wheel",
@@ -6708,7 +6719,8 @@
       "focus-energy",
       "laser-focus",
       "lucky-chant",
-      "psych-up"
+      "psych-up",
+      "mind-reader"
     ]
   }
 }
