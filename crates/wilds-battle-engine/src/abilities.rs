@@ -616,6 +616,22 @@ impl Battle {
         let mut order = self.actors();
         order.sort_by_key(|&who| std::cmp::Reverse(self.action_speed(who)));
         for who in order {
+            if self.has_ability(who, "slowstart") && self.get(who).entered_turn < self.turn {
+                if let Some(counter) = self
+                    .get_mut(who)
+                    .conditions
+                    .iter_mut()
+                    .find(|c| c.name == "slow_start" && c.value > 0)
+                {
+                    counter.value = (counter.value - 1).max(0);
+                    if counter.value == 0 {
+                        events.push(BattleEvent::Message(format!(
+                            "{} got its act together!",
+                            self.get(who).name
+                        )));
+                    }
+                }
+            }
             if self.has_ability(who, "moody") {
                 use crate::model::Stat;
                 let stats = [
@@ -672,6 +688,9 @@ impl Battle {
             return;
         }
         self.ability_terrain_entry(who, events);
+        if self.has_ability(who, "slowstart") {
+            self.set_mark(crate::model::Scope::Pokemon(who), "slow_start", 5, None);
+        }
         if self.has_ability(who, "anticipation")
             && self.actors().into_iter().any(|foe| {
                 foe.side != who.side
@@ -1002,6 +1021,16 @@ impl Battle {
         stat: crate::model::CombatStat,
     ) -> f32 {
         use crate::model::CombatStat::*;
+        if matches!(stat, Attack | Speed)
+            && self.has_ability(who, "slowstart")
+            && self
+                .get(who)
+                .conditions
+                .iter()
+                .any(|c| c.name == "slow_start" && c.value > 0)
+        {
+            return 0.5;
+        }
         if stat == Defense
             && self.has_ability(who, "grasspelt")
             && self

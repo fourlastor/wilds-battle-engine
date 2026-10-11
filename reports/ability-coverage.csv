@@ -110,7 +110,7 @@ id,ability,status,verification
 109,unaware,IMPLEMENTED,ability_rules::unaware_ignores_opponents_relevant_stages_but_preserves_foul_play_source
 110,tinted-lens,IMPLEMENTED,ability_rules::tintedlens_only_modifies_the_relevant_type_matchups
 111,filter,IMPLEMENTED,Source inventory; existing tests only
-112,slow-start,MISSING,No native battle behavior
+112,slow-start,IMPLEMENTED,ability_rules::slow_start_halves_attack_and_speed_for_five_turns
 113,scrappy,IMPLEMENTED,ability_rules::scrappy_bypasses_ghost_immunity_for_normal_fighting_and_fixed_damage
 114,storm-drain,IMPLEMENTED,ability_rules::storm_drain_redirects_damage_and_status_but_not_mold_breaker
 115,ice-body,IMPLEMENTED,ability_rules::ice_body_heals_in_hail_and_prevents_hail_damage

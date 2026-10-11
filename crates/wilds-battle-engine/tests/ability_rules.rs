@@ -3282,3 +3282,22 @@ fn moody_raises_and_lowers_distinct_non_accuracy_stats_with_caps() {
     assert_eq!(ally(&battle).stage(Stat::Attack), 5);
     assert_eq!(ally(&battle).stage(Stat::Defense), 6);
 }
+
+#[test]
+fn slow_start_halves_attack_and_speed_for_five_turns() {
+    let mut user = mon("User", &["tackle"]);
+    user.speed = 150;
+    user.ability = Some("slow-start".into());
+    let mut target = mon("Target", &["splash"]);
+    target.speed = 100;
+    let mut battle = game(user, target, 0.5);
+    let mut losses = vec![];
+    for n in 0..6 {
+        let before = foe(&battle).hp;
+        let events = turn(&mut battle, "tackle", "splash");
+        assert_eq!(first_move_is_user(&events), n == 5);
+        losses.push(before - foe(&battle).hp);
+    }
+    assert!(losses[..5].iter().all(|x| *x == losses[0]));
+    assert!((f32::from(losses[5]) - f32::from(losses[0]) * 2.0).abs() <= 3.0);
+}
