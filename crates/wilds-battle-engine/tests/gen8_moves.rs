@@ -1434,3 +1434,37 @@ fn lucky_chant_blocks_guaranteed_criticals_for_five_turns_without_refreshing() {
         }
     }
 }
+
+#[test]
+fn psych_up_copies_stages_through_protect_and_substitute() {
+    use wilds_battle_engine::Stat;
+    let mut user = mon("User", &["psych-up"]);
+    user.stages.insert(Stat::Defense, 5);
+    user.ability = Some("contrary".into());
+    let mut foe = mon("Foe", &["protect"]);
+    foe.substitute_hp = 50;
+    foe.stages.insert(Stat::Attack, 3);
+    foe.stages.insert(Stat::Accuracy, -2);
+    let mut b = game(user, vec![foe], 0.5);
+    turn(&mut b);
+    let p = &b.participants(Side::Allies)[0];
+    assert_eq!(p.stage(Stat::Attack), 3);
+    assert_eq!(p.stage(Stat::Accuracy), -2);
+    assert_eq!(p.stage(Stat::Defense), 0);
+}
+
+#[test]
+fn psych_up_copies_focus_energy_critical_bonus() {
+    let mut user = mon("User", &["psych-up", "tackle"]);
+    user.speed = 1;
+    let mut b = game(user, vec![mon("Foe", &["focus-energy", "splash"])], 0.25);
+    turn(&mut b);
+    let events = turn_with(&mut b, |p| {
+        p.choices.iter().find(|c|matches!(c,Choice::UseMove{move_id,..}if move_id==if p.actor.side==Side::Allies {"tackle"}else{"splash"})).unwrap().id()
+    });
+    assert!(
+        events
+            .iter()
+            .any(|e| matches!(e,BattleEvent::Message(s)if s=="A critical hit!"))
+    );
+}

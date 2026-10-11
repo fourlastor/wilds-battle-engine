@@ -2126,6 +2126,17 @@
       "limitations": []
     },
     {
+      "id": 244,
+      "slug": "psych-up",
+      "name": "Psych Up",
+      "sheet_row": null,
+      "runtime_id": "psych-up",
+      "file": "moves/psych-up.lua",
+      "status": "implemented",
+      "limitations": [],
+      "parameter_source": "https://pokeapi.co/api/v2/move/244/"
+    },
+    {
       "id": 245,
       "slug": "extreme-speed",
       "name": "Extreme Speed",
@@ -6696,7 +6707,8 @@
       "psycho-shift",
       "focus-energy",
       "laser-focus",
-      "lucky-chant"
+      "lucky-chant",
+      "psych-up"
     ]
   }
 }
