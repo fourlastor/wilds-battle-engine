@@ -236,7 +236,7 @@ id,ability,status,verification
 235,dauntless-shield,IMPLEMENTED,ability_rules::dauntless_shield_boosts_defense_on_every_gen8_entry
 236,libero,MISSING,No native battle behavior
 237,ball-fetch,MISSING,No native battle behavior
-238,cotton-down,MISSING,No native battle behavior
+238,cotton-down,IMPLEMENTED,ability_rules::cotton_down_lowers_every_other_active_pokemons_speed
 239,propeller-tail,MISSING,No native battle behavior
 240,mirror-armor,MISSING,No native battle behavior
 241,gulp-missile,MISSING,No native battle behavior

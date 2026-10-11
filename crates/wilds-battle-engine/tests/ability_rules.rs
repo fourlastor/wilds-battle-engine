@@ -2090,3 +2090,37 @@ fn sand_spit_starts_sandstorm_after_damage_but_not_status_moves() {
         );
     }
 }
+
+#[test]
+fn cotton_down_lowers_every_other_active_pokemons_speed() {
+    for suppressed in [false, true] {
+        let user = mon("User", &["swift"]);
+        let mut target = mon("Target", &["splash"]);
+        target.ability = Some("cotton-down".into());
+        target.ability_suppressed = suppressed;
+        let partner = mon("Partner", &["splash"]);
+        let mut immune = mon("Immune", &["splash"]);
+        immune.ability = Some("clear-body".into());
+        let mut battle = Battle::with_rng(
+            Fixed(0.5),
+            [vec![user, immune], vec![target, partner]],
+            MoveCatalog::builtin().unwrap(),
+        )
+        .unwrap();
+        turn(&mut battle, "swift", "splash");
+        let expected = if suppressed { 0 } else { -1 };
+        assert_eq!(
+            ally(&battle).stage(wilds_battle_engine::Stat::Speed),
+            expected
+        );
+        assert_eq!(
+            battle.participants(Side::Foes)[1].stage(wilds_battle_engine::Stat::Speed),
+            expected
+        );
+        assert_eq!(foe(&battle).stage(wilds_battle_engine::Stat::Speed), 0);
+        assert_eq!(
+            battle.participants(Side::Allies)[1].stage(wilds_battle_engine::Stat::Speed),
+            0
+        );
+    }
+}

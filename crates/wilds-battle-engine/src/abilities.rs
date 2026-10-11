@@ -40,6 +40,13 @@ impl Battle {
         if ability == "sandspit" {
             self.start_weather(crate::model::WeatherKind::Sandstorm, 5, events);
         }
+        if ability == "cottondown" {
+            for who in self.actors() {
+                if who != target {
+                    self.change_stat_from(target, who, crate::model::Stat::Speed, -1, events);
+                }
+            }
+        }
         if self.get(target).hp > 0 && ability == "stamina" {
             self.change_stat(target, crate::model::Stat::Defense, 1, events);
         }
