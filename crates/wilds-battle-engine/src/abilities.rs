@@ -74,6 +74,28 @@ impl Battle {
                     },
                 ],
             )
+        } else if self.has_ability(who, "grassysurge") {
+            (
+                "grassy_terrain",
+                vec![
+                    Rule::BasePower {
+                        move_type: Some(PokemonType::Grass),
+                        factor: 5325.0 / 4096.0,
+                        grounded_only: true,
+                    },
+                    Rule::IncomingBasePower {
+                        moves: vec!["earthquake".into(), "bulldoze".into(), "magnitude".into()],
+                        move_type: None,
+                        factor: 0.5,
+                        grounded_only: true,
+                    },
+                    Rule::HealEachTurn {
+                        fraction: 1.0 / 16.0,
+                        message: None,
+                        grounded_only: true,
+                    },
+                ],
+            )
         } else {
             return;
         };

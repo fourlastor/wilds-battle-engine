@@ -227,7 +227,7 @@ id,ability,status,verification
 226,electric-surge,IMPLEMENTED,ability_rules::electric_surge_starts_five_turn_electric_terrain
 227,psychic-surge,IMPLEMENTED,ability_rules::psychic_surge_starts_five_turn_psychic_terrain
 228,misty-surge,IMPLEMENTED,ability_rules::misty_surge_starts_five_turn_misty_terrain
-229,grassy-surge,MISSING,No native battle behavior
+229,grassy-surge,IMPLEMENTED,ability_rules::grassy_surge_starts_five_turn_grassy_terrain
 230,full-metal-body,IMPLEMENTED,Source inventory; existing tests only
 231,shadow-shield,IMPLEMENTED,Source inventory; existing tests only
 232,prism-armor,IMPLEMENTED,Source inventory; existing tests only
