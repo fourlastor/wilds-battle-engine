@@ -1039,12 +1039,16 @@ impl Battle {
         self.move_failed = false;
         self.substitute_hits.clear();
         self.active_gem = None;
+        self.expire_action_conditions(actor, Some(&choice.move_id));
         let result = self.perform_move(actor, choice, events);
         self.finish_item_hits(events);
         self.substitute_hits.clear();
         self.ignored_ability = None;
         self.ability_bypass = false;
         let used = result?;
+        if !used {
+            self.expire_action_conditions(actor, None);
+        }
         self.finish_forced_switches(events);
         let failed = self.move_failed;
         let pokemon = self.get_mut(actor);
@@ -2379,6 +2383,14 @@ impl Battle {
             )));
             return Ok(lost);
         }
+        let faint_attacker = actor.side != target.side
+            && self
+                .rules(target)
+                .any(|rule| matches!(rule, Rule::FaintAttacker))
+            && !self
+                .catalog
+                .get(&meta.move_id)
+                .is_some_and(|spec| spec.has_flag("future_move"));
         // Capture contact listeners before damage clears a fainted Pokémon's effects.
         let reactions: Vec<_> = self
             .hit_reactions
@@ -2436,6 +2448,13 @@ impl Battle {
             let result = self.execute_script(target, actor, &spec, events, ScriptHook::Hit);
             self.reaction_hit = previous;
             result?;
+        }
+        if faint_attacker && self.get(target).hp == 0 && self.get(actor).hp > 0 {
+            events.push(BattleEvent::Message(format!(
+                "{} took its attacker down with it!",
+                self.get(target).name
+            )));
+            self.damage(actor, self.get(actor).hp, events);
         }
         Ok(lost)
     }

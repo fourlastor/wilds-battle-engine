@@ -34,6 +34,8 @@ pub(crate) enum AccuracyKind {
 /// The kinds of rule a timed effect can carry; see `model::Rule`.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum RuleKind {
+    ExpiresOnAction,
+    FaintAttacker,
     Guard,
     BlockPriority,
     IncomingBasePower,
@@ -208,6 +210,8 @@ pub(crate) fn install(lua: &Lua) -> Result<(), BattleError> {
     let rules = lua.create_table()?;
     for (name, value) in [
         ("DamageEachTurn", RuleKind::DamageEachTurn),
+        ("ExpiresOnAction", RuleKind::ExpiresOnAction),
+        ("FaintAttacker", RuleKind::FaintAttacker),
         ("Guard", RuleKind::Guard),
         ("BlockPriority", RuleKind::BlockPriority),
         ("IncomingBasePower", RuleKind::IncomingBasePower),

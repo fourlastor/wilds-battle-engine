@@ -843,6 +843,8 @@ fn rule_of(value: &Value) -> mlua::Result<Rule> {
         _ => return Err(bad("rule kind requires a Rule value")),
     };
     let allowed: &[&str] = match kind {
+        RuleKind::ExpiresOnAction => &["kind", "except_move"],
+        RuleKind::FaintAttacker => &["kind"],
         RuleKind::Guard => &[
             "kind",
             "spread_only",
@@ -933,6 +935,10 @@ fn rule_of(value: &Value) -> mlua::Result<Rule> {
         }
     };
     Ok(match kind {
+        RuleKind::ExpiresOnAction => Rule::ExpiresOnAction {
+            except_move: options.text("except_move")?,
+        },
+        RuleKind::FaintAttacker => Rule::FaintAttacker,
         RuleKind::StatusOnExpiry => Rule::StatusOnExpiry {
             status: status_of(&required("status")?, "expiry status")?,
             source: pokemon_of(&required("by")?, "expiry source")?,

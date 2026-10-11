@@ -5568,3 +5568,63 @@ fn baneful_bunker_respects_misty_terrain_and_blocks_status_moves() {
     turn(&mut b);
     assert_eq!(b.participants(Side::Allies)[0].stage(Stat::Attack), 0);
 }
+
+#[test]
+fn destiny_bond_takes_down_a_direct_attacker_but_not_on_residual_damage() {
+    use wilds_battle_engine::Status;
+    for residual in [false, true] {
+        let mut user = mon("User", &["destiny-bond"]);
+        user.hp = 1;
+        user.speed = 200;
+        if residual {
+            user.status = Some(Status::Burned);
+        }
+        let mut b = game(
+            user,
+            vec![mon("Foe", &[if residual { "splash" } else { "pound" }])],
+            0.5,
+        );
+        turn(&mut b);
+        assert_eq!(b.participants(Side::Allies)[0].hp, 0);
+        assert_eq!(
+            b.participants(Side::Foes)[0].hp,
+            if residual { 1000 } else { 0 }
+        );
+    }
+}
+
+#[test]
+fn destiny_bond_ends_on_the_next_action_and_cannot_be_used_consecutively() {
+    for next_move in ["destiny-bond", "splash"] {
+        let mut user = mon("User", &["destiny-bond", "splash"]);
+        user.hp = 1;
+        user.speed = 200;
+        let mut b = game(user, vec![mon("Foe", &["splash", "pound"])], 0.5);
+        turn(&mut b);
+        turn_with(&mut b, |p| choose_move(p, next_move, "pound"));
+        assert_eq!(b.participants(Side::Allies)[0].hp, 0);
+        assert_eq!(b.participants(Side::Foes)[0].hp, 1000);
+    }
+    let mut b = game(
+        mon("User", &["destiny-bond"]),
+        vec![mon("Foe", &["splash"])],
+        0.5,
+    );
+    turn(&mut b);
+    turn(&mut b);
+    assert!(b.participants(Side::Allies)[0].last_move_failed);
+    turn(&mut b);
+    assert!(!b.participants(Side::Allies)[0].last_move_failed);
+}
+
+#[test]
+fn destiny_bond_persists_between_turns_until_its_user_acts_again() {
+    let mut user = mon("User", &["destiny-bond", "splash"]);
+    user.hp = 1;
+    user.speed = 200;
+    let mut b = game(user, vec![mon("Foe", &["splash", "quick-attack"])], 0.5);
+    turn(&mut b);
+    turn_with(&mut b, |p| choose_move(p, "splash", "quick-attack"));
+    assert_eq!(b.participants(Side::Allies)[0].hp, 0);
+    assert_eq!(b.participants(Side::Foes)[0].hp, 0);
+}

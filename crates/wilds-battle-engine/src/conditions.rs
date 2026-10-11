@@ -14,6 +14,11 @@ pub(crate) fn named(message: &str, name: &str) -> String {
 }
 
 impl Battle {
+    pub(crate) fn expire_action_conditions(&mut self, who: ParticipantId, move_id: Option<&str>) {
+        self.get_mut(who).conditions.retain(|condition| !condition.rules.iter().any(|rule|
+            matches!(rule, Rule::ExpiresOnAction {except_move} if move_id.is_none() || except_move.as_deref() != move_id)));
+    }
+
     pub(crate) fn conditions(&self, scope: Scope) -> &[Condition] {
         match scope {
             Scope::Pokemon(id) => &self.get(id).conditions,

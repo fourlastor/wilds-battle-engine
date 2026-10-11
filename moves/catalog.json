@@ -1895,6 +1895,17 @@
       "parameter_source": "https://pokeapi.co/api/v2/move/193/"
     },
     {
+      "id": 194,
+      "slug": "destiny-bond",
+      "name": "Destiny Bond",
+      "sheet_row": null,
+      "runtime_id": "destiny-bond",
+      "file": "moves/destiny-bond.lua",
+      "status": "implemented",
+      "limitations": [],
+      "parameter_source": "https://pokeapi.co/api/v2/move/194/"
+    },
+    {
       "id": 195,
       "slug": "perish-song",
       "name": "Perish Song",
@@ -7872,7 +7883,8 @@
       "kings-shield",
       "obstruct",
       "spiky-shield",
-      "baneful-bunker"
+      "baneful-bunker",
+      "destiny-bond"
     ]
   }
 }

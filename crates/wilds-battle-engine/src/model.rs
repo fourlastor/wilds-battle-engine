@@ -153,6 +153,12 @@ pub enum Scope {
 /// A rule on a side applies to every Pokémon of that side, one on the field to everyone.
 #[derive(Clone, Debug, PartialEq)]
 pub enum Rule {
+    /// Expires when the holder attempts its next action, except an optional move id.
+    ExpiresOnAction {
+        except_move: Option<String>,
+    },
+    /// Takes an opposing direct attacker down if its hit knocks the holder out.
+    FaintAttacker,
     /// Hit protection, removed by moves that break Protect. Filters are combined.
     Guard {
         spread_only: bool,
