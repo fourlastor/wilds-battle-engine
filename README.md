@@ -1,9 +1,9 @@
 # Wilds battle engine
 
 `wilds-battle-engine` is the Rust battle simulation. Move definitions are loaded
-from Lua; `MoveCatalog::builtin()` embeds the 728 files under `moves/`,
+from Lua; `MoveCatalog::builtin()` embeds the 729 files under `moves/`,
 and `MoveCatalog::from_directory(path)` reads them from disk at runtime.
-Both catalogs also include the system move Struggle, for 729 moves in total.
+Both catalogs also include the system move Struggle, for 730 moves in total.
 The [move catalog](moves/README.md) includes 538 entries from the Saved moves sheet,
 plus support moves, additional local JSON moves and the original moves outside the sheet. Its manifest
 records the 34 excluded Z/Max Moves. Files use canonical slugs and source display
@@ -198,6 +198,7 @@ before turn-start hooks; capped changes and resetting stages do not trigger them
 | `ctx:multi_hit(power, min, max, options)` | Several hits on one Pokémon, as `Effect.MultiHit`. |
 | `ctx:direct_damage(who, amount, {typeless, min_target_hp})` | An exact amount, as fixed and level damage. |
 | `ctx:try_hit(who, options)` | The usual protection, hiding and accuracy checks without damage. Returns true or false. The next `damage` or `multi_hit` on that Pokémon follows the answer instead of checking again. |
+| `ctx:healing_hit(who, hp)` | Healing through an attack (Present): checks accuracy, protection and type/ability immunity, bypasses Substitute and respects healing prevention. Returns HP restored. |
 | `ctx:hurt(who, amount)`, `ctx:heal(who, amount)` | `amount` is HP or `{fraction = 1/8}` of max HP. Returns the HP that changed. |
 | `ctx:apply_status(who, Status.X, {chance, replace, announce_failure})`, `ctx:cure_status(who, Status.X)` | True if it took. |
 | `ctx:confuse(who, {chance})`, `ctx:flinch(who, {chance})` | |

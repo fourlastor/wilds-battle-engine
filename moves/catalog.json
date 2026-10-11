@@ -2119,6 +2119,17 @@
       "parameter_source": "https://pokeapi.co/api/v2/move/216/"
     },
     {
+      "id": 217,
+      "slug": "present",
+      "name": "Present",
+      "sheet_row": null,
+      "runtime_id": "present",
+      "file": "moves/present.lua",
+      "status": "implemented",
+      "limitations": [],
+      "parameter_source": "https://pokeapi.co/api/v2/move/217/"
+    },
+    {
       "id": 218,
       "slug": "frustration",
       "name": "Frustration",
@@ -7908,7 +7919,8 @@
       "baneful-bunker",
       "destiny-bond",
       "grudge",
-      "bide"
+      "bide",
+      "present"
     ]
   }
 }

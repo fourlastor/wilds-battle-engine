@@ -191,6 +191,10 @@ pub(crate) enum HpAmount {
 
 #[derive(Clone, Debug, PartialEq)]
 pub(crate) enum ScriptOperation {
+    HealingHit {
+        who: ParticipantId,
+        amount: u16,
+    },
     MoveInfo(String),
     SwapAbilities {
         a: ParticipantId,
@@ -1145,6 +1149,10 @@ fn parse_op(name: &str, args: &[Value]) -> mlua::Result<ScriptOperation> {
         Options::new(given(index), "effect", &["chance"])?.chance()
     };
     Ok(match name {
+        "healing_hit" => ScriptOperation::HealingHit {
+            who: who(0)?,
+            amount: floored(arg(1), "healing_hit")?,
+        },
         "multi_hit" => {
             let min = whole(arg(1), "multi_hit minimum", 1.0, 10.0)? as u8;
             let max = whole(arg(2), "multi_hit maximum", 1.0, 10.0)? as u8;

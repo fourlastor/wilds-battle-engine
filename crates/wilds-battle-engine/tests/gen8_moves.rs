@@ -5777,3 +5777,72 @@ fn bide_does_not_count_poison_or_substitute_damage_and_sleep_aborts_the_sequence
     );
     assert_eq!(b.participants(Side::Foes)[0].hp, 1000);
 }
+
+#[test]
+fn present_has_three_damage_branches_and_a_healing_branch_that_bypasses_substitute() {
+    for (roll, power) in [(2, 40), (5, 40), (6, 80), (8, 80), (9, 120)] {
+        let user = mon("User", &["present"]);
+        let foe = mon("Foe", &["splash"]);
+        let expected = control_damage(power, "Normal", "Physical", user.clone(), foe.clone());
+        let mut b = Battle::with_rng(
+            Rolls(roll, 0.5),
+            [vec![user], vec![foe]],
+            MoveCatalog::builtin().unwrap(),
+        )
+        .unwrap();
+        turn(&mut b);
+        assert_eq!(1000 - b.participants(Side::Foes)[0].hp, expected);
+    }
+    for roll in [0, 1] {
+        let mut foe = mon("Foe", &["splash"]);
+        foe.max_hp = 1001;
+        foe.hp = 500;
+        foe.substitute_hp = 100;
+        let mut b = Battle::with_rng(
+            Rolls(roll, 0.5),
+            [vec![mon("User", &["present"])], vec![foe]],
+            MoveCatalog::builtin().unwrap(),
+        )
+        .unwrap();
+        turn(&mut b);
+        assert_eq!(b.participants(Side::Foes)[0].hp, 750);
+        assert_eq!(b.participants(Side::Foes)[0].substitute_hp, 100);
+    }
+}
+
+#[test]
+fn present_healing_still_checks_accuracy_protect_type_and_ability_immunity() {
+    for (kind, ability, response, dice) in [
+        (PokemonType::Ghost, None, "splash", 0.5),
+        (PokemonType::Normal, Some("wonder-guard"), "splash", 0.5),
+        (PokemonType::Normal, None, "protect", 0.5),
+        (PokemonType::Normal, None, "splash", 0.99),
+    ] {
+        let mut foe = mon("Foe", &[response]);
+        foe.hp = 500;
+        foe.types = vec![kind];
+        foe.ability = ability.map(str::to_owned);
+        let mut b = game(mon("User", &["present"]), vec![foe], dice);
+        turn(&mut b);
+        assert_eq!(b.participants(Side::Foes)[0].hp, 500);
+        assert!(b.participants(Side::Allies)[0].last_move_failed);
+    }
+    let mut b = game(
+        mon("User", &["present"]),
+        vec![mon("Foe", &["splash"])],
+        0.5,
+    );
+    turn(&mut b);
+    assert!(b.participants(Side::Allies)[0].last_move_failed);
+}
+
+#[test]
+fn present_healing_respects_heal_block_without_blocking_its_damage_branches() {
+    let mut foe = mon("Foe", &["splash"]);
+    foe.hp = 500;
+    let mut b = game(mon("User", &["heal-block", "present"]), vec![foe], 0.5);
+    turn(&mut b);
+    turn_with(&mut b, |p| choose_move(p, "present", "splash"));
+    assert_eq!(b.participants(Side::Foes)[0].hp, 500);
+    assert!(b.participants(Side::Allies)[0].last_move_failed);
+}

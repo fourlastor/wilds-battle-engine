@@ -1646,6 +1646,35 @@ impl Battle {
                 }
                 Value::Integer(i64::from(pokemon.hp))
             }
+            ScriptOperation::HealingHit { who, amount } => {
+                let mut restored = 0;
+                if self.hit_outcome(frame, who, &HitOptions::default(), events) == HitOutcome::Hit {
+                    let options = DamageOptions::default();
+                    let attack = self.attack(frame, 0, &options);
+                    let effectiveness = self.matchup(who, &attack);
+                    if effectiveness == 0.0 {
+                        self.immune_message(who, events);
+                    } else if !self.ability_blocks_damage(
+                        actor,
+                        who,
+                        attack.move_type,
+                        effectiveness,
+                        attack.sound,
+                        attack.bullet,
+                        attack.hits_airborne,
+                        events,
+                    ) && !self.healing_blocked(who)
+                    {
+                        restored = amount.min(self.get(who).max_hp - self.get(who).hp);
+                        if restored > 0 {
+                            self.heal(who, restored, events);
+                        }
+                    }
+                }
+                frame.any_hit |= restored > 0;
+                frame.failed |= restored == 0;
+                Value::Integer(i64::from(restored))
+            }
             ScriptOperation::Heal { who, amount } => {
                 let pokemon = self.get(who);
                 let missing = pokemon.max_hp - pokemon.hp;
