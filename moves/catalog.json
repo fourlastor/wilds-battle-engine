@@ -2964,6 +2964,17 @@
       "parameter_source": "https://pokeapi.co/api/v2/move/378/"
     },
     {
+      "id": 386,
+      "slug": "punishment",
+      "name": "Punishment",
+      "sheet_row": null,
+      "runtime_id": "punishment",
+      "file": "moves/punishment.lua",
+      "status": "implemented",
+      "limitations": [],
+      "parameter_source": "https://pokeapi.co/api/v2/move/386/"
+    },
+    {
       "id": 387,
       "slug": "last-resort",
       "name": "Last Resort",
@@ -6348,7 +6359,8 @@
       "electro-ball",
       "wring-out",
       "crush-grip",
-      "trump-card"
+      "trump-card",
+      "punishment"
     ]
   }
 }

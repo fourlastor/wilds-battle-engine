@@ -756,3 +756,18 @@ fn trump_card_uses_pp_remaining_after_spending_this_use() {
         );
     }
 }
+
+#[test]
+fn punishment_counts_positive_stages_only_and_caps_power() {
+    use wilds_battle_engine::Stat;
+    for (attack, speed, power) in [(0, 0, 60), (2, -6, 100), (6, 1, 200), (6, 6, 200)] {
+        let user = mon("User", &["punishment"]);
+        let mut foe = mon("Foe", &["splash"]);
+        foe.stages.insert(Stat::Attack, attack);
+        foe.stages.insert(Stat::Speed, speed);
+        let expected = control_damage(power, "Dark", "Physical", user.clone(), foe.clone());
+        let mut b = game(user, vec![foe], 0.5);
+        turn(&mut b);
+        assert_eq!(1000 - b.participants(Side::Foes)[0].hp, expected);
+    }
+}
