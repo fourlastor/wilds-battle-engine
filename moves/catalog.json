@@ -4673,6 +4673,17 @@
       "limitations": []
     },
     {
+      "id": 502,
+      "slug": "ally-switch",
+      "name": "Ally Switch",
+      "sheet_row": null,
+      "runtime_id": "ally-switch",
+      "file": "moves/ally-switch.lua",
+      "status": "implemented",
+      "limitations": [],
+      "parameter_source": "https://pokeapi.co/api/v2/move/502/"
+    },
+    {
       "id": 503,
       "slug": "scald",
       "name": "Scald",
@@ -7500,7 +7511,8 @@
       "yawn",
       "perish-song",
       "trick-room",
-      "wonder-room"
+      "wonder-room",
+      "ally-switch"
     ]
   }
 }

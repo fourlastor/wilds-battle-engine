@@ -405,6 +405,9 @@ fn event(value: &BattleEvent) -> Value {
         BattleEvent::HpSet { target, hp } => {
             json!({"kind":"hp_set", "target":participant(*target), "hp":hp})
         }
+        BattleEvent::PositionsSwapped { a, b } => {
+            json!({"kind":"swap_positions", "a":participant(*a), "b":participant(*b)})
+        }
         BattleEvent::Switched { from, to, position } => {
             json!({"kind":"switch", "from":participant(*from),"to":participant(*to),"position":position})
         }

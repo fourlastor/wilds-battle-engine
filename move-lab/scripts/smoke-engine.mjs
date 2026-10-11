@@ -200,3 +200,18 @@ assert.deepEqual(happy.payout_multiplier, { allies: 2, foes: 1 });
 assert.deepEqual(JSON.parse(text(engine._mlab_state(happyBattle))).payout_multiplier, happy.payout_multiplier);
 engine._wbe_destroy(happyBattle);
 console.log('ok: Happy Hour exposes its prize multiplier through both wasm snapshots');
+
+const swapBattle = withStrings([JSON.stringify({
+  allies: [{name: 'User', max_hp: 1000, moves: ['ally-switch']}, {name: 'Ally', max_hp: 1000, moves: ['splash']}],
+  foes: [{name: 'Foe', max_hp: 1000, moves: ['splash']}],
+}), '/moves'], (json, dir) => engine._wbe_create(json, dir));
+assert.notEqual(swapBattle, 0, lastError());
+for (let i = 0; i < 3; i++) {
+  const step = JSON.parse(text(engine._wbe_advance(swapBattle)));
+  assert.ok(engine._wbe_respond(swapBattle, BigInt(step.status.prompt_id), step.status.choices[0].id));
+}
+const swap = JSON.parse(text(engine._wbe_advance(swapBattle)));
+assert.ok(swap.events.some(e => e.kind === 'swap_positions' && e.a.index === 0 && e.b.index === 1));
+assert.deepEqual(swap.active.allies, [1, 0]);
+engine._wbe_destroy(swapBattle);
+console.log('ok: Ally Switch exposes slot changes through wasm');

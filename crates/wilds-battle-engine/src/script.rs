@@ -419,6 +419,7 @@ impl Battle {
         for side in Side::ALL {
             let table = &run.sides[side.index()];
             let (marks, effects) = self.conditions_tables(lua, Scope::Side(side))?;
+            table.raw_set("active_slots", self.active[side.index()].len())?;
             table.raw_set("marks", marks)?;
             table.raw_set("effects", effects)?;
             let last_faint = self.last_faint_turn[side.index()];
@@ -1409,6 +1410,9 @@ impl Battle {
                 events.push(BattleEvent::Message("But it failed!".into()));
                 frame.failed = true;
                 return Ok(Flow::Stop);
+            }
+            ScriptOperation::SwapPositions { a, b } => {
+                Value::Boolean(self.swap_positions(a, b, events))
             }
             ScriptOperation::CheckProtection => Value::Boolean(self.protection_check(actor)),
             ScriptOperation::Succeed => {

@@ -760,6 +760,66 @@ impl Battle {
         Ok(())
     }
 
+    pub(crate) fn swap_positions(
+        &mut self,
+        a: ParticipantId,
+        b: ParticipantId,
+        events: &mut Vec<BattleEvent>,
+    ) -> bool {
+        if a == b || a.side != b.side || self.get(a).hp == 0 || self.get(b).hp == 0 {
+            return false;
+        }
+        let (Some(pa), Some(pb)) = (self.position(a), self.position(b)) else {
+            return false;
+        };
+        self.active[a.side.index()].swap(pa, pb);
+        self.get_mut(a).last_position = Some(pb);
+        self.get_mut(b).last_position = Some(pa);
+        for entry in &mut self.turn_queue {
+            if entry.actor == a {
+                entry.position = pb;
+            }
+            if entry.actor == b {
+                entry.position = pa;
+            }
+        }
+        for (side, pos) in &mut self.completed_slots {
+            if *side == a.side {
+                if *pos == pa {
+                    *pos = pb;
+                } else if *pos == pb {
+                    *pos = pa;
+                }
+            }
+        }
+        // Drain recovery follows the vacated slot, as it does on a party switch.
+        for condition in self
+            .sides
+            .iter_mut()
+            .flatten()
+            .flat_map(|p| &mut p.conditions)
+            .chain(self.side_conditions.iter_mut().flatten())
+            .chain(&mut self.field_conditions)
+        {
+            for rule in &mut condition.rules {
+                if let Rule::DrainEachTurn { to, .. } = rule {
+                    if *to == a {
+                        *to = b;
+                    } else if *to == b {
+                        *to = a;
+                    }
+                }
+            }
+        }
+        events.push(BattleEvent::PositionsSwapped { a, b });
+        events.push(BattleEvent::Message(format!(
+            "{} switched places with {}!",
+            self.get(a).name,
+            self.get(b).name
+        )));
+        true
+    }
+
     pub(crate) fn delay_action(&mut self, who: ParticipantId) -> bool {
         let Some(entry) = self
             .turn_queue
@@ -843,7 +903,8 @@ impl Battle {
             }
             self.update_berries(events);
             self.get_mut(actor).acted = true;
-            self.completed_slots.push((actor.side, entry.position));
+            self.completed_slots
+                .push((actor.side, self.position(actor).unwrap_or(entry.position)));
             self.resolve_outcome(events);
             self.refresh_pending_speed();
             if !self.hurry.is_empty() {

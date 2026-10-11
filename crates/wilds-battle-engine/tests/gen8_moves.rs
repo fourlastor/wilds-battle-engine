@@ -4152,3 +4152,72 @@ fn wonder_room_body_press_uses_original_defense_with_special_defense_boosts() {
     turn_with(&mut b, |p| choose_move(p, "body-press", "splash"));
     assert_eq!(1000 - b.participants(Side::Foes)[0].hp, expected);
 }
+
+#[test]
+fn ally_switch_moves_slots_redirects_queued_attacks_and_preserves_volatile_state() {
+    use wilds_battle_engine::{Stat, Status};
+    let mut user = mon("User", &["ally-switch"]);
+    user.status = Some(Status::Poisoned);
+    user.change_stage(Stat::Attack, 2);
+    let mut ally = mon("Ally", &["splash"]);
+    ally.speed = 150;
+    let mut b = Battle::with_rng(
+        Fixed(0.5),
+        [vec![user, ally], vec![mon("Foe", &["pound"])]],
+        MoveCatalog::builtin().unwrap(),
+    )
+    .unwrap();
+    let events = turn_with(&mut b, |p| {
+        p.choices.iter().find(|c| matches!(c,Choice::UseMove {target,..} if p.actor.side == Side::Allies || target.index == 0)).unwrap().id()
+    });
+    assert_eq!(b.active_indices(Side::Allies), &[1, 0]);
+    assert_eq!(b.participants(Side::Allies)[0].hp, 875); // one poison tick, no direct hit
+    assert!(b.participants(Side::Allies)[1].hp < 1000);
+    assert_eq!(b.participants(Side::Allies)[0].stage(Stat::Attack), 2);
+    assert_eq!(used_names(&events), ["User", "Ally", "Foe"]);
+    assert!(
+        events
+            .iter()
+            .any(|e| matches!(e, BattleEvent::PositionsSwapped { .. }))
+    );
+    // Gen 8 has no consecutive-use failure chance. Aim at the user's new slot again.
+    turn_with(&mut b, |p| {
+        p.choices.iter().find(|c| matches!(c,Choice::UseMove {target,..} if p.actor.side == Side::Allies || target.index == 0)).unwrap().id()
+    });
+    assert_eq!(b.active_indices(Side::Allies), &[0, 1]);
+    assert_eq!(b.participants(Side::Allies)[0].hp, 750);
+}
+
+#[test]
+fn ally_switch_fails_in_singles_and_the_middle_of_triples_but_swaps_the_edges() {
+    let mut b = game(
+        mon("User", &["ally-switch"]),
+        vec![mon("Foe", &["splash"])],
+        0.5,
+    );
+    turn(&mut b);
+    assert!(b.participants(Side::Allies)[0].last_move_failed);
+    for index in [0, 1, 2] {
+        let mut party = vec![
+            mon("Left", &["splash"]),
+            mon("Middle", &["splash"]),
+            mon("Right", &["splash"]),
+        ];
+        party[index].moves = vec!["ally-switch".into()];
+        let mut b = Battle::with_rng(
+            Fixed(0.5),
+            [party, vec![mon("Foe", &["splash"])]],
+            MoveCatalog::builtin().unwrap(),
+        )
+        .unwrap();
+        turn(&mut b);
+        assert_eq!(
+            b.active_indices(Side::Allies),
+            if index == 1 { &[0, 1, 2] } else { &[2, 1, 0] }
+        );
+        assert_eq!(
+            b.participants(Side::Allies)[index].last_move_failed,
+            index == 1
+        );
+    }
+}

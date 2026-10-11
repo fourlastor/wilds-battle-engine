@@ -188,6 +188,10 @@ pub(crate) enum HpAmount {
 
 #[derive(Clone, Debug, PartialEq)]
 pub(crate) enum ScriptOperation {
+    SwapPositions {
+        a: ParticipantId,
+        b: ParticipantId,
+    },
     CanApplyStatus {
         who: ParticipantId,
         status: AppliedStatus,
@@ -1062,6 +1066,10 @@ fn parse_op(name: &str, args: &[Value]) -> mlua::Result<ScriptOperation> {
         "can_apply_status" => ScriptOperation::CanApplyStatus {
             who: who(0)?,
             status: status_of(arg(1), "can_apply_status")?,
+        },
+        "swap_positions" => ScriptOperation::SwapPositions {
+            a: who(0)?,
+            b: who(1)?,
         },
         "check_protection" => ScriptOperation::CheckProtection,
         "succeed" => ScriptOperation::Succeed,

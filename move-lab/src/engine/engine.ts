@@ -8,6 +8,7 @@ export interface Ref {
 }
 
 export type EngineEvent =
+  | { kind: 'swap_positions'; a: Ref; b: Ref }
   | { kind: 'hp_set'; target: Ref; hp: number }
   | { kind: 'message'; text: string }
   | { kind: 'damage'; target: Ref; amount: number; hp: number }

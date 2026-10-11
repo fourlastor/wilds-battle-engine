@@ -668,6 +668,10 @@ pub struct Weather {
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum BattleEvent {
+    PositionsSwapped {
+        a: ParticipantId,
+        b: ParticipantId,
+    },
     /// HP reassignment, without damage or healing mechanics (for example Pain Split).
     HpSet {
         target: ParticipantId,
