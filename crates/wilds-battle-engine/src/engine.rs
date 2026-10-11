@@ -26,6 +26,8 @@ pub struct Battle {
     pub(crate) environment: Option<String>,
     /// The move each Pokémon chose this turn.
     pub(crate) turn_choices: Vec<(ParticipantId, String)>,
+    /// Move users still waiting after the current action, in queue order.
+    pub(crate) pending_actors: Vec<ParticipantId>,
     /// Pending actors promoted by moves or reactions after the current action.
     pub(crate) hurry: Vec<ParticipantId>,
     /// Whether the move being used right now failed, missed or had no effect.
@@ -70,6 +72,7 @@ pub(crate) struct Attack<'a> {
     pub(crate) power: u16,
     pub(crate) high_crit: bool,
     pub(crate) always_crit: bool,
+    pub(crate) force_stab: bool,
     pub(crate) consecutive_boost: u8,
     pub(crate) typeless: bool,
     pub(crate) move_type: PokemonType,
@@ -173,6 +176,7 @@ impl Battle {
             payout: [0, 0],
             environment: None,
             turn_choices: Vec::new(),
+            pending_actors: Vec::new(),
             hurry: Vec::new(),
             move_failed: false,
         })
@@ -495,6 +499,12 @@ impl Battle {
             let actor = ordered[next].0;
             let choice = ordered[next].1.clone();
             next += 1;
+            self.pending_actors = ordered[next..]
+                .iter()
+                .filter_map(|(id, action, ..)| {
+                    matches!(action, SelectedAction::Move(_)).then_some(*id)
+                })
+                .collect();
             self.hit_reactions
                 .retain(|reaction| reaction.owner != actor);
             self.check_sleep(actor, &mut events);
@@ -1426,6 +1436,7 @@ impl Battle {
             power,
             high_crit,
             always_crit,
+            force_stab: false,
             consecutive_boost,
             typeless,
             move_type: self.converted_type(actor, spec.move_type),
@@ -1529,7 +1540,7 @@ impl Battle {
             }
         }
         damage *= effectiveness;
-        if !typeless && self.types_of(actor).contains(&move_type) {
+        if !typeless && (attack.force_stab || self.types_of(actor).contains(&move_type)) {
             damage *= 1.5;
         }
         if crit {

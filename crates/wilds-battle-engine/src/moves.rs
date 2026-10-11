@@ -158,6 +158,7 @@ pub(crate) struct DamageOptions {
     pub typeless: bool,
     pub high_crit: bool,
     pub always_crit: bool,
+    pub force_stab: bool,
     /// One recipient instead of everyone the move is aimed at.
     pub target: Option<ParticipantId>,
     pub move_type: Option<PokemonType>,
@@ -619,6 +620,7 @@ fn damage_options(value: Option<&Value>) -> mlua::Result<DamageOptions> {
             "typeless",
             "high_crit",
             "always_crit",
+            "force_stab",
             "target",
             "type",
             "also_type",
@@ -680,6 +682,7 @@ fn damage_options(value: Option<&Value>) -> mlua::Result<DamageOptions> {
         typeless: options.flag("typeless")?,
         high_crit: options.flag("high_crit")?,
         always_crit: options.flag("always_crit")?,
+        force_stab: options.flag("force_stab")?,
         target: options.pokemon("target")?,
         move_type: options.pokemon_type("type")?,
         also_type: options.pokemon_type("also_type")?,

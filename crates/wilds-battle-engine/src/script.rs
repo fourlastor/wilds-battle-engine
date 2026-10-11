@@ -405,6 +405,16 @@ impl Battle {
             )?,
         )?;
         ctx.raw_set("everyone", list(self.actors())?)?;
+        ctx.raw_set(
+            "pending",
+            list(
+                self.pending_actors
+                    .iter()
+                    .copied()
+                    .filter(|id| self.get(*id).hp > 0)
+                    .collect(),
+            )?,
+        )?;
         ctx.raw_set("targets", list(self.recipients(frame))?)?;
         match &self.weather {
             Some(weather) => {
@@ -663,6 +673,7 @@ impl Battle {
             power,
             high_crit: options.high_crit,
             always_crit: options.always_crit,
+            force_stab: options.force_stab,
             consecutive_boost: 0,
             typeless: options.typeless,
             move_type: self.converted_type(

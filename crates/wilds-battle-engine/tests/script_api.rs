@@ -1805,6 +1805,17 @@ fn an_effect_chance_follows_the_rainbow() {
 // Guard rails
 
 #[test]
+fn forced_stab_applies_once_even_if_the_user_already_has_the_type() {
+    let normal = damage_of(0.5, "", "ctx:damage(80)");
+    let forced_normal = damage_of(0.5, "", "ctx:damage(80, {force_stab=true})");
+    let forced_fire = damage_of(0.5, "", "ctx:damage(80, {type=Type.Fire, force_stab=true})");
+    let fire = damage_of(0.5, "", "ctx:damage(80, {type=Type.Fire})");
+    assert_eq!(normal, forced_normal);
+    assert_eq!(normal, forced_fire);
+    assert!(forced_fire > fire);
+}
+
+#[test]
 fn contact_overrides_apply_to_single_and_multiple_hits_without_changing_move_flags() {
     for flags in ["", "flags={'contact'},"] {
         let script = test_move(

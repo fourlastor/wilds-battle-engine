@@ -3722,10 +3722,8 @@
       "sheet_row": 361,
       "runtime_id": "water-pledge",
       "file": "moves/water-pledge.lua",
-      "status": "partial",
-      "limitations": [
-        "The example implements side-effect combinations only. Combined 150-power attacks, forced STAB and cross-move queue promotion need engine support."
-      ]
+      "status": "implemented",
+      "limitations": []
     },
     {
       "id": 519,
@@ -3734,10 +3732,8 @@
       "sheet_row": 362,
       "runtime_id": "fire-pledge",
       "file": "moves/fire-pledge.lua",
-      "status": "partial",
-      "limitations": [
-        "The example implements side-effect combinations only. Combined 150-power attacks, forced STAB and cross-move queue promotion need engine support."
-      ]
+      "status": "implemented",
+      "limitations": []
     },
     {
       "id": 520,
@@ -3746,10 +3742,8 @@
       "sheet_row": 363,
       "runtime_id": "grass-pledge",
       "file": "moves/grass-pledge.lua",
-      "status": "partial",
-      "limitations": [
-        "The example implements side-effect combinations only. Combined 150-power attacks, forced STAB and cross-move queue promotion need engine support."
-      ]
+      "status": "implemented",
+      "limitations": []
     },
     {
       "id": 521,

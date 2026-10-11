@@ -34,6 +34,9 @@ impl Game {
         Self::new(vec![mon("Ally", moves)], vec![foe], dice)
     }
     fn turn(&mut self, ally: &str, foe: &str) -> Vec<BattleEvent> {
+        self.turn_with(ally, foe, None)
+    }
+    fn turn_with(&mut self, ally: &str, foe: &str, partner: Option<&str>) -> Vec<BattleEvent> {
         for _ in 0..30 {
             let result = self.0.advance().unwrap();
             if !result.events.is_empty() {
@@ -44,6 +47,8 @@ impl Game {
             };
             let selected = if prompt.actor.side == Side::Allies && prompt.actor.index == 0 {
                 ally
+            } else if prompt.actor.side == Side::Allies {
+                partner.unwrap_or(foe)
             } else {
                 foe
             };
@@ -76,6 +81,114 @@ fn said(events: &[BattleEvent], text: &str) -> bool {
     events
         .iter()
         .any(|event| matches!(event, BattleEvent::Message(message) if message.contains(text)))
+}
+
+#[test]
+fn pledges_combine_in_both_orders_promote_the_partner_and_apply_the_right_effect() {
+    let pairs = [
+        (
+            "fire-pledge",
+            "water-pledge",
+            PokemonType::Water,
+            "rainbow",
+            Side::Allies,
+        ),
+        (
+            "fire-pledge",
+            "grass-pledge",
+            PokemonType::Fire,
+            "sea_of_fire",
+            Side::Foes,
+        ),
+        (
+            "water-pledge",
+            "grass-pledge",
+            PokemonType::Grass,
+            "swamp",
+            Side::Foes,
+        ),
+    ];
+    for (a, b, kind, effect, side) in pairs {
+        let mut damages = Vec::new();
+        for (first, second) in [(a, b), (b, a)] {
+            let mut leader = mon("Leader", &[first]);
+            leader.speed = 300;
+            let mut foe = mon("Foe", &["splash"]);
+            foe.speed = 200;
+            let mut game = Game::new(vec![leader, mon("Partner", &[second])], vec![foe], 0.5);
+            let events = game.turn_with(first, "splash", Some(second));
+            let uses: Vec<&str> = events
+                .iter()
+                .filter_map(|event| match event {
+                    BattleEvent::Message(text) if text.contains(" used ") => Some(text.as_str()),
+                    _ => None,
+                })
+                .collect();
+            assert!(uses[0].starts_with("Leader"));
+            assert!(uses[1].starts_with("Partner"));
+            assert!(uses[2].starts_with("Foe"));
+            let hits: Vec<u16> = events
+                .iter()
+                .filter_map(|event| match event {
+                    BattleEvent::Damage { target, amount, .. } if target.side == Side::Foes => {
+                        Some(*amount)
+                    }
+                    _ => None,
+                })
+                .collect();
+            assert_eq!(hits.len(), if effect == "sea_of_fire" { 2 } else { 1 });
+            assert_eq!(game.foe().last_hit.as_ref().unwrap().move_type, kind);
+            damages.push(hits[0]);
+            let condition = game
+                .0
+                .side_conditions(side)
+                .iter()
+                .find(|c| c.name == effect)
+                .unwrap();
+            assert_eq!(condition.turns_left, Some(3));
+            if effect == "swamp" {
+                assert!(condition.rules.iter().any(|r| matches!(r, wilds_battle_engine::Rule::StatMultiplier { factor, .. } if *factor == 0.25)));
+            }
+        }
+        assert_eq!(damages[0], damages[1]);
+    }
+}
+
+#[test]
+fn pledges_do_not_combine_identical_moves_or_leave_effects_after_a_block() {
+    for protected in [false, true] {
+        let first = "fire-pledge";
+        let second = if protected { "water-pledge" } else { first };
+        let foe_move = if protected { "protect" } else { "splash" };
+        let mut game = Game::new(
+            vec![mon("Leader", &[first]), mon("Partner", &[second])],
+            vec![mon("Foe", &[foe_move])],
+            0.5,
+        );
+        let events = game.turn_with(first, foe_move, Some(second));
+        assert!(game.0.side_conditions(Side::Allies).is_empty());
+        assert!(game.0.side_conditions(Side::Foes).is_empty());
+        let hits = events
+            .iter()
+            .filter(|e| matches!(e, BattleEvent::Damage { .. }))
+            .count();
+        assert_eq!(hits, if protected { 0 } else { 2 });
+    }
+    let mut partner = mon("Partner", &["water-pledge"]);
+    partner.status = Some(Status::Asleep);
+    partner.status_turns = 5;
+    let mut leader = mon("Leader", &["fire-pledge"]);
+    leader.speed = 200;
+    let mut game = Game::new(vec![leader, partner], vec![mon("Foe", &["splash"])], 0.5);
+    let events = game.turn_with("fire-pledge", "splash", Some("water-pledge"));
+    assert!(said(&events, "is waiting for Partner"));
+    assert_eq!(game.foe().hp, 1000);
+    assert!(game.0.side_conditions(Side::Allies).is_empty());
+    assert!(
+        game.0.participants(Side::Allies)[1]
+            .condition("pledge_partner")
+            .is_none()
+    );
 }
 
 #[test]

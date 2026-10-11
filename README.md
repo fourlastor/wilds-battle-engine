@@ -160,7 +160,9 @@ trapping metadata and incomplete mechanics.
 
 Pokémon tables: `ctx.user`, `ctx.target`, and the lists `ctx.targets` (everyone the
 move is aimed at), `ctx.allies`, `ctx.foes`, `ctx.others`, `ctx.everyone`. Fainted
-Pokémon are left out of the lists.
+Pokémon are left out of the lists. `ctx.pending` lists Pokémon with a pending move
+after the current action, in queue order. `force_stab = true` applies the usual
+STAB bonus even when the attacker lacks the hit's type, without doubling an existing bonus.
 
 | On a Pokémon | |
 |---|---|
@@ -215,7 +217,7 @@ before turn-start hooks; capped changes and resetting stages do not trigger them
 
 Damage options: `ohko_accuracy`, `accuracy`, `never_miss`, `ignore_protect`, `ignore_evasion`,
 `hits_hidden` (a list of `Hidden` values, or `true`), `drain`, `recoil`,
-`min_target_hp`, `typeless`, `high_crit`, `always_crit`, `target` (one Pokémon),
+`min_target_hp`, `typeless`, `high_crit`, `always_crit`, `force_stab`, `target` (one Pokémon),
 `type`, `also_type`, `effective` (`{[Type.Water] = 2}` replaces the type chart
 against the listed types), `category`, `attack_from` (whose attacking stat is used),
 `attack_stat`, `defense_stat`, `ignore_stages`. `try_hit` takes the first six. `ohko_accuracy` is an OHKO base probability plus
