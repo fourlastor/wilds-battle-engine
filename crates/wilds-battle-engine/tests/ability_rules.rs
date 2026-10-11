@@ -3181,3 +3181,31 @@ fn analytic_boosts_only_after_every_other_pokemon_has_moved() {
     assert_eq!(run("analytic", 10, true), base);
     assert!((f32::from(run("analytic", 10, false)) - f32::from(base) * 1.3).abs() <= 3.0);
 }
+
+#[test]
+fn stakeout_boosts_attacks_only_on_the_targets_switch_in_turn() {
+    for move_id in ["tackle", "water-gun"] {
+        let run = |ability: &str| {
+            let mut user = mon("User", &[move_id]);
+            user.ability = Some(ability.into());
+            let mut battle = Battle::with_rng(
+                Fixed(0.5),
+                [
+                    vec![user],
+                    vec![mon("Target", &["splash"]), mon("Bench", &["splash"])],
+                ],
+                MoveCatalog::builtin().unwrap(),
+            )
+            .unwrap();
+            battle.set_active([vec![0], vec![0]]).unwrap();
+            turn(&mut battle, move_id, "switch:1");
+            let first = 1000 - battle.participants(Side::Foes)[1].hp;
+            turn(&mut battle, move_id, "splash");
+            (first, 1000 - battle.participants(Side::Foes)[1].hp - first)
+        };
+        let base = run("");
+        let boosted = run("stakeout");
+        assert!((f32::from(boosted.0) - f32::from(base.0) * 2.0).abs() <= 3.0);
+        assert_eq!(boosted.1, base.1);
+    }
+}

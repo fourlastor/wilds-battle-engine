@@ -2674,7 +2674,7 @@ impl Battle {
             .map(|stat| self.swapped_defensive_stat(stat))
             .unwrap_or(atk_name);
         let def_name = attack.defense_stat.unwrap_or(def_name);
-        let attack_value = if attack.attack_stat.is_some() {
+        let mut attack_value = if attack.attack_stat.is_some() {
             // An offensive-stat override changes the base stat and stages, not
             // the user's category-based modifiers (Body Press still uses ModifyAtk).
             let value = if crit && source.stage(atk_name.into()) < 0 {
@@ -2689,6 +2689,12 @@ impl Battle {
         } else {
             self.stat_value(attack.attack_from, atk_name)
         };
+        if self.has_ability(actor, "stakeout")
+            && self.turn > 0
+            && defender.entered_turn == self.turn
+        {
+            attack_value *= 2.0;
+        }
         let mut defense = if attack.ignore_stages {
             (self.battle_raw_stat(target, def_name) * self.stat_factor(target, def_name)).trunc()
         } else if crit && defender.stage(def_name.into()) > 0 {
