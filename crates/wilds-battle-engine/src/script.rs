@@ -1406,6 +1406,9 @@ impl Battle {
             ScriptOperation::ScheduleHeal { who, amount, delay } => {
                 Value::Boolean(self.schedule_heal(who, amount, delay))
             }
+            ScriptOperation::PrepareReplacementHeal { who, restore_pp } => {
+                Value::Boolean(self.prepare_replacement_heal(who, restore_pp))
+            }
             ScriptOperation::MoveInfo(id) => match self.catalog.get(&id) {
                 None => Value::Nil,
                 Some(info) => {

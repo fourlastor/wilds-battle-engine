@@ -201,6 +201,10 @@ pub(crate) enum ScriptOperation {
         amount: u16,
         delay: u8,
     },
+    PrepareReplacementHeal {
+        who: ParticipantId,
+        restore_pp: bool,
+    },
     MoveInfo(String),
     MoveIds,
     CallMove {
@@ -1404,6 +1408,14 @@ fn parse_op(name: &str, args: &[Value]) -> mlua::Result<ScriptOperation> {
             who: who(0)?,
             amount: floored(arg(1), "schedule_heal amount")?,
             delay: whole(arg(2), "schedule_heal delay", 1.0, 255.0)? as u8,
+        },
+        "prepare_replacement_heal" => ScriptOperation::PrepareReplacementHeal {
+            who: who(0)?,
+            restore_pp: match arg(1) {
+                Value::Nil => false,
+                Value::Boolean(value) => *value,
+                _ => return Err(bad("prepare_replacement_heal restore_pp must be a boolean")),
+            },
         },
         "move_info" => ScriptOperation::MoveInfo(text_of(arg(0), name)?),
         "set_types" => {

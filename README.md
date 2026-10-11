@@ -1,9 +1,9 @@
 # Wilds battle engine
 
 `wilds-battle-engine` is the Rust battle simulation. Move definitions are loaded
-from Lua; `MoveCatalog::builtin()` embeds the 745 files under `moves/`,
+from Lua; `MoveCatalog::builtin()` embeds the 746 files under `moves/`,
 and `MoveCatalog::from_directory(path)` reads them from disk at runtime.
-Both catalogs also include the system move Struggle, for 746 moves in total.
+Both catalogs also include the system move Struggle, for 747 moves in total.
 The [move catalog](moves/README.md) includes 538 entries from the Saved moves sheet,
 plus support moves, additional local JSON moves and the original moves outside the sheet. Its manifest
 records the 34 excluded Z/Max Moves. Files use canonical slugs and source display
@@ -224,6 +224,7 @@ before turn-start hooks; capped changes and resetting stages do not trigger them
 | `who.last_move_type` | Actual type of the last attempted move, including Weather Ball and other dynamic damage types; cleared on withdrawal. |
 | `who.team.roster` | The complete read-only party, including fainted members; `team.pokemon` continues to contain living members. |
 | `ctx:call_move(id, target)` | Executes another catalog move immediately with its targeting, hit checks and effects, spending only the caller's PP. An omitted target is selected by the engine; nesting is bounded. |
+| `ctx:prepare_replacement_heal(who, restore_pp)` | Reserves full healing and status curing for a slot, with optional PP restoration. Requires a living bench member, activates before entry hazards, and remains pending through a healthy entrant. |
 | `ctx:schedule_heal(who, amount, delay)` | Schedules one pending heal for a field slot after the given number of turns, before residual damage; follows replacements and respects Heal Block. |
 | `who.base_attack` | Optional host-supplied original species base Attack, also accepted by the FFI setup. Beat Up requires it for eligible party members and fails explicitly when missing. |
 | `ctx:multi_hit(power, min, max, {powers={...}})` | A fixed-length hit sequence with separate base power per hit, sharing one accuracy check and applying reactions between hits. |

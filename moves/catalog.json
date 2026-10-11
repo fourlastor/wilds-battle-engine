@@ -3620,6 +3620,17 @@
       "parameter_source": "https://pokeapi.co/api/v2/move/360/"
     },
     {
+      "id": 361,
+      "slug": "healing-wish",
+      "name": "Healing Wish",
+      "sheet_row": null,
+      "runtime_id": "healing-wish",
+      "file": "moves/healing-wish.lua",
+      "status": "implemented",
+      "limitations": [],
+      "parameter_source": "https://pokeapi.co/api/v2/move/361/"
+    },
+    {
       "id": 362,
       "slug": "brine",
       "name": "Brine",
@@ -8112,7 +8123,8 @@
       "me-first",
       "encore",
       "beat-up",
-      "wish"
+      "wish",
+      "healing-wish"
     ]
   }
 }

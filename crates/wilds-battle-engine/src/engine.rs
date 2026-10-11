@@ -38,6 +38,7 @@ pub struct Battle {
     pub(crate) side_conditions: [Vec<Condition>; 2],
     pub(crate) field_conditions: Vec<Condition>,
     pub(crate) delayed_heals: Vec<crate::slots::DelayedHeal>,
+    pub(crate) replacement_heals: Vec<crate::slots::ReplacementHeal>,
     pub(crate) last_faint_turn: [Option<u64>; 2],
     pub(crate) payout: [u32; 2],
     pub(crate) payout_multiplier: [u8; 2],
@@ -256,6 +257,7 @@ impl Battle {
             side_conditions: [Vec::new(), Vec::new()],
             field_conditions: Vec::new(),
             delayed_heals: Vec::new(),
+            replacement_heals: Vec::new(),
             last_faint_turn: [None, None],
             payout: [0, 0],
             payout_multiplier: [1, 1],
@@ -815,6 +817,8 @@ impl Battle {
                 }
             }
         }
+        self.heal_replacement(a, events);
+        self.heal_replacement(b, events);
         events.push(BattleEvent::PositionsSwapped { a, b });
         events.push(BattleEvent::Message(format!(
             "{} switched places with {}!",

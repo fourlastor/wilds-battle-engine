@@ -48,3 +48,73 @@ impl Battle {
         }
     }
 }
+
+pub(crate) struct ReplacementHeal {
+    side: Side,
+    position: usize,
+    restore_pp: bool,
+}
+
+impl Battle {
+    pub(crate) fn prepare_replacement_heal(
+        &mut self,
+        who: ParticipantId,
+        restore_pp: bool,
+    ) -> bool {
+        let Some(position) = self.position(who) else {
+            return false;
+        };
+        if self.get(who).hp == 0
+            || self.bench(who.side).is_empty()
+            || self.replacement_heals.iter().any(|effect| {
+                effect.side == who.side
+                    && effect.position == position
+                    && effect.restore_pp == restore_pp
+            })
+        {
+            return false;
+        }
+        self.replacement_heals.push(ReplacementHeal {
+            side: who.side,
+            position,
+            restore_pp,
+        });
+        true
+    }
+
+    pub(crate) fn heal_replacement(&mut self, who: ParticipantId, events: &mut Vec<BattleEvent>) {
+        let Some(position) = self.position(who) else {
+            return;
+        };
+        if self.get(who).hp == 0 {
+            return;
+        }
+        for effect in std::mem::take(&mut self.replacement_heals) {
+            let p = self.get(who);
+            let pp_missing = p.moves.iter().any(|id| {
+                self.catalog
+                    .get(id)
+                    .is_some_and(|spec| p.move_pp.get(id).copied().unwrap_or(0) < spec.pp)
+            });
+            if effect.side != who.side
+                || effect.position != position
+                || (p.hp == p.max_hp && p.status.is_none() && !(effect.restore_pp && pp_missing))
+            {
+                self.replacement_heals.push(effect);
+                continue;
+            }
+            let hp = p.max_hp;
+            self.cure_status(who, None, events);
+            self.heal_unchecked(who, hp, events);
+            if effect.restore_pp {
+                let pp: Vec<_> = self
+                    .get(who)
+                    .moves
+                    .iter()
+                    .filter_map(|id| self.catalog.get(id).map(|spec| (id.clone(), spec.pp)))
+                    .collect();
+                self.get_mut(who).move_pp.extend(pp);
+            }
+        }
+    }
+}

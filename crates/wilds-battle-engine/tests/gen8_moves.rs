@@ -6848,3 +6848,90 @@ fn wish_resolves_before_poison_and_checks_heal_block_when_it_arrives() {
     turn_with(&mut b, |p| choose_move(p, "splash", "heal-block"));
     assert_eq!(b.participants(Side::Allies)[0].hp, 300);
 }
+
+#[test]
+fn healing_wish_sacrifices_the_user_and_heals_and_cures_before_entry_hazards() {
+    let mut user = mon("User", &["splash", "healing-wish"]);
+    user.speed = 200;
+    let mut bench = mon("Bench", &["splash"]);
+    bench.hp = 1;
+    bench.status = Some(wilds_battle_engine::Status::Burned);
+    bench.move_pp.insert("splash".into(), 1);
+    let mut b = Battle::with_rng(
+        Fixed(0.5),
+        [
+            vec![user, bench],
+            vec![mon("Foe", &["stealth-rock", "splash"])],
+        ],
+        MoveCatalog::builtin().unwrap(),
+    )
+    .unwrap();
+    b.set_active([vec![0], vec![0]]).unwrap();
+    turn(&mut b);
+    turn_with(&mut b, |p| {
+        if p.reason == wilds_battle_engine::PromptReason::Replacement {
+            p.choices[0].id()
+        } else {
+            choose_move(p, "healing-wish", "splash")
+        }
+    });
+    assert_eq!(b.participants(Side::Allies)[0].hp, 0);
+    assert_eq!(b.active_indices(Side::Allies), [1]);
+    assert_eq!(b.participants(Side::Allies)[1].hp, 875);
+    assert_eq!(b.participants(Side::Allies)[1].status, None);
+    assert_eq!(b.participants(Side::Allies)[1].move_pp["splash"], 1);
+}
+#[test]
+fn healing_wish_waits_through_a_healthy_replacement() {
+    let mut injured = mon("Injured", &["splash"]);
+    injured.hp = 100;
+    let mut b = Battle::with_rng(
+        Fixed(0.5),
+        [
+            vec![
+                mon("User", &["healing-wish"]),
+                mon("Healthy", &["splash"]),
+                injured,
+            ],
+            vec![mon("Foe", &["splash"])],
+        ],
+        MoveCatalog::builtin().unwrap(),
+    )
+    .unwrap();
+    b.set_active([vec![0], vec![0]]).unwrap();
+    turn_with(&mut b, |p| {
+        if p.reason == wilds_battle_engine::PromptReason::Replacement {
+            p.choices
+                .iter()
+                .find(|c| matches!(c,Choice::Switch{to,..} if to.index==1))
+                .unwrap()
+                .id()
+        } else {
+            choose_move(p, "healing-wish", "splash")
+        }
+    });
+    assert_eq!(b.active_indices(Side::Allies), [1]);
+    turn_with(&mut b, |p| {
+        if p.actor.side == Side::Allies {
+            p.choices
+                .iter()
+                .find(|c| matches!(c,Choice::Switch{to,..} if to.index==2))
+                .unwrap()
+                .id()
+        } else {
+            choose_move(p, "splash", "splash")
+        }
+    });
+    assert_eq!(b.participants(Side::Allies)[2].hp, 1000);
+}
+#[test]
+fn healing_wish_fails_without_a_living_bench_member() {
+    let mut b = game(
+        mon("User", &["healing-wish"]),
+        vec![mon("Foe", &["splash"])],
+        0.5,
+    );
+    turn(&mut b);
+    assert_eq!(b.participants(Side::Allies)[0].hp, 1000);
+    assert!(b.participants(Side::Allies)[0].last_move_failed);
+}
