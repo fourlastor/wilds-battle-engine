@@ -85,14 +85,15 @@ fn said(events: &[BattleEvent], text: &str) -> bool {
 
 #[test]
 fn beak_blast_reacts_to_zero_damage_and_knockout_contact_but_not_immunity() {
-    for attack in ["hold-back", "body-slam"] {
+    for attack in ["hold-back", "false_swipe", "body-slam", "tackle"] {
         let mut ally = mon("Ally", &["beak-blast"]);
         ally.hp = 1;
         let mut game = Game::new(vec![ally], vec![mon("Foe", &[attack])], 0.5);
         game.turn("beak-blast", attack);
         assert_eq!(game.foe().status, Some(Status::Burned), "{attack}");
-        assert_eq!(game.ally().hp, if attack == "hold-back" { 1 } else { 0 });
-        if attack == "hold-back" {
+        let leaves_one_hp = matches!(attack, "hold-back" | "false_swipe");
+        assert_eq!(game.ally().hp, if leaves_one_hp { 1 } else { 0 });
+        if leaves_one_hp {
             assert!(game.ally().last_hit.is_none());
             assert_eq!(game.ally().damage_taken, 0);
         }

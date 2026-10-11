@@ -3,7 +3,7 @@ local function end_thrash(ctx)
   ctx:break_sequence()
 end
 
-return { id="thrash", name="Thrash", type=Type.Normal, category=Category.Physical, pp=10,
+return { flags={"contact"}, id="thrash", name="Thrash", type=Type.Normal, category=Category.Physical, pp=10,
     accuracy=1.0, target=Target.RandomOpponent, on_interrupt=end_thrash,
     script=function(ctx)
       if not ctx.total_turns then

@@ -1,4 +1,4 @@
-return { id="rage", name="Rage", type=Type.Normal, category=Category.Physical, pp=20,
+return { flags={"contact"}, id="rage", name="Rage", type=Type.Normal, category=Category.Physical, pp=20,
     on_hit=function(ctx)
       ctx:change_self_stat(ctx.Stat.Attack, 1)
     end,
