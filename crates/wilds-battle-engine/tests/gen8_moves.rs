@@ -1584,3 +1584,16 @@ fn spit_up_scales_with_stockpile_and_consumes_charges_even_when_protected() {
         );
     }
 }
+
+#[test]
+fn whirlpool_binds_and_hits_diving_targets_at_double_power() {
+    check_partial_trap("whirlpool", 35, "Water", "Special");
+    let mut user = mon("User", &["whirlpool"]);
+    user.speed = 1;
+    let foe = mon("Foe", &["dive"]);
+    let expected = control_damage(70, "Water", "Special", user.clone(), foe.clone()) + 125;
+    let mut b = game(user, vec![foe], 0.5);
+    turn(&mut b);
+    assert_eq!(1000 - b.participants(Side::Foes)[0].hp, expected);
+    assert!(b.participants(Side::Foes)[0].bound.is_some());
+}

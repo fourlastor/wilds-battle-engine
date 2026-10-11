@@ -2212,6 +2212,17 @@
       "limitations": []
     },
     {
+      "id": 250,
+      "slug": "whirlpool",
+      "name": "Whirlpool",
+      "sheet_row": null,
+      "runtime_id": "whirlpool",
+      "file": "moves/whirlpool.lua",
+      "status": "implemented",
+      "limitations": [],
+      "parameter_source": "https://pokeapi.co/api/v2/move/250/"
+    },
+    {
       "id": 252,
       "slug": "fake-out",
       "name": "Fake Out",
@@ -6756,7 +6767,8 @@
       "mind-reader",
       "lock-on",
       "belly-drum",
-      "spit-up"
+      "spit-up",
+      "whirlpool"
     ]
   }
 }
