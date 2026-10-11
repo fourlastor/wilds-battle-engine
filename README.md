@@ -205,7 +205,7 @@ before turn-start hooks; capped changes and resetting stages do not trigger them
 | `ctx:protect(who)`, `ctx:break_protect(who)`, `ctx:bind(who, {min_turns, max_turns})`, `ctx:free(who)` | A Pokémon that protects itself with the same move turn after turn succeeds a third as often each time, as with `Effect.Protect`. |
 | `ctx:hide(Hidden.X)`, `ctx:unhide(who)` | The user hides until it next acts. `unhide` also calls off what the Pokémon was doing. |
 | `ctx:set_weather(Weather.X, turns)`, `ctx:clear_weather()` | `Sun`, `Sandstorm`, `Rain`, `Hail`. |
-| `ctx:set_types(who, {Type.X})`, `ctx:set_weight(who, kg)`, `ctx:take_item(who)`, `ctx:give_item(who, item)`, `ctx:suppress_ability(who)` | |
+| `ctx:set_types(who, {Type.X})`, `ctx:set_weight(who, kg)`, `ctx:take_item(who)`, `ctx:give_item(who, item)`, `ctx:suppress_ability(who)` | Suppression returns false for absent, already suppressed, fainted, or protected abilities. Active-ability checks immediately respect suppression. |
 | `ctx:adjacent(a, b)` | Whether two Pokémon occupy neighboring field slots. `who.position` is its zero-based slot from its trainer's perspective; opposing rows face each other. Fainting does not collapse slots. |
 | `ctx:item_removable(who)` | Checks species-bound items independently of Sticky Hold, for damage bonuses such as Knock Off. Removal and atomic theft enforce both restrictions; fainted or suppressed Sticky Hold does not protect an item. |
 | `ctx:eat_berry(who, forced)`, `ctx:eat_stolen_berry(from, to)` | Apply berry consumption effects and record history. Forced eating bypasses Unnerve and Klutz; stealing a berry respects removal restrictions and preserves the eater's own item. |

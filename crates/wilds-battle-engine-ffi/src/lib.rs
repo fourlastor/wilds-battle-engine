@@ -372,6 +372,7 @@ fn snapshot(value: &Pokemon) -> Value {
         "types":value.types.iter().map(|kind| format!("{kind:?}")).collect::<Vec<_>>(),
         "ate_berry":value.ate_berry, "consumed_items":value.consumed_items, "last_consumed_item":value.last_consumed_item,
         "nature_down":value.nature_down.map(|stat| format!("{stat:?}")),
+        "ability":value.ability, "ability_suppressed":value.ability_suppressed,
         "item":value.item, "hidden":value.hidden().map(|place| format!("{place:?}")),
         "conditions":conditions(&value.conditions)})
 }

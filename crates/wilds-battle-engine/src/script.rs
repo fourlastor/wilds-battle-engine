@@ -1470,10 +1470,7 @@ impl Battle {
                 Value::Boolean(free)
             }
             ScriptOperation::SuppressAbility { who } => {
-                let pokemon = self.get_mut(who);
-                let had = pokemon.ability.is_some() && !pokemon.ability_suppressed;
-                pokemon.ability_suppressed = true;
-                Value::Boolean(had)
+                Value::Boolean(self.suppress_ability(who, events))
             }
             ScriptOperation::AddPayout(amount) => {
                 let payout = &mut self.payout[actor.side.index()];

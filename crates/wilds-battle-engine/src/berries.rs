@@ -85,15 +85,6 @@ pub(crate) fn is_berry(id: &str) -> bool {
 }
 
 impl Battle {
-    pub(crate) fn has_ability(&self, who: ParticipantId, ability: &str) -> bool {
-        let p = self.get(who);
-        p.hp > 0
-            && !p.ability_suppressed
-            && p.ability
-                .as_deref()
-                .is_some_and(|id| item_key(id) == ability)
-    }
-
     pub fn has_eaten_berry(&self, who: ParticipantId) -> bool {
         self.get(who).ate_berry
     }

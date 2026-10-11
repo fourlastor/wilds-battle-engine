@@ -112,6 +112,69 @@ fn meloetta() -> Pokemon {
 }
 
 #[test]
+fn core_enforcer_suppresses_only_after_the_target_acts_and_changes_active_effects() {
+    for (speed, suppressed) in [(200, true), (1, false)] {
+        let mut target = mon("Target", &["splash"]);
+        target.speed = speed;
+        target.ability = Some("sticky-hold".into());
+        target.item = Some("leftovers".into());
+        let mut game = Game::duel(&["core-enforcer", "thief"], target, 0.5);
+        game.turn("core-enforcer", "splash");
+        assert_eq!(game.foe().ability_suppressed, suppressed);
+        game.turn("thief", "splash");
+        assert_eq!(game.ally().item.is_some(), suppressed);
+    }
+    let mut user = mon("User", &["core-enforcer"]);
+    user.hp = 100;
+    user.item = Some("sitrus-berry".into());
+    let mut target = mon("Target", &["splash"]);
+    target.speed = 200;
+    target.ability = Some("unnerve".into());
+    let mut game = Game::new(vec![user], vec![target], 0.5);
+    game.turn("core-enforcer", "splash");
+    assert!(game.foe().ability_suppressed);
+    assert_eq!(game.ally().hp, 350);
+    assert!(game.ally().ate_berry);
+}
+
+#[test]
+fn core_enforcer_cannot_suppress_protected_absent_fainted_or_unreached_abilities() {
+    for ability in [
+        "as-one-glastrier",
+        "as-one-spectrier",
+        "battle-bond",
+        "comatose",
+        "disguise",
+        "gulp-missile",
+        "ice-face",
+        "multitype",
+        "power-construct",
+        "rks-system",
+        "schooling",
+        "shields-down",
+        "stance-change",
+        "zen-mode",
+        "",
+    ] {
+        let mut target = mon("Target", &["splash"]);
+        target.speed = 200;
+        target.ability = Some(ability.into());
+        let mut game = Game::duel(&["core-enforcer"], target, 0.5);
+        game.turn("core-enforcer", "splash");
+        assert!(!game.foe().ability_suppressed, "{ability}");
+    }
+    for (hp, protects) in [(1, false), (1000, true)] {
+        let mut target = mon("Target", &["splash", "protect"]);
+        target.speed = 200;
+        target.hp = hp;
+        target.ability = Some("sticky-hold".into());
+        let mut game = Game::duel(&["core-enforcer"], target, 0.5);
+        game.turn("core-enforcer", if protects { "protect" } else { "splash" });
+        assert!(!game.foe().ability_suppressed);
+    }
+}
+
+#[test]
 fn relic_song_can_start_in_pirouette_and_restore_registered_base_types() {
     let aria = meloetta();
     let mut user = aria.clone();

@@ -31,8 +31,8 @@ Pokémon Showdown reference recorded in [catalog.json](catalog.json).
 For example, Snipe Shot has an increased critical-hit rate, Jaw Lock traps both
 participants, and No Retreat raises five stats and records its one-use trap.
 
-Of the 507 added definitions currently included, 489 implement their move-specific
-behavior through the available API and 18 are partial. Each partial file has an
+Of the 507 added definitions currently included, 490 implement their move-specific
+behavior through the available API and 17 are partial. Each partial file has an
 `INCOMPLETE` comment, an `incomplete` flag, and specific limitations in the manifest. Sky Drop fails explicitly because carrying another Pokémon cannot yet run through this API.
 Other partial moves execute the supported portion of their effects.
 

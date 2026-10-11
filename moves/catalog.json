@@ -4734,10 +4734,8 @@
       "sheet_row": 464,
       "runtime_id": "core-enforcer",
       "file": "moves/core-enforcer.lua",
-      "status": "partial",
-      "limitations": [
-        "Ability suppression is recorded, but ability execution and the unsuppressible-ability registry require engine or host support."
-      ]
+      "status": "implemented",
+      "limitations": []
     },
     {
       "id": 688,

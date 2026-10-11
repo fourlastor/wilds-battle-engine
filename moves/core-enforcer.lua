@@ -1,12 +1,11 @@
 -- Move 687: Core Enforcer. Identity and parameters: pokemon_data/assets/moves/687.json.
 -- Behavior checked against PokeAPI; see catalog.json for scope and limitations.
--- INCOMPLETE: Ability suppression is recorded, but ability execution and the unsuppressible-ability registry require engine or host support.
 
 local move = {target = Target.AllOpponents,
     script = function(ctx)
       ctx:damage(100)
       for _, pokemon in ipairs(ctx.targets) do
-        if ctx:reached(pokemon) and pokemon.acted then ctx:suppress_ability(pokemon) end
+        if ctx:reached(pokemon) and pokemon.acted and pokemon.turns_on_field > 0 then ctx:suppress_ability(pokemon) end
       end
     end}
 
@@ -18,5 +17,5 @@ move.pp = 10
 move.accuracy = 1
 move.priority = 0
 move.target = Target.AllOpponents
-move.flags = {"incomplete"}
+move.flags = {}
 return move

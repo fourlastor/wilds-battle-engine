@@ -140,14 +140,8 @@ impl Battle {
     ) -> Option<String> {
         let pokemon = self.get(who);
         let item = pokemon.item.as_ref()?;
-        let sticky_hold = source != who
-            && pokemon.hp > 0
-            && !pokemon.ability_suppressed
-            && pokemon
-                .ability
-                .as_deref()
-                .is_some_and(|id| item_key(id) == "stickyhold")
-            && item_key(item) != "stickybarb";
+        let sticky_hold =
+            source != who && self.has_ability(who, "stickyhold") && item_key(item) != "stickybarb";
         if sticky_hold || !self.item_removable(who) {
             return None;
         }

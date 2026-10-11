@@ -407,7 +407,7 @@ pub struct Pokemon {
     pub consumed_items: BTreeSet<String>,
     pub ate_berry: bool,
     pub last_consumed_item: Option<String>,
-    /// Ability id. The engine does not know what abilities do.
+    /// Ability id. Supported mechanics query its active/suppressed state.
     pub ability: Option<String>,
     pub ability_suppressed: bool,
     /// HP, Attack, Defense, Sp. Attack, Sp. Defense, Speed.
