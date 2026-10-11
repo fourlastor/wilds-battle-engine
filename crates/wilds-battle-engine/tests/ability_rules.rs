@@ -891,3 +891,20 @@ fn plus_needs_an_active_plus_or_minus_teammate() {
 fn minus_needs_an_active_plus_or_minus_teammate() {
     check_plus_minus("minus");
 }
+
+#[test]
+fn defeatist_halves_both_attacking_stats_at_half_hp() {
+    let run = |attack: &str, hp, suppressed| {
+        let mut user = mon("User", &[attack]);
+        user.hp = hp;
+        user.ability = Some("defeatist".into());
+        user.ability_suppressed = suppressed;
+        let mut battle = game(user, mon("Target", &["splash"]), 0.5);
+        turn(&mut battle, attack, "splash");
+        1000 - foe(&battle).hp
+    };
+    for attack in ["tackle", "water-gun"] {
+        assert!(run(attack, 500, false) < run(attack, 501, false));
+        assert_eq!(run(attack, 500, true), run(attack, 501, false));
+    }
+}

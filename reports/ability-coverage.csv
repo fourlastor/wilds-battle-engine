@@ -127,7 +127,7 @@ id,ability,status,verification
 126,contrary,IMPLEMENTED,Source inventory; existing tests only
 127,unnerve,IMPLEMENTED,Source inventory; existing tests only
 128,defiant,MISSING,No native battle behavior
-129,defeatist,MISSING,No native battle behavior
+129,defeatist,IMPLEMENTED,ability_rules::defeatist_halves_both_attacking_stats_at_half_hp
 130,cursed-body,MISSING,No native battle behavior
 131,healer,IMPLEMENTED,Source inventory; existing tests only
 132,friend-guard,MISSING,No native battle behavior

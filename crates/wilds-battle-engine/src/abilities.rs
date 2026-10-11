@@ -355,6 +355,12 @@ impl Battle {
         stat: crate::model::CombatStat,
     ) -> f32 {
         use crate::model::CombatStat::*;
+        if matches!(stat, Attack | SpAttack)
+            && self.has_ability(who, "defeatist")
+            && self.get(who).hp <= self.get(who).max_hp / 2
+        {
+            return 0.5;
+        }
         if stat == SpAttack
             && (self.has_ability(who, "plus") || self.has_ability(who, "minus"))
             && self.actors().into_iter().any(|ally| {
