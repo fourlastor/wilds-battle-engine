@@ -1289,3 +1289,8 @@ fn check_weather_entry(ability: &str, kind: wilds_battle_engine::WeatherKind) {
 fn drizzle_starts_rain_on_entry_only_when_active() {
     check_weather_entry("drizzle", wilds_battle_engine::WeatherKind::Rain);
 }
+
+#[test]
+fn drought_starts_weather_on_entry_only_when_active() {
+    check_weather_entry("drought", wilds_battle_engine::WeatherKind::Sun);
+}

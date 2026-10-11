@@ -167,6 +167,9 @@ impl Battle {
     }
 
     pub(crate) fn ability_on_entry(&mut self, who: ParticipantId, events: &mut Vec<BattleEvent>) {
+        if self.has_ability(who, "drought") {
+            self.start_weather(crate::model::WeatherKind::Sun, 5, events);
+        }
         if self.has_ability(who, "drizzle") {
             self.start_weather(crate::model::WeatherKind::Rain, 5, events);
         }

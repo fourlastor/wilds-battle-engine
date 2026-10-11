@@ -68,7 +68,7 @@ id,ability,status,verification
 67,torrent,IMPLEMENTED,ability_rules::torrent_boosts_matching_moves_only
 68,swarm,IMPLEMENTED,ability_rules::swarm_boosts_matching_moves_only
 69,rock-head,MISSING,No native battle behavior
-70,drought,MISSING,No native battle behavior
+70,drought,IMPLEMENTED,ability_rules::drought_starts_weather_on_entry_only_when_active
 71,arena-trap,MISSING,No native battle behavior
 72,vital-spirit,IMPLEMENTED,Source inventory; existing tests only
 73,white-smoke,IMPLEMENTED,Source inventory; existing tests only
