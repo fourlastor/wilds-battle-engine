@@ -5452,6 +5452,17 @@
       "limitations": []
     },
     {
+      "id": 672,
+      "slug": "toxic-thread",
+      "name": "Toxic Thread",
+      "sheet_row": null,
+      "runtime_id": "toxic-thread",
+      "file": "moves/toxic-thread.lua",
+      "status": "implemented",
+      "limitations": [],
+      "parameter_source": "https://pokeapi.co/api/v2/move/672/"
+    },
+    {
       "id": 673,
       "slug": "laser-focus",
       "name": "Laser Focus",
@@ -6900,7 +6911,8 @@
       "counter",
       "mirror-coat",
       "metal-burst",
-      "pain-split"
+      "pain-split",
+      "toxic-thread"
     ]
   }
 }

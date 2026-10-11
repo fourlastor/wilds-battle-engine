@@ -1941,3 +1941,31 @@ fn pain_split_ignores_ghost_immunity_and_does_not_count_as_hit_damage() {
         2
     );
 }
+
+#[test]
+fn toxic_thread_still_lowers_speed_when_poison_is_immune() {
+    use wilds_battle_engine::{Stat, Status};
+    for (kind, sub, slowed, poisoned) in [
+        (PokemonType::Normal, 0, true, true),
+        (PokemonType::Steel, 0, true, false),
+        (PokemonType::Normal, 50, false, false),
+    ] {
+        let mut foe = mon("Foe", &["splash"]);
+        foe.types = vec![kind];
+        foe.substitute_hp = sub;
+        let mut b = game(mon("User", &["toxic-thread"]), vec![foe], 0.5);
+        turn(&mut b);
+        assert_eq!(
+            b.participants(Side::Foes)[0].stage(Stat::Speed),
+            if slowed { -1 } else { 0 }
+        );
+        assert_eq!(
+            b.participants(Side::Foes)[0].status,
+            if poisoned {
+                Some(Status::Poisoned)
+            } else {
+                None
+            }
+        );
+    }
+}
