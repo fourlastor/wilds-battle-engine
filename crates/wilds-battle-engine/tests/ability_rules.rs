@@ -1510,3 +1510,8 @@ fn check_repeated_entry_boost(ability: &str, stat: wilds_battle_engine::Stat) {
 fn intrepid_sword_boosts_attack_on_every_gen8_entry() {
     check_repeated_entry_boost("intrepid-sword", wilds_battle_engine::Stat::Attack);
 }
+
+#[test]
+fn dauntless_shield_boosts_defense_on_every_gen8_entry() {
+    check_repeated_entry_boost("dauntless-shield", wilds_battle_engine::Stat::Defense);
+}

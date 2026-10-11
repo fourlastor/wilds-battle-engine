@@ -210,6 +210,9 @@ impl Battle {
     }
 
     pub(crate) fn ability_on_entry(&mut self, who: ParticipantId, events: &mut Vec<BattleEvent>) {
+        if self.has_ability(who, "dauntlessshield") {
+            self.change_stat(who, crate::model::Stat::Defense, 1, events);
+        }
         // Sword/Shield activates this on every entry, unlike the once-per-battle Gen 9 rule.
         if self.has_ability(who, "intrepidsword") {
             self.change_stat(who, crate::model::Stat::Attack, 1, events);

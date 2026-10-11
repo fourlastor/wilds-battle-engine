@@ -233,7 +233,7 @@ id,ability,status,verification
 232,prism-armor,IMPLEMENTED,Source inventory; existing tests only
 233,neuroforce,IMPLEMENTED,ability_rules::neuroforce_only_modifies_the_relevant_type_matchups
 234,intrepid-sword,IMPLEMENTED,ability_rules::intrepid_sword_boosts_attack_on_every_gen8_entry
-235,dauntless-shield,MISSING,No native battle behavior
+235,dauntless-shield,IMPLEMENTED,ability_rules::dauntless_shield_boosts_defense_on_every_gen8_entry
 236,libero,MISSING,No native battle behavior
 237,ball-fetch,MISSING,No native battle behavior
 238,cotton-down,MISSING,No native battle behavior
