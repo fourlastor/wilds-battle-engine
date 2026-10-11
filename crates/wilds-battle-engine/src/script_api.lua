@@ -182,6 +182,7 @@ return function(api, fields, roster)
   function ctx:take_item(who) return op("take_item", who) end
   function ctx:give_item(who, item) return op("give_item", who, item) end
   function ctx:set_ability(who, ability) return op("set_ability", who, ability) end
+  function ctx:swap_abilities(a, b) return op("swap_abilities", a, b) end
   function ctx:copy_ability(who, from) return op("copy_ability", who, from) end
   function ctx:suppress_ability(who) return op("suppress_ability", who) end
 

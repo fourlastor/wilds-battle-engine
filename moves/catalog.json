@@ -2719,6 +2719,17 @@
       "limitations": []
     },
     {
+      "id": 285,
+      "slug": "skill-swap",
+      "name": "Skill Swap",
+      "sheet_row": null,
+      "runtime_id": "skill-swap",
+      "file": "moves/skill-swap.lua",
+      "status": "implemented",
+      "limitations": [],
+      "parameter_source": "https://pokeapi.co/api/v2/move/285/"
+    },
+    {
       "id": 286,
       "slug": "imprison",
       "name": "Imprison",
@@ -7764,7 +7775,8 @@
       "role-play",
       "worry-seed",
       "simple-beam",
-      "entrainment"
+      "entrainment",
+      "skill-swap"
     ]
   }
 }

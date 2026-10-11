@@ -56,6 +56,17 @@ impl Battle {
         {
             return false;
         }
+        self.install_ability(who, state, events);
+        self.ability_on_entry(who, events);
+        true
+    }
+
+    fn install_ability(
+        &mut self,
+        who: ParticipantId,
+        state: crate::model::AbilityState,
+        events: &mut Vec<BattleEvent>,
+    ) {
         let original = self.ability_state(who);
         let pokemon = self.get_mut(who);
         pokemon.original_ability.get_or_insert(original);
@@ -68,7 +79,32 @@ impl Battle {
             pokemon.name,
             pokemon.ability.as_deref().unwrap_or_default()
         )));
-        self.ability_on_entry(who, events);
+    }
+
+    pub(crate) fn swap_abilities(
+        &mut self,
+        a: ParticipantId,
+        b: ParticipantId,
+        events: &mut Vec<BattleEvent>,
+    ) -> bool {
+        if a == b
+            || [a, b].iter().any(|id| {
+                self.get(*id).hp == 0
+                    || !self.is_active(*id)
+                    || self.get(*id).ability.as_deref().is_none_or(|ability| {
+                        ability.is_empty() || ability_flag(&item_key(ability), "failskillswap")
+                    })
+            })
+        {
+            return false;
+        }
+        let first = self.ability_state(a);
+        let second = self.ability_state(b);
+        self.install_ability(a, second, events);
+        self.install_ability(b, first, events);
+        // Both abilities change before either activation; the recipient starts first.
+        self.ability_on_entry(b, events);
+        self.ability_on_entry(a, events);
         true
     }
 

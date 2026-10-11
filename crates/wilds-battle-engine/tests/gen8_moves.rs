@@ -5221,3 +5221,59 @@ fn entrainment_transfers_supported_ability_rules_and_honors_restrictions() {
         }
     }
 }
+
+#[test]
+fn skill_swap_is_atomic_and_activates_both_new_abilities_including_identical_ones() {
+    use wilds_battle_engine::Stat;
+    for same in [false, true] {
+        let mut user = mon("User", &["skill-swap"]);
+        user.ability = Some(if same { "intimidate" } else { "contrary" }.into());
+        let mut foe = mon("Foe", &["splash"]);
+        foe.ability = Some("intimidate".into());
+        let mut b = game(user, vec![foe], 0.5);
+        turn(&mut b);
+        assert!(!b.participants(Side::Allies)[0].last_move_failed);
+        assert_eq!(
+            b.participants(Side::Allies)[0].ability.as_deref(),
+            Some("intimidate")
+        );
+        assert_eq!(
+            b.participants(Side::Foes)[0].ability.as_deref(),
+            Some(if same { "intimidate" } else { "contrary" })
+        );
+        assert_eq!(
+            b.participants(Side::Foes)[0].stage(Stat::Attack),
+            if same { -2 } else { 1 }
+        );
+        assert_eq!(
+            b.participants(Side::Allies)[0].stage(Stat::Attack),
+            if same { -2 } else { 1 }
+        );
+    }
+}
+
+#[test]
+fn skill_swap_bypasses_substitute_but_cannot_partially_swap_a_protected_ability() {
+    for (own, other, response, sub, success) in [
+        ("pressure", "levitate", "splash", 50, true),
+        ("pressure", "levitate", "protect", 0, false),
+        ("pressure", "wonder-guard", "splash", 0, false),
+        ("multitype", "levitate", "splash", 0, false),
+    ] {
+        let mut user = mon("User", &["skill-swap"]);
+        user.ability = Some(own.into());
+        let mut foe = mon("Foe", &[response]);
+        foe.ability = Some(other.into());
+        foe.substitute_hp = sub;
+        let mut b = game(user, vec![foe], 0.5);
+        turn(&mut b);
+        assert_eq!(
+            b.participants(Side::Allies)[0].ability.as_deref(),
+            Some(if success { other } else { own })
+        );
+        assert_eq!(
+            b.participants(Side::Foes)[0].ability.as_deref(),
+            Some(if success { own } else { other })
+        );
+    }
+}

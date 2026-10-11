@@ -1314,7 +1314,9 @@ impl Battle {
             | ScriptOperation::TakeItem { who }
             | ScriptOperation::GiveItem { who, .. }
             | ScriptOperation::ConsumeItem { who } => Some((*who, Value::Nil)),
-            ScriptOperation::SwapItems { b, .. } => Some((*b, Value::Boolean(false))),
+            ScriptOperation::SwapAbilities { b, .. } | ScriptOperation::SwapItems { b, .. } => {
+                Some((*b, Value::Boolean(false)))
+            }
             ScriptOperation::StealItem { from, .. } => Some((*from, Value::Nil)),
             ScriptOperation::EatStolenBerry { from, .. } => Some((*from, Value::Boolean(false))),
             ScriptOperation::StartEffect {
@@ -1951,6 +1953,9 @@ impl Battle {
                     bypassable: None,
                 };
                 Value::Boolean(self.replace_ability(who, state, events))
+            }
+            ScriptOperation::SwapAbilities { a, b } => {
+                Value::Boolean(self.swap_abilities(a, b, events))
             }
             ScriptOperation::CopyAbility { who, from } => {
                 let state = self.ability_state(from);

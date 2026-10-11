@@ -191,6 +191,10 @@ pub(crate) enum HpAmount {
 #[derive(Clone, Debug, PartialEq)]
 pub(crate) enum ScriptOperation {
     MoveInfo(String),
+    SwapAbilities {
+        a: ParticipantId,
+        b: ParticipantId,
+    },
     SetAbility {
         who: ParticipantId,
         ability: String,
@@ -1370,6 +1374,10 @@ fn parse_op(name: &str, args: &[Value]) -> mlua::Result<ScriptOperation> {
         "set_ability" => ScriptOperation::SetAbility {
             who: who(0)?,
             ability: text_of(arg(1), name)?,
+        },
+        "swap_abilities" => ScriptOperation::SwapAbilities {
+            a: who(0)?,
+            b: who(1)?,
         },
         "copy_ability" => ScriptOperation::CopyAbility {
             who: who(0)?,
