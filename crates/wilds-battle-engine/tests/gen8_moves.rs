@@ -5328,3 +5328,31 @@ fn wide_guard_shares_the_protect_failure_counter() {
     assert!(b.participants(Side::Allies)[0].last_move_failed);
     assert!(b.participants(Side::Allies)[0].hp < hp);
 }
+
+#[test]
+fn quick_guard_blocks_priority_hits_and_status_but_feint_breaks_it() {
+    use wilds_battle_engine::Stat;
+    for attack in ["quick-attack", "baby-doll-eyes", "pound", "feint"] {
+        let mut user = mon("User", &["quick-guard"]);
+        user.types = vec![PokemonType::Flying];
+        let mut b = game(user, vec![mon("Foe", &[attack])], 0.5);
+        turn(&mut b);
+        assert_eq!(
+            b.participants(Side::Allies)[0].hp < 1000,
+            matches!(attack, "pound" | "feint")
+        );
+        assert_eq!(b.participants(Side::Allies)[0].stage(Stat::Attack), 0);
+        turn(&mut b);
+        assert!(!b.participants(Side::Allies)[0].last_move_failed);
+    }
+}
+
+#[test]
+fn quick_guard_includes_priority_from_grassy_terrain() {
+    let user = mon("User", &["quick-guard"]);
+    let foe = mon("Foe", &["grassy-terrain", "grassy-glide"]);
+    let mut b = game(user, vec![foe], 0.5);
+    turn(&mut b);
+    turn_with(&mut b, |p| choose_move(p, "quick-guard", "grassy-glide"));
+    assert_eq!(b.participants(Side::Allies)[0].hp, 1000);
+}

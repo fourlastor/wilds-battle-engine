@@ -4827,6 +4827,17 @@
       "limitations": []
     },
     {
+      "id": 501,
+      "slug": "quick-guard",
+      "name": "Quick Guard",
+      "sheet_row": null,
+      "runtime_id": "quick-guard",
+      "file": "moves/quick-guard.lua",
+      "status": "implemented",
+      "limitations": [],
+      "parameter_source": "https://pokeapi.co/api/v2/move/501/"
+    },
+    {
       "id": 502,
       "slug": "ally-switch",
       "name": "Ally Switch",
@@ -7788,7 +7799,8 @@
       "simple-beam",
       "entrainment",
       "skill-swap",
-      "wide-guard"
+      "wide-guard",
+      "quick-guard"
     ]
   }
 }
