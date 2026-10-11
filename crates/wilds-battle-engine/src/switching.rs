@@ -117,6 +117,8 @@ impl Battle {
         outgoing.next_move_power_boost = None;
         outgoing.last_move = None;
         outgoing.consecutive_count = 0;
+        outgoing.protection_streak = 0;
+        outgoing.last_protection_turn = None;
         outgoing.crit_stage = 0;
         outgoing.semi_invulnerable = false;
         outgoing.recharging = false;

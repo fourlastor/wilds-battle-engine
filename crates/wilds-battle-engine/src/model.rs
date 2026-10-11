@@ -417,6 +417,9 @@ pub struct Pokemon {
     pub next_move_power_boost: Option<NextMovePowerBoost>,
     pub last_move: Option<String>,
     pub consecutive_count: u8,
+    /// Successful protection attempts share a streak across move names.
+    pub protection_streak: u8,
+    pub last_protection_turn: Option<u64>,
     pub crit_stage: u8,
     pub semi_invulnerable: bool,
     pub carrying: Option<ParticipantId>,
@@ -506,6 +509,8 @@ impl Pokemon {
             next_move_power_boost: None,
             last_move: None,
             consecutive_count: 0,
+            protection_streak: 0,
+            last_protection_turn: None,
             crit_stage: 0,
             semi_invulnerable: false,
             carrying: None,

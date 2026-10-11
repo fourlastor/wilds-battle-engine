@@ -2905,3 +2905,36 @@ fn bestow_rejects_occupied_slots_and_species_binding_without_losing_the_gift() {
         assert!(b.participants(Side::Allies)[0].last_move_failed);
     }
 }
+
+#[test]
+fn detect_and_protect_share_the_consecutive_failure_chance() {
+    let mut b = game(
+        mon("User", &["protect", "detect", "splash"]),
+        vec![mon("Foe", &["tackle"])],
+        0.5,
+    );
+    turn_with(&mut b, |p| choose_move(p, "protect", "tackle"));
+    assert_eq!(b.participants(Side::Allies)[0].hp, 1000);
+    turn_with(&mut b, |p| choose_move(p, "detect", "tackle"));
+    assert!(b.participants(Side::Allies)[0].hp < 1000);
+    assert!(b.participants(Side::Allies)[0].last_move_failed);
+    let prior = b.participants(Side::Allies)[0].hp;
+    turn_with(&mut b, |p| choose_move(p, "detect", "tackle"));
+    assert_eq!(b.participants(Side::Allies)[0].hp, prior);
+    turn_with(&mut b, |p| choose_move(p, "protect", "tackle"));
+    assert!(b.participants(Side::Allies)[0].hp < prior);
+    turn_with(&mut b, |p| choose_move(p, "splash", "tackle"));
+    let prior = b.participants(Side::Allies)[0].hp;
+    turn_with(&mut b, |p| choose_move(p, "detect", "tackle"));
+    assert_eq!(b.participants(Side::Allies)[0].hp, prior);
+}
+
+#[test]
+fn detect_fails_if_every_other_action_already_finished() {
+    let mut user = mon("User", &["detect"]);
+    user.speed = 10;
+    let foe = mon("Foe", &["protect"]);
+    let mut b = game(user, vec![foe], 0.5);
+    turn(&mut b);
+    assert!(b.participants(Side::Allies)[0].last_move_failed);
+}

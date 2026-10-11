@@ -912,6 +912,28 @@ impl Battle {
             self.get_mut(id).status_turns -= 1;
         }
     }
+    pub(crate) fn protection_check(&mut self, actor: ParticipantId) -> bool {
+        let pokemon = self.get(actor);
+        let streak = if pokemon
+            .last_protection_turn
+            .is_some_and(|turn| turn + 1 >= self.turn)
+        {
+            pokemon.protection_streak
+        } else {
+            0
+        };
+        let succeeds = streak == 0 || self.rng.chance((1.0f32 / 3.0).powi(i32::from(streak)));
+        let turn = self.turn;
+        let pokemon = self.get_mut(actor);
+        pokemon.protection_streak = if succeeds {
+            streak.saturating_add(1)
+        } else {
+            0
+        };
+        pokemon.last_protection_turn = succeeds.then_some(turn);
+        succeeds
+    }
+
     fn execute_move(
         &mut self,
         actor: ParticipantId,
@@ -1098,13 +1120,8 @@ impl Battle {
             pokemon.last_used = Some(spec.id.clone());
             pokemon.moves_used.insert(spec.id.clone());
         }
-        let streak = if self.get(actor).last_move.as_deref() == Some(&spec.id) {
-            self.get(actor).consecutive_count
-        } else {
-            0
-        };
         if spec.effects.iter().any(|e| matches!(e, Effect::Protect))
-            && !self.rng.chance((1.0f32 / 3.0).powi(streak as i32))
+            && !self.protection_check(actor)
         {
             events.push(BattleEvent::Message(format!(
                 "{user_name} used {}!",

@@ -1644,15 +1644,7 @@ impl Battle {
                 Value::Boolean(self.get_mut(who).bound.take().is_some())
             }
             ScriptOperation::Protect { who } => {
-                // As with the Protect effect, a Pokémon that keeps protecting itself with the
-                // same move succeeds a third as often for each turn in a row it has worked.
-                let user = self.get(actor);
-                let streak = if who == actor && user.streak_move.as_deref() == Some(&spec.id) {
-                    user.streak
-                } else {
-                    0
-                };
-                let holds = streak == 0 || self.rng.chance((1.0f32 / 3.0).powi(i32::from(streak)));
+                let holds = who != actor || self.protection_check(actor);
                 if !holds {
                     events.push(BattleEvent::Message("But it failed!".into()));
                     frame.failed = true;

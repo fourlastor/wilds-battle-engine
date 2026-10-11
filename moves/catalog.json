@@ -1839,6 +1839,17 @@
       "limitations": []
     },
     {
+      "id": 197,
+      "slug": "detect",
+      "name": "Detect",
+      "sheet_row": null,
+      "runtime_id": "detect",
+      "file": "moves/detect.lua",
+      "status": "implemented",
+      "limitations": [],
+      "parameter_source": "https://pokeapi.co/api/v2/move/197/"
+    },
+    {
       "id": 198,
       "slug": "bone-rush",
       "name": "Bone Rush",
@@ -7212,7 +7223,8 @@
       "spotlight",
       "trick",
       "switcheroo",
-      "bestow"
+      "bestow",
+      "detect"
     ]
   }
 }
