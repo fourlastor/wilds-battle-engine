@@ -2901,3 +2901,23 @@ fn unseen_fist_contact_moves_pierce_protection_without_reprisals() {
         }
     }
 }
+
+#[test]
+fn mummy_replaces_contact_attackers_abilities_except_protected_ones() {
+    for (move_id, ability, target_hp, expected) in [
+        ("tackle", "huge-power", 1000, "mummy"),
+        ("tackle", "huge-power", 1, "mummy"),
+        ("swift", "huge-power", 1000, "huge-power"),
+        ("tackle", "long-reach", 1000, "long-reach"),
+        ("tackle", "multitype", 1000, "multitype"),
+    ] {
+        let mut user = mon("User", &[move_id]);
+        user.ability = Some(ability.into());
+        let mut target = mon("Target", &["splash"]);
+        target.hp = target_hp;
+        target.ability = Some("mummy".into());
+        let mut battle = game(user, target, 0.5);
+        turn(&mut battle, move_id, "splash");
+        assert_eq!(ally(&battle).ability.as_deref(), Some(expected));
+    }
+}

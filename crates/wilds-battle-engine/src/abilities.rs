@@ -170,6 +170,17 @@ impl Battle {
         if hit.damage == 0 || hit.attacker == target {
             return;
         }
+        if ability == "mummy" && hit.contact && !self.has_ability(hit.attacker, "mummy") {
+            self.replace_ability(
+                hit.attacker,
+                crate::model::AbilityState {
+                    id: Some("mummy".into()),
+                    rules: vec![],
+                    bypassable: None,
+                },
+                events,
+            );
+        }
         if ability == "innardsout" && self.get(target).hp == 0 {
             self.indirect_damage(hit.attacker, hit.damage, events);
         }
