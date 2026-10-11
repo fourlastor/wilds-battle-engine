@@ -4,8 +4,8 @@ use std::ffi::{CStr, CString, c_char};
 use std::panic::{AssertUnwindSafe, catch_unwind};
 use std::sync::Mutex;
 use wilds_battle_engine::{
-    ActionSelection, AdvanceStatus, Battle, BattleEvent, Choice, Condition, Gender, MoveCatalog,
-    ParticipantId, Pokemon, PokemonType, Side, Status,
+    ActionSelection, AdvanceStatus, Battle, BattleEvent, Choice, CombatStat, Condition, Gender,
+    MoveCatalog, ParticipantId, Pokemon, PokemonType, Side, Status,
 };
 
 static LAST_ERROR: Mutex<String> = Mutex::new(String::new());
@@ -67,11 +67,24 @@ struct SetupPokemon {
     /// HP, Attack, Defense, Sp. Attack, Sp. Defense, Speed.
     ivs: Option<[u8; 6]>,
     happiness: Option<u8>,
+    nature_down: Option<String>,
 }
 
 fn pokemon(config: SetupPokemon) -> Result<Pokemon, String> {
     let mut value = Pokemon::new(config.name, config.moves);
     value.species_id = config.species_id;
+    value.nature_down = config
+        .nature_down
+        .as_deref()
+        .map(|stat| match stat {
+            "Attack" => Ok(CombatStat::Attack),
+            "Defense" => Ok(CombatStat::Defense),
+            "SpAttack" => Ok(CombatStat::SpAttack),
+            "SpDefense" => Ok(CombatStat::SpDefense),
+            "Speed" => Ok(CombatStat::Speed),
+            other => Err(format!("unknown nature_down stat {other}")),
+        })
+        .transpose()?;
     value.level = config.level;
     value.max_hp = config.max_hp;
     value.hp = config.hp.unwrap_or(config.max_hp);
@@ -317,6 +330,8 @@ fn snapshot(value: &Pokemon) -> Value {
         "status":value.status.map(|status| format!("{status:?}")),
         "moves":value.moves, "move_pp":value.move_pp,
         "types":value.types.iter().map(|kind| format!("{kind:?}")).collect::<Vec<_>>(),
+        "ate_berry":value.ate_berry, "consumed_items":value.consumed_items, "last_consumed_item":value.last_consumed_item,
+        "nature_down":value.nature_down.map(|stat| format!("{stat:?}")),
         "item":value.item, "hidden":value.hidden().map(|place| format!("{place:?}")),
         "conditions":conditions(&value.conditions)})
 }

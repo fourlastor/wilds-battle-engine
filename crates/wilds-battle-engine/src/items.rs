@@ -9,6 +9,7 @@ impl Battle {
             return None;
         }
         let item = pokemon.item.take()?;
+        pokemon.ate_berry |= crate::berries::is_berry(&item);
         pokemon.last_consumed_item = Some(item.clone());
         pokemon.consumed_items.insert(item.clone());
         Some(item)

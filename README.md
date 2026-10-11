@@ -172,7 +172,7 @@ STAB bonus even when the attacker lacks the hit's type, without doubling an exis
 | `attack`, `defense`, `sp_attack`, `sp_defense`, `speed` | With stat stages and effects applied. |
 | `stages[Stat.X]`, `:stage(Stat.X)` | −6 to +6. |
 | `hidden` | A `Hidden` value (`Air`, `Underground`, `Underwater`, `Vanished`) or nil. |
-| `item`, `ability` | Item/ability IDs or nil. Power Herb activates on charging; other activation mechanics are added separately. |
+| `item`, `ability` | Item/ability IDs or nil. Power Herb activates on charging; supported berries activate or can be eaten by move scripts. |
 | `marks[name]`, `effects[name]` | See below. |
 | `acted`, `selected_move` | This turn. `selected_move` has `id`, `name`, `type`, `category`, `damaging`, `priority`. |
 | `damage_taken`, `hurt_this_turn`, `last_attacker`, `last_hit` | This turn. `last_hit` has `damage`, `move`, `category`, `type`, `contact`. |
@@ -208,6 +208,7 @@ before turn-start hooks; capped changes and resetting stages do not trigger them
 | `ctx:set_types(who, {Type.X})`, `ctx:set_weight(who, kg)`, `ctx:take_item(who)`, `ctx:give_item(who, item)`, `ctx:suppress_ability(who)` | |
 | `ctx:adjacent(a, b)` | Whether two Pokémon occupy neighboring field slots. `who.position` is its zero-based slot from its trainer's perspective; opposing rows face each other. Fainting does not collapse slots. |
 | `ctx:item_removable(who)` | Checks species-bound items independently of Sticky Hold, for damage bonuses such as Knock Off. Removal and atomic theft enforce both restrictions; fainted or suppressed Sticky Hold does not protect an item. |
+| `ctx:eat_berry(who, forced)`, `ctx:eat_stolen_berry(from, to)` | Apply berry consumption effects and record history. Forced eating bypasses Unnerve and Klutz; stealing a berry respects removal restrictions and preserves the eater's own item. |
 | `ctx:consume_item(who)` | Removes a held item, records it in `who.consumed_items` and `who.last_consumed_item`, and returns its ID (or nil). Taking an item does not record consumption. |
 | `ctx:reduce_pp(who, move_id, amount)` | Returns PP removed, clamped to what remains; an absent move loses zero. Refreshed `who.pp` reflects the change. |
 | `ctx:chance(probability)`, `ctx:effect_chance(probability)`, `ctx:random_int(min, max)` | `effect_chance` is for a move's extra effects: an `EffectChance` rule can multiply it. |
@@ -290,3 +291,13 @@ Besides stats and moves, each Pokémon in the setup JSON can carry `species`,
 `ability`, `ivs` (six numbers) and `happiness`. The setup can name an
 `environment`. `wbe_advance` also reports `weather`, the marks and effects on the
 `field` and on both `sides`, and the `payout` earned by each side.
+
+Berry consumption supports the generation 3–8 berries. Health and status berries
+activate between actions and before choices; hit-triggered berries are tracked
+separately. `who.ate_berry` persists for the battle and gates Belch in both move
+selection and execution. Stuff Cheeks requires a held berry and consumes it after
+a successful Defense increase. Hosts may supply `nature_down` (a `CombatStat` in
+Rust or `"Attack"`, `"Defense"`, `"SpAttack"`, `"SpDefense"`, `"Speed"` in setup JSON)
+for flavor-based confusion; absent means a neutral flavor preference. This does
+not recalculate host-provided stats. Berry effects account for Ripen, Cheek Pouch,
+Gluttony, Klutz and Unnerve when those abilities are active.

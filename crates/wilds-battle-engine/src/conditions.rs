@@ -263,6 +263,18 @@ impl Battle {
     }
 
     pub(crate) fn move_block(&self, id: ParticipantId, spec: &MoveSpec) -> Option<&str> {
+        if spec.has_flag("requires_eaten_berry") && !self.has_eaten_berry(id) {
+            return Some("{name} must eat a berry before using that move!");
+        }
+        if spec.has_flag("requires_held_berry")
+            && !self
+                .get(id)
+                .item
+                .as_deref()
+                .is_some_and(crate::berries::is_berry)
+        {
+            return Some("{name} needs to hold a berry to use that move!");
+        }
         self.rules(id).find_map(|rule| match rule {
             Rule::BlockMoves { flags, message } if flags.iter().any(|flag| spec.has_flag(flag)) => {
                 Some(message.as_deref().unwrap_or("{name} cannot use that move!"))

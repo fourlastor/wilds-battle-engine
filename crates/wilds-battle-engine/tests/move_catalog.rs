@@ -37,13 +37,16 @@ impl Game {
         self.turn_with(ally, foe, None)
     }
     fn turn_with(&mut self, ally: &str, foe: &str, partner: Option<&str>) -> Vec<BattleEvent> {
+        let turn = self.0.turn();
+        let mut events = Vec::new();
         for _ in 0..30 {
             let result = self.0.advance().unwrap();
-            if !result.events.is_empty() {
-                return result.events;
+            events.extend(result.events);
+            if self.0.turn() > turn {
+                return events;
             }
             let AdvanceStatus::Awaiting(prompt) = result.status else {
-                return result.events;
+                return events;
             };
             let selected = if prompt.actor.side == Side::Allies && prompt.actor.index == 0 {
                 ally
@@ -81,6 +84,135 @@ fn said(events: &[BattleEvent], text: &str) -> bool {
     events
         .iter()
         .any(|event| matches!(event, BattleEvent::Message(message) if message.contains(text)))
+}
+
+#[test]
+fn stuff_cheeks_consumes_berries_and_applies_their_effects() {
+    for (item, hp, attack, defense, special_defense) in [
+        ("sitrus-berry", 850, 0, 2, 0),
+        ("oran-berry", 610, 0, 2, 0),
+        ("figy-berry", 933, 0, 2, 0),
+        ("liechi-berry", 600, 1, 2, 0),
+        ("ganlon-berry", 600, 0, 3, 0),
+        ("maranga-berry", 600, 0, 2, 1),
+        ("razz-berry", 600, 0, 2, 0),
+        ("chilan-berry", 600, 0, 2, 0),
+        ("enigma-berry", 600, 0, 2, 0),
+    ] {
+        let mut user = mon("User", &["stuff-cheeks", "belch", "splash"]);
+        user.hp = 600;
+        user.item = Some(item.into());
+        let mut game = Game::new(vec![user], vec![mon("Foe", &["splash"])], 0.5);
+        game.turn("stuff-cheeks", "splash");
+        assert_eq!(game.ally().hp, hp, "{item}");
+        assert_eq!(game.ally().stage(Stat::Attack), attack);
+        assert_eq!(game.ally().stage(Stat::Defense), defense);
+        assert_eq!(game.ally().stage(Stat::SpDefense), special_defense);
+        assert!(game.ally().item.is_none());
+        assert!(game.ally().consumed_items.contains(item));
+        game.turn("belch", "splash");
+        assert!(game.foe().hp < 1000);
+    }
+}
+
+#[test]
+fn berry_consumption_respects_nature_pp_caps_and_stuff_cheeks_failure() {
+    let mut user = mon("User", &["stuff-cheeks", "splash"]);
+    user.item = Some("figy-berry".into());
+    user.nature_down = Some(wilds_battle_engine::CombatStat::Attack);
+    let mut game = Game::new(vec![user], vec![mon("Foe", &["splash"])], 0.5);
+    game.turn("stuff-cheeks", "splash");
+    assert!(game.ally().confused_turns.is_some());
+
+    let mut user = mon("User", &["stuff-cheeks", "tackle"]);
+    user.item = Some("leppa-berry".into());
+    user.move_pp.insert("tackle".into(), 1);
+    let mut game = Game::new(vec![user], vec![mon("Foe", &["splash"])], 0.5);
+    game.turn("stuff-cheeks", "splash");
+    // Forced eating restores the first move below maximum, including the move just used.
+    assert_eq!(game.ally().move_pp["stuff-cheeks"], 10);
+    assert_eq!(game.ally().move_pp["tackle"], 1);
+
+    let mut user = mon("User", &["stuff-cheeks", "splash"]);
+    user.item = Some("sitrus-berry".into());
+    user.stages.insert(Stat::Defense, 6);
+    let mut game = Game::new(vec![user], vec![mon("Foe", &["splash"])], 0.5);
+    game.turn("stuff-cheeks", "splash");
+    assert!(game.ally().item.is_some());
+    assert!(game.ally().consumed_items.is_empty());
+}
+
+#[test]
+fn held_berries_activate_and_belch_legality_uses_consumption_history() {
+    let mut user = mon("User", &["belch", "stuff-cheeks", "splash"]);
+    user.item = Some("sitrus-berry".into());
+    let mut game = Game::new(vec![user], vec![mon("Foe", &["splash"])], 0.5);
+    let AdvanceStatus::Awaiting(prompt) = game.0.advance().unwrap().status else {
+        panic!()
+    };
+    assert!(
+        !prompt
+            .choices
+            .iter()
+            .any(|choice| matches!(choice, Choice::UseMove { move_id, .. } if move_id == "belch"))
+    );
+    game.turn("stuff-cheeks", "splash");
+    let AdvanceStatus::Awaiting(prompt) = game.0.advance().unwrap().status else {
+        panic!()
+    };
+    assert!(
+        prompt
+            .choices
+            .iter()
+            .any(|choice| matches!(choice, Choice::UseMove { move_id, .. } if move_id == "belch"))
+    );
+    assert!(!prompt.choices.iter().any(
+        |choice| matches!(choice, Choice::UseMove { move_id, .. } if move_id == "stuff-cheeks")
+    ));
+
+    for (berry, status) in [
+        ("cheri-berry", Status::Paralyzed),
+        ("chesto-berry", Status::Asleep),
+        ("rawst-berry", Status::Burned),
+        ("aspear-berry", Status::Frozen),
+        ("pecha-berry", Status::BadlyPoisoned),
+    ] {
+        let mut user = mon("User", &["belch"]);
+        user.item = Some(berry.into());
+        user.status = Some(status);
+        let mut game = Game::new(vec![user], vec![mon("Foe", &["splash"])], 0.5);
+        game.turn("belch", "splash");
+        assert_eq!(game.ally().status, None, "{berry}");
+        assert!(game.foe().hp < 1000);
+    }
+}
+
+#[test]
+fn berry_abilities_change_thresholds_and_effects_but_forced_eating_bypasses_unnerve() {
+    for (ability, hp, expected_hp, consumed) in [
+        ("ripen", 500, 1000, true),
+        ("cheek-pouch", 500, 1000, true),
+        ("klutz", 500, 500, false),
+        ("", 500, 750, true),
+    ] {
+        let mut user = mon("User", &["splash"]);
+        user.hp = hp;
+        user.item = Some("sitrus-berry".into());
+        user.ability = Some(ability.into());
+        let mut game = Game::new(vec![user], vec![mon("Foe", &["splash"])], 0.5);
+        game.turn("splash", "splash");
+        assert_eq!(game.ally().hp, expected_hp);
+        assert_eq!(game.ally().item.is_none(), consumed);
+    }
+    let mut user = mon("User", &["stuff-cheeks"]);
+    user.hp = 100;
+    user.item = Some("sitrus-berry".into());
+    let mut foe = mon("Foe", &["splash"]);
+    foe.ability = Some("unnerve".into());
+    let mut game = Game::new(vec![user], vec![foe], 0.5);
+    game.turn("stuff-cheeks", "splash");
+    assert_eq!(game.ally().hp, 350);
+    assert_eq!(game.ally().stage(Stat::Defense), 2);
 }
 
 #[test]
@@ -1385,8 +1517,6 @@ fn berry_moves_report_consumption_and_unlock_belch() {
     let mut foe = mon("Foe", &["splash"]);
     foe.item = Some("oran-berry".into());
     let mut game = Game::duel(&["belch", "bug-bite"], foe, 0.5);
-    assert!(said(&game.turn("belch", "splash"), "failed"));
-    assert_eq!(game.foe().hp, 1000);
     game.turn("bug-bite", "splash");
     assert!(game.foe().item.is_none());
     let before = game.foe().hp;
@@ -1396,7 +1526,8 @@ fn berry_moves_report_consumption_and_unlock_belch() {
 
 #[test]
 fn unavailable_moves_fail_explicitly_without_fake_effects() {
-    for id in ["sky-drop", "stuff-cheeks"] {
+    {
+        let id = "sky-drop";
         let mut game = Game::duel(&[id], mon("Foe", &["splash"]), 0.5);
         let events = game.turn(id, "splash");
         assert!(said(&events, "unavailable"), "{id}");

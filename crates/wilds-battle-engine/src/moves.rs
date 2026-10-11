@@ -336,6 +336,14 @@ pub(crate) enum ScriptOperation {
         a: ParticipantId,
         b: ParticipantId,
     },
+    EatStolenBerry {
+        from: ParticipantId,
+        to: ParticipantId,
+    },
+    EatBerry {
+        who: ParticipantId,
+        forced: bool,
+    },
     ConsumeItem {
         who: ParticipantId,
     },
@@ -1075,6 +1083,18 @@ fn parse_op(name: &str, args: &[Value]) -> mlua::Result<ScriptOperation> {
         "adjacent" => ScriptOperation::Adjacent {
             a: who(0)?,
             b: who(1)?,
+        },
+        "eat_stolen_berry" => ScriptOperation::EatStolenBerry {
+            from: who(0)?,
+            to: who(1)?,
+        },
+        "eat_berry" => ScriptOperation::EatBerry {
+            who: who(0)?,
+            forced: match arg(1) {
+                Value::Nil => false,
+                Value::Boolean(value) => *value,
+                _ => return Err(bad("eat_berry forced must be a boolean")),
+            },
         },
         "consume_item" => ScriptOperation::ConsumeItem { who: who(0)? },
         "item_removable" => ScriptOperation::ItemRemovable { who: who(0)? },

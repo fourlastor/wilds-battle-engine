@@ -2662,7 +2662,7 @@
       "file": "moves/pluck.lua",
       "status": "partial",
       "limitations": [
-        "Berry removal and consumption history are recorded, but berry activation and resistance-berry timing require an item engine."
+        "Berry consumption effects and history are implemented; resistance and reactive berry timing still require engine support."
       ]
     },
     {
@@ -3248,7 +3248,7 @@
       "file": "moves/bug-bite.lua",
       "status": "partial",
       "limitations": [
-        "Berry removal and consumption history are recorded, but berry activation and resistance-berry timing require an item engine."
+        "Berry consumption effects and history are implemented; resistance and reactive berry timing still require engine support."
       ]
     },
     {
@@ -4132,10 +4132,8 @@
       "sheet_row": 403,
       "runtime_id": "belch",
       "file": "moves/belch.lua",
-      "status": "partial",
-      "limitations": [
-        "Fails on execution until the ate_berry mark is set. Pre-selection legality and automatic held-berry consumption require engine/host support."
-      ]
+      "status": "implemented",
+      "limitations": []
     },
     {
       "id": 563,
@@ -5129,10 +5127,8 @@
       "sheet_row": 516,
       "runtime_id": "stuff-cheeks",
       "file": "moves/stuff-cheeks.lua",
-      "status": "partial",
-      "limitations": [
-        "Unavailable: held berries are identifiers only; their activation effects cannot be executed by Lua."
-      ]
+      "status": "implemented",
+      "limitations": []
     },
     {
       "id": 748,

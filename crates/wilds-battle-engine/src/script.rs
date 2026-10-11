@@ -297,6 +297,7 @@ impl Battle {
             consumed.raw_set(item.as_str(), true)?;
         }
         table.raw_set("consumed_items", consumed)?;
+        table.raw_set("ate_berry", self.has_eaten_berry(id))?;
         Ok(())
     }
 
@@ -956,7 +957,7 @@ impl Battle {
         false
     }
 
-    fn cure_status(
+    pub(crate) fn cure_status(
         &mut self,
         who: ParticipantId,
         only: Option<Status>,
@@ -976,7 +977,7 @@ impl Battle {
         true
     }
 
-    fn confuse(
+    pub(crate) fn confuse(
         &mut self,
         actor: ParticipantId,
         who: ParticipantId,
@@ -1412,6 +1413,12 @@ impl Battle {
                 Value::Integer(i64::from(lost))
             }
             ScriptOperation::Adjacent { a, b } => Value::Boolean(self.adjacent(a, b)),
+            ScriptOperation::EatStolenBerry { from, to } => {
+                Value::Boolean(self.eat_stolen_berry(from, to, events))
+            }
+            ScriptOperation::EatBerry { who, forced } => {
+                Value::Boolean(self.eat_berry(who, forced, events))
+            }
             ScriptOperation::ConsumeItem { who } => match self.consume_item(who) {
                 Some(item) => Value::String(self.catalog.lua().create_string(&item)?),
                 None => Value::Nil,
@@ -1510,6 +1517,8 @@ fn reaction_may(operation: &ScriptOperation, hook: ScriptHook) -> bool {
         | Op::RandomInt { .. }
         | Op::ReducePp { .. }
         | Op::Adjacent { .. }
+        | Op::EatStolenBerry { .. }
+        | Op::EatBerry { .. }
         | Op::ConsumeItem { .. }
         | Op::ItemRemovable { .. }
         | Op::StealItem { .. }

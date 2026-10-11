@@ -333,6 +333,10 @@ impl Battle {
                 status: AdvanceStatus::Awaiting(prompt.clone()),
             });
         }
+        let mut events = Vec::new();
+        if self.selections.is_empty() {
+            self.update_berries(&mut events);
+        }
         let actors = self.actors();
         let selected: Vec<_> = self.selections.iter().map(|(actor, _)| *actor).collect();
         for actor in actors {
@@ -390,11 +394,11 @@ impl Battle {
             self.next_prompt_id += 1;
             self.pending = Some(prompt.clone());
             return Ok(AdvanceResult {
-                events: Vec::new(),
+                events,
                 status: AdvanceStatus::Awaiting(prompt),
             });
         }
-        let mut events = self.resolve_turn()?;
+        events.extend(self.resolve_turn()?);
         let status = if let Some(winner) = self.winner {
             AdvanceStatus::End { winner }
         } else {
@@ -538,6 +542,7 @@ impl Battle {
                     }
                 }
             }
+            self.update_berries(&mut events);
             self.get_mut(actor).acted = true;
             self.resolve_outcome(&mut events);
             if !self.hurry.is_empty() {
@@ -553,6 +558,7 @@ impl Battle {
         if self.winner.is_none() {
             for (actor, _, _, _, _) in &ordered {
                 self.post_turn_status(*actor, &mut events);
+                self.update_berries(&mut events);
                 self.resolve_outcome(&mut events);
                 if self.winner.is_some() {
                     break;
@@ -561,11 +567,13 @@ impl Battle {
         }
         if self.winner.is_none() {
             self.post_turn_weather(&ordered, &mut events);
+            self.update_berries(&mut events);
             self.resolve_outcome(&mut events);
         }
         if self.winner.is_none() {
             let order: Vec<ParticipantId> = ordered.iter().map(|entry| entry.0).collect();
             self.tick_conditions(&order, &mut events);
+            self.update_berries(&mut events);
             self.resolve_outcome(&mut events);
         }
         for pokemon in self.sides.iter_mut().flatten() {
@@ -1083,6 +1091,7 @@ impl Battle {
         };
         let probability =
             value * self.get(actor).accuracy_factor() * evasion * self.accuracy_rule_factor(actor);
+        self.end_condition(Scope::Pokemon(actor), "micle_berry");
         self.rng.chance(probability)
     }
     // These inputs correspond to C# PEffectAttributes plus the event sink.

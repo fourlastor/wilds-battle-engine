@@ -384,10 +384,11 @@ pub struct Pokemon {
     pub gender: Gender,
     /// Kilograms; 0 when unknown.
     pub weight: f32,
-    /// Held item id. The engine does not know what items do.
+    /// Held item id; supported activation and removal rules run in the engine.
     pub item: Option<String>,
     /// Consumption history persists for the battle; transferring/removing an item does not add to it.
     pub consumed_items: BTreeSet<String>,
+    pub ate_berry: bool,
     pub last_consumed_item: Option<String>,
     /// Ability id. The engine does not know what abilities do.
     pub ability: Option<String>,
@@ -395,6 +396,8 @@ pub struct Pokemon {
     /// HP, Attack, Defense, Sp. Attack, Sp. Defense, Speed.
     pub ivs: Option<[u8; 6]>,
     pub happiness: Option<u8>,
+    /// Stat reduced by nature, used for berry flavor preferences. Raw stats remain host-provided.
+    pub nature_down: Option<CombatStat>,
     /// Where it is while `semi_invulnerable`.
     pub hidden_kind: HiddenKind,
     pub conditions: Vec<Condition>,
@@ -455,11 +458,13 @@ impl Pokemon {
             weight: 0.0,
             item: None,
             consumed_items: BTreeSet::new(),
+            ate_berry: false,
             last_consumed_item: None,
             ability: None,
             ability_suppressed: false,
             ivs: None,
             happiness: None,
+            nature_down: None,
             hidden_kind: HiddenKind::Vanished,
             conditions: Vec::new(),
             entered_turn: 0,
