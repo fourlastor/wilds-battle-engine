@@ -2069,3 +2069,24 @@ fn steam_engine_raises_speed_six_stages_after_water_or_fire_damage() {
     turn(&mut battle, "water-gun", "splash");
     assert_eq!(foe(&battle).stage(Stat::Speed), 2);
 }
+
+#[test]
+fn sand_spit_starts_sandstorm_after_damage_but_not_status_moves() {
+    for (move_id, suppressed, expected) in [
+        ("tackle", false, true),
+        ("swift", false, true),
+        ("tackle", true, false),
+        ("growl", false, false),
+    ] {
+        let user = mon("User", &[move_id]);
+        let mut target = mon("Target", &["splash"]);
+        target.ability = Some("sand-spit".into());
+        target.ability_suppressed = suppressed;
+        let mut battle = game(user, target, 0.5);
+        turn(&mut battle, move_id, "splash");
+        assert_eq!(
+            battle.weather().map(|w| w.kind),
+            expected.then_some(wilds_battle_engine::WeatherKind::Sandstorm)
+        );
+    }
+}

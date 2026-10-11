@@ -37,6 +37,9 @@ impl Battle {
         if hit.damage == 0 || hit.attacker == target {
             return;
         }
+        if ability == "sandspit" {
+            self.start_weather(crate::model::WeatherKind::Sandstorm, 5, events);
+        }
         if self.get(target).hp > 0 && ability == "stamina" {
             self.change_stat(target, crate::model::Stat::Defense, 1, events);
         }
