@@ -688,6 +688,72 @@ fn steadfast_boosts_only_when_flinch_actually_prevents_the_action() {
 }
 
 #[test]
+fn infatuation_aroma_veil_protects_the_holder_and_its_allies_unless_bypassed() {
+    use wilds_battle_engine::Gender;
+    for partner in [false, true] {
+        for bypass in [false, true] {
+            let mut user = mon("User", &["attract"]);
+            user.gender = Gender::Male;
+            if bypass {
+                user.ability = Some("mold-breaker".into());
+            }
+            let mut target = mon("Target", &["splash"]);
+            target.gender = Gender::Female;
+            let mut veil = mon("Veil", &["splash"]);
+            if partner {
+                veil.ability = Some("aroma-veil".into());
+            } else {
+                target.ability = Some("aroma-veil".into());
+            }
+            let mut battle = Battle::with_rng(
+                Fixed(0.5),
+                [vec![user], vec![target, veil]],
+                MoveCatalog::builtin().unwrap(),
+            )
+            .unwrap();
+            turn(&mut battle, "attract", "splash");
+            assert_eq!(foe(&battle).condition("attract").is_some(), bypass);
+        }
+    }
+}
+
+#[test]
+fn oblivious_cures_existing_infatuation_before_action_selection() {
+    use wilds_battle_engine::{Condition, ParticipantId, Rule};
+    let mut target = mon("Target", &["splash"]);
+    target.ability = Some("Oblivious".into());
+    target.conditions.push(Condition {
+        name: "attract".into(),
+        value: 1,
+        turns_left: None,
+        rules: vec![Rule::InfatuatedBy(ParticipantId {
+            side: Side::Allies,
+            index: 0,
+        })],
+        group: None,
+        end_message: None,
+    });
+    let mut battle = game(mon("User", &["splash"]), target, 0.1);
+    battle.advance().unwrap();
+    assert!(foe(&battle).condition("attract").is_none());
+}
+
+#[test]
+fn aroma_veil_also_prevents_the_related_mental_move_restrictions() {
+    for (move_id, condition) in [
+        ("taunt", "taunt"),
+        ("torment", "torment"),
+        ("heal-block", "heal_block"),
+    ] {
+        let mut target = mon("Target", &["splash"]);
+        target.ability = Some("aroma-veil".into());
+        let mut battle = game(mon("User", &[move_id]), target, 0.5);
+        turn(&mut battle, move_id, "splash");
+        assert!(foe(&battle).condition(condition).is_none());
+    }
+}
+
+#[test]
 fn freeze_fire_hits_thaw_before_the_targets_pending_action() {
     for attack in ["ember", "fire-punch", "fire-spin", "flamethrower"] {
         let mut user = mon("User", &[attack]);

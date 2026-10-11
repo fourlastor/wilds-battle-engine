@@ -63,6 +63,11 @@ impl Battle {
 
     pub(crate) fn update_status_abilities(&mut self, events: &mut Vec<BattleEvent>) {
         for who in self.actors() {
+            if self.has_ability(who, "oblivious") {
+                self.get_mut(who).conditions.retain(|c| {
+                    c.name != "taunt" && !c.rules.iter().any(|r| matches!(r, Rule::InfatuatedBy(_)))
+                });
+            }
             if self.has_ability(who, "owntempo") {
                 self.get_mut(who).confused_turns = None;
             }
@@ -73,6 +78,20 @@ impl Battle {
                 self.cure_status(who, None, events);
             }
         }
+    }
+
+    pub(crate) fn can_infatuate(&self, source: ParticipantId, target: ParticipantId) -> bool {
+        use crate::model::Gender::{Female, Male};
+        self.get(source).hp > 0
+            && self.get(target).hp > 0
+            && self.is_active(source)
+            && self.is_active(target)
+            && matches!(
+                (self.get(source).gender, self.get(target).gender),
+                (Male, Female) | (Female, Male)
+            )
+            && !self.has_ability(target, "oblivious")
+            && !self.team_status_ability(target, "aromaveil")
     }
 
     pub(crate) fn field_prevents_sleep(&self) -> bool {

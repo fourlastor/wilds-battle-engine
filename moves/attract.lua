@@ -8,8 +8,7 @@ return {
     if not ctx:try_hit(ctx.target) then return end
     local a, b = ctx.user.gender, ctx.target.gender
     local opposite = (a == Gender.Male and b == Gender.Female) or (a == Gender.Female and b == Gender.Male)
-    local ability = ctx.target.ability and ctx.target.ability:gsub("[-_]", "")
-    if not opposite or ability == "oblivious" or ctx.target.effects.attract then ctx:fail(); return end
-    ctx:start_effect(ctx.target, "attract", {rules = {{kind = Rule.Infatuated, by = ctx.user}}})
+    if not opposite or ctx.target.effects.attract then ctx:fail(); return end
+    if not ctx:start_effect(ctx.target, "attract", {rules = {{kind = Rule.Infatuated, by = ctx.user}}}) then ctx:fail() end
   end,
 }

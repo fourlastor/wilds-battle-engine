@@ -77,6 +77,17 @@ impl Battle {
         condition: Condition,
         restart: bool,
     ) -> bool {
+        if let Scope::Pokemon(who) = scope
+            && (condition.rules.iter().any(
+                |r| matches!(r, Rule::InfatuatedBy(source) if !self.can_infatuate(*source, who)),
+            ) || (matches!(
+                condition.name.as_str(),
+                "attract" | "disable" | "encore" | "heal_block" | "taunt" | "torment"
+            ) && self.team_status_ability(who, "aromaveil"))
+                || (condition.name == "taunt" && self.has_ability(who, "oblivious")))
+        {
+            return false;
+        }
         let conditions = self.conditions_mut(scope);
         if conditions.iter().any(|own| own.name == condition.name) {
             if !restart {

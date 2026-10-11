@@ -11,6 +11,6 @@ return {
     if not move or forbidden[move:gsub("[^%w]", ""):lower()] or not ctx.target.pp[move] or ctx.target.pp[move] == 0 or ctx.target.effects.encore then ctx:fail(); return end
     local turns = 4
     for _, pokemon in ipairs(ctx.pending) do if pokemon == ctx.target then turns=3; break end end
-    ctx:start_effect(ctx.target, "encore", {turns=turns, rules={{kind=Rule.OnlyMove, id=move}}})
+    if not ctx:start_effect(ctx.target, "encore", {turns=turns, rules={{kind=Rule.OnlyMove, id=move}}}) then ctx:fail() end
   end,
 }

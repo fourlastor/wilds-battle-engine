@@ -10,8 +10,8 @@ return {
     if not move or move == "struggle" or ctx.target.pp[move] == 0 or ctx.target.effects.disable then ctx:fail(); return end
     local turns = 5
     for _, who in ipairs(ctx.pending) do if who == ctx.target then turns = 4; break end end
-    ctx:start_effect(ctx.target, "disable", {turns = turns, rules = {
+    if not ctx:start_effect(ctx.target, "disable", {turns = turns, rules = {
       {kind = Rule.BlockMove, id = move, message = "{name}'s move is disabled!"}
-    }})
+    }}) then ctx:fail() end
   end,
 }

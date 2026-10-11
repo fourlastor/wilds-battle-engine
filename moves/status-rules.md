@@ -94,3 +94,12 @@ Regression tests are in `crates/wilds-battle-engine/tests/status_rules.rs`.
   effects. Suppression and ability-bypassing attacks can disable those protections.
 - Steadfast raises Speed once when flinch actually prevents an action, rather
   than merely when a flinching hit lands.
+
+## Infatuation
+
+- Requires opposite genders; each attempted action has a 50% chance to fail
+  without spending PP. It ends when either participant leaves or its source faints.
+- Oblivious prevents and cures infatuation. Aroma Veil prevents it for its holder
+  and active allies, respecting suppression and ability bypass. Aroma Veil also
+  blocks Disable, Encore, Heal Block, Taunt and Torment.
+- Safeguard, Substitute and major-status immunity do not block Attract.
