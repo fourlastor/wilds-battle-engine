@@ -5033,6 +5033,17 @@
       "limitations": []
     },
     {
+      "id": 571,
+      "slug": "forests-curse",
+      "name": "Forest\u2019s Curse",
+      "sheet_row": null,
+      "runtime_id": "forests-curse",
+      "file": "moves/forests-curse.lua",
+      "status": "implemented",
+      "limitations": [],
+      "parameter_source": "https://pokeapi.co/api/v2/move/571/"
+    },
+    {
       "id": 572,
       "slug": "petal-blizzard",
       "name": "Petal Blizzard",
@@ -7092,7 +7103,8 @@
       "power-trick",
       "soak",
       "magic-powder",
-      "trick-or-treat"
+      "trick-or-treat",
+      "forests-curse"
     ]
   }
 }

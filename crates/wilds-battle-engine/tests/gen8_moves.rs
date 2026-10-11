@@ -2492,3 +2492,40 @@ fn trick_or_treat_respects_protect_and_substitute_and_soak_clears_added_type() {
         }
     }
 }
+
+#[test]
+fn forests_curse_replaces_trick_or_treat_and_preserves_base_types() {
+    let mut foe = mon("Foe", &["splash"]);
+    foe.types = vec![PokemonType::Fire, PokemonType::Flying];
+    let mut b = game(
+        mon("User", &["trick-or-treat", "forests-curse"]),
+        vec![foe],
+        0.5,
+    );
+    for (id, kind) in [
+        ("trick-or-treat", PokemonType::Ghost),
+        ("forests-curse", PokemonType::Grass),
+        ("trick-or-treat", PokemonType::Ghost),
+    ] {
+        turn_with(&mut b, |p| choose_move(p, id, "splash"));
+        let foe = &b.participants(Side::Foes)[0];
+        assert_eq!(foe.types, vec![PokemonType::Fire, PokemonType::Flying]);
+        assert_eq!(foe.added_type, Some(kind));
+    }
+}
+#[test]
+fn forests_curse_respects_substitute_protect_and_existing_grass_type() {
+    for (kind, response, sub) in [
+        (PokemonType::Grass, "splash", 0),
+        (PokemonType::Fire, "protect", 0),
+        (PokemonType::Fire, "splash", 50),
+    ] {
+        let mut foe = mon("Foe", &[response]);
+        foe.types = vec![kind];
+        foe.substitute_hp = sub;
+        let mut b = game(mon("User", &["forests-curse"]), vec![foe], 0.5);
+        turn(&mut b);
+        assert_eq!(b.participants(Side::Foes)[0].added_type, None);
+        assert!(b.participants(Side::Allies)[0].last_move_failed);
+    }
+}
