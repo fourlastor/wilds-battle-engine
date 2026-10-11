@@ -3096,6 +3096,17 @@
       "limitations": []
     },
     {
+      "id": 375,
+      "slug": "psycho-shift",
+      "name": "Psycho Shift",
+      "sheet_row": null,
+      "runtime_id": "psycho-shift",
+      "file": "moves/psycho-shift.lua",
+      "status": "implemented",
+      "limitations": [],
+      "parameter_source": "https://pokeapi.co/api/v2/move/375/"
+    },
+    {
       "id": 376,
       "slug": "trump-card",
       "name": "Trump Card",
@@ -6648,7 +6659,8 @@
       "heart-swap",
       "topsy-turvy",
       "refresh",
-      "purify"
+      "purify",
+      "psycho-shift"
     ]
   }
 }

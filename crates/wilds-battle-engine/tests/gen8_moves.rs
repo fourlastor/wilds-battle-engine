@@ -1327,3 +1327,38 @@ fn purify_heals_user_only_when_it_cures_the_target() {
         }
     }
 }
+
+#[test]
+fn psycho_shift_cures_user_only_after_successfully_transferring_status() {
+    use wilds_battle_engine::Status;
+    for (kind, status, transferred) in [
+        (PokemonType::Normal, None, true),
+        (PokemonType::Fire, None, false),
+        (PokemonType::Normal, Some(Status::Poisoned), false),
+    ] {
+        let mut user = mon("User", &["psycho-shift"]);
+        user.status = Some(Status::Burned);
+        user.speed = 200;
+        let mut foe = mon("Foe", &["splash"]);
+        foe.types = vec![kind];
+        foe.status = status;
+        let mut b = game(user, vec![foe], 0.5);
+        turn(&mut b);
+        assert_eq!(
+            b.participants(Side::Allies)[0].status,
+            if transferred {
+                None
+            } else {
+                Some(Status::Burned)
+            }
+        );
+        assert_eq!(
+            b.participants(Side::Foes)[0].status,
+            if transferred {
+                Some(Status::Burned)
+            } else {
+                status
+            }
+        );
+    }
+}
