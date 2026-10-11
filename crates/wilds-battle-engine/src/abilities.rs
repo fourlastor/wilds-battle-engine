@@ -134,7 +134,8 @@ impl Battle {
     pub(crate) fn finish_ability_knockouts(&mut self, events: &mut Vec<BattleEvent>) {
         // All targets and recoil resolve before knockout rewards change attacking stats.
         for actor in std::mem::take(&mut self.pending_knockouts) {
-            if self.has_ability(actor, "asoneglastrier") {
+            if self.has_ability(actor, "asoneglastrier") || self.has_ability(actor, "chillingneigh")
+            {
                 self.change_stat(actor, crate::model::Stat::Attack, 1, events);
             }
             if self.has_ability(actor, "asonespectrier") {

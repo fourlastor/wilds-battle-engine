@@ -728,3 +728,8 @@ fn as_one_spectrier_gains_sp_attack_after_all_spread_hits_resolve() {
     assert_eq!(boosted.1, 1);
     assert_eq!(boosted.0, run("").0);
 }
+
+#[test]
+fn chillingneigh_rewards_move_knockouts() {
+    check_knockout_boost("chilling-neigh", wilds_battle_engine::Stat::Attack);
+}
