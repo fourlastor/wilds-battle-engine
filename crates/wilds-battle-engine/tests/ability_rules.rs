@@ -3346,3 +3346,33 @@ fn stall_moves_last_within_its_priority_bracket_even_in_trick_room() {
         );
     }
 }
+
+#[test]
+fn quick_draw_acts_first_on_thirty_percent_of_attacks_within_priority() {
+    for (move_id, opponent, dice, first) in [
+        ("tackle", "tackle", 0.2, true),
+        ("tackle", "tackle", 0.4, false),
+        ("growl", "tackle", 0.2, false),
+        ("tackle", "quick-attack", 0.2, false),
+    ] {
+        let mut user = mon("User", &[move_id]);
+        user.speed = 10;
+        user.ability = Some("quick-draw".into());
+        let mut target = mon("Target", &[opponent]);
+        target.speed = 100;
+        let mut battle = game(user, target, dice);
+        assert_eq!(
+            first_move_is_user(&turn(&mut battle, move_id, opponent)),
+            first
+        );
+    }
+    let mut user = mon("User", &["tackle"]);
+    user.speed = 200;
+    user.ability = Some("quick-draw".into());
+    let mut target = mon("Target", &["tackle"]);
+    target.speed = 100;
+    target.hp = 200;
+    target.item = Some("custap-berry".into());
+    let mut battle = game(user, target, 0.2);
+    assert!(first_move_is_user(&turn(&mut battle, "tackle", "tackle")));
+}

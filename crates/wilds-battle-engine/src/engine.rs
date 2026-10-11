@@ -163,6 +163,7 @@ struct QueuedAction {
     speed: i32,
     tie: u64,
     custap: bool,
+    quick_draw: bool,
     promoted: bool,
     postponed: bool,
 }
@@ -715,12 +716,11 @@ impl Battle {
                 };
                 let custap = matches!(choice, SelectedAction::Move(_))
                     && self.custap_priority(actor, events);
-                let speed = if custap {
-                    i32::MAX
-                } else {
-                    self.action_speed(actor)
-                };
-                let fractional_priority = if custap {
+                let quick_draw = matches!(&choice, SelectedAction::Move(choice) if self.catalog.get(&choice.move_id).is_some_and(|spec| spec.category != Category::Status))
+                    && self.has_ability(actor, "quickdraw") && self.rng.chance(0.3);
+                if quick_draw { events.push(BattleEvent::Message(format!("{}'s Quick Draw activated!", self.get(actor).name))); }
+                let speed = self.action_speed(actor);
+                let fractional_priority = if custap || quick_draw {
                     1
                 } else if !matches!(choice, SelectedAction::Switch(_))
                     && self.has_ability(actor, "stall")
@@ -738,6 +738,7 @@ impl Battle {
                     speed,
                     tie: self.rng.next_u64(),
                     custap,
+                    quick_draw,
                     promoted: false,
                     postponed: false,
                 }
@@ -876,7 +877,7 @@ impl Battle {
                     self.catalog.get(&choice.move_id).expect("queued move"),
                 );
             }
-            entry.fractional_priority = if entry.custap {
+            entry.fractional_priority = if entry.custap || entry.quick_draw {
                 1
             } else if !matches!(entry.action, SelectedAction::Switch(_))
                 && self.has_ability(entry.actor, "stall")
@@ -885,9 +886,7 @@ impl Battle {
             } else {
                 0
             };
-            if !entry.custap {
-                entry.speed = self.action_speed(entry.actor);
-            }
+            entry.speed = self.action_speed(entry.actor);
         }
         queue.make_contiguous().sort_by(|a, b| {
             b.promoted.cmp(&a.promoted).then_with(|| {
@@ -944,6 +943,7 @@ impl Battle {
             speed: self.action_speed(actor),
             tie: 0,
             custap: false,
+            quick_draw: false,
             promoted: true,
             postponed: false,
         };
