@@ -1364,3 +1364,8 @@ fn check_weather_speed(ability: &str, weather: &str) {
 fn swift_swim_doubles_speed_in_effective_rain() {
     check_weather_speed("swift-swim", "rain-dance");
 }
+
+#[test]
+fn chlorophyll_doubles_speed_in_effective_weather() {
+    check_weather_speed("chlorophyll", "sunny_day");
+}

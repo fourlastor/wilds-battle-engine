@@ -32,7 +32,7 @@ id,ability,status,verification
 31,lightning-rod,IMPLEMENTED,ability_rules::lightning_rod_redirects_damage_and_status_but_not_mold_breaker
 32,serene-grace,MISSING,No native battle behavior
 33,swift-swim,IMPLEMENTED,ability_rules::swift_swim_doubles_speed_in_effective_rain
-34,chlorophyll,MISSING,No native battle behavior
+34,chlorophyll,IMPLEMENTED,ability_rules::chlorophyll_doubles_speed_in_effective_weather
 35,illuminate,MISSING,No native battle behavior
 36,trace,MISSING,No native battle behavior
 37,huge-power,IMPLEMENTED,Source inventory; existing tests only
