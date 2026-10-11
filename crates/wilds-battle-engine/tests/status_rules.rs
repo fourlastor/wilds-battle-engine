@@ -557,6 +557,91 @@ fn uproar_blocks_rest_and_wakes_sleeping_switch_ins() {
 }
 
 #[test]
+fn confusion_own_tempo_prevents_new_confusion_and_cures_existing_confusion() {
+    for suppressed in [false, true] {
+        for confused in [false, true] {
+            let mut target = mon("Target", &["splash"]);
+            target.ability = Some("own-tempo".into());
+            target.ability_suppressed = suppressed;
+            target.confused_turns = confused.then_some(3);
+            let mut battle = game(mon("User", &["confuse_ray"]), target, 0.5);
+            turn(&mut battle, "confuse_ray", "splash");
+            assert_eq!(foe(&battle).confused_turns.is_some(), suppressed);
+        }
+    }
+}
+
+#[test]
+fn confusion_self_hit_uses_floored_40_power_damage_and_a_random_roll() {
+    struct Roll(f32);
+    impl BattleRng for Roll {
+        fn next_u64(&mut self) -> u64 {
+            0
+        }
+        fn fraction(&mut self) -> f32 {
+            0.1
+        }
+        fn damage_roll(&mut self) -> f32 {
+            self.0
+        }
+    }
+    for (roll, expected) in [(0.85, 17), (1.0, 21)] {
+        for (status, ability) in [
+            (None, None),
+            (Some(Status::Burned), Some("guts")),
+            (None, Some("huge-power")),
+            (None, Some("magic-guard")),
+        ] {
+            let mut user = mon("User", &["tackle"]);
+            user.level = 53;
+            user.attack = 103;
+            user.defense = 97;
+            user.confused_turns = Some(1);
+            user.status = status;
+            user.ability = ability.map(str::to_owned);
+            let mut battle = Battle::with_rng(
+                Roll(roll),
+                [vec![user], vec![mon("Target", &["splash"])]],
+                MoveCatalog::builtin().unwrap(),
+            )
+            .unwrap();
+            let events = turn(&mut battle, "tackle", "splash");
+            let damage = events.iter().find_map(|e| match e {
+                BattleEvent::Damage { target, amount, .. } if target.side == Side::Allies => {
+                    Some(*amount)
+                }
+                _ => None,
+            });
+            assert_eq!(damage, Some(expected));
+            assert_eq!(foe(&battle).hp, 1000);
+            turn(&mut battle, "tackle", "splash");
+            assert_eq!(ally(&battle).confused_turns, None);
+            assert!(foe(&battle).hp < 1000);
+        }
+    }
+}
+
+#[test]
+fn tangled_feet_halves_accuracy_only_while_confused_and_preserves_always_hit_moves() {
+    for (move_id, confused, suppressed, hit) in [
+        ("tackle", true, false, false),
+        ("tackle", false, false, true),
+        ("tackle", true, true, true),
+        ("swift", true, false, true),
+    ] {
+        let mut user = mon("User", &[move_id]);
+        user.speed = 200;
+        let mut target = mon("Target", &["splash"]);
+        target.ability = Some("tangled-feet".into());
+        target.ability_suppressed = suppressed;
+        target.confused_turns = confused.then_some(3);
+        let mut battle = game(user, target, 0.75);
+        turn(&mut battle, move_id, "splash");
+        assert_eq!(foe(&battle).hp < 1000, hit);
+    }
+}
+
+#[test]
 fn freeze_fire_hits_thaw_before_the_targets_pending_action() {
     for attack in ["ember", "fire-punch", "fire-spin", "flamethrower"] {
         let mut user = mon("User", &[attack]);

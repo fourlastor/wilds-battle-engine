@@ -1380,14 +1380,7 @@ impl Battle {
                         events.push(BattleEvent::Message(
                             "It hurt itself in its confusion!".into(),
                         ));
-                        let p = self.get(actor).clone();
-                        let attack = p.effective_stat(CombatStat::Attack);
-                        let defense = self.battle_staged_stat(actor, CombatStat::Defense).max(1.0);
-                        let amount =
-                            (((2.0 * p.level as f32 * 0.2 + 2.0) * 40.0 * attack / defense / 50.0
-                                + 2.0)
-                                .round() as u16)
-                                .max(1);
+                        let amount = self.confusion_damage(actor);
                         self.damage(actor, amount, events);
                         self.clear_consecutive(actor);
                         self.interrupt_script(actor, choice.target, &spec, events)?;
@@ -1928,8 +1921,18 @@ impl Battle {
         } else {
             self.get(target).evasion_factor()
         };
-        let probability =
-            value * self.get(actor).accuracy_factor() * evasion * self.accuracy_rule_factor(actor);
+        let tangled = if self.get(target).confused_turns.is_some()
+            && self.has_ability(target, "tangledfeet")
+        {
+            0.5
+        } else {
+            1.0
+        };
+        let probability = value
+            * self.get(actor).accuracy_factor()
+            * evasion
+            * self.accuracy_rule_factor(actor)
+            * tangled;
         self.end_condition(Scope::Pokemon(actor), "micle_berry");
         self.rng.chance(probability)
     }

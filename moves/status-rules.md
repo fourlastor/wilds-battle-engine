@@ -74,3 +74,14 @@ Regression tests are in `crates/wilds-battle-engine/tests/status_rules.rs`.
   Wake-Up Slap and Hex use it; Comatose is not a removable major status.
 - Bad Dreams damages sleeping or Comatose opponents for floor(maximum HP / 8),
   minimum 1, unless Magic Guard prevents it.
+
+## Confusion
+
+- Lasts 1–4 attempted actions with a 33% self-hit chance. Sleep, freeze and
+  flinch prevent the confusion check and therefore do not advance its counter.
+- Self-hits use a 40-power physical calculation with integer truncation and
+  a damage roll. Attack/Defense stages and Wonder Room apply; burn, Guts,
+  Huge Power, STAB, type effectiveness and critical hits do not. Magic Guard
+  does not prevent the self-hit.
+- Own Tempo prevents and cures confusion, including self-inflicted confusion.
+  Tangled Feet halves incoming accuracy while confused; always-hit moves bypass it.

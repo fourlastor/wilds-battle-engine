@@ -1344,6 +1344,7 @@ impl Battle {
     ) -> bool {
         if self.get(who).hp == 0
             || self.get(who).confused_turns.is_some()
+            || self.has_ability(who, "owntempo")
             || (who != actor && self.blocks_confusion(who))
             || self.blocks_grounded_confusion(who)
         {

@@ -63,6 +63,9 @@ impl Battle {
 
     pub(crate) fn update_status_abilities(&mut self, events: &mut Vec<BattleEvent>) {
         for who in self.actors() {
+            if self.has_ability(who, "owntempo") {
+                self.get_mut(who).confused_turns = None;
+            }
             if self.get(who).status.is_some_and(|status| {
                 self.status_ability_immunity(who, status)
                     || (status == Status::Asleep && self.field_prevents_sleep())
@@ -79,6 +82,16 @@ impl Battle {
 
     pub(crate) fn is_asleep(&self, who: ParticipantId) -> bool {
         self.get(who).status == Some(Status::Asleep) || self.has_ability(who, "comatose")
+    }
+
+    pub(crate) fn confusion_damage(&mut self, who: ParticipantId) -> u16 {
+        use crate::model::CombatStat;
+        let p = self.get(who);
+        let attack = p.effective_stat(CombatStat::Attack) as u64;
+        let defense = self.battle_staged_stat(who, CombatStat::Defense).max(1.0) as u64;
+        // Confusion uses stages but no burn, Guts, STAB, type or critical modifiers.
+        let base = ((2 * u64::from(p.level) / 5 + 2) * 40 * attack / defense / 50 + 2) as u16;
+        (f32::from(base) * self.rng.damage_roll()).floor().max(1.0) as u16
     }
 
     pub(crate) fn bad_dreams_residual(&mut self, events: &mut Vec<BattleEvent>) {
