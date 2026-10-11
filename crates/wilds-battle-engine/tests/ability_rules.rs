@@ -3057,3 +3057,25 @@ fn receiver_inherits_eligible_fainted_ally_abilities_and_activates_them() {
 fn power_of_alchemy_inherits_eligible_fainted_ally_abilities_and_activates_them() {
     check_ally_ability_inheritance("power-of-alchemy");
 }
+
+#[test]
+fn frisk_reveals_all_active_opponents_items_even_when_inactive() {
+    let mut user = mon("User", &["splash"]);
+    user.ability = Some("frisk".into());
+    let mut target = mon("Target", &["splash"]);
+    target.item = Some("sitrus-berry".into());
+    target.ability = Some("klutz".into());
+    let mut partner = mon("Partner", &["splash"]);
+    partner.item = Some("power-herb".into());
+    let mut battle = Battle::with_rng(
+        Fixed(0.5),
+        [vec![user], vec![target, partner]],
+        MoveCatalog::builtin().unwrap(),
+    )
+    .unwrap();
+    let events = turn(&mut battle, "splash", "splash");
+    for item in ["sitrus-berry", "power-herb"] {
+        assert!(events.iter().any(|e| matches!(e, BattleEvent::Message(m) if m.contains("Frisk revealed") && m.contains(item))));
+    }
+    assert_eq!(foe(&battle).item.as_deref(), Some("sitrus-berry"));
+}

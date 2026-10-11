@@ -117,7 +117,7 @@ id,ability,status,verification
 116,solid-rock,IMPLEMENTED,Source inventory; existing tests only
 117,snow-warning,IMPLEMENTED,ability_rules::snowwarning_starts_weather_on_entry_only_when_active
 118,honey-gather,MISSING,No native battle behavior
-119,frisk,MISSING,No native battle behavior
+119,frisk,IMPLEMENTED,ability_rules::frisk_reveals_all_active_opponents_items_even_when_inactive
 120,reckless,IMPLEMENTED,ability_rules::reckless_boosts_recoil_and_crash_attacks_only
 121,multitype,MISSING,No native battle behavior
 122,flower-gift,MISSING,No native battle behavior

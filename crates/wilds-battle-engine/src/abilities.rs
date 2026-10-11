@@ -613,6 +613,20 @@ impl Battle {
 
     pub(crate) fn ability_on_entry(&mut self, who: ParticipantId, events: &mut Vec<BattleEvent>) {
         self.ability_terrain_entry(who, events);
+        if self.has_ability(who, "frisk") {
+            for foe in self.actors() {
+                if foe.side != who.side
+                    && let Some(item) = &self.get(foe).item
+                {
+                    events.push(BattleEvent::Message(format!(
+                        "{}'s Frisk revealed {}'s {}!",
+                        self.get(who).name,
+                        self.get(foe).name,
+                        item
+                    )));
+                }
+            }
+        }
         if self.has_ability(who, "screencleaner") {
             let mut cleared = false;
             for side in [crate::model::Side::Allies, crate::model::Side::Foes] {
