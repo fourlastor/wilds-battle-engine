@@ -7038,6 +7038,17 @@
       "limitations": []
     },
     {
+      "id": 792,
+      "slug": "obstruct",
+      "name": "Obstruct",
+      "sheet_row": null,
+      "runtime_id": "obstruct",
+      "file": "moves/obstruct.lua",
+      "status": "implemented",
+      "limitations": [],
+      "parameter_source": "https://pokeapi.co/api/v2/move/792/"
+    },
+    {
       "id": 793,
       "slug": "false-surrender",
       "name": "False Surrender",
@@ -7836,7 +7847,8 @@
       "quick-guard",
       "crafty-shield",
       "mat-block",
-      "kings-shield"
+      "kings-shield",
+      "obstruct"
     ]
   }
 }

@@ -5454,3 +5454,30 @@ fn kings_shield_shares_protect_failure_chance_and_feint_bypasses_its_reaction() 
     assert!(b.participants(Side::Allies)[0].hp < 1000);
     assert_eq!(b.participants(Side::Foes)[0].stage(Stat::Attack), 0);
 }
+
+#[test]
+fn obstruct_blocks_damage_lowers_contact_defense_and_allows_status_moves() {
+    use wilds_battle_engine::Stat;
+    for (attack, ability, change) in [
+        ("pound", None, -2),
+        ("water-gun", None, 0),
+        ("pound", Some("contrary"), 2),
+        ("pound", Some("clear-body"), 0),
+    ] {
+        let mut foe = mon("Foe", &[attack]);
+        foe.ability = ability.map(str::to_owned);
+        let mut b = game(mon("User", &["obstruct"]), vec![foe], 0.5);
+        turn(&mut b);
+        assert_eq!(b.participants(Side::Allies)[0].hp, 1000);
+        assert_eq!(b.participants(Side::Foes)[0].stage(Stat::Defense), change);
+    }
+    let mut b = game(
+        mon("User", &["obstruct"]),
+        vec![mon("Foe", &["growl"])],
+        0.5,
+    );
+    turn(&mut b);
+    assert_eq!(b.participants(Side::Allies)[0].stage(Stat::Attack), -1);
+    turn(&mut b);
+    assert!(b.participants(Side::Allies)[0].last_move_failed);
+}
