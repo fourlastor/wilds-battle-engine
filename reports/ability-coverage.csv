@@ -45,7 +45,7 @@ id,ability,status,verification
 44,rain-dish,MISSING,No native battle behavior
 45,sand-stream,MISSING,No native battle behavior
 46,pressure,MISSING,No native battle behavior
-47,thick-fat,MISSING,No native battle behavior
+47,thick-fat,IMPLEMENTED,ability_rules::thickfat_halves_fire_and_ice_damage_and_is_bypassable
 48,early-bird,IMPLEMENTED,Source inventory; existing tests only
 49,flame-body,MISSING,No native battle behavior
 50,run-away,MISSING,No native battle behavior

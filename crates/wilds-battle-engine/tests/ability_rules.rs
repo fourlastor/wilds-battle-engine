@@ -1016,3 +1016,21 @@ fn big_pecks_blocks_external_defense_drops_only() {
         assert_eq!(foe(&battle).stage(wilds_battle_engine::Stat::Attack), -2);
     }
 }
+
+#[test]
+fn thickfat_halves_fire_and_ice_damage_and_is_bypassable() {
+    for move_id in ["ember", "fire-punch", "ice-beam", "ice-punch"] {
+        let base = ability_damage(move_id, "", "", false);
+        let reduced = ability_damage(move_id, "", "thickfat", false);
+        assert!((i32::from(base) - 2 * i32::from(reduced)).abs() <= 1);
+        assert_eq!(
+            base,
+            ability_damage(move_id, "mold-breaker", "thickfat", false)
+        );
+        assert_eq!(base, ability_damage(move_id, "", "thickfat", true));
+    }
+    assert_eq!(
+        ability_damage("tackle", "", "thickfat", false),
+        ability_damage("tackle", "", "", false)
+    );
+}
