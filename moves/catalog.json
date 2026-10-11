@@ -1398,10 +1398,8 @@
       "sheet_row": 136,
       "runtime_id": "thief",
       "file": "moves/thief.lua",
-      "status": "partial",
-      "limitations": [
-        "Species-bound unremovable items require the host item/ability rules; ordinary items and Sticky Hold are handled."
-      ]
+      "status": "implemented",
+      "limitations": []
     },
     {
       "id": 172,
@@ -2007,10 +2005,8 @@
       "sheet_row": 194,
       "runtime_id": "knock-off",
       "file": "moves/knock-off.lua",
-      "status": "partial",
-      "limitations": [
-        "Species-bound unremovable items require host item rules; ordinary items and Sticky Hold are handled."
-      ]
+      "status": "implemented",
+      "limitations": []
     },
     {
       "id": 284,
@@ -2501,10 +2497,8 @@
       "sheet_row": 243,
       "runtime_id": "covet",
       "file": "moves/covet.lua",
-      "status": "partial",
-      "limitations": [
-        "Species-bound unremovable items require the host item/ability rules; ordinary items and Sticky Hold are handled."
-      ]
+      "status": "implemented",
+      "limitations": []
     },
     {
       "id": 344,

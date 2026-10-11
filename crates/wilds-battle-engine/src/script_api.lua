@@ -187,13 +187,9 @@ return function(api, fields, roster)
       end
     end
   end
-  -- Gives `to` the item `from` holds, if `to` holds none. Returns the item, or nil.
-  function ctx:steal_item(from, to)
-    if not from.item or to.item then return nil end
-    local item = ctx:take_item(from)
-    ctx:give_item(to, item)
-    return item
-  end
+  -- Transfers atomically, respecting species binding and Sticky Hold.
+  function ctx:steal_item(from, to) return op("steal_item", from, to) end
+  function ctx:item_removable(who) return op("item_removable", who) end
   -- Takes one type away from a Pokémon for as long as it stays in the battle.
   function ctx:lose_type(who, kind)
     local kept = {}

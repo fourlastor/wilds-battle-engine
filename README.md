@@ -207,6 +207,7 @@ before turn-start hooks; capped changes and resetting stages do not trigger them
 | `ctx:set_weather(Weather.X, turns)`, `ctx:clear_weather()` | `Sun`, `Sandstorm`, `Rain`, `Hail`. |
 | `ctx:set_types(who, {Type.X})`, `ctx:set_weight(who, kg)`, `ctx:take_item(who)`, `ctx:give_item(who, item)`, `ctx:suppress_ability(who)` | |
 | `ctx:adjacent(a, b)` | Whether two Pokémon occupy neighboring field slots. `who.position` is its zero-based slot from its trainer's perspective; opposing rows face each other. Fainting does not collapse slots. |
+| `ctx:item_removable(who)` | Checks species-bound items independently of Sticky Hold, for damage bonuses such as Knock Off. Removal and atomic theft enforce both restrictions; fainted or suppressed Sticky Hold does not protect an item. |
 | `ctx:consume_item(who)` | Removes a held item, records it in `who.consumed_items` and `who.last_consumed_item`, and returns its ID (or nil). Taking an item does not record consumption. |
 | `ctx:reduce_pp(who, move_id, amount)` | Returns PP removed, clamped to what remains; an absent move loses zero. Refreshed `who.pp` reflects the change. |
 | `ctx:chance(probability)`, `ctx:effect_chance(probability)`, `ctx:random_int(min, max)` | `effect_chance` is for a move's extra effects: an `EffectChance` rule can multiply it. |

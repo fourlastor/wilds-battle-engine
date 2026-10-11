@@ -6,6 +6,7 @@ local move = {script = function(ctx)
 local hit = ctx:damage(60)
 if hit.hit and ctx.target.item and ctx.target.item:find("berry", 1, true) then
   local item = ctx:take_item(ctx.target)
+  if not item then return end
   ctx:mark(ctx.user, "ate_berry")
   ctx:message(ctx.user.name .. " ate " .. item .. "!")
 end

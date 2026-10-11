@@ -1416,7 +1416,12 @@ impl Battle {
                 Some(item) => Value::String(self.catalog.lua().create_string(&item)?),
                 None => Value::Nil,
             },
-            ScriptOperation::TakeItem { who } => match self.get_mut(who).item.take() {
+            ScriptOperation::ItemRemovable { who } => Value::Boolean(self.item_removable(who)),
+            ScriptOperation::StealItem { from, to } => match self.steal_item(from, to) {
+                Some(item) => Value::String(self.catalog.lua().create_string(&item)?),
+                None => Value::Nil,
+            },
+            ScriptOperation::TakeItem { who } => match self.take_item(who, actor) {
                 Some(item) => Value::String(self.catalog.lua().create_string(&item)?),
                 None => Value::Nil,
             },
@@ -1506,6 +1511,8 @@ fn reaction_may(operation: &ScriptOperation, hook: ScriptHook) -> bool {
         | Op::ReducePp { .. }
         | Op::Adjacent { .. }
         | Op::ConsumeItem { .. }
+        | Op::ItemRemovable { .. }
+        | Op::StealItem { .. }
         | Op::TakeItem { .. }
         | Op::GiveItem { .. }
         | Op::AddPayout(_) => true,

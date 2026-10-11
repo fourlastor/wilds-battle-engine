@@ -339,6 +339,13 @@ pub(crate) enum ScriptOperation {
     ConsumeItem {
         who: ParticipantId,
     },
+    ItemRemovable {
+        who: ParticipantId,
+    },
+    StealItem {
+        from: ParticipantId,
+        to: ParticipantId,
+    },
     TakeItem {
         who: ParticipantId,
     },
@@ -1070,6 +1077,11 @@ fn parse_op(name: &str, args: &[Value]) -> mlua::Result<ScriptOperation> {
             b: who(1)?,
         },
         "consume_item" => ScriptOperation::ConsumeItem { who: who(0)? },
+        "item_removable" => ScriptOperation::ItemRemovable { who: who(0)? },
+        "steal_item" => ScriptOperation::StealItem {
+            from: who(0)?,
+            to: who(1)?,
+        },
         "take_item" => ScriptOperation::TakeItem { who: who(0)? },
         "give_item" => ScriptOperation::GiveItem {
             who: who(0)?,

@@ -84,6 +84,69 @@ fn said(events: &[BattleEvent], text: &str) -> bool {
 }
 
 #[test]
+fn item_removal_respects_species_binding_and_atomic_theft() {
+    for attack in ["thief", "covet", "knock-off"] {
+        for (item, species, number, bound) in [
+            ("leftovers", "giratina", 487, false),
+            ("griseous-orb", "giratina-origin", 0, true),
+            ("flame-plate", "", 493, true),
+            ("fire_memory", "silvally-fire", 0, true),
+            ("shock-drive", "", 649, true),
+            ("rusted-sword", "zacian", 0, true),
+            ("charizardite-x", "", 6, true),
+            ("charizardite-x", "venusaur", 3, false),
+            ("adamant-orb", "dialga", 483, false),
+        ] {
+            let mut target = mon("Target", &["splash"]);
+            target.item = Some(item.into());
+            target.species = species.into();
+            target.species_id = number;
+            let mut game = Game::duel(&[attack], target, 0.5);
+            game.turn(attack, "splash");
+            assert_eq!(
+                game.foe().item.is_some(),
+                bound,
+                "{attack}, {item}, {species}"
+            );
+            assert_eq!(game.ally().item.is_some(), !bound && attack != "knock-off");
+        }
+    }
+    // A compatible recipient may not steal a form-defining item, even off another species.
+    let mut thief = mon("Arceus", &["thief"]);
+    thief.species_id = 493;
+    let mut target = mon("Target", &["splash"]);
+    target.item = Some("flame-plate".into());
+    let mut game = Game::new(vec![thief], vec![target], 0.5);
+    game.turn("thief", "splash");
+    assert!(game.ally().item.is_none());
+    assert_eq!(game.foe().item.as_deref(), Some("flame-plate"));
+}
+
+#[test]
+fn knock_off_bonus_ignores_sticky_hold_but_not_species_binding() {
+    let run = |item: Option<&str>, species, sticky: bool, suppressed, hp| {
+        let mut target = mon("Target", &["splash"]);
+        target.hp = hp;
+        target.item = item.map(str::to_string);
+        target.species_id = species;
+        target.ability = sticky.then(|| "sticky-hold".into());
+        target.ability_suppressed = suppressed;
+        let mut game = Game::duel(&["knock-off"], target, 0.5);
+        game.turn("knock-off", "splash");
+        (hp - game.foe().hp, game.foe().item.clone())
+    };
+    let plain = run(None, 0, false, false, 1000).0;
+    let boosted = run(Some("leftovers"), 0, false, false, 1000).0;
+    assert!(boosted > plain);
+    assert_eq!(run(Some("griseous-orb"), 487, false, false, 1000).0, plain);
+    let sticky = run(Some("leftovers"), 0, true, false, 1000);
+    assert_eq!(sticky.0, boosted);
+    assert!(sticky.1.is_some());
+    assert!(run(Some("leftovers"), 0, true, true, 1000).1.is_none());
+    assert!(run(Some("leftovers"), 0, true, false, 1).1.is_none());
+}
+
+#[test]
 fn redirection_checks_type_scope_liveness_and_priority() {
     for (attack, alive, redirects) in [
         ("water-gun", true, true),
