@@ -170,6 +170,31 @@ impl Battle {
         if hit.damage == 0 || hit.attacker == target {
             return;
         }
+        if ability == "perishbody"
+            && hit.contact
+            && !self
+                .get(hit.attacker)
+                .conditions
+                .iter()
+                .any(|c| c.name == "perish_song")
+        {
+            for who in [hit.attacker, target] {
+                if self.get(who).hp > 0 {
+                    self.start_condition(
+                        crate::model::Scope::Pokemon(who),
+                        crate::model::Condition {
+                            name: "perish_song".into(),
+                            value: 1,
+                            turns_left: Some(4),
+                            rules: vec![crate::model::Rule::FaintOnExpiry],
+                            group: None,
+                            end_message: None,
+                        },
+                        false,
+                    );
+                }
+            }
+        }
         if ability == "wanderingspirit" && hit.contact {
             self.swap_abilities(hit.attacker, target, events);
         }

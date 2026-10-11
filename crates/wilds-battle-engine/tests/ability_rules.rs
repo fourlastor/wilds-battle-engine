@@ -2946,3 +2946,32 @@ fn wandering_spirit_exchanges_contact_abilities_with_skill_swap_restrictions() {
         );
     }
 }
+
+#[test]
+fn perish_body_counts_down_both_contact_participants_and_ignores_soundproof() {
+    for attacker_ability in ["", "soundproof", "long-reach"] {
+        let mut user = mon("User", &["tackle", "splash"]);
+        user.ability = Some(attacker_ability.into());
+        let mut target = mon("Target", &["splash"]);
+        target.ability = Some("perish-body".into());
+        let mut battle = game(user, target, 0.5);
+        turn(&mut battle, "tackle", "splash");
+        assert_eq!(
+            ally(&battle)
+                .conditions
+                .iter()
+                .any(|c| c.name == "perish_song"),
+            attacker_ability != "long-reach"
+        );
+        for _ in 0..2 {
+            turn(&mut battle, "splash", "splash");
+        }
+        assert!(ally(&battle).hp > 0 && foe(&battle).hp > 0);
+        let events = turn(&mut battle, "splash", "splash");
+        assert_eq!(
+            ally(&battle).hp == 0 || foe(&battle).hp == 0,
+            attacker_ability != "long-reach"
+        );
+        assert_eq!(events.iter().filter(|event| matches!(event, BattleEvent::Message(m) if m.contains("perish count fell to 0"))).count(), if attacker_ability == "long-reach" { 0 } else { 2 });
+    }
+}
