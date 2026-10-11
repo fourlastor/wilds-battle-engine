@@ -6187,3 +6187,63 @@ fn mimic_restores_its_slot_when_fainted() {
     assert_eq!(b.participants(Side::Allies)[0].moves, ["mimic"]);
     assert_eq!(b.participants(Side::Allies)[0].move_pp["mimic"], 9);
 }
+
+#[test]
+fn sketch_permanently_copies_a_move_and_keeps_spent_pp_after_switching() {
+    let mut user = mon("User", &["sketch"]);
+    user.speed = 50;
+    let mut b = Battle::with_rng(
+        Fixed(0.5),
+        [
+            vec![user, mon("Bench", &["splash"])],
+            vec![mon("Foe", &["pound"])],
+        ],
+        MoveCatalog::builtin().unwrap(),
+    )
+    .unwrap();
+    b.set_active([vec![0], vec![0]]).unwrap();
+    turn(&mut b);
+    assert_eq!(b.participants(Side::Allies)[0].moves, ["pound"]);
+    assert_eq!(b.participants(Side::Allies)[0].move_pp["pound"], 35);
+    turn(&mut b);
+    turn_with(&mut b, |p| {
+        if p.actor.side == Side::Allies {
+            p.choices
+                .iter()
+                .find(|c| matches!(c, Choice::Switch { .. }))
+                .unwrap()
+                .id()
+        } else {
+            choose_move(p, "splash", "pound")
+        }
+    });
+    let user = &b.participants(Side::Allies)[0];
+    assert_eq!(user.moves, ["pound"]);
+    assert_eq!(user.move_pp["pound"], 34);
+    assert!(!user.move_pp.contains_key("sketch"));
+}
+#[test]
+fn sketch_bypasses_protect_and_substitute_but_rejects_forbidden_moves() {
+    for response in ["protect", "chatter"] {
+        let mut user = mon("User", &["sketch"]);
+        user.speed = 50;
+        let mut foe = mon("Foe", &[response]);
+        foe.substitute_hp = 100;
+        let mut b = game(user, vec![foe], 0.5);
+        turn(&mut b);
+        assert_eq!(
+            b.participants(Side::Allies)[0].moves[0],
+            if response == "protect" {
+                "protect"
+            } else {
+                "sketch"
+            }
+        );
+    }
+    let mut user = mon("User", &["sketch", "pound"]);
+    user.speed = 50;
+    let mut b = game(user, vec![mon("Foe", &["pound"])], 0.5);
+    turn(&mut b);
+    assert_eq!(b.participants(Side::Allies)[0].moves, ["sketch", "pound"]);
+    assert!(b.participants(Side::Allies)[0].last_move_failed);
+}

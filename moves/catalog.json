@@ -1642,6 +1642,17 @@
       "limitations": []
     },
     {
+      "id": 166,
+      "slug": "sketch",
+      "name": "Sketch",
+      "sheet_row": null,
+      "runtime_id": "sketch",
+      "file": "moves/sketch.lua",
+      "status": "implemented",
+      "limitations": [],
+      "parameter_source": "https://pokeapi.co/api/v2/move/166/"
+    },
+    {
       "id": 167,
       "slug": "triple-kick",
       "name": "Triple Kick",
@@ -7980,7 +7991,8 @@
       "magic-room",
       "natural-gift",
       "fling",
-      "mimic"
+      "mimic",
+      "sketch"
     ]
   }
 }
