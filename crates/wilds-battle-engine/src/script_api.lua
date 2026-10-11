@@ -189,6 +189,7 @@ return function(api, fields, roster)
   function ctx:end_group(scope, group) return op("end_group", scope, group) end
 
   -- The rest of the battle
+  function ctx:set_payout_multiplier(factor) return op("set_payout_multiplier", factor) end
   function ctx:add_payout(amount) return op("add_payout", amount) end
   function ctx:delay(who) return op("delay", who) end
   function ctx:hurry(who) return op("hurry", who) end

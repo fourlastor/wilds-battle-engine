@@ -417,6 +417,7 @@ pub(crate) enum ScriptOperation {
         who: ParticipantId,
     },
     AddPayout(u32),
+    SetPayoutMultiplier(u8),
     Delay {
         who: ParticipantId,
     },
@@ -1266,6 +1267,11 @@ fn parse_op(name: &str, args: &[Value]) -> mlua::Result<ScriptOperation> {
             item: name_of(arg(1), "item")?,
         },
         "suppress_ability" => ScriptOperation::SuppressAbility { who: who(0)? },
+        "set_payout_multiplier" => {
+            ScriptOperation::SetPayoutMultiplier(
+                whole(arg(0), "payout multiplier", 1.0, 16.0)? as u8
+            )
+        }
         "add_payout" => {
             ScriptOperation::AddPayout(whole(arg(0), "add_payout", 0.0, 1_000_000.0)? as u32)
         }

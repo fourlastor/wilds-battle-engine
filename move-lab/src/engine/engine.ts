@@ -95,6 +95,8 @@ export interface EngineState {
   sides: Record<Side, ConditionInfo[]>;
   /** Money each side has earned from moves such as Pay Day. */
   payout: Record<Side, number>;
+  /** Multiplier for host-owned trainer prizes; already included in payout. */
+  payout_multiplier: Record<Side, number>;
   environment: string | null;
 }
 

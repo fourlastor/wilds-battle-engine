@@ -5553,6 +5553,17 @@
       "limitations": []
     },
     {
+      "id": 603,
+      "slug": "happy-hour",
+      "name": "Happy Hour",
+      "sheet_row": null,
+      "runtime_id": "happy-hour",
+      "file": "moves/happy-hour.lua",
+      "status": "implemented",
+      "limitations": [],
+      "parameter_source": "https://pokeapi.co/api/v2/move/603/"
+    },
+    {
       "id": 605,
       "slug": "dazzling-gleam",
       "name": "Dazzling Gleam",
@@ -7428,7 +7439,8 @@
       "mud-sport",
       "water-sport",
       "helping-hand",
-      "hold-hands"
+      "hold-hands",
+      "happy-hour"
     ]
   }
 }

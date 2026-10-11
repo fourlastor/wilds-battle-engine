@@ -39,6 +39,7 @@ pub struct Battle {
     pub(crate) field_conditions: Vec<Condition>,
     pub(crate) last_faint_turn: [Option<u64>; 2],
     pub(crate) payout: [u32; 2],
+    pub(crate) payout_multiplier: [u8; 2],
     pub(crate) environment: Option<String>,
     /// The move each Pokémon chose this turn.
     pub(crate) turn_choices: Vec<(ParticipantId, String)>,
@@ -260,6 +261,7 @@ impl Battle {
             field_conditions: Vec::new(),
             last_faint_turn: [None, None],
             payout: [0, 0],
+            payout_multiplier: [1, 1],
             environment: None,
             turn_choices: Vec::new(),
             pending_actors: Vec::new(),
@@ -289,9 +291,13 @@ impl Battle {
     pub fn field_conditions(&self) -> &[Condition] {
         self.conditions(Scope::Field)
     }
-    /// Money a side's moves have earned so far (Pay Day).
+    /// Money a side's moves have earned so far, including its payout multiplier.
     pub fn payout(&self, side: Side) -> u32 {
-        self.payout[side.index()]
+        self.payout[side.index()].saturating_mul(u32::from(self.payout_multiplier(side)))
+    }
+    /// Apply this multiplier to host-owned trainer prize money after the battle.
+    pub fn payout_multiplier(&self, side: Side) -> u8 {
+        self.payout_multiplier[side.index()]
     }
     /// Where the battle takes place, for moves that depend on it (Secret Power).
     pub fn environment(&self) -> Option<&str> {

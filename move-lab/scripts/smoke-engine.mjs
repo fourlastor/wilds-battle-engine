@@ -185,3 +185,18 @@ assert.equal(split.events.filter(event => event.kind === 'hp_set' && event.hp ==
 assert.ok(!split.events.some(event => event.kind === 'damage'));
 engine._wbe_destroy(splitBattle);
 console.log('ok: Pain Split HP assignments round-trip without triggering Counter');
+
+const happyBattle = withStrings([JSON.stringify({
+  allies: [{ name: 'User', max_hp: 1000, moves: ['happy-hour'] }],
+  foes: [{ name: 'Foe', max_hp: 1000, moves: ['splash'] }],
+}), '/moves'], (json, dir) => engine._wbe_create(json, dir));
+assert.notEqual(happyBattle, 0, lastError());
+for (let i = 0; i < 2; i++) {
+  const step = JSON.parse(text(engine._wbe_advance(happyBattle)));
+  assert.ok(engine._wbe_respond(happyBattle, BigInt(step.status.prompt_id), step.status.choices[0].id));
+}
+const happy = JSON.parse(text(engine._wbe_advance(happyBattle)));
+assert.deepEqual(happy.payout_multiplier, { allies: 2, foes: 1 });
+assert.deepEqual(JSON.parse(text(engine._mlab_state(happyBattle))).payout_multiplier, happy.payout_multiplier);
+engine._wbe_destroy(happyBattle);
+console.log('ok: Happy Hour exposes its prize multiplier through both wasm snapshots');

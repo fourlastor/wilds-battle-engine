@@ -3811,3 +3811,50 @@ fn hold_hands_fails_without_an_ally_after_spending_pp() {
     assert!(b.participants(Side::Allies)[0].last_move_failed);
     assert_eq!(b.participants(Side::Allies)[0].move_pp["hold-hands"], 39);
 }
+
+#[test]
+fn happy_hour_doubles_prior_and_future_pay_day_money_without_stacking() {
+    let mut user = mon("User", &["happy-hour", "pay-day"]);
+    user.level = 10;
+    let mut b = game(user, vec![mon("Foe", &["splash"])], 0.5);
+    turn_with(&mut b, |p| choose_move(p, "pay-day", "splash"));
+    assert_eq!(b.payout(Side::Allies), 50);
+    for _ in 0..2 {
+        turn_with(&mut b, |p| choose_move(p, "happy-hour", "splash"));
+        assert_eq!(b.payout(Side::Allies), 100);
+        assert_eq!(b.payout_multiplier(Side::Allies), 2);
+        assert_eq!(b.payout_multiplier(Side::Foes), 1);
+        assert!(!b.participants(Side::Allies)[0].last_move_failed);
+    }
+    turn_with(&mut b, |p| choose_move(p, "pay-day", "splash"));
+    assert_eq!(b.payout(Side::Allies), 200);
+}
+
+#[test]
+fn happy_hours_multiplier_persists_when_its_user_switches_out() {
+    let mut b = Battle::with_rng(
+        Fixed(0.5),
+        [
+            vec![mon("User", &["happy-hour"]), mon("Bench", &["splash"])],
+            vec![mon("Foe", &["splash"])],
+        ],
+        MoveCatalog::builtin().unwrap(),
+    )
+    .unwrap();
+    b.set_active([vec![0], vec![0]]).unwrap();
+    turn(&mut b);
+    turn_with(&mut b, |p| {
+        p.choices
+            .iter()
+            .find(|c| {
+                if p.actor.side == Side::Allies {
+                    matches!(c, Choice::Switch { .. })
+                } else {
+                    matches!(c, Choice::UseMove { .. })
+                }
+            })
+            .unwrap()
+            .id()
+    });
+    assert_eq!(b.payout_multiplier(Side::Allies), 2);
+}

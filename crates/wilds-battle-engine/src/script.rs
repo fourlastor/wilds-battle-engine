@@ -1816,6 +1816,10 @@ impl Battle {
             ScriptOperation::SuppressAbility { who } => {
                 Value::Boolean(self.suppress_ability(who, events))
             }
+            ScriptOperation::SetPayoutMultiplier(factor) => {
+                self.payout_multiplier[actor.side.index()] = factor;
+                Value::Nil
+            }
             ScriptOperation::AddPayout(amount) => {
                 let payout = &mut self.payout[actor.side.index()];
                 *payout = payout.saturating_add(amount);

@@ -1,9 +1,9 @@
 # Wilds battle engine
 
 `wilds-battle-engine` is the Rust battle simulation. Move definitions are loaded
-from Lua; `MoveCatalog::builtin()` embeds the 688 files under `moves/`,
+from Lua; `MoveCatalog::builtin()` embeds the 689 files under `moves/`,
 and `MoveCatalog::from_directory(path)` reads them from disk at runtime.
-Both catalogs also include the system move Struggle, for 689 moves in total.
+Both catalogs also include the system move Struggle, for 690 moves in total.
 The [move catalog](moves/README.md) includes 538 entries from the Saved moves sheet,
 plus support moves, additional local JSON moves and the original moves outside the sheet. Its manifest
 records the 34 excluded Z/Max Moves. Files use canonical slugs and source display
@@ -224,6 +224,7 @@ before turn-start hooks; capped changes and resetting stages do not trigger them
 | `ctx:steal_boosts(from, to)`, `ctx:steal_item(from, to)`, `ctx:lose_type(who, Type.X)` | Shorthands built from the calls above. |
 | `ctx:opposite_genders(a, b)`, `ctx:share_type(a, b)`, `ctx:type_number(0..15)` | `type_number` uses Hidden Power's order. |
 | `who:raised_stages()`, `who:used_all_other_moves(id)` | Read-only helpers on a Pokémon. |
+| `ctx:set_payout_multiplier(factor)` | Sets a persistent side multiplier without stacking. `Battle::payout` includes it for Pay Day; `Battle::payout_multiplier` and JSON `payout_multiplier` let the host apply it to trainer prizes. |
 | `ctx:add_payout(amount)` | Money for the user's side, read by the host with `Battle::payout`. |
 | `ctx:set_hp(who, hp)` | Sets a living Pokémon's HP to an integer between 1 and its maximum, without damage, healing or hit reactions. Returns its HP and emits `hp_set`. |
 | `ctx:succeed()` | Records a successful effect, even if another target was missed or protected during the same move. |

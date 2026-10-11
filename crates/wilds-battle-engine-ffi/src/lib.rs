@@ -314,6 +314,7 @@ pub unsafe extern "C" fn wbe_advance(ptr: *mut Battle) -> *mut c_char {
             "sides":{"allies":conditions(battle.side_conditions(Side::Allies)),
                 "foes":conditions(battle.side_conditions(Side::Foes))},
             "payout":{"allies":battle.payout(Side::Allies), "foes":battle.payout(Side::Foes)},
+            "payout_multiplier":{"allies":battle.payout_multiplier(Side::Allies), "foes":battle.payout_multiplier(Side::Foes)},
         })))
     })
 }

@@ -197,6 +197,7 @@ pub unsafe extern "C" fn mlab_state(battle: *const Battle) -> *mut c_char {
         "sides": {"allies": ffi::conditions(battle.side_conditions(Side::Allies)),
             "foes": ffi::conditions(battle.side_conditions(Side::Foes))},
         "payout": {"allies": battle.payout(Side::Allies), "foes": battle.payout(Side::Foes)},
+        "payout_multiplier": {"allies": battle.payout_multiplier(Side::Allies), "foes": battle.payout_multiplier(Side::Foes)},
         "environment": battle.environment(),
     }))
 }
