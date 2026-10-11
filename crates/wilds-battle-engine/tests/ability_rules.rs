@@ -3020,7 +3020,16 @@ fn soul_heart_rewards_any_faint_including_allies_and_residual_damage() {
 }
 
 fn check_ally_ability_inheritance(ability: &str) {
-    for inherited in ["intimidate", "multitype"] {
+    for inherited in [
+        "intimidate",
+        "multitype",
+        "trace",
+        "receiver",
+        "power-of-alchemy",
+        "forecast",
+        "wonder-guard",
+        "gulp-missile",
+    ] {
         let mut user = mon("User", &["splash"]);
         user.ability = Some(ability.into());
         let mut partner = mon("Partner", &["splash"]);
@@ -3036,10 +3045,10 @@ fn check_ally_ability_inheritance(ability: &str) {
         turn(&mut battle, "splash", "splash");
         assert_eq!(
             ally(&battle).ability.as_deref(),
-            Some(if inherited == "multitype" {
-                ability
-            } else {
+            Some(if inherited == "intimidate" {
                 inherited
+            } else {
+                ability
             })
         );
         if inherited == "intimidate" {

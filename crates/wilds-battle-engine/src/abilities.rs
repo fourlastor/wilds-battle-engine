@@ -1447,6 +1447,8 @@ impl Battle {
 pub(crate) fn ability_flag(ability: &str, flag: &str) -> bool {
     match flag {
         "cantsuppress" => cannot_suppress(ability),
+        "noreceiver" => ability == "gulpmissile" || ability_flag(ability, "failroleplay"),
+        "notrace" => ability != "wonderguard" && ability_flag(ability, "noreceiver"),
         "failroleplay" => matches!(
             ability,
             "asoneglastrier"
