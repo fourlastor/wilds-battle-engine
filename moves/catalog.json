@@ -5256,6 +5256,16 @@
       "limitations": []
     },
     {
+      "id": 781,
+      "slug": "behemoth-blade",
+      "name": "Behemoth Blade",
+      "sheet_row": null,
+      "runtime_id": "behemoth-blade",
+      "file": "moves/behemoth-blade.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
       "id": 784,
       "slug": "breaking-swipe",
       "name": "Breaking Swipe",
@@ -5910,7 +5920,8 @@
       "fishious-rend",
       "clangorous-soul",
       "body-press",
-      "decorate"
+      "decorate",
+      "behemoth-blade"
     ]
   }
 }

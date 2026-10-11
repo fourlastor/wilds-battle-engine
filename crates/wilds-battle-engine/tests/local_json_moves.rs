@@ -488,3 +488,50 @@ fn decorate_respects_substitute_caps_and_contrary() {
         );
     }
 }
+
+fn steel_damage(move_id: &str, kind: PokemonType, response: &str, dice: f32) -> Battle {
+    let mut user = mon("User", &[move_id]);
+    user.speed = 200;
+    let mut foe = mon("Foe", &[response]);
+    foe.types = vec![kind];
+    let mut battle = game(user, vec![foe], dice);
+    turn(&mut battle);
+    battle
+}
+
+#[test]
+fn behemoth_blade_has_ordinary_steel_damage_without_form_or_item_requirements() {
+    for kind in [PokemonType::Normal, PokemonType::Fairy, PokemonType::Fire] {
+        let blade = steel_damage("behemoth-blade", kind, "splash", 0.5);
+        let same_power = steel_damage("iron-tail", kind, "splash", 0.5);
+        assert_eq!(
+            blade.participants(Side::Foes)[0].hp,
+            same_power.participants(Side::Foes)[0].hp
+        );
+        assert_eq!(
+            blade.participants(Side::Allies)[0].move_pp["behemoth-blade"],
+            4
+        );
+    }
+    assert!(
+        steel_damage("behemoth-blade", PokemonType::Normal, "splash", 0.99)
+            .participants(Side::Foes)[0]
+            .hp
+            < 1000
+    );
+    assert_eq!(
+        steel_damage("behemoth-blade", PokemonType::Normal, "protect", 0.5)
+            .participants(Side::Foes)[0]
+            .hp,
+        1000
+    );
+}
+
+#[test]
+fn behemoth_blade_makes_contact() {
+    let battle = steel_damage("behemoth-blade", PokemonType::Normal, "beak-blast", 0.5);
+    assert_eq!(
+        battle.participants(Side::Allies)[0].status,
+        Some(wilds_battle_engine::Status::Burned)
+    );
+}
