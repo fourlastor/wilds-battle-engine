@@ -6,7 +6,7 @@ use crate::engine::Battle;
 use crate::model::{
     BattleEvent, CombatStat, Condition, ParticipantId, PokemonType, Rule, Scope, Side, Status,
 };
-use crate::moves::Category;
+use crate::moves::{Category, MoveSpec};
 
 /// Fills in `{name}` in a message written by a move.
 pub(crate) fn named(message: &str, name: &str) -> String {
@@ -207,6 +207,15 @@ impl Battle {
                 _ => None,
             })
             .unwrap_or(move_type)
+    }
+
+    pub(crate) fn move_block(&self, id: ParticipantId, spec: &MoveSpec) -> Option<&str> {
+        self.rules(id).find_map(|rule| match rule {
+            Rule::BlockMoves { flags, message } if flags.iter().any(|flag| spec.has_flag(flag)) => {
+                Some(message.as_deref().unwrap_or("{name} cannot use that move!"))
+            }
+            _ => None,
+        })
     }
 
     pub(crate) fn is_grounded(&self, id: ParticipantId) -> bool {

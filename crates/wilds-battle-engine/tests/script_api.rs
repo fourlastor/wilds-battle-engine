@@ -1841,5 +1841,13 @@ fn mistakes_in_a_script_are_reported() {
         .contains("needs stat")
     );
     assert!(failing("ctx:mark(ctx.user, '')").contains("1 to 40 characters"));
+    assert!(
+        failing("ctx:start_effect(ctx.field, 'x', {rules={{kind=Rule.BlockMoves, flags={}}}})")
+            .contains("needs at least one flag")
+    );
+    assert!(
+        failing("ctx:start_effect(ctx.field, 'x', {rules={{kind=Rule.BlockMoves, flags={42}}}})")
+            .contains("requires text")
+    );
     assert!(failing("while true do ctx:message('x') end").contains("exceeded 256 operations"));
 }

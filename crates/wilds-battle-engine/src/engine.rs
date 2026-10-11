@@ -233,6 +233,9 @@ impl Battle {
                 continue;
             }
             let spec = self.catalog.get(move_id).expect("validated catalog");
+            if self.move_block(actor, spec).is_some() {
+                continue;
+            }
             let targets: Vec<_> = if let Some(lock) = &pokemon.locked_move
                 && lock.charging
             {
@@ -447,7 +450,10 @@ impl Battle {
                 continue;
             };
             let spec = self.catalog.get(&choice.move_id).expect("validated choice");
-            if spec.on_turn_start.is_some() && self.get(*actor).hp > 0 {
+            if spec.on_turn_start.is_some()
+                && self.get(*actor).hp > 0
+                && self.move_block(*actor, spec).is_none()
+            {
                 let spec = spec.clone();
                 self.execute_script(
                     *actor,
@@ -574,6 +580,18 @@ impl Battle {
             .get(&choice.move_id)
             .expect("validated choice")
             .clone();
+        if let Some(message) = self.move_block(actor, &spec) {
+            events.push(BattleEvent::Message(crate::conditions::named(
+                message,
+                &self.get(actor).name,
+            )));
+            self.clear_consecutive(actor);
+            self.interrupt_script(actor, choice.target, &spec, events)?;
+            let pokemon = self.get_mut(actor);
+            pokemon.locked_move = None;
+            pokemon.semi_invulnerable = false;
+            return Ok(false);
+        }
         // A Pokémon that hid through a script comes back when it next acts.
         if self.get(actor).semi_invulnerable && self.get(actor).locked_move.is_none() {
             self.get_mut(actor).semi_invulnerable = false;

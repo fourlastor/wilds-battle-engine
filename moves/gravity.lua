@@ -1,6 +1,5 @@
 -- Move 356: Gravity. No local source JSON; identity and parameters from PokeAPI.
 -- Behavior checked against the reference recorded in catalog.json.
--- INCOMPLETE: Affected moves fail on execution; hiding them from legal choices requires a move-legality hook.
 
 return {
   id = "gravity",
@@ -11,12 +10,13 @@ return {
   accuracy = Accuracy.Always,
   priority = 0,
   target = Target.Field,
-  flags = {"incomplete"},
+  flags = {},
   script = function(ctx)
     if not ctx:start_effect(ctx.field, "gravity", {
       turns = 5,
       rules = {
         {kind = Rule.Grounded},
+        {kind = Rule.BlockMoves, flags = {"gravity"}, message = "{name} cannot use that move because of gravity!"},
         {kind = Rule.AccuracyMultiplier, factor = 6840 / 4096},
       },
       end_message = "Gravity returned to normal!",

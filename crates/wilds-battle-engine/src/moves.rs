@@ -716,6 +716,7 @@ fn rule_of(value: &Value) -> mlua::Result<Rule> {
         RuleKind::DamageDealt => &["kind", "factor", "category", "type"],
         RuleKind::StatMultiplier => &["kind", "stat", "factor"],
         RuleKind::BlockStatus => &["kind", "statuses", "confusion"],
+        RuleKind::BlockMoves => &["kind", "flags", "message"],
         RuleKind::AccuracyMultiplier | RuleKind::EffectChance => &["kind", "factor"],
         RuleKind::MoveType => &["kind", "from", "to"],
         RuleKind::AlwaysHit => &["kind", "against"],
@@ -785,6 +786,16 @@ fn rule_of(value: &Value) -> mlua::Result<Rule> {
                 .collect(),
             confusion: options.flag("confusion")?,
         },
+        RuleKind::BlockMoves => {
+            let flags = options.list("flags", name_of)?;
+            if flags.is_empty() {
+                return Err(bad("rule BlockMoves needs at least one flag"));
+            }
+            Rule::BlockMoves {
+                flags,
+                message: options.text("message")?,
+            }
+        }
         RuleKind::BlockStatDrops => Rule::BlockStatDrops,
         RuleKind::EffectChance => Rule::EffectChance { factor: factor()? },
         RuleKind::MoveType => Rule::MoveType {

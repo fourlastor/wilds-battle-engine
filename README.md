@@ -246,6 +246,7 @@ ctx:end_effect(ctx.target.team, "reflect")                  -- Brick Break
 | `DamageTaken`, `DamageDealt` | `factor`, and optionally only for a `category` or `type`; `not_on_crit` for damage taken |
 | `AccuracyMultiplier` | `factor`; ordinary hit checks only, excludes OHKO and always-hit moves |
 | `StatMultiplier` | `stat`, `factor` |
+| `BlockMoves` | nonempty `flags` list, optional `message`; prevents selection and execution of matching moves |
 | `BlockStatus` | `statuses` (all if left out), `confusion`. Does not stop what a Pokémon does to itself. |
 | `BlockStatDrops`, `Grounded`, `Trapped`, `Endure` | |
 | `EffectChance` | `factor` for the `chance` of the holder's extra effects |

@@ -190,10 +190,8 @@
       "sheet_row": 19,
       "runtime_id": "fly",
       "file": "moves/fly.lua",
-      "status": "partial",
-      "limitations": [
-        "Fails during Gravity on execution; preventing selection during Gravity requires a move-legality hook."
-      ]
+      "status": "implemented",
+      "limitations": []
     },
     {
       "id": 21,
@@ -254,10 +252,8 @@
       "sheet_row": 25,
       "runtime_id": "jump-kick",
       "file": "moves/jump-kick.lua",
-      "status": "partial",
-      "limitations": [
-        "Fails during Gravity on execution; preventing selection during Gravity requires a move-legality hook."
-      ]
+      "status": "implemented",
+      "limitations": []
     },
     {
       "id": 27,
@@ -1170,10 +1166,8 @@
       "sheet_row": 113,
       "runtime_id": "high-jump-kick",
       "file": "moves/high-jump-kick.lua",
-      "status": "partial",
-      "limitations": [
-        "Fails during Gravity on execution; preventing selection during Gravity requires a move-legality hook."
-      ]
+      "status": "implemented",
+      "limitations": []
     },
     {
       "id": 137,
@@ -2487,10 +2481,8 @@
       "sheet_row": 240,
       "runtime_id": "bounce",
       "file": "moves/bounce.lua",
-      "status": "partial",
-      "limitations": [
-        "Fails during Gravity on execution; preventing selection during Gravity requires a move-legality hook."
-      ]
+      "status": "implemented",
+      "limitations": []
     },
     {
       "id": 341,
@@ -2633,10 +2625,8 @@
       "sheet_row": null,
       "runtime_id": "gravity",
       "file": "moves/gravity.lua",
-      "status": "partial",
-      "limitations": [
-        "Affected moves fail on execution; hiding them from legal choices requires a move-legality hook."
-      ],
+      "status": "implemented",
+      "limitations": [],
       "parameter_source": "https://pokeapi.co/api/v2/move/356/"
     },
     {
@@ -4162,10 +4152,8 @@
       "sheet_row": 402,
       "runtime_id": "flying-press",
       "file": "moves/flying-press.lua",
-      "status": "partial",
-      "limitations": [
-        "Fails during Gravity on execution; preventing selection during Gravity requires a move-legality hook."
-      ]
+      "status": "implemented",
+      "limitations": []
     },
     {
       "id": 562,

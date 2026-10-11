@@ -1,6 +1,5 @@
 -- Move 340: Bounce. Identity and parameters: pokemon_data/assets/moves/340.json.
 -- Behavior checked against PokeAPI; see catalog.json for scope and limitations.
--- INCOMPLETE: Fails during Gravity on execution; preventing selection during Gravity requires a move-legality hook.
 
 local function two_turns(place, message, strike)
   return function(ctx)
@@ -15,13 +14,8 @@ local function two_turns(place, message, strike)
   end
 end
 
-local function gravity(ctx)
-  return ctx.field.effects.gravity ~= nil
-end
-
 local move = {accuracy = 0.85, manual_announce = true, flags = {"contact"},
     script = function(ctx)
-      if gravity(ctx) then return ctx:fail() end
       two_turns(Hidden.Air, " sprang up!", function(inner)
         if inner:damage(85).hit then inner:apply_status(inner.target, Status.Paralyzed, {chance = 0.3}) end
       end)(ctx)
@@ -35,5 +29,5 @@ move.pp = 5
 move.accuracy = 0.85
 move.priority = 0
 move.target = Target.Selected
-move.flags = {"incomplete"}
+move.flags = {"contact", "gravity"}
 return move

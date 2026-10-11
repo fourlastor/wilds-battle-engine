@@ -142,59 +142,55 @@ fn swallow_preserves_other_stat_changes() {
 #[test]
 fn gravity_boosts_plain_and_scripted_accuracy_until_expiry_without_changing_stages() {
     for move_id in ["fire-blast", "thunder"] {
-        let mut game = Game::duel(
-            &["gravity", move_id, "splash"],
-            mon("Foe", &["splash"]),
-            0.9,
-        );
-        game.turn(move_id, "splash");
+        let mut game = Game::duel(&["gravity", move_id, "growl"], mon("Foe", &["growl"]), 0.9);
+        game.turn(move_id, "growl");
         assert_eq!(game.foe().hp, 1000);
-        game.turn("gravity", "splash");
-        game.turn(move_id, "splash");
+        game.turn("gravity", "growl");
+        game.turn(move_id, "growl");
         assert!(game.foe().hp < 1000, "{move_id}");
         assert_eq!(game.ally().stage(Stat::Accuracy), 0);
         assert_eq!(game.foe().stage(Stat::Evasion), 0);
         for _ in 0..3 {
-            game.turn("splash", "splash");
+            game.turn("growl", "growl");
         }
         assert!(game.0.field_conditions().is_empty());
         let hp = game.foe().hp;
-        game.turn(move_id, "splash");
+        game.turn(move_id, "growl");
         assert_eq!(game.foe().hp, hp, "{move_id}");
     }
 }
 
 #[test]
 fn gravity_does_not_boost_one_hit_knockout_accuracy() {
-    let mut game = Game::duel(&["gravity", "fissure"], mon("Foe", &["splash"]), 0.4);
-    game.turn("gravity", "splash");
-    game.turn("fissure", "splash");
+    let mut game = Game::duel(&["gravity", "fissure"], mon("Foe", &["growl"]), 0.4);
+    game.turn("gravity", "growl");
+    game.turn("fissure", "growl");
     assert_eq!(game.foe().hp, 1000);
 }
 
 #[test]
 fn gravity_grounds_flyers_and_expires_without_refreshing_on_failure() {
-    let mut bird = mon("Bird", &["fly", "splash"]);
+    let mut bird = mon("Bird", &["fly", "growl"]);
     bird.types = vec![PokemonType::Flying];
     bird.speed = 200;
-    let mut game = Game::duel(&["gravity", "earthquake", "splash"], bird, 0.5);
+    let mut game = Game::duel(&["gravity", "earthquake", "growl"], bird, 0.5);
     let events = game.turn("gravity", "fly");
     assert!(said(&events, "couldn't stay airborne"));
     assert!(game.foe().hidden().is_none());
     assert_eq!(game.0.field_conditions()[0].turns_left, Some(4));
-    assert!(said(&game.turn("gravity", "splash"), "failed"));
+    assert!(said(&game.turn("gravity", "growl"), "failed"));
     assert_eq!(game.0.field_conditions()[0].turns_left, Some(3));
-    game.turn("earthquake", "fly");
+    game.turn("earthquake", "growl");
     assert!(game.foe().hp < 1000);
     assert!(game.foe().hidden().is_none());
-    game.turn("splash", "splash");
-    let events = game.turn("splash", "splash");
+    game.turn("growl", "growl");
+    let events = game.turn("growl", "growl");
     assert!(said(&events, "Gravity returned to normal"));
     assert!(game.0.field_conditions().is_empty());
     let hp = game.foe().hp;
-    game.turn("earthquake", "splash");
+    game.turn("earthquake", "growl");
     assert_eq!(game.foe().hp, hp);
-    game.turn("splash", "fly");
+    game.turn("growl", "fly");
     assert!(game.foe().hidden().is_some());
 }
 
@@ -203,12 +199,12 @@ fn gravity_preserves_non_airborne_charge_moves() {
     for move_id in ["dig", "dive", "phantom-force"] {
         let mut foe = mon("Foe", &[move_id]);
         foe.speed = 200;
-        let mut ally = mon("Ally", &["gravity", "splash"]);
+        let mut ally = mon("Ally", &["gravity", "growl"]);
         ally.types = vec![PokemonType::Grass];
         let mut game = Game::new(vec![ally], vec![foe], 0.5);
         game.turn("gravity", move_id);
         assert!(game.foe().hidden().is_some(), "{move_id} was interrupted");
-        game.turn("splash", move_id);
+        game.turn("growl", move_id);
         assert!(game.foe().hidden().is_none(), "{move_id} did not finish");
         assert!(game.ally().hp < 1000, "{move_id} did not hit");
     }
@@ -222,26 +218,84 @@ fn gravity_blocks_airborne_moves_without_crash_damage_and_boosts_grav_apple() {
         "jump-kick",
         "high-jump-kick",
         "flying-press",
+        "splash",
+        "sky-drop",
     ] {
-        let mut game = Game::duel(&["gravity", move_id], mon("Foe", &["splash"]), 0.5);
-        game.turn("gravity", "splash");
-        assert!(said(&game.turn(move_id, "splash"), "failed"), "{move_id}");
+        let mut foe = mon("Foe", &["gravity"]);
+        foe.speed = 200;
+        let mut game = Game::duel(&[move_id], foe, 0.5);
+        let pp = game.ally().move_pp[move_id];
+        assert!(
+            said(&game.turn(move_id, "gravity"), "because of gravity"),
+            "{move_id}"
+        );
+        assert_eq!(game.ally().move_pp[move_id], pp);
         assert_eq!((game.ally().hp, game.foe().hp), (1000, 1000), "{move_id}");
         assert!(game.ally().hidden().is_none());
     }
     let damage = |opener| {
         let mut game = Game::duel(
-            &["gravity", "grav-apple", "splash"],
-            mon("Foe", &["splash"]),
+            &["gravity", "grav-apple", "growl"],
+            mon("Foe", &["growl"]),
             0.5,
         );
-        game.turn(opener, "splash");
-        game.turn("grav-apple", "splash");
+        game.turn(opener, "growl");
+        game.turn("grav-apple", "growl");
         1000 - game.foe().hp
     };
-    let normal = damage("splash");
+    let normal = damage("growl");
     let boosted = damage("gravity");
     assert!(boosted >= normal * 14 / 10 && boosted <= normal * 16 / 10);
+}
+
+#[test]
+fn gravity_interrupts_a_queued_airborne_second_turn() {
+    for move_id in ["fly", "bounce"] {
+        let mut ally = mon("Ally", &["gravity", "growl"]);
+        ally.speed = 200;
+        let mut game = Game::new(vec![ally], vec![mon("Foe", &[move_id, "growl"])], 0.5);
+        game.turn("growl", move_id);
+        assert!(game.foe().hidden().is_some());
+        let pp = game.foe().move_pp[move_id];
+        game.turn("gravity", move_id);
+        assert!(game.foe().hidden().is_none());
+        assert_eq!(game.ally().hp, 1000);
+        assert_eq!(game.foe().move_pp[move_id], pp);
+        game.turn("growl", "growl");
+        assert_eq!(game.ally().hp, 1000);
+    }
+}
+
+#[test]
+fn gravity_filters_choices_and_allows_struggle_when_every_move_is_blocked() {
+    let blocked = [
+        "fly",
+        "bounce",
+        "jump-kick",
+        "high-jump-kick",
+        "flying-press",
+        "splash",
+        "sky-drop",
+    ];
+    let mut moves = blocked.to_vec();
+    moves.extend(["gravity", "growl"]);
+    let mut game = Game::duel(&moves, mon("Foe", &["growl"]), 0.5);
+    game.turn("gravity", "growl");
+    let AdvanceStatus::Awaiting(prompt) = game.0.advance().unwrap().status else {
+        panic!("expected a choice")
+    };
+    assert_eq!(prompt.choices.len(), 2);
+    for choice in prompt.choices {
+        let Choice::UseMove { move_id, .. } = choice;
+        assert!(!blocked.contains(&move_id.as_str()));
+    }
+    let mut foe = mon("Foe", &["gravity"]);
+    foe.speed = 200;
+    let mut game = Game::duel(&["splash"], foe, 0.5);
+    game.turn("splash", "gravity");
+    let events = game.turn("struggle", "gravity");
+    assert!(said(&events, "used Struggle"));
+    assert!(game.foe().hp < 1000);
 }
 
 #[test]

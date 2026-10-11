@@ -196,6 +196,11 @@ pub enum Rule {
         statuses: Vec<Status>,
         confusion: bool,
     },
+    /// Moves with any listed flag cannot be selected or executed by the holder.
+    BlockMoves {
+        flags: Vec<String>,
+        message: Option<String>,
+    },
     /// Stats cannot be lowered by others.
     BlockStatDrops,
     /// Chances of the extra effects of the holder's moves are multiplied.

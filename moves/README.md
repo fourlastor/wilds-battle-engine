@@ -31,8 +31,8 @@ Pokémon Showdown reference recorded in [catalog.json](catalog.json).
 For example, Snipe Shot has an increased critical-hit rate, Jaw Lock traps both
 participants, and No Retreat raises five stats and records its one-use trap.
 
-Of the 507 added definitions currently included, 448 implement their move-specific
-behavior through the available API and 59 are partial. Each partial file has an
+Of the 507 added definitions currently included, 454 implement their move-specific
+behavior through the available API and 53 are partial. Each partial file has an
 `INCOMPLETE` comment, an `incomplete` flag, and specific limitations in the manifest. Sky Drop and Stuff
 Cheeks fail explicitly because their defining mechanics cannot run through this API.
 Other partial moves execute the supported portion of their effects.
@@ -51,8 +51,8 @@ Gravity grounds everyone for five turns, cancels airborne charging, and activate
 the existing Gravity checks in Fly, Bounce, the jumping kicks, Flying Press and
 Grav Apple. It leaves Dig, Dive and disappearing moves alone. A timed engine rule
 boosts ordinary accuracy checks by about 1.67 without changing stat stages or OHKO
-accuracy. Preventing affected moves from being selected still requires an engine
-hook; affected moves currently fail when executed under Gravity.
+accuracy. A flag-based engine rule prevents selecting or executing affected moves,
+including Splash and Sky Drop. If every move is blocked, the engine uses Struggle.
 
 The manifest maps included sheet IDs and rows to their slugs, display names,
 runtime IDs, files, statuses and limitations; excluded entries retain their IDs,

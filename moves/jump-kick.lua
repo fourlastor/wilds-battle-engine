@@ -1,14 +1,8 @@
 -- Move 26: Jump Kick. Identity and parameters: pokemon_data/assets/moves/26.json.
 -- Behavior checked against PokeAPI; see catalog.json for scope and limitations.
--- INCOMPLETE: Fails during Gravity on execution; preventing selection during Gravity requires a move-legality hook.
-
-local function gravity(ctx)
-  return ctx.field.effects.gravity ~= nil
-end
 
 local move = {accuracy = 0.9, flags = {"contact"},
     script = function(ctx)
-      if gravity(ctx) then return ctx:fail() end
       local hit = ctx:damage(100)
       if not hit.hit then
         ctx:message(ctx.user.name .. " kept going and crashed!")
@@ -24,5 +18,5 @@ move.pp = 10
 move.accuracy = 0.95
 move.priority = 0
 move.target = Target.Selected
-move.flags = {"contact", "incomplete"}
+move.flags = {"contact", "gravity"}
 return move
