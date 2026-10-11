@@ -1587,6 +1587,17 @@
       ]
     },
     {
+      "id": 175,
+      "slug": "flail",
+      "name": "Flail",
+      "sheet_row": null,
+      "runtime_id": "flail",
+      "file": "moves/flail.lua",
+      "status": "implemented",
+      "limitations": [],
+      "parameter_source": "https://pokeapi.co/api/v2/move/175/"
+    },
+    {
       "id": 177,
       "slug": "aeroblast",
       "name": "Aeroblast",
@@ -6180,7 +6191,8 @@
       "teleport",
       "light-screen",
       "reflect",
-      "haze"
+      "haze",
+      "flail"
     ]
   }
 }
