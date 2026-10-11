@@ -269,3 +269,8 @@ fn check_partial_trap(move_id: &str, power: u16, kind: &str, category: &str) {
 fn fire_spin_damages_and_binds_only_after_a_reaching_hit() {
     check_partial_trap("fire-spin", 35, "Fire", "Special");
 }
+
+#[test]
+fn clamp_damages_and_binds_only_after_a_reaching_hit() {
+    check_partial_trap("clamp", 35, "Water", "Physical");
+}

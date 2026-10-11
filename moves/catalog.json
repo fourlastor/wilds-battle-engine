@@ -1183,6 +1183,17 @@
       "limitations": []
     },
     {
+      "id": 128,
+      "slug": "clamp",
+      "name": "Clamp",
+      "sheet_row": null,
+      "runtime_id": "clamp",
+      "file": "moves/clamp.lua",
+      "status": "implemented",
+      "limitations": [],
+      "parameter_source": "https://pokeapi.co/api/v2/move/128/"
+    },
+    {
       "id": 129,
       "slug": "swift",
       "name": "Swift",
@@ -6060,7 +6071,8 @@
       "mist",
       "low-kick",
       "leech-seed",
-      "fire-spin"
+      "fire-spin",
+      "clamp"
     ]
   }
 }
