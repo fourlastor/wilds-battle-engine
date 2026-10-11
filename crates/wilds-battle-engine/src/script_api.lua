@@ -124,6 +124,7 @@ return function(api, fields, roster)
     reached[who or ctx.target] = hit
     return hit
   end
+  function ctx:redirect_target(who) return roster[op("redirect_target", who)] end
   -- Whether the move has got through to `who` (the target if left out). The first thing a move
   -- does to a Pokémon decides it: a hit that landed or missed, or else the usual checks made now.
   function ctx:reached(who)

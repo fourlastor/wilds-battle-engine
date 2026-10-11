@@ -1,9 +1,9 @@
 # Wilds battle engine
 
 `wilds-battle-engine` is the Rust battle simulation. Move definitions are loaded
-from Lua; `MoveCatalog::builtin()` embeds the 640 files under `moves/`,
+from Lua; `MoveCatalog::builtin()` embeds the 641 files under `moves/`,
 and `MoveCatalog::from_directory(path)` reads them from disk at runtime.
-Both catalogs also include the system move Struggle, for 641 moves in total.
+Both catalogs also include the system move Struggle, for 642 moves in total.
 The [move catalog](moves/README.md) includes 538 entries from the Saved moves sheet,
 plus support moves, additional local JSON moves and the original moves outside the sheet. Its manifest
 records the 34 excluded Z/Max Moves. Files use canonical slugs and source display
@@ -209,6 +209,7 @@ before turn-start hooks; capped changes and resetting stages do not trigger them
 | `ctx:carry(who)`, `ctx:release()` | Link the user and a foe in the air, then release the pair. Carrying requires a living, active, unhidden foe under 200 kg. Pair state blocks switching and suppresses the carried member's action while it remains held. Interruption, fainting and `unhide` release both and cancel the carrier's continuation. |
 | `ctx:switch_out()` | Requests a host-selected bench replacement for the user after this move and its hit reactions. Bypasses ordinary traps. A `Pivot` prompt pauses the turn; responding resumes the remaining actions without rerolling order or repeating moves. |
 | `ctx:force_switch(who)` | Requests a random living bench replacement after this move and its hit reactions. Returns false when unavailable or blocked by Suction Cups, Guard Dog or `Rule.BlockForcedSwitch`. Cancels the outgoing member's pending action. |
+| `ctx:redirect_target(who)` | Resolves redirection for a target chosen during the script, such as Counter's last attacker. Returns the Pokémon to aim at. |
 | `ctx:adjacent(a, b)` | Whether two Pokémon occupy neighboring field slots. `who.position` is its zero-based slot from its trainer's perspective; opposing rows face each other. Fainting does not collapse slots. |
 | `ctx:item_removable(who)` | Checks species-bound items independently of Sticky Hold, for damage bonuses such as Knock Off. Removal and atomic theft enforce both restrictions; fainted or suppressed Sticky Hold does not protect an item. |
 | `ctx:eat_berry(who, forced)`, `ctx:eat_stolen_berry(from, to)` | Apply berry consumption effects and record history. Forced eating bypasses Unnerve and Klutz; stealing a berry respects removal restrictions and preserves the eater's own item. |

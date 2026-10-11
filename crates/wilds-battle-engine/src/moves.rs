@@ -361,6 +361,9 @@ pub(crate) enum ScriptOperation {
         a: ParticipantId,
         b: ParticipantId,
     },
+    RedirectTarget {
+        who: ParticipantId,
+    },
     EatStolenBerry {
         from: ParticipantId,
         to: ParticipantId,
@@ -960,6 +963,7 @@ fn parse_op(name: &str, args: &[Value]) -> mlua::Result<ScriptOperation> {
                 min_target_hp: options.whole("min_target_hp", 0.0, 65535.0)?.unwrap_or(0.0) as u16,
             }
         }
+        "redirect_target" => ScriptOperation::RedirectTarget { who: who(0)? },
         "try_hit" => ScriptOperation::TryHit {
             who: given(0).map(|value| pokemon_of(value, name)).transpose()?,
             options: hit_options(&Options::new(given(1), "try_hit", &HIT_KEYS)?)?,

@@ -1716,6 +1716,15 @@ impl Battle {
                 Value::Integer(i64::from(lost))
             }
             ScriptOperation::Adjacent { a, b } => Value::Boolean(self.adjacent(a, b)),
+            ScriptOperation::RedirectTarget { who } => {
+                let who = self.redirect_target(actor, who, spec);
+                let offset = if who.side == Side::Foes {
+                    self.sides[0].len()
+                } else {
+                    0
+                };
+                Value::Integer((offset + who.index + 1) as i64)
+            }
             ScriptOperation::EatStolenBerry { from, to } => {
                 Value::Boolean(self.eat_stolen_berry(from, to, events))
             }
@@ -1818,6 +1827,7 @@ fn reaction_may(operation: &ScriptOperation, hook: ScriptHook) -> bool {
         | Op::RandomInt { .. }
         | Op::ReducePp { .. }
         | Op::Adjacent { .. }
+        | Op::RedirectTarget { .. }
         | Op::EatStolenBerry { .. }
         | Op::EatBerry { .. }
         | Op::ConsumeItem { .. }

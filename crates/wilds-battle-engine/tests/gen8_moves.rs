@@ -1760,3 +1760,94 @@ fn celebrate_spends_pp_and_announces_without_changing_combat_state() {
             .any(|e| matches!(e,BattleEvent::Message(s)if s=="Congratulations!"))
     );
 }
+
+#[test]
+fn counter_retaliates_only_against_physical_hp_damage_and_respects_ghost_immunity() {
+    for (attack, sub, ghost, returns) in [
+        ("tackle", 0, false, true),
+        ("water-gun", 0, false, false),
+        ("tackle", 500, false, false),
+        ("tackle", 0, true, false),
+    ] {
+        let mut user = mon("User", &["counter"]);
+        user.substitute_hp = sub;
+        let mut foe = mon("Foe", &[attack]);
+        if ghost {
+            foe.types = vec![PokemonType::Ghost];
+        }
+        let mut b = game(user, vec![foe], 0.5);
+        turn(&mut b);
+        let lost = 1000 - b.participants(Side::Allies)[0].hp;
+        assert_eq!(
+            1000 - b.participants(Side::Foes)[0].hp,
+            if returns { 2 * lost } else { 0 }
+        );
+    }
+}
+
+#[test]
+fn counter_keeps_the_last_physical_hit_even_after_a_special_hit() {
+    let user = mon("User", &["counter"]);
+    let mut physical = mon("Physical", &["tackle"]);
+    physical.speed = 200;
+    let special = mon("Special", &["water-gun"]);
+    let expected = 2 * control_damage(40, "Normal", "Physical", physical.clone(), user.clone());
+    let mut b = game(user, vec![physical, special], 0.5);
+    turn(&mut b);
+    assert_eq!(1000 - b.participants(Side::Foes)[0].hp, expected);
+    assert_eq!(b.participants(Side::Foes)[1].hp, 1000);
+}
+
+#[test]
+fn counter_hits_a_pivot_replacement_in_the_attackers_field_position() {
+    let mut b = game(
+        mon("User", &["counter"]),
+        vec![mon("Foe", &["u-turn"]), mon("Bench", &["splash"])],
+        0.5,
+    );
+    b.set_active([vec![0], vec![0]]).unwrap();
+    turn_with(&mut b, |p| {
+        p.choices
+            .iter()
+            .find(|c| matches!(c, Choice::UseMove { .. }))
+            .unwrap_or(&p.choices[0])
+            .id()
+    });
+    assert_eq!(b.active_indices(Side::Foes), &[1]);
+    assert_eq!(
+        1000 - b.participants(Side::Foes)[1].hp,
+        2 * (1000 - b.participants(Side::Allies)[0].hp)
+    );
+}
+
+#[test]
+fn counter_applies_redirection_after_resolving_the_attacker() {
+    use wilds_battle_engine::{Condition, ParticipantId, Rule};
+    let mut foe = mon("Attacker", &["tackle"]);
+    foe.conditions.push(Condition {
+        name: "redirect".into(),
+        value: 1,
+        turns_left: None,
+        group: None,
+        end_message: None,
+        rules: vec![Rule::Redirect {
+            to: ParticipantId {
+                side: Side::Foes,
+                index: 1,
+            },
+            move_type: None,
+            priority: 2,
+        }],
+    });
+    let mut b = game(
+        mon("User", &["counter"]),
+        vec![foe, mon("Redirector", &["splash"])],
+        0.5,
+    );
+    turn(&mut b);
+    assert_eq!(b.participants(Side::Foes)[0].hp, 1000);
+    assert_eq!(
+        1000 - b.participants(Side::Foes)[1].hp,
+        2 * (1000 - b.participants(Side::Allies)[0].hp)
+    );
+}
