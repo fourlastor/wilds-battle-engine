@@ -2742,3 +2742,48 @@ fn rage_powder_draws_attacks_except_from_grass_or_overcoat_attackers() {
     turn(&mut b);
     assert!(b.participants(Side::Allies)[0].last_move_failed);
 }
+
+#[test]
+fn spotlight_takes_precedence_over_follow_me() {
+    let user = mon("User", &["spotlight"]);
+    let ally = mon("Ally", &["tackle"]);
+    let follower = mon("Follower", &["follow-me"]);
+    let lit = mon("Lit", &["splash"]);
+    let mut b = Battle::with_rng(
+        Fixed(0.5),
+        [vec![user, ally], vec![follower, lit]],
+        MoveCatalog::builtin().unwrap(),
+    )
+    .unwrap();
+    turn_with(&mut b, |p| {
+        if p.actor.side == Side::Allies {
+            let index = if p.actor.index == 0 { 1 } else { 0 };
+            p.choices.iter().find(|c| matches!(c,Choice::UseMove{target,..} if target.side==Side::Foes && target.index==index)).unwrap().id()
+        } else {
+            p.choices[0].id()
+        }
+    });
+    assert_eq!(b.participants(Side::Foes)[0].hp, 1000);
+    assert!(b.participants(Side::Foes)[1].hp < 1000);
+}
+#[test]
+fn spotlight_respects_protect_and_substitute_and_fails_in_singles() {
+    let mut b = game(
+        mon("User", &["spotlight"]),
+        vec![mon("Foe", &["splash"])],
+        0.5,
+    );
+    turn(&mut b);
+    assert!(b.participants(Side::Allies)[0].last_move_failed);
+    for (response, sub) in [("protect", 0), ("splash", 50)] {
+        let mut foe = mon("Foe", &[response]);
+        foe.substitute_hp = sub;
+        let mut b = game(
+            mon("User", &["spotlight"]),
+            vec![foe, mon("Other", &["splash"])],
+            0.5,
+        );
+        turn(&mut b);
+        assert!(b.participants(Side::Allies)[0].last_move_failed);
+    }
+}

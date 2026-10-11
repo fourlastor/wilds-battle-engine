@@ -5617,6 +5617,17 @@
       "limitations": []
     },
     {
+      "id": 671,
+      "slug": "spotlight",
+      "name": "Spotlight",
+      "sheet_row": null,
+      "runtime_id": "spotlight",
+      "file": "moves/spotlight.lua",
+      "status": "implemented",
+      "limitations": [],
+      "parameter_source": "https://pokeapi.co/api/v2/move/671/"
+    },
+    {
       "id": 672,
       "slug": "toxic-thread",
       "name": "Toxic Thread",
@@ -7164,7 +7175,8 @@
       "after-you",
       "quash",
       "follow-me",
-      "rage-powder"
+      "rage-powder",
+      "spotlight"
     ]
   }
 }
