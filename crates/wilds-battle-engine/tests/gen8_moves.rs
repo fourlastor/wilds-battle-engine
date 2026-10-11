@@ -136,3 +136,26 @@ fn roar_bypasses_protect_and_substitute_but_soundproof_blocks_it() {
         assert_eq!(b.participants(Side::Foes)[0].hp, 1000);
     }
 }
+
+#[test]
+fn mist_prevents_opposing_stat_drops_for_five_turns_without_refreshing() {
+    use wilds_battle_engine::Stat;
+    let mut user = mon("User", &["mist", "splash"]);
+    user.speed = 200;
+    let mut b = game(user, vec![mon("Foe", &["growl"])], 0.5);
+    turn(&mut b);
+    assert_eq!(b.participants(Side::Allies)[0].stage(Stat::Attack), 0);
+    turn(&mut b);
+    assert!(b.participants(Side::Allies)[0].last_move_failed);
+    for _ in 0..3 {
+        turn_with(&mut b, |p| {
+            p.choices.iter().find(|c| matches!(c, Choice::UseMove {move_id,..} if move_id == if p.actor.side == Side::Allies {"splash"} else {"growl"})).unwrap().id()
+        });
+    }
+    assert_eq!(b.participants(Side::Allies)[0].stage(Stat::Attack), 0);
+    assert!(b.side_conditions(Side::Allies).is_empty());
+    turn_with(&mut b, |p| {
+        p.choices.iter().find(|c| matches!(c, Choice::UseMove {move_id,..} if move_id == if p.actor.side == Side::Allies {"splash"} else {"growl"})).unwrap().id()
+    });
+    assert_eq!(b.participants(Side::Allies)[0].stage(Stat::Attack), -1);
+}

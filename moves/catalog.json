@@ -539,6 +539,17 @@
       "limitations": []
     },
     {
+      "id": 54,
+      "slug": "mist",
+      "name": "Mist",
+      "sheet_row": null,
+      "runtime_id": "mist",
+      "file": "moves/mist.lua",
+      "status": "implemented",
+      "limitations": [],
+      "parameter_source": "https://pokeapi.co/api/v2/move/54/"
+    },
+    {
       "id": 55,
       "slug": "water-gun",
       "name": "Water Gun",
@@ -6012,7 +6023,8 @@
       "life-dew",
       "whirlwind",
       "wrap",
-      "roar"
+      "roar",
+      "mist"
     ]
   }
 }
