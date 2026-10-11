@@ -2294,3 +2294,27 @@ fn guard_split_averages_raw_defenses_and_respects_protection() {
         assert_eq!(theirs.stage(Stat::SpDefense), -3);
     }
 }
+
+#[test]
+fn speed_swap_exchanges_raw_speed_through_substitute_and_keeps_stages() {
+    use wilds_battle_engine::Stat;
+    for (response, lands) in [("splash", true), ("protect", false)] {
+        let mut user = mon("User", &["speed-swap"]);
+        user.speed = 71;
+        user.change_stage(Stat::Speed, 4);
+        let mut foe = mon("Foe", &[response]);
+        foe.speed = 202;
+        foe.substitute_hp = 50;
+        foe.change_stage(Stat::Speed, -2);
+        let mut b = game(user, vec![foe], 0.5);
+        turn(&mut b);
+        let mine = &b.participants(Side::Allies)[0];
+        let theirs = &b.participants(Side::Foes)[0];
+        assert_eq!(
+            (mine.speed, theirs.speed),
+            if lands { (202, 71) } else { (71, 202) }
+        );
+        assert_eq!(mine.stage(Stat::Speed), 4);
+        assert_eq!(theirs.stage(Stat::Speed), -2);
+    }
+}

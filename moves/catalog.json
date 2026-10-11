@@ -5610,6 +5610,17 @@
       "limitations": []
     },
     {
+      "id": 683,
+      "slug": "speed-swap",
+      "name": "Speed Swap",
+      "sheet_row": null,
+      "runtime_id": "speed-swap",
+      "file": "moves/speed-swap.lua",
+      "status": "implemented",
+      "limitations": [],
+      "parameter_source": "https://pokeapi.co/api/v2/move/683/"
+    },
+    {
       "id": 684,
       "slug": "smart-strike",
       "name": "Smart Strike",
@@ -7020,7 +7031,8 @@
       "teatime",
       "recycle",
       "power-split",
-      "guard-split"
+      "guard-split",
+      "speed-swap"
     ]
   }
 }
