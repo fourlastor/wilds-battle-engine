@@ -6423,3 +6423,47 @@ fn sleep_talk_can_call_self_targeted_healing_and_still_checks_target_protection(
     assert_eq!(b.participants(Side::Foes)[0].hp, 1000);
     assert!(b.participants(Side::Allies)[0].last_move_failed);
 }
+
+#[test]
+fn assist_calls_bench_moves_including_fainted_members_without_spending_their_pp() {
+    for hp in [0, 1000] {
+        let user = mon("User", &["assist", "recover"]);
+        let mut bench = mon("Bench", &["pound"]);
+        bench.hp = hp;
+        bench.move_pp.insert("pound".into(), 0);
+        let mut b = Battle::with_rng(
+            Fixed(0.5),
+            [vec![user, bench], vec![mon("Foe", &["splash"])]],
+            MoveCatalog::builtin().unwrap(),
+        )
+        .unwrap();
+        b.set_active([vec![0], vec![0]]).unwrap();
+        turn(&mut b);
+        assert!(b.participants(Side::Foes)[0].hp < 1000);
+        assert_eq!(b.participants(Side::Allies)[1].move_pp["pound"], 0);
+        assert_eq!(b.participants(Side::Allies)[0].move_pp["assist"], 19);
+        assert_eq!(
+            b.participants(Side::Allies)[0].last_used.as_deref(),
+            Some("assist")
+        );
+    }
+}
+#[test]
+fn assist_excludes_its_own_moves_and_forbidden_party_moves() {
+    let mut b = Battle::with_rng(
+        Fixed(0.5),
+        [
+            vec![
+                mon("User", &["assist", "pound"]),
+                mon("Bench", &["protect", "dig", "mimic", "thief"]),
+            ],
+            vec![mon("Foe", &["splash"])],
+        ],
+        MoveCatalog::builtin().unwrap(),
+    )
+    .unwrap();
+    b.set_active([vec![0], vec![0]]).unwrap();
+    turn(&mut b);
+    assert_eq!(b.participants(Side::Foes)[0].hp, 1000);
+    assert!(b.participants(Side::Allies)[0].last_move_failed);
+}

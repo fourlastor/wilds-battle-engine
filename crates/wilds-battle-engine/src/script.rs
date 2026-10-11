@@ -442,6 +442,14 @@ impl Battle {
             let table = &run.sides[side.index()];
             let (marks, effects) = self.conditions_tables(lua, Scope::Side(side))?;
             table.raw_set("active_slots", self.active[side.index()].len())?;
+            table.raw_set(
+                "roster",
+                list(
+                    (0..self.participants(side).len())
+                        .map(|index| ParticipantId { side, index })
+                        .collect(),
+                )?,
+            )?;
             table.raw_set("marks", marks)?;
             table.raw_set("effects", effects)?;
             let last_faint = self.last_faint_turn[side.index()];
