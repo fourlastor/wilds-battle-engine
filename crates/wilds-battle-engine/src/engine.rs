@@ -1698,6 +1698,20 @@ impl Battle {
             self.move_failed = true;
             return Ok(true);
         }
+        if Self::normalizable_move(&spec.id)
+            && self
+                .extreme_weather_blocks(self.converted_type(actor, spec.move_type), spec.category)
+        {
+            events.push(BattleEvent::Message(format!(
+                "{user_name} used {}!",
+                spec.name
+            )));
+            events.push(BattleEvent::Message(
+                "The extreme weather stopped the attack!".into(),
+            ));
+            self.move_failed = true;
+            return Ok(true);
+        }
         if !spec.auto_only
             && self.explode_on_type(actor, self.converted_type(actor, spec.move_type), events)
         {
@@ -2730,6 +2744,13 @@ impl Battle {
         attack: &Attack,
         events: &mut Vec<BattleEvent>,
     ) -> Option<Roll> {
+        if self.extreme_weather_blocks(attack.move_type, attack.category) {
+            self.move_failed = true;
+            events.push(BattleEvent::Message(
+                "The extreme weather stopped the attack!".into(),
+            ));
+            return None;
+        }
         if self.ability_bypass {
             self.ignored_ability = Some(target);
         }
@@ -3253,13 +3274,15 @@ impl Battle {
             events.push(BattleEvent::Weather(None));
             return;
         }
-        self.weather.as_mut().unwrap().turns_left -= 1;
+        if weather.kind.owner_ability().is_none() {
+            self.weather.as_mut().unwrap().turns_left -= 1;
+        }
         events.push(BattleEvent::Message(continues.into()));
         if self.effective_weather().is_none() {
             return;
         }
         for &id in order {
-            self.ability_weather_residual(id, weather.kind, events);
+            self.ability_weather_residual(id, weather.kind.battle_kind(), events);
         }
         let (spared, name): (&[PokemonType], &str) = match weather.kind {
             WeatherKind::Sandstorm => (
@@ -3267,7 +3290,7 @@ impl Battle {
                 "sandstorm",
             ),
             WeatherKind::Hail => (&[PokemonType::Ice], "hail"),
-            WeatherKind::Sun | WeatherKind::Rain => return,
+            WeatherKind::Sun | WeatherKind::Rain | WeatherKind::HeavyRain => return,
         };
         for id in order {
             let p = self.get(*id).clone();

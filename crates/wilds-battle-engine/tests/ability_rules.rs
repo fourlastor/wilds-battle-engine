@@ -4312,3 +4312,40 @@ fn rks_system_uses_existing_memories_and_transformation_keeps_copied_types() {
         assert_eq!(ally(&battle).types, [PokemonType::Fire]);
     }
 }
+
+#[test]
+fn primordial_sea_keeps_heavy_rain_blocks_fire_attacks_and_ends_with_its_last_source() {
+    use wilds_battle_engine::WeatherKind;
+    let mut user = mon("User", &["sunny_day", "splash"]);
+    user.ability = Some("primordial-sea".into());
+    let mut battle = game(
+        user,
+        mon("Target", &["ember", "will-o-wisp", "splash", "gastro-acid"]),
+        0.5,
+    );
+    turn(&mut battle, "sunny_day", "ember");
+    assert_eq!(battle.weather().unwrap().kind, WeatherKind::HeavyRain);
+    assert_eq!(ally(&battle).hp, 1000);
+    for _ in 0..6 {
+        turn(&mut battle, "splash", "splash");
+    }
+    assert_eq!(battle.weather().unwrap().kind, WeatherKind::HeavyRain);
+    turn(&mut battle, "splash", "will-o-wisp");
+    assert_eq!(ally(&battle).status, Some(Status::Burned));
+    turn(&mut battle, "splash", "gastro-acid");
+    assert!(battle.weather().is_none());
+
+    let mut sea = mon("Sea", &["splash"]);
+    sea.ability = Some("primordial-sea".into());
+    let mut sun = mon("Sun", &["splash"]);
+    sun.ability = Some("drought".into());
+    let mut battle = Battle::with_rng(
+        Fixed(0.5),
+        [vec![sea, sun], vec![mon("Target", &["splash"])]],
+        MoveCatalog::builtin().unwrap(),
+    )
+    .unwrap();
+    battle.set_active([vec![0], vec![0]]).unwrap();
+    turn(&mut battle, "switch:1", "splash");
+    assert_eq!(battle.weather().unwrap().kind, WeatherKind::Sun);
+}

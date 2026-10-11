@@ -105,6 +105,7 @@ impl Battle {
     }
 
     pub(crate) fn update_status_abilities(&mut self, events: &mut Vec<BattleEvent>) {
+        self.refresh_extreme_weather(events);
         for who in self.actors() {
             self.try_trace(who, events);
             self.update_ability_form(who, events);

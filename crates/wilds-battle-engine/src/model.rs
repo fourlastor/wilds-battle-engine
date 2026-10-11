@@ -93,12 +93,30 @@ pub enum WeatherKind {
     Sandstorm,
     Rain,
     Hail,
+    HeavyRain,
 }
 
 impl WeatherKind {
+    pub(crate) fn owner_ability(self) -> Option<&'static str> {
+        match self {
+            Self::HeavyRain => Some("primordialsea"),
+            _ => None,
+        }
+    }
+    pub(crate) fn battle_kind(self) -> Self {
+        match self {
+            Self::HeavyRain => Self::Rain,
+            other => other,
+        }
+    }
     /// The lines shown when the weather starts, at the end of each turn, and when it stops.
     pub const fn messages(self) -> (&'static str, &'static str, &'static str) {
         match self {
+            Self::HeavyRain => (
+                "A heavy rain began to fall!",
+                "The heavy rain continues.",
+                "The heavy rain stopped.",
+            ),
             Self::Sun => (
                 "The sunlight turned harsh!",
                 "The sunlight is strong.",

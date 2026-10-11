@@ -537,7 +537,7 @@ impl Battle {
             Some(weather) => {
                 ctx.raw_set(
                     "weather",
-                    symbol(lua, "Weather", &format!("{:?}", weather.kind))?,
+                    symbol(lua, "Weather", &format!("{:?}", weather.kind.battle_kind()))?,
                 )?;
                 ctx.raw_set("weather_turns", weather.turns_left)?;
             }
@@ -2338,6 +2338,18 @@ impl Battle {
         turns: u8,
         events: &mut Vec<BattleEvent>,
     ) -> bool {
+        self.refresh_extreme_weather(events);
+        if self
+            .weather
+            .as_ref()
+            .is_some_and(|w| w.kind.owner_ability().is_some())
+            && kind.owner_ability().is_none()
+        {
+            events.push(BattleEvent::Message(
+                "The extreme weather could not be replaced!".into(),
+            ));
+            return false;
+        }
         if self
             .weather
             .as_ref()

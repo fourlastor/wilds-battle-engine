@@ -27,6 +27,33 @@ fn cannot_suppress(ability: &str) -> bool {
 }
 
 impl Battle {
+    pub(crate) fn refresh_extreme_weather(&mut self, events: &mut Vec<BattleEvent>) {
+        if let Some(kind) = self.weather.as_ref().map(|w| w.kind)
+            && let Some(ability) = kind.owner_ability()
+            && !self
+                .actors()
+                .into_iter()
+                .any(|who| self.has_ability(who, ability))
+        {
+            self.weather = None;
+            events.push(BattleEvent::Message(kind.messages().2.into()));
+            events.push(BattleEvent::Weather(None));
+        }
+    }
+
+    pub(crate) fn extreme_weather_blocks(
+        &self,
+        kind: crate::model::PokemonType,
+        category: crate::moves::Category,
+    ) -> bool {
+        category != crate::moves::Category::Status
+            && self.effective_weather().is_some()
+            && self.weather.as_ref().is_some_and(|w| {
+                w.kind == crate::model::WeatherKind::HeavyRain
+                    && kind == crate::model::PokemonType::Fire
+            })
+    }
+
     pub(crate) fn active_hp(&self) -> Vec<(ParticipantId, u16)> {
         self.actors()
             .into_iter()
@@ -658,7 +685,9 @@ impl Battle {
         {
             None
         } else {
-            self.weather.as_ref().map(|weather| weather.kind)
+            self.weather
+                .as_ref()
+                .map(|weather| weather.kind.battle_kind())
         }
     }
 
@@ -963,6 +992,9 @@ impl Battle {
             return;
         }
         self.ability_terrain_entry(who, events);
+        if self.has_ability(who, "primordialsea") {
+            self.start_weather(crate::model::WeatherKind::HeavyRain, u8::MAX, events);
+        }
         self.update_ability_form(who, events);
         self.health_ability_form(who, true, events);
         self.restore_ice_face(who, events);
