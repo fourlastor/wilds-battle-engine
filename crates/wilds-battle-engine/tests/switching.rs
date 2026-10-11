@@ -234,6 +234,8 @@ fn bench_does_not_change_screen_scaling_or_adjacency() {
                 factor: 0.5,
                 not_on_crit: true,
                 multi_battle_factor: Some(2.0 / 3.0),
+                screen: true,
+                unless_side_effect: None,
             }],
             group: None,
             end_message: None,

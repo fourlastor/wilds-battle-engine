@@ -6163,6 +6163,17 @@
       "limitations": []
     },
     {
+      "id": 694,
+      "slug": "aurora-veil",
+      "name": "Aurora Veil",
+      "sheet_row": null,
+      "runtime_id": "aurora-veil",
+      "file": "moves/aurora-veil.lua",
+      "status": "implemented",
+      "limitations": [],
+      "parameter_source": "https://pokeapi.co/api/v2/move/694/"
+    },
+    {
       "id": 704,
       "slug": "shell-trap",
       "name": "Shell Trap",
@@ -7572,7 +7583,8 @@
       "electrify",
       "magic-coat",
       "powder",
-      "court-change"
+      "court-change",
+      "aurora-veil"
     ]
   }
 }

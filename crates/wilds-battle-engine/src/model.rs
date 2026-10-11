@@ -203,6 +203,9 @@ pub enum Rule {
         not_on_crit: bool,
         /// Alternate factor for battles with multiple active positions on either side.
         multi_battle_factor: Option<f32>,
+        /// Screens are bypassed by Infiltrator and do not combine with the named side effect.
+        screen: bool,
+        unless_side_effect: Option<String>,
     },
     /// Damage from the holder's moves is multiplied.
     DamageDealt {

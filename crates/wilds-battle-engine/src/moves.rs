@@ -834,6 +834,8 @@ fn rule_of(value: &Value) -> mlua::Result<Rule> {
             "type",
             "not_on_crit",
             "multi_battle_factor",
+            "screen",
+            "unless_side_effect",
         ],
         RuleKind::BasePower => &["kind", "type", "factor"],
         RuleKind::DamageDealt => &["kind", "factor", "category", "type"],
@@ -940,6 +942,8 @@ fn rule_of(value: &Value) -> mlua::Result<Rule> {
             move_type: options.pokemon_type("type")?,
             factor: factor("factor")?,
             not_on_crit: options.flag("not_on_crit")?,
+            screen: options.flag("screen")?,
+            unless_side_effect: options.text("unless_side_effect")?,
             multi_battle_factor: options
                 .get("multi_battle_factor")?
                 .map(|_| factor("multi_battle_factor"))

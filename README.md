@@ -1,9 +1,9 @@
 # Wilds battle engine
 
 `wilds-battle-engine` is the Rust battle simulation. Move definitions are loaded
-from Lua; `MoveCatalog::builtin()` embeds the 700 files under `moves/`,
+from Lua; `MoveCatalog::builtin()` embeds the 701 files under `moves/`,
 and `MoveCatalog::from_directory(path)` reads them from disk at runtime.
-Both catalogs also include the system move Struggle, for 701 moves in total.
+Both catalogs also include the system move Struggle, for 702 moves in total.
 The [move catalog](moves/README.md) includes 538 entries from the Saved moves sheet,
 plus support moves, additional local JSON moves and the original moves outside the sheet. Its manifest
 records the 34 excluded Z/Max Moves. Files use canonical slugs and source display
@@ -272,6 +272,7 @@ ctx:end_effect(ctx.target.team, "reflect")                  -- Brick Break
 | Rule | Options |
 |---|---|
 | `ExplodeOnType` | `type`, `fraction`, optional `message`; cancels moves of that type after PP is spent and deals rounded residual damage. Magic Guard prevents that damage. |
+| Screen damage rules | `DamageTaken` accepts `screen=true` to allow Infiltrator and `unless_side_effect` to avoid stacking with another named screen. |
 | `ReflectMoves` | Reflects eligible incoming moves, including side hazards, once. Independent of ability suppression. |
 | `SwapDefenses` | Field rule exchanging raw Defense and Sp. Defense for calculations, retaining their stage modifiers; defensive attacking-stat overrides follow Wonder Room rules. |
 | `ReverseSpeed` | Field rule reversing action Speed within each priority bracket, including mid-turn queue updates. |

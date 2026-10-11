@@ -2249,7 +2249,7 @@ impl Battle {
             damage *= 1.5;
         }
         let dealt = self.damage_dealt_factor(actor, attack.category, move_type);
-        let taken = self.damage_taken_factor(target, attack.category, move_type, crit);
+        let taken = self.damage_taken_factor(actor, target, attack.category, move_type, crit);
         if dealt != 1.0 || taken != 1.0 {
             damage *= dealt * taken;
         }

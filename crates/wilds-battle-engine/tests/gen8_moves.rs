@@ -4400,3 +4400,69 @@ fn court_change_exchanges_screens_and_hazard_layers_without_resetting_durations(
     turn(&mut b);
     assert!(b.participants(Side::Allies)[0].last_move_failed);
 }
+
+fn veil_damage(attack: &str, ability: Option<&str>, screen: &str, veil: bool) -> u16 {
+    let mut user = mon(
+        "User",
+        &["hail", "aurora-veil", "reflect", "light-screen", "splash"],
+    );
+    user.speed = 200;
+    user.types = vec![PokemonType::Ice];
+    let mut foe = mon("Foe", &["splash", attack]);
+    foe.types = vec![PokemonType::Ice];
+    foe.ability = ability.map(str::to_owned);
+    let mut b = game(user, vec![foe], 0.5);
+    turn(&mut b);
+    turn_with(&mut b, |p| {
+        choose_move(p, if veil { "aurora-veil" } else { "splash" }, "splash")
+    });
+    turn_with(&mut b, |p| choose_move(p, screen, attack));
+    1000 - b.participants(Side::Allies)[0].hp
+}
+
+#[test]
+fn aurora_veil_requires_hail_protects_both_categories_and_never_stacks_with_screens() {
+    for (attack, screen) in [("pound", "reflect"), ("psychic", "light-screen")] {
+        let normal = veil_damage(attack, None, "splash", false);
+        let veil = veil_damage(attack, None, "splash", true);
+        assert!(veil < normal);
+        assert_eq!(veil_damage(attack, None, screen, true), veil);
+        assert_eq!(
+            veil_damage(attack, Some("infiltrator"), screen, true),
+            normal
+        );
+    }
+    assert_eq!(
+        veil_damage("frost-breath", None, "splash", true),
+        veil_damage("frost-breath", None, "splash", false)
+    );
+    let mut b = game(
+        mon("User", &["aurora-veil"]),
+        vec![mon("Foe", &["splash"])],
+        0.5,
+    );
+    turn(&mut b);
+    assert!(b.participants(Side::Allies)[0].last_move_failed);
+    assert!(b.side_conditions(Side::Allies).is_empty());
+}
+
+#[test]
+fn aurora_veil_keeps_working_after_hail_ends_but_expires_after_five_turns() {
+    let mut b = game(
+        mon("User", &["hail", "aurora-veil", "splash"]),
+        vec![mon("Foe", &["splash", "rain-dance"])],
+        0.5,
+    );
+    turn(&mut b);
+    turn_with(&mut b, |p| choose_move(p, "aurora-veil", "splash"));
+    turn_with(&mut b, |p| choose_move(p, "splash", "rain-dance"));
+    assert!(
+        b.side_conditions(Side::Allies)
+            .iter()
+            .any(|c| c.name == "aurora_veil")
+    );
+    for _ in 0..3 {
+        turn_with(&mut b, |p| choose_move(p, "splash", "splash"));
+    }
+    assert!(b.side_conditions(Side::Allies).is_empty());
+}

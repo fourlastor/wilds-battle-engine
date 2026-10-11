@@ -227,6 +227,7 @@ impl Battle {
 
     pub(crate) fn damage_taken_factor(
         &self,
+        actor: ParticipantId,
         id: ParticipantId,
         category: Category,
         move_type: PokemonType,
@@ -239,9 +240,17 @@ impl Battle {
                 factor: by,
                 not_on_crit,
                 multi_battle_factor,
+                screen,
+                unless_side_effect,
             } if only_category.is_none_or(|own| own == category)
                 && only_type.is_none_or(|own| own == move_type)
-                && !(*not_on_crit && critical) =>
+                && !(*not_on_crit && critical)
+                && !(*screen && self.has_ability(actor, "infiltrator"))
+                && !unless_side_effect.as_ref().is_some_and(|name| {
+                    self.side_conditions[id.side.index()]
+                        .iter()
+                        .any(|c| &c.name == name)
+                }) =>
             {
                 // Fainting does not change the battle format.
                 let multi = self.active.iter().any(|side| side.len() > 1);
