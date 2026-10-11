@@ -34,7 +34,7 @@ id,ability,status,verification
 33,swift-swim,IMPLEMENTED,ability_rules::swift_swim_doubles_speed_in_effective_rain
 34,chlorophyll,IMPLEMENTED,ability_rules::chlorophyll_doubles_speed_in_effective_weather
 35,illuminate,MISSING,No native battle behavior
-36,trace,MISSING,No native battle behavior
+36,trace,IMPLEMENTED,ability_rules::trace_copies_and_activates_eligible_foe_abilities_and_retries_later
 37,huge-power,IMPLEMENTED,Source inventory; existing tests only
 38,poison-point,IMPLEMENTED,ability_rules::poison_point_has_thirty_percent_contact_poison_with_type_immunity
 39,inner-focus,IMPLEMENTED,Source inventory; existing tests only

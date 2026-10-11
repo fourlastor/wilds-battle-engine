@@ -3088,3 +3088,43 @@ fn frisk_reveals_all_active_opponents_items_even_when_inactive() {
     }
     assert_eq!(foe(&battle).item.as_deref(), Some("sitrus-berry"));
 }
+
+#[test]
+fn trace_copies_and_activates_eligible_foe_abilities_and_retries_later() {
+    for copied in ["intimidate", "wonder-guard", "multitype"] {
+        let mut user = mon("User", &["splash"]);
+        user.ability = Some("trace".into());
+        let mut target = mon("Target", &["splash"]);
+        target.ability = Some(copied.into());
+        let mut battle = game(user, target, 0.5);
+        turn(&mut battle, "splash", "splash");
+        assert_eq!(
+            ally(&battle).ability.as_deref(),
+            Some(if copied == "multitype" {
+                "trace"
+            } else {
+                copied
+            })
+        );
+        if copied == "intimidate" {
+            assert_eq!(foe(&battle).stage(wilds_battle_engine::Stat::Attack), -1);
+        }
+    }
+    let mut user = mon("User", &["splash"]);
+    user.ability = Some("trace".into());
+    let mut target = mon("Target", &["splash"]);
+    target.ability = Some("multitype".into());
+    let mut bench = mon("Bench", &["splash"]);
+    bench.ability = Some("huge-power".into());
+    let mut battle = Battle::with_rng(
+        Fixed(0.5),
+        [vec![user], vec![target, bench]],
+        MoveCatalog::builtin().unwrap(),
+    )
+    .unwrap();
+    battle.set_active([vec![0], vec![0]]).unwrap();
+    turn(&mut battle, "splash", "splash");
+    assert_eq!(ally(&battle).ability.as_deref(), Some("trace"));
+    turn(&mut battle, "splash", "switch:1");
+    assert_eq!(ally(&battle).ability.as_deref(), Some("huge-power"));
+}

@@ -27,6 +27,27 @@ fn cannot_suppress(ability: &str) -> bool {
 }
 
 impl Battle {
+    pub(crate) fn try_trace(&mut self, who: ParticipantId, events: &mut Vec<BattleEvent>) {
+        if !self.has_ability(who, "trace") {
+            return;
+        }
+        let foes: Vec<_> = self
+            .actors()
+            .into_iter()
+            .filter(|foe| {
+                foe.side != who.side
+                    && self.adjacent(who, *foe)
+                    && self.get(*foe).ability.as_deref().is_some_and(|ability| {
+                        !ability.is_empty() && !ability_flag(&item_key(ability), "notrace")
+                    })
+            })
+            .collect();
+        if !foes.is_empty() {
+            let foe = foes[self.rng.index(foes.len())];
+            self.replace_ability(who, self.ability_state(foe), events);
+        }
+    }
+
     fn ability_terrain_entry(&mut self, who: ParticipantId, events: &mut Vec<BattleEvent>) {
         use crate::model::{Condition, PokemonType, Rule, Scope, Status};
         let (name, rules) = if self.has_ability(who, "electricsurge") {
@@ -612,6 +633,10 @@ impl Battle {
     }
 
     pub(crate) fn ability_on_entry(&mut self, who: ParticipantId, events: &mut Vec<BattleEvent>) {
+        if self.has_ability(who, "trace") {
+            self.try_trace(who, events);
+            return;
+        }
         self.ability_terrain_entry(who, events);
         if self.has_ability(who, "frisk") {
             for foe in self.actors() {

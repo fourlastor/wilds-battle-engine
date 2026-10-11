@@ -106,6 +106,7 @@ impl Battle {
 
     pub(crate) fn update_status_abilities(&mut self, events: &mut Vec<BattleEvent>) {
         for who in self.actors() {
+            self.try_trace(who, events);
             if self.has_ability(who, "oblivious") {
                 self.get_mut(who).conditions.retain(|c| {
                     c.name != "taunt" && !c.rules.iter().any(|r| matches!(r, Rule::InfatuatedBy(_)))
