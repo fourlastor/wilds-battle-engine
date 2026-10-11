@@ -2619,3 +2619,39 @@ fn friend_guard_reduces_ally_damage_and_is_bypassed_by_mold_breaker() {
     assert_eq!(run(false, false, true), base);
     assert!((f32::from(run(false, false, false)) - f32::from(base) * 0.75).abs() <= 1.0);
 }
+
+fn team_boost_damage(ability: &str, move_id: &str, partners: usize, on_user: bool) -> u16 {
+    let mut user = mon("User", &[move_id]);
+    user.types = vec![PokemonType::None];
+    if on_user {
+        user.ability = Some(ability.into());
+    }
+    let mut party = vec![user];
+    for _ in 0..partners {
+        let mut partner = mon("Partner", &["splash"]);
+        partner.ability = Some(ability.into());
+        party.push(partner);
+    }
+    let mut battle = Battle::with_rng(
+        Fixed(0.5),
+        [party, vec![mon("Target", &["splash"])]],
+        MoveCatalog::builtin().unwrap(),
+    )
+    .unwrap();
+    turn(&mut battle, move_id, "splash");
+    1000 - foe(&battle).hp
+}
+
+#[test]
+fn battery_boosts_special_attacks_of_allies_and_stacks() {
+    let base = team_boost_damage("battery", "water-gun", 0, false);
+    assert_eq!(team_boost_damage("battery", "water-gun", 0, true), base);
+    for count in 1..=2 {
+        let damage = team_boost_damage("battery", "water-gun", count, false);
+        assert!((f32::from(damage) - f32::from(base) * 1.3f32.powi(count as i32)).abs() <= 3.0);
+    }
+    assert_eq!(
+        team_boost_damage("battery", "tackle", 1, false),
+        team_boost_damage("battery", "tackle", 0, false)
+    );
+}

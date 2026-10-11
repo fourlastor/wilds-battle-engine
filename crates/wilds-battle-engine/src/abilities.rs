@@ -983,6 +983,26 @@ impl Battle {
             })
     }
 
+    pub(crate) fn team_ability_power_factor(
+        &self,
+        actor: ParticipantId,
+        attack: &crate::engine::Attack,
+    ) -> f32 {
+        let mut factor = 1.0;
+        for ally in self.actors() {
+            if ally.side != actor.side {
+                continue;
+            }
+            if ally != actor
+                && self.has_ability(ally, "battery")
+                && attack.category == crate::moves::Category::Special
+            {
+                factor *= 1.3;
+            }
+        }
+        factor
+    }
+
     pub(crate) fn ability_base_power_factor(
         &self,
         actor: ParticipantId,

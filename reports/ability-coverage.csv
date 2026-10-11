@@ -215,7 +215,7 @@ id,ability,status,verification
 214,queenly-majesty,IMPLEMENTED,ability_rules::queenly_majesty_protects_allies_from_priority_and_allows_mold_breaker
 215,innards-out,IMPLEMENTED,ability_rules::innards_out_returns_actual_hp_lost_only_on_a_direct_knockout
 216,dancer,MISSING,No native battle behavior
-217,battery,MISSING,No native battle behavior
+217,battery,IMPLEMENTED,ability_rules::battery_boosts_special_attacks_of_allies_and_stacks
 218,fluffy,IMPLEMENTED,Source inventory; existing tests only
 219,dazzling,IMPLEMENTED,ability_rules::dazzling_protects_allies_from_priority_and_allows_mold_breaker
 220,soul-heart,MISSING,No native battle behavior

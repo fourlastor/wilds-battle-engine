@@ -2714,6 +2714,7 @@ impl Battle {
         let base_power = (f32::from(attack.power)
             * self.base_power_factor(actor, move_type)
             * self.ability_base_power_factor(actor, target, attack)
+            * self.team_ability_power_factor(actor, attack)
             * self.incoming_base_power_factor(target, attack.move_id, move_type)
             - 0.5)
             .ceil()
