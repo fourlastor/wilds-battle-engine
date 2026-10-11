@@ -2631,6 +2631,17 @@
       "limitations": []
     },
     {
+      "id": 286,
+      "slug": "imprison",
+      "name": "Imprison",
+      "sheet_row": null,
+      "runtime_id": "imprison",
+      "file": "moves/imprison.lua",
+      "status": "implemented",
+      "limitations": [],
+      "parameter_source": "https://pokeapi.co/api/v2/move/286/"
+    },
+    {
       "id": 287,
       "slug": "refresh",
       "name": "Refresh",
@@ -7356,7 +7367,8 @@
       "attract",
       "taunt",
       "disable",
-      "torment"
+      "torment",
+      "imprison"
     ]
   }
 }

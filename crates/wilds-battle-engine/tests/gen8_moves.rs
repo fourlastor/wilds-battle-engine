@@ -3502,3 +3502,63 @@ fn torment_allows_struggle_when_the_only_learned_move_cannot_repeat() {
     assert!(b.participants(Side::Foes)[0].hp < 1000);
     turn_with(&mut b, |p| choose_move(p, "splash", "tackle"));
 }
+
+#[test]
+fn imprison_blocks_shared_moves_immediately_and_unseals_them_when_the_user_leaves() {
+    let mut user = mon("User", &["imprison", "tackle", "splash"]);
+    user.speed = 200;
+    let foe = mon("Foe", &["tackle", "splash", "ember"]);
+    let mut b = Battle::with_rng(
+        Fixed(0.5),
+        [vec![user, mon("Bench", &["splash"])], vec![foe]],
+        MoveCatalog::builtin().unwrap(),
+    )
+    .unwrap();
+    b.set_active([vec![0], vec![0]]).unwrap();
+    let pp = b.participants(Side::Foes)[0].move_pp["tackle"];
+    turn_with(&mut b, |p| choose_move(p, "imprison", "tackle"));
+    assert_eq!(b.participants(Side::Foes)[0].move_pp["tackle"], pp);
+    assert_eq!(b.participants(Side::Allies)[0].hp, 1000);
+    turn_with(&mut b, |p| {
+        if p.actor.side == Side::Allies {
+            p.choices
+                .iter()
+                .find(|c| matches!(c, Choice::Switch { .. }))
+                .unwrap()
+                .id()
+        } else {
+            assert!(!p.choices.iter().any(|c| matches!(c,Choice::UseMove{move_id,..} if move_id=="tackle" || move_id=="splash")));
+            choose_move(p, "splash", "ember")
+        }
+    });
+    turn_with(&mut b, |p| choose_move(p, "splash", "tackle"));
+    assert_eq!(b.participants(Side::Foes)[0].move_pp["tackle"], pp - 1);
+}
+
+#[test]
+fn imprison_does_not_seal_allies_and_leaves_struggle_available() {
+    let mut user = mon("User", &["imprison", "tackle", "splash"]);
+    user.speed = 200;
+    let mut b = Battle::with_rng(
+        Fixed(0.5),
+        [
+            vec![user, mon("Partner", &["splash"])],
+            vec![mon("Foe", &["tackle"])],
+        ],
+        MoveCatalog::builtin().unwrap(),
+    )
+    .unwrap();
+    turn_with(&mut b, |p| {
+        choose_move(
+            p,
+            if p.actor.index == 0 {
+                "imprison"
+            } else {
+                "splash"
+            },
+            "tackle",
+        )
+    });
+    turn_with(&mut b, |p| choose_move(p, "splash", "struggle"));
+    assert!(b.participants(Side::Foes)[0].hp < 1000);
+}

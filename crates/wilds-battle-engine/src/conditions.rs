@@ -301,6 +301,20 @@ impl Battle {
         {
             return Some("{name} needs to hold a berry to use that move!");
         }
+        if spec.id != "struggle"
+            && self.actors().into_iter().any(|source| {
+                source.side != id.side
+                    && self.get(source).moves.contains(&spec.id)
+                    && self
+                        .get(source)
+                        .conditions
+                        .iter()
+                        .flat_map(|c| &c.rules)
+                        .any(|r| matches!(r, Rule::SealMoves))
+            })
+        {
+            return Some("{name}'s move is sealed by Imprison!");
+        }
         self.rules(id).find_map(|rule| match rule {
             Rule::BlockMove {
                 id: blocked,

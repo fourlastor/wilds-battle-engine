@@ -231,6 +231,8 @@ pub enum Rule {
     },
     /// Prevent choosing the last used move again; does not interrupt an already queued action.
     NoRepeat,
+    /// While the holder is active, foes cannot choose or use its currently learned moves.
+    SealMoves,
     /// Stats cannot be lowered by others.
     BlockStatDrops,
     /// Flinching cannot interrupt the holder.
