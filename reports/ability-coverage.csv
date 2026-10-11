@@ -248,7 +248,7 @@ id,ability,status,verification
 247,ripen,IMPLEMENTED,Source inventory; existing tests only
 248,ice-face,MISSING,No native battle behavior
 249,power-spot,IMPLEMENTED,ability_rules::power_spot_boosts_ally_attacks_but_not_the_holders
-250,mimicry,MISSING,No native battle behavior
+250,mimicry,IMPLEMENTED,ability_rules::mimicry_changes_on_terrain_transitions_and_restores_original_types
 251,screen-cleaner,IMPLEMENTED,ability_rules::screen_cleaner_removes_both_sides_screens_but_preserves_mist
 252,steely-spirit,IMPLEMENTED,ability_rules::steely_spirit_boosts_steel_for_holder_and_allies_and_stacks
 253,perish-body,IMPLEMENTED,ability_rules::perish_body_counts_down_both_contact_participants_and_ignores_soundproof

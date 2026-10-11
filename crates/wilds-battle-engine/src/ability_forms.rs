@@ -4,6 +4,43 @@ use crate::items::item_key;
 use crate::model::{BattleEvent, ParticipantId, WeatherKind};
 
 impl Battle {
+    fn update_mimicry(&mut self, who: ParticipantId, events: &mut Vec<BattleEvent>) {
+        use crate::model::{PokemonType, Scope};
+        if !self.has_ability(who, "mimicry") {
+            self.end_condition(Scope::Pokemon(who), "mimicry");
+            return;
+        }
+        let terrain = self
+            .field_conditions
+            .iter()
+            .find_map(|c| match c.name.as_str() {
+                "electric_terrain" => Some((1, PokemonType::Electric)),
+                "grassy_terrain" => Some((2, PokemonType::Grass)),
+                "misty_terrain" => Some((3, PokemonType::Fairy)),
+                "psychic_terrain" => Some((4, PokemonType::Psychic)),
+                _ => None,
+            });
+        let value = terrain.map_or(0, |(n, _)| n);
+        if self
+            .get(who)
+            .conditions
+            .iter()
+            .any(|c| c.name == "mimicry" && c.value == value)
+        {
+            return;
+        }
+        self.set_mark(Scope::Pokemon(who), "mimicry", value, None);
+        let types = terrain.map_or_else(|| self.get(who).original_types(), |(_, kind)| vec![kind]);
+        if self.types_of(who) != types {
+            self.get_mut(who).types = types;
+            self.get_mut(who).added_type = None;
+            events.push(BattleEvent::Message(format!(
+                "{} changed type with Mimicry!",
+                self.get(who).name
+            )));
+        }
+    }
+
     pub(crate) fn shields_down_blocks_status(&self, who: ParticipantId) -> bool {
         self.has_ability(who, "shieldsdown")
             && self.species_is(who, 774, "minior")
@@ -139,6 +176,7 @@ impl Battle {
         who: ParticipantId,
         events: &mut Vec<BattleEvent>,
     ) {
+        self.update_mimicry(who, events);
         if self.get(who).transformed() {
             return;
         }

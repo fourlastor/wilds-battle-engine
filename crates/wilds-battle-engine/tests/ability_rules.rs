@@ -3910,3 +3910,21 @@ fn shields_down_changes_minior_forms_and_blocks_new_statuses_without_curing_exis
         }
     }
 }
+
+#[test]
+fn mimicry_changes_on_terrain_transitions_and_restores_original_types() {
+    let mut user = mon("User", &["electric-terrain", "grassy-terrain", "splash"]);
+    user.types = vec![PokemonType::Flying];
+    user.ability = Some("mimicry".into());
+    let mut battle = game(user, mon("Target", &["splash", "soak"]), 0.5);
+    turn(&mut battle, "electric-terrain", "splash");
+    assert_eq!(ally(&battle).types, [PokemonType::Electric]);
+    turn(&mut battle, "splash", "soak");
+    assert_eq!(ally(&battle).types, [PokemonType::Water]);
+    turn(&mut battle, "grassy-terrain", "splash");
+    assert_eq!(ally(&battle).types, [PokemonType::Grass]);
+    for _ in 0..5 {
+        turn(&mut battle, "splash", "splash");
+    }
+    assert_eq!(ally(&battle).types, [PokemonType::Flying]);
+}

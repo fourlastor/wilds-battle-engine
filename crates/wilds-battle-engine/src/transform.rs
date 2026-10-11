@@ -17,6 +17,15 @@ pub(crate) struct OriginalPokemon {
 }
 
 impl Pokemon {
+    pub(crate) fn original_types(&self) -> Vec<crate::model::PokemonType> {
+        self.transformation
+            .as_ref()
+            .and_then(|p| p.battle_base_form.as_ref())
+            .or(self.battle_base_form.as_ref())
+            .map(|(_, form)| form.types.clone())
+            .unwrap_or_else(|| self.types.clone())
+    }
+
     pub fn transformed(&self) -> bool {
         self.transformation.is_some()
     }
