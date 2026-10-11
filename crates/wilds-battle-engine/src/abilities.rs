@@ -996,6 +996,11 @@ impl Battle {
             if ally != actor && self.has_ability(ally, "powerspot") {
                 factor *= 1.3;
             }
+            if self.has_ability(ally, "steelyspirit")
+                && attack.move_type == crate::model::PokemonType::Steel
+            {
+                factor *= 1.5;
+            }
             if ally != actor
                 && self.has_ability(ally, "battery")
                 && attack.category == crate::moves::Category::Special

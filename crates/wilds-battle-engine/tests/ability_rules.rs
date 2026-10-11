@@ -2668,3 +2668,16 @@ fn power_spot_boosts_ally_attacks_but_not_the_holders() {
         );
     }
 }
+
+#[test]
+fn steely_spirit_boosts_steel_for_holder_and_allies_and_stacks() {
+    let base = team_boost_damage("steely-spirit", "iron-head", 0, false);
+    for (partners, on_user, factor) in [(0, true, 1.5), (1, false, 1.5), (1, true, 2.25)] {
+        let damage = team_boost_damage("steely-spirit", "iron-head", partners, on_user);
+        assert!((f32::from(damage) - f32::from(base) * factor).abs() <= 3.0);
+    }
+    assert_eq!(
+        team_boost_damage("steely-spirit", "tackle", 1, true),
+        team_boost_damage("steely-spirit", "tackle", 0, false)
+    );
+}

@@ -250,7 +250,7 @@ id,ability,status,verification
 249,power-spot,IMPLEMENTED,ability_rules::power_spot_boosts_ally_attacks_but_not_the_holders
 250,mimicry,MISSING,No native battle behavior
 251,screen-cleaner,IMPLEMENTED,ability_rules::screen_cleaner_removes_both_sides_screens_but_preserves_mist
-252,steely-spirit,MISSING,No native battle behavior
+252,steely-spirit,IMPLEMENTED,ability_rules::steely_spirit_boosts_steel_for_holder_and_allies_and_stacks
 253,perish-body,MISSING,No native battle behavior
 254,wandering-spirit,MISSING,No native battle behavior
 255,gorilla-tactics,MISSING,No native battle behavior
