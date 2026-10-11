@@ -3254,3 +3254,31 @@ fn unaware_ignores_opponents_relevant_stages_but_preserves_foul_play_source() {
         assert!(foe(&battle).hp < 1000);
     }
 }
+
+#[test]
+fn moody_raises_and_lowers_distinct_non_accuracy_stats_with_caps() {
+    use wilds_battle_engine::Stat;
+    let mut user = mon("User", &["splash"]);
+    user.ability = Some("moody".into());
+    let mut battle = game(user, mon("Target", &["splash"]), 0.5);
+    turn(&mut battle, "splash", "splash");
+    assert_eq!(ally(&battle).stage(Stat::Attack), 2);
+    assert_eq!(ally(&battle).stage(Stat::Defense), -1);
+    assert_eq!(ally(&battle).stage(Stat::Accuracy), 0);
+    assert_eq!(ally(&battle).stage(Stat::Evasion), 0);
+    let mut user = mon("User", &["splash"]);
+    user.ability = Some("moody".into());
+    for stat in [
+        Stat::Attack,
+        Stat::Defense,
+        Stat::SpAttack,
+        Stat::SpDefense,
+        Stat::Speed,
+    ] {
+        user.stages.insert(stat, 6);
+    }
+    let mut battle = game(user, mon("Target", &["splash"]), 0.5);
+    turn(&mut battle, "splash", "splash");
+    assert_eq!(ally(&battle).stage(Stat::Attack), 5);
+    assert_eq!(ally(&battle).stage(Stat::Defense), 6);
+}

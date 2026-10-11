@@ -139,7 +139,7 @@ id,ability,status,verification
 138,flare-boost,IMPLEMENTED,Source inventory; existing tests only
 139,harvest,MISSING,No native battle behavior
 140,telepathy,IMPLEMENTED,Source inventory; existing tests only
-141,moody,MISSING,No native battle behavior
+141,moody,IMPLEMENTED,ability_rules::moody_raises_and_lowers_distinct_non_accuracy_stats_with_caps
 142,overcoat,IMPLEMENTED,ability_rules::overcoat_prevents_sand_and_hail_damage_only_while_active
 143,poison-touch,IMPLEMENTED,ability_rules::poison_touch_poisons_contact_targets_and_respects_shield_dust
 144,regenerator,IMPLEMENTED,Source inventory; existing tests only

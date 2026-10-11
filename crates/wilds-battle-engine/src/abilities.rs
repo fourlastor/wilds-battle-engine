@@ -616,6 +616,40 @@ impl Battle {
         let mut order = self.actors();
         order.sort_by_key(|&who| std::cmp::Reverse(self.action_speed(who)));
         for who in order {
+            if self.has_ability(who, "moody") {
+                use crate::model::Stat;
+                let stats = [
+                    Stat::Attack,
+                    Stat::Defense,
+                    Stat::SpAttack,
+                    Stat::SpDefense,
+                    Stat::Speed,
+                ];
+                let choices: Vec<_> = stats
+                    .into_iter()
+                    .filter(|s| self.get(who).stage(*s) < 6)
+                    .collect();
+                let raised = if choices.is_empty() {
+                    None
+                } else {
+                    Some(choices[self.rng.index(choices.len())])
+                };
+                let choices: Vec<_> = stats
+                    .into_iter()
+                    .filter(|s| Some(*s) != raised && self.get(who).stage(*s) > -6)
+                    .collect();
+                let lowered = if choices.is_empty() {
+                    None
+                } else {
+                    Some(choices[self.rng.index(choices.len())])
+                };
+                if let Some(stat) = raised {
+                    self.change_stat(who, stat, 2, events);
+                }
+                if let Some(stat) = lowered {
+                    self.change_stat(who, stat, -1, events);
+                }
+            }
             if self.has_ability(who, "speedboost") && self.get(who).entered_turn < self.turn {
                 self.change_stat(who, crate::model::Stat::Speed, 1, events);
             }
