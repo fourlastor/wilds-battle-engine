@@ -143,3 +143,22 @@ fn flash_fire_activates_from_will_o_wisp_and_boosts_fire_damage() {
     assert_eq!(run(true, true, false).1, Some(Status::Burned));
     assert_eq!(run(true, false, true).1, Some(Status::Burned));
 }
+
+#[test]
+fn motor_drive_absorbs_thunder_wave_and_boosts_speed_once() {
+    for (suppressed, breaker) in [(false, false), (true, false), (false, true)] {
+        let mut user = mon("User", &["thunder-wave"]);
+        user.ability = breaker.then(|| "mold-breaker".into());
+        let mut target = mon("Target", &["splash"]);
+        target.ability = Some("motor-drive".into());
+        target.ability_suppressed = suppressed;
+        let mut battle = game(user, target, 0.5);
+        turn(&mut battle, "thunder-wave", "splash");
+        let active = !suppressed && !breaker;
+        assert_eq!(
+            foe(&battle).stage(wilds_battle_engine::Stat::Speed),
+            i8::from(active)
+        );
+        assert_eq!(foe(&battle).status, (!active).then_some(Status::Paralyzed));
+    }
+}

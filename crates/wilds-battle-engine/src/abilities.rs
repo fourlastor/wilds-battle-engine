@@ -380,7 +380,7 @@ impl Battle {
         }
         let kind = self.converted_type(actor, spec.move_type);
         let absorbs = (kind == crate::model::PokemonType::Electric
-            && self.has_ability(target, "voltabsorb"))
+            && (self.has_ability(target, "voltabsorb") || self.has_ability(target, "motordrive")))
             || (kind == crate::model::PokemonType::Water
                 && self.has_ability(target, "waterabsorb"))
             || (kind == crate::model::PokemonType::Fire && self.has_ability(target, "flashfire"));
