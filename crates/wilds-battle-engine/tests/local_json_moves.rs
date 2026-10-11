@@ -93,3 +93,40 @@ fn sonic_boom_respects_immunity_accuracy_and_protect() {
         assert_eq!(battle.participants(Side::Foes)[0].hp, 1000);
     }
 }
+
+#[test]
+fn seismic_toss_uses_user_level_without_type_or_stat_scaling() {
+    for (level, kind) in [(7, PokemonType::Rock), (73, PokemonType::Flying)] {
+        let mut user = mon("User", &["seismic-toss"]);
+        user.level = level;
+        user.attack = 1;
+        user.types = vec![PokemonType::Fighting];
+        let mut foe = mon("Foe", &["splash"]);
+        foe.defense = 999;
+        foe.types = vec![kind];
+        let mut battle = game(user, vec![foe], 0.5);
+        turn(&mut battle);
+        assert_eq!(
+            battle.participants(Side::Foes)[0].hp,
+            1000 - u16::from(level)
+        );
+    }
+}
+
+#[test]
+fn seismic_toss_respects_ghost_immunity_and_substitute() {
+    for ghost in [false, true] {
+        let mut user = mon("User", &["seismic-toss"]);
+        user.level = 50;
+        let mut foe = mon("Foe", &["splash"]);
+        if ghost {
+            foe.types = vec![PokemonType::Ghost];
+        } else {
+            foe.substitute_hp = 20;
+        }
+        let mut battle = game(user, vec![foe], 0.5);
+        turn(&mut battle);
+        assert_eq!(battle.participants(Side::Foes)[0].hp, 1000);
+        assert_eq!(battle.participants(Side::Foes)[0].substitute_hp, 0);
+    }
+}

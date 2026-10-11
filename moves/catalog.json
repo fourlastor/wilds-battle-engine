@@ -628,6 +628,16 @@
       "limitations": []
     },
     {
+      "id": 69,
+      "slug": "seismic-toss",
+      "name": "Seismic Toss",
+      "sheet_row": null,
+      "runtime_id": "seismic-toss",
+      "file": "moves/seismic-toss.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
       "id": 70,
       "slug": "strength",
       "name": "Strength",
@@ -5833,7 +5843,8 @@
       "stealth-rock",
       "sticky-web",
       "substitute",
-      "sonic-boom"
+      "sonic-boom",
+      "seismic-toss"
     ]
   }
 }

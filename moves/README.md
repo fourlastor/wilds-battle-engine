@@ -12,9 +12,9 @@ excluded while Z-Moves and Dynamax are outside the project scope. They are liste
 under `excluded_moves` in the manifest and have no loadable Lua files here.
 Dynamax Cannon remains an ordinary attack; its Dynamax-only bonus is out of scope.
 
-With seven additional support moves, 1 further moves from the local JSON data,
-and the nine original moves outside the sheet, the runtime catalog has 555 moves:
-554 files here and Struggle in `src/system_moves.lua` inside the crate.
+With seven additional support moves, 2 further moves from the local JSON data,
+and the nine original moves outside the sheet, the runtime catalog has 556 moves:
+555 files here and Struggle in `src/system_moves.lua` inside the crate.
 The 22 original filenames containing underscores have been renamed with hyphens.
 
 New move IDs equal their filename slugs. Original runtime IDs retain underscores
