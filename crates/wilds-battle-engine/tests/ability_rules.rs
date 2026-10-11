@@ -2124,3 +2124,33 @@ fn cotton_down_lowers_every_other_active_pokemons_speed() {
         );
     }
 }
+
+#[test]
+fn cursed_body_disables_the_damaging_move_for_four_turns_including_the_hit() {
+    for (dice, expected) in [(0.2, true), (0.4, false)] {
+        let user = mon("User", &["swift", "splash"]);
+        let mut target = mon("Target", &["splash"]);
+        target.ability = Some("cursed-body".into());
+        let mut battle = game(user, target, dice);
+        turn(&mut battle, "swift", "splash");
+        assert_eq!(
+            ally(&battle).conditions.iter().any(|c| c.name == "disable"),
+            expected
+        );
+        if expected {
+            for _ in 0..3 {
+                let result = battle.advance().unwrap();
+                let AdvanceStatus::Awaiting(prompt) = result.status else {
+                    panic!("missing choice")
+                };
+                assert!(
+                    !prompt.choices.iter().any(
+                        |c| matches!(c, Choice::UseMove { move_id, .. } if move_id == "swift")
+                    )
+                );
+                turn(&mut battle, "splash", "splash");
+            }
+            assert!(!ally(&battle).conditions.iter().any(|c| c.name == "disable"));
+        }
+    }
+}

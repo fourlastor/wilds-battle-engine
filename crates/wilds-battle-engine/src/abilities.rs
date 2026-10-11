@@ -37,6 +37,40 @@ impl Battle {
         if hit.damage == 0 || hit.attacker == target {
             return;
         }
+        let last_used = self
+            .get(hit.attacker)
+            .last_used
+            .clone()
+            .unwrap_or_else(|| hit.move_id.clone());
+        if ability == "cursedbody"
+            && hit.move_id != "struggle"
+            && !self
+                .catalog
+                .get(&hit.move_id)
+                .is_some_and(|m| m.has_flag("future_move"))
+            && self
+                .get(hit.attacker)
+                .move_pp
+                .get(&last_used)
+                .is_some_and(|pp| *pp > 0)
+            && self.rng.chance(0.3)
+        {
+            self.start_condition(
+                crate::model::Scope::Pokemon(hit.attacker),
+                crate::model::Condition {
+                    name: "disable".into(),
+                    value: 0,
+                    turns_left: Some(4),
+                    rules: vec![crate::model::Rule::BlockMove {
+                        id: last_used,
+                        message: Some("{name}'s move is disabled!".into()),
+                    }],
+                    group: None,
+                    end_message: None,
+                },
+                false,
+            );
+        }
         if ability == "sandspit" {
             self.start_weather(crate::model::WeatherKind::Sandstorm, 5, events);
         }

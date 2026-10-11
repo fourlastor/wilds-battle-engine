@@ -128,7 +128,7 @@ id,ability,status,verification
 127,unnerve,IMPLEMENTED,Source inventory; existing tests only
 128,defiant,MISSING,No native battle behavior
 129,defeatist,IMPLEMENTED,ability_rules::defeatist_halves_both_attacking_stats_at_half_hp
-130,cursed-body,MISSING,No native battle behavior
+130,cursed-body,IMPLEMENTED,ability_rules::cursed_body_disables_the_damaging_move_for_four_turns_including_the_hit
 131,healer,IMPLEMENTED,Source inventory; existing tests only
 132,friend-guard,MISSING,No native battle behavior
 133,weak-armor,IMPLEMENTED,ability_rules::weak_armor_trades_defense_for_two_speed_per_physical_hit
