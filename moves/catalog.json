@@ -138,10 +138,8 @@
       "sheet_row": 14,
       "runtime_id": "razor-wind",
       "file": "moves/razor-wind.lua",
-      "status": "partial",
-      "limitations": [
-        "Power Herb item activation is not available; normal charge and weather shortcuts are implemented."
-      ]
+      "status": "implemented",
+      "limitations": []
     },
     {
       "id": 14,
@@ -1104,10 +1102,8 @@
       "sheet_row": 107,
       "runtime_id": "skull-bash",
       "file": "moves/skull-bash.lua",
-      "status": "partial",
-      "limitations": [
-        "Power Herb item activation is not available; normal charge and weather shortcuts are implemented."
-      ]
+      "status": "implemented",
+      "limitations": []
     },
     {
       "id": 131,
@@ -1238,10 +1234,8 @@
       "sheet_row": 120,
       "runtime_id": "sky-attack",
       "file": "moves/sky-attack.lua",
-      "status": "partial",
-      "limitations": [
-        "Power Herb item activation is not available; normal charge and weather shortcuts are implemented."
-      ]
+      "status": "implemented",
+      "limitations": []
     },
     {
       "id": 145,
@@ -3400,10 +3394,8 @@
       "sheet_row": 330,
       "runtime_id": "shadow-force",
       "file": "moves/shadow-force.lua",
-      "status": "partial",
-      "limitations": [
-        "Power Herb item activation is not available; normal charge and weather shortcuts are implemented."
-      ]
+      "status": "implemented",
+      "limitations": []
     },
     {
       "id": 468,
@@ -4068,10 +4060,8 @@
       "sheet_row": 395,
       "runtime_id": "freeze-shock",
       "file": "moves/freeze-shock.lua",
-      "status": "partial",
-      "limitations": [
-        "Power Herb item activation is not available; normal charge and weather shortcuts are implemented."
-      ]
+      "status": "implemented",
+      "limitations": []
     },
     {
       "id": 554,
@@ -4080,10 +4070,8 @@
       "sheet_row": 396,
       "runtime_id": "ice-burn",
       "file": "moves/ice-burn.lua",
-      "status": "partial",
-      "limitations": [
-        "Power Herb item activation is not available; normal charge and weather shortcuts are implemented."
-      ]
+      "status": "implemented",
+      "limitations": []
     },
     {
       "id": 555,
@@ -4184,10 +4172,8 @@
       "sheet_row": 406,
       "runtime_id": "phantom-force",
       "file": "moves/phantom-force.lua",
-      "status": "partial",
-      "limitations": [
-        "Power Herb item activation is not available; normal charge and weather shortcuts are implemented."
-      ]
+      "status": "implemented",
+      "limitations": []
     },
     {
       "id": 568,
@@ -4410,10 +4396,8 @@
       "sheet_row": 428,
       "runtime_id": "geomancy",
       "file": "moves/geomancy.lua",
-      "status": "partial",
-      "limitations": [
-        "Power Herb item activation is not available; normal charge and weather shortcuts are implemented."
-      ]
+      "status": "implemented",
+      "limitations": []
     },
     {
       "id": 602,
@@ -4656,10 +4640,8 @@
       "sheet_row": 453,
       "runtime_id": "solar-blade",
       "file": "moves/solar-blade.lua",
-      "status": "partial",
-      "limitations": [
-        "Power Herb item activation is not available; normal charge and weather shortcuts are implemented."
-      ]
+      "status": "implemented",
+      "limitations": []
     },
     {
       "id": 670,
@@ -5321,10 +5303,8 @@
       "sheet_row": 550,
       "runtime_id": "meteor-beam",
       "file": "moves/meteor-beam.lua",
-      "status": "partial",
-      "limitations": [
-        "Power Herb item activation is not available; normal charge and weather shortcuts are implemented."
-      ]
+      "status": "implemented",
+      "limitations": []
     },
     {
       "id": 801,

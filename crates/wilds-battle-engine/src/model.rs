@@ -380,6 +380,9 @@ pub struct Pokemon {
     pub weight: f32,
     /// Held item id. The engine does not know what items do.
     pub item: Option<String>,
+    /// Consumption history persists for the battle; transferring/removing an item does not add to it.
+    pub consumed_items: BTreeSet<String>,
+    pub last_consumed_item: Option<String>,
     /// Ability id. The engine does not know what abilities do.
     pub ability: Option<String>,
     pub ability_suppressed: bool,
@@ -445,6 +448,8 @@ impl Pokemon {
             gender: Gender::Genderless,
             weight: 0.0,
             item: None,
+            consumed_items: BTreeSet::new(),
+            last_consumed_item: None,
             ability: None,
             ability_suppressed: false,
             ivs: None,

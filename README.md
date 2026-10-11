@@ -172,7 +172,7 @@ STAB bonus even when the attacker lacks the hit's type, without doubling an exis
 | `attack`, `defense`, `sp_attack`, `sp_defense`, `speed` | With stat stages and effects applied. |
 | `stages[Stat.X]`, `:stage(Stat.X)` | −6 to +6. |
 | `hidden` | A `Hidden` value (`Air`, `Underground`, `Underwater`, `Vanished`) or nil. |
-| `item`, `ability` | Text or nil. The engine stores them and does not know what they do. |
+| `item`, `ability` | Item/ability IDs or nil. Power Herb activates on charging; other activation mechanics are added separately. |
 | `marks[name]`, `effects[name]` | See below. |
 | `acted`, `selected_move` | This turn. `selected_move` has `id`, `name`, `type`, `category`, `damaging`, `priority`. |
 | `damage_taken`, `hurt_this_turn`, `last_attacker`, `last_hit` | This turn. `last_hit` has `damage`, `move`, `category`, `type`, `contact`. |
@@ -206,6 +206,7 @@ before turn-start hooks; capped changes and resetting stages do not trigger them
 | `ctx:hide(Hidden.X)`, `ctx:unhide(who)` | The user hides until it next acts. `unhide` also calls off what the Pokémon was doing. |
 | `ctx:set_weather(Weather.X, turns)`, `ctx:clear_weather()` | `Sun`, `Sandstorm`, `Rain`, `Hail`. |
 | `ctx:set_types(who, {Type.X})`, `ctx:set_weight(who, kg)`, `ctx:take_item(who)`, `ctx:give_item(who, item)`, `ctx:suppress_ability(who)` | |
+| `ctx:consume_item(who)` | Removes a held item, records it in `who.consumed_items` and `who.last_consumed_item`, and returns its ID (or nil). Taking an item does not record consumption. |
 | `ctx:reduce_pp(who, move_id, amount)` | Returns PP removed, clamped to what remains; an absent move loses zero. Refreshed `who.pp` reflects the change. |
 | `ctx:chance(probability)`, `ctx:effect_chance(probability)`, `ctx:random_int(min, max)` | `effect_chance` is for a move's extra effects: an `EffectChance` rule can multiply it. |
 | `ctx:reached(who)` | Whether this use of the move got through to a Pokémon (the target if left out): the result of the hit already made on it, or else `try_hit` now. Use it to hold an effect back until the move connects. |
@@ -273,8 +274,11 @@ everyone.
 
 The engine has no switching and no bench: `Trapped` is only reported
 (`Battle::trapped`), and nothing leaves the field except by fainting. Items and
-abilities are data that moves can read, take, give and suppress; the engine does
-not act on them.
+abilities are data that moves can read, take, give and suppress. Power Herb now
+activates when a move charges: `Effect.TwoTurn`, or a scripted move flagged `charge`
+that calls `force_move(2, ...)`. Its second phase runs immediately, paying PP once.
+Weather shortcuts preserve the item. Other item activation and ability effects
+remain separate mechanics.
 
 ### Host setup
 

@@ -1,6 +1,5 @@
 -- Move 130: Skull Bash. Identity and parameters: pokemon_data/assets/moves/130.json.
 -- Behavior checked against PokeAPI; see catalog.json for scope and limitations.
--- INCOMPLETE: Power Herb item activation is not available; normal charge and weather shortcuts are implemented.
 
 local move = {manual_announce = true,
     script = function(ctx)
@@ -22,5 +21,5 @@ move.pp = 10
 move.accuracy = 1
 move.priority = 0
 move.target = Target.Selected
-move.flags = {"contact", "incomplete"}
+move.flags = {"charge", "contact"}
 return move

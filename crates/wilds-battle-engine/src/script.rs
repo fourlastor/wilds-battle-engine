@@ -290,6 +290,12 @@ impl Battle {
             pp.raw_set(own.as_str(), *left)?;
         }
         table.raw_set("pp", pp)?;
+        table.raw_set("last_consumed_item", pokemon.last_consumed_item.as_deref())?;
+        let consumed = lua.create_table()?;
+        for item in &pokemon.consumed_items {
+            consumed.raw_set(item.as_str(), true)?;
+        }
+        table.raw_set("consumed_items", consumed)?;
         Ok(())
     }
 
@@ -1404,6 +1410,10 @@ impl Battle {
                 };
                 Value::Integer(i64::from(lost))
             }
+            ScriptOperation::ConsumeItem { who } => match self.consume_item(who) {
+                Some(item) => Value::String(self.catalog.lua().create_string(&item)?),
+                None => Value::Nil,
+            },
             ScriptOperation::TakeItem { who } => match self.get_mut(who).item.take() {
                 Some(item) => Value::String(self.catalog.lua().create_string(&item)?),
                 None => Value::Nil,
@@ -1492,6 +1502,7 @@ fn reaction_may(operation: &ScriptOperation, hook: ScriptHook) -> bool {
         | Op::EffectChance(_)
         | Op::RandomInt { .. }
         | Op::ReducePp { .. }
+        | Op::ConsumeItem { .. }
         | Op::TakeItem { .. }
         | Op::GiveItem { .. }
         | Op::AddPayout(_) => true,

@@ -1805,6 +1805,27 @@ fn an_effect_chance_follows_the_rainbow() {
 // Guard rails
 
 #[test]
+fn consuming_an_item_records_history_but_taking_it_does_not() {
+    let script = test_move(
+        "",
+        "
+        ctx:give_item(ctx.user, 'power-herb')
+        assert(ctx:consume_item(ctx.user) == 'power-herb')
+        assert(ctx.user.item == nil and ctx.user.consumed_items['power-herb'])
+        assert(ctx.user.last_consumed_item == 'power-herb')
+        assert(ctx:consume_item(ctx.user) == nil)
+        ctx:give_item(ctx.user, 'oran-berry')
+        assert(ctx:take_item(ctx.user) == 'oran-berry')
+        assert(ctx.user.last_consumed_item == 'power-herb')
+        assert(not ctx.user.consumed_items['oran-berry'])
+    ",
+    );
+    let mut game = Game::duel(&[&script], &["test"]);
+    game.turn(&["test", "wait"]);
+    assert_eq!(game.ally(0).consumed_items.len(), 1);
+}
+
+#[test]
 fn forced_stab_applies_once_even_if_the_user_already_has_the_type() {
     let normal = damage_of(0.5, "", "ctx:damage(80)");
     let forced_normal = damage_of(0.5, "", "ctx:damage(80, {force_stab=true})");

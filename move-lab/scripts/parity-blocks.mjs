@@ -25,7 +25,7 @@ const mon = (name, moves, extra = {}) => ({
 
 /** Situations that reach the different branches of the built-in scripts. */
 function scenarios(move) {
-  return [
+  const cases = [
     { name: 'plain', allies: [mon('Ally', [move])], foes: [mon('Foe', ['tackle'], { speed: 60 })] },
     { name: 'user hurt and burned, target asleep', allies: [mon('Ally', [move], { hp: 50, status: 'Burned' })], foes: [mon('Foe', ['splash'], { status: 'Asleep', status_turns: 5 })] },
     { name: 'user asleep', allies: [mon('Ally', [move], { status: 'Asleep', status_turns: 4 })], foes: [mon('Foe', ['tackle'])] },
@@ -36,6 +36,10 @@ function scenarios(move) {
     { name: 'used by the foe', allies: [mon('Ally', ['tackle', 'headbutt'])], foes: [mon('Foe', [move], { speed: 70 })] },
     { name: 'frail target', allies: [mon('Ally', [move], { attack: 200, sp_attack: 200 })], foes: [mon('Foe', ['tackle'], { max_hp: 30, hp: 30 })] },
   ];
+  if (catalog.find((entry) => entry.id === move)?.flags.includes('charge')) {
+    cases.push({ name: 'Power Herb', allies: [mon('Ally', [move], { item: 'power-herb' })], foes: [mon('Foe', ['splash'])] });
+  }
+  return cases;
 }
 
 /** Plays a battle and returns everything the engine reported, with marker messages removed. */

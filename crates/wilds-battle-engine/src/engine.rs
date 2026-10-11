@@ -825,7 +825,23 @@ impl Battle {
                     spec.name
                 )));
             }
-            let hit = self.execute_script(actor, target, &spec, events, ScriptHook::Main)?;
+            let mut hit = self.execute_script(actor, target, &spec, events, ScriptHook::Main)?;
+            let charging = spec.has_flag("charge")
+                && self
+                    .get(actor)
+                    .script_continuation
+                    .as_ref()
+                    .is_some_and(|lock| lock.turn == 1 && lock.total_turns == 2);
+            if charging && self.try_skip_charge(actor, events) {
+                let pokemon = self.get_mut(actor);
+                pokemon
+                    .script_continuation
+                    .as_mut()
+                    .expect("charging continuation")
+                    .turn = 2;
+                pokemon.semi_invulnerable = false;
+                hit = self.execute_script(actor, target, &spec, events, ScriptHook::Main)?;
+            }
             if let Some(lock) = self.get_mut(actor).script_continuation.as_mut() {
                 if lock.turn >= lock.total_turns {
                     self.get_mut(actor).script_continuation = None;
@@ -846,12 +862,16 @@ impl Battle {
             pokemon.last_move = Some(spec.id);
             return Ok(true);
         }
-        let second_turn = self
+        let mut second_turn = self
             .get(actor)
             .locked_move
             .as_ref()
             .is_some_and(|lock| lock.charging);
-        let first_charge = !second_turn && spec.effects.iter().any(|e| matches!(e, Effect::TwoTurn { skip_in_sun, .. } if !skip_in_sun || self.weather.as_ref().is_none_or(|w| w.kind != WeatherKind::Sun)));
+        let mut first_charge = !second_turn && spec.effects.iter().any(|e| matches!(e, Effect::TwoTurn { skip_in_sun, .. } if !skip_in_sun || self.weather.as_ref().is_none_or(|w| w.kind != WeatherKind::Sun)));
+        if first_charge && self.try_skip_charge(actor, events) {
+            first_charge = false;
+            second_turn = true;
+        }
         if second_turn {
             self.get_mut(actor).locked_move = None;
             self.get_mut(actor).semi_invulnerable = false;

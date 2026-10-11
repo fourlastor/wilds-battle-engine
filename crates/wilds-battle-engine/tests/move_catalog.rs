@@ -84,6 +84,85 @@ fn said(events: &[BattleEvent], text: &str) -> bool {
 }
 
 #[test]
+fn power_herb_completes_charge_moves_immediately_and_pays_pp_once() {
+    for move_id in [
+        "razor-wind",
+        "skull-bash",
+        "sky-attack",
+        "shadow-force",
+        "freeze-shock",
+        "ice-burn",
+        "phantom-force",
+        "geomancy",
+        "solar-blade",
+        "meteor-beam",
+        "fly",
+        "bounce",
+        "dig",
+        "solar_beam",
+        "dive",
+    ] {
+        let mut ally = mon("Ally", &[move_id, "splash"]);
+        ally.item = Some("power-herb".into());
+        let mut foe = mon("Foe", &["splash"]);
+        foe.types = vec![PokemonType::Psychic];
+        let mut game = Game::new(vec![ally], vec![foe], 0.5);
+        let pp = game.ally().move_pp[move_id];
+        let events = game.turn(move_id, "splash");
+        assert!(said(&events, "Power Herb"), "{move_id}");
+        assert_eq!(game.ally().item, None, "{move_id}");
+        assert_eq!(
+            game.ally().last_consumed_item.as_deref(),
+            Some("power-herb")
+        );
+        assert!(game.ally().consumed_items.contains("power-herb"));
+        assert_eq!(game.ally().move_pp[move_id], pp - 1, "{move_id}");
+        assert!(game.ally().hidden().is_none(), "{move_id}");
+        if move_id == "geomancy" {
+            assert_eq!(game.ally().stage(Stat::SpAttack), 2);
+        } else {
+            assert!(game.foe().hp < 1000, "{move_id}");
+        }
+        if move_id == "meteor-beam" {
+            assert_eq!(game.ally().stage(Stat::SpAttack), 1);
+        }
+        if move_id == "skull-bash" {
+            assert_eq!(game.ally().stage(Stat::Defense), 1);
+        }
+        let hp = game.foe().hp;
+        game.turn("splash", "splash");
+        assert_eq!(game.foe().hp, hp, "{move_id} still forced a second turn");
+    }
+}
+
+#[test]
+fn power_herb_preserves_weather_shortcuts_and_does_not_skip_lock_ins() {
+    for move_id in ["solar_beam", "solar-blade"] {
+        let mut ally = mon("Ally", &["sunny_day", move_id]);
+        ally.item = Some("power_herb".into());
+        let mut game = Game::new(vec![ally], vec![mon("Foe", &["splash"])], 0.5);
+        game.turn("sunny_day", "splash");
+        game.turn(move_id, "splash");
+        assert!(game.foe().hp < 1000);
+        assert_eq!(game.ally().item.as_deref(), Some("power_herb"));
+        assert!(game.ally().consumed_items.is_empty());
+    }
+    let mut ally = mon("Ally", &["thrash"]);
+    ally.item = Some("power-herb".into());
+    let mut game = Game::new(vec![ally], vec![mon("Foe", &["splash"])], 0.5);
+    game.turn("thrash", "splash");
+    assert_eq!(game.ally().item.as_deref(), Some("power-herb"));
+    let mut ally = mon("Ally", &["meteor-beam"]);
+    ally.item = Some("oran-berry".into());
+    let mut game = Game::new(vec![ally], vec![mon("Foe", &["splash"])], 0.5);
+    game.turn("meteor-beam", "splash");
+    assert_eq!(game.foe().hp, 1000);
+    assert_eq!(game.ally().item.as_deref(), Some("oran-berry"));
+    game.turn("meteor-beam", "splash");
+    assert!(game.foe().hp < 1000);
+}
+
+#[test]
 fn beak_blast_reacts_to_zero_damage_and_knockout_contact_but_not_immunity() {
     for attack in ["hold-back", "false_swipe", "body-slam", "tackle"] {
         let mut ally = mon("Ally", &["beak-blast"]);

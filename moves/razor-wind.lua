@@ -1,6 +1,5 @@
 -- Move 13: Razor Wind. Identity and parameters: pokemon_data/assets/moves/13.json.
 -- Behavior checked against PokeAPI; see catalog.json for scope and limitations.
--- INCOMPLETE: Power Herb item activation is not available; normal charge and weather shortcuts are implemented.
 
 local function two_turns(place, message, strike)
   return function(ctx)
@@ -26,5 +25,5 @@ move.pp = 10
 move.accuracy = 1
 move.priority = 0
 move.target = Target.AllOpponents
-move.flags = {"incomplete"}
+move.flags = {"charge"}
 return move

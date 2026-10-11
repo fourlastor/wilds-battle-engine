@@ -27,5 +27,5 @@ move.pp = 15
 move.accuracy = 0.95
 move.priority = 0
 move.target = Target.Selected
-move.flags = {"contact", "no_sleep_talk", "gravity"}
+move.flags = {"charge", "contact", "no_sleep_talk", "gravity"}
 return move

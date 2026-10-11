@@ -1,4 +1,4 @@
-return { id="solar_beam", name="Solar Beam", type=Type.Grass, category=Category.Special, pp=10,
+return { flags={"charge"}, id="solar_beam", name="Solar Beam", type=Type.Grass, category=Category.Special, pp=10,
     manual_announce=true,
     script=function(ctx)
       if ctx.turn == 1 and ctx.weather ~= Weather.Sun then

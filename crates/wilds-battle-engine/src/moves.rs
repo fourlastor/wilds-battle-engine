@@ -332,6 +332,9 @@ pub(crate) enum ScriptOperation {
         move_id: String,
         amount: u8,
     },
+    ConsumeItem {
+        who: ParticipantId,
+    },
     TakeItem {
         who: ParticipantId,
     },
@@ -1052,6 +1055,7 @@ fn parse_op(name: &str, args: &[Value]) -> mlua::Result<ScriptOperation> {
             move_id: name_of(arg(1), "reduce_pp move")?,
             amount: whole(arg(2), "reduce_pp amount", 0.0, 255.0)? as u8,
         },
+        "consume_item" => ScriptOperation::ConsumeItem { who: who(0)? },
         "take_item" => ScriptOperation::TakeItem { who: who(0)? },
         "give_item" => ScriptOperation::GiveItem {
             who: who(0)?,

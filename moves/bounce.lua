@@ -29,5 +29,5 @@ move.pp = 5
 move.accuracy = 0.85
 move.priority = 0
 move.target = Target.Selected
-move.flags = {"contact", "gravity"}
+move.flags = {"charge", "contact", "gravity"}
 return move

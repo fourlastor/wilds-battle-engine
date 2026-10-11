@@ -1,5 +1,6 @@
 mod conditions;
 mod engine;
+mod items;
 mod lua_symbols;
 mod model;
 mod moves;

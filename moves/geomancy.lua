@@ -1,6 +1,5 @@
 -- Move 601: Geomancy. Identity and parameters: pokemon_data/assets/moves/601.json.
 -- Behavior checked against PokeAPI; see catalog.json for scope and limitations.
--- INCOMPLETE: Power Herb item activation is not available; normal charge and weather shortcuts are implemented.
 
 local function two_turns(place, message, strike)
   return function(ctx)
@@ -28,5 +27,5 @@ move.pp = 10
 move.accuracy = Accuracy.Always
 move.priority = 0
 move.target = Target.User
-move.flags = {"incomplete"}
+move.flags = {"charge"}
 return move

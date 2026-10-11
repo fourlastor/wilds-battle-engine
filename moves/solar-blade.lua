@@ -1,6 +1,5 @@
 -- Move 669: Solar Blade. Identity and parameters: pokemon_data/assets/moves/669.json.
 -- Behavior checked against PokeAPI; see catalog.json for scope and limitations.
--- INCOMPLETE: Power Herb item activation is not available; normal charge and weather shortcuts are implemented.
 
 local move = {manual_announce = true, flags = {"contact"},
     script = function(ctx)
@@ -22,5 +21,5 @@ move.pp = 10
 move.accuracy = 1
 move.priority = 0
 move.target = Target.Selected
-move.flags = {"contact", "slicing", "incomplete"}
+move.flags = {"charge", "contact", "slicing"}
 return move
