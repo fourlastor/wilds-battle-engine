@@ -29,7 +29,7 @@ id,ability,status,verification
 28,synchronize,IMPLEMENTED,Source inventory; existing tests only
 29,clear-body,IMPLEMENTED,Source inventory; existing tests only
 30,natural-cure,IMPLEMENTED,Source inventory; existing tests only
-31,lightning-rod,PARTIAL,Source inventory; existing tests only
+31,lightning-rod,IMPLEMENTED,ability_rules::lightning_rod_redirects_damage_and_status_but_not_mold_breaker
 32,serene-grace,MISSING,No native battle behavior
 33,swift-swim,MISSING,No native battle behavior
 34,chlorophyll,MISSING,No native battle behavior

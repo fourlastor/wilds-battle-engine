@@ -188,3 +188,39 @@ fn sap_sipper_blocks_grass_status_moves_without_secondary_effects() {
         }
     }
 }
+
+#[test]
+fn lightning_rod_redirects_damage_and_status_but_not_mold_breaker() {
+    for move_id in ["thunder-wave", "thunderbolt"] {
+        for (suppressed, breaker) in [(false, false), (true, false), (false, true)] {
+            let mut user = mon("User", &[move_id]);
+            user.ability = breaker.then(|| "mold-breaker".into());
+            let mut rod = mon("Rod", &["splash"]);
+            rod.ability = Some("lightning-rod".into());
+            rod.ability_suppressed = suppressed;
+            let mut battle = Battle::with_rng(
+                Fixed(0.5),
+                [vec![user], vec![mon("Selected", &["splash"]), rod]],
+                MoveCatalog::builtin().unwrap(),
+            )
+            .unwrap();
+            turn(&mut battle, move_id, "splash");
+            let active = !suppressed && !breaker;
+            let rod = &battle.participants(Side::Foes)[1];
+            assert_eq!(
+                rod.stage(wilds_battle_engine::Stat::SpAttack),
+                i8::from(active)
+            );
+            assert_eq!(rod.hp, 1000);
+            assert_eq!(rod.status, None);
+            if active {
+                assert_eq!(foe(&battle).hp, 1000);
+                assert_eq!(foe(&battle).status, None);
+            } else if move_id == "thunder-wave" {
+                assert_eq!(foe(&battle).status, Some(Status::Paralyzed));
+            } else {
+                assert!(foe(&battle).hp < 1000);
+            }
+        }
+    }
+}

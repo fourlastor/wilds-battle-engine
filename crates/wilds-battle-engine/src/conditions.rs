@@ -409,7 +409,7 @@ impl Battle {
     }
 
     pub(crate) fn redirect_target(
-        &self,
+        &mut self,
         actor: ParticipantId,
         target: ParticipantId,
         spec: &MoveSpec,
@@ -424,7 +424,8 @@ impl Battle {
             return target;
         }
         let move_type = self.converted_type(actor, spec.move_type);
-        self.rules(target)
+        let redirected = self
+            .rules(target)
             .enumerate()
             .filter_map(|(order, rule)| {
                 let (to, priority) = match rule {
@@ -456,7 +457,39 @@ impl Battle {
                 .then_some((priority, order, to))
             })
             .max_by_key(|(priority, order, _)| (*priority, *order))
-            .map_or(target, |(_, _, to)| to)
+            .map(|(_, _, to)| to);
+        // Attention effects (Follow Me/Rage Powder) take precedence over abilities.
+        if let Some(to) = redirected {
+            return to;
+        }
+        if spec.has_flag("ignore_ability")
+            || ["moldbreaker", "teravolt", "turboblaze"]
+                .iter()
+                .any(|name| self.has_ability(actor, name))
+        {
+            return target;
+        }
+        let ability = match move_type {
+            PokemonType::Electric => "lightningrod",
+            _ => return target,
+        };
+        let mut candidates: Vec<_> = self
+            .actors()
+            .into_iter()
+            .filter(|who| {
+                *who != actor && self.adjacent(actor, *who) && self.has_ability(*who, ability)
+            })
+            .collect();
+        candidates.sort_by(|a, b| {
+            self.stat_value(*b, CombatStat::Speed)
+                .total_cmp(&self.stat_value(*a, CombatStat::Speed))
+        });
+        let Some(first) = candidates.first().copied() else {
+            return target;
+        };
+        let fastest = self.stat_value(first, CombatStat::Speed);
+        candidates.retain(|who| self.stat_value(*who, CombatStat::Speed) == fastest);
+        candidates[self.rng.index(candidates.len())]
     }
 
     fn matching_guard(
