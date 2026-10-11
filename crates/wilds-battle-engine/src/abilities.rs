@@ -44,6 +44,17 @@ impl Battle {
                 events,
             );
         }
+        if ability == "static" && hit.contact && self.rng.chance(0.3) {
+            self.inflict_status(
+                target,
+                hit.attacker,
+                crate::model::AppliedStatus::Paralyzed,
+                false,
+                crate::model::PokemonType::None,
+                false,
+                events,
+            );
+        }
     }
 
     /// Weather keeps its timer while its battle effects are suppressed.

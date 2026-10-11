@@ -1859,3 +1859,52 @@ fn rough_skin_reacts_to_contact_even_on_faint_but_not_substitutes() {
 fn iron_barbs_reacts_to_contact_even_on_faint_but_not_substitutes() {
     check_contact_damage("iron-barbs");
 }
+
+fn check_contact_status(ability: &str, status: Status, immune_type: PokemonType) {
+    for (move_id, attacker_ability, suppressed, kind, dice, hp, expected) in [
+        ("tackle", "", false, PokemonType::Normal, 0.2, 1000, true),
+        ("tackle", "", false, PokemonType::Normal, 0.2, 1, true),
+        (
+            "tackle",
+            "mold-breaker",
+            false,
+            PokemonType::Normal,
+            0.2,
+            1000,
+            true,
+        ),
+        (
+            "tackle",
+            "long-reach",
+            false,
+            PokemonType::Normal,
+            0.2,
+            1000,
+            false,
+        ),
+        ("tackle", "", true, PokemonType::Normal, 0.2, 1000, false),
+        ("swift", "", false, PokemonType::Normal, 0.2, 1000, false),
+        ("tackle", "", false, immune_type, 0.2, 1000, false),
+        ("tackle", "", false, PokemonType::Normal, 0.4, 1000, false),
+    ] {
+        let mut user = mon("User", &[move_id]);
+        user.ability = Some(attacker_ability.into());
+        user.types = vec![kind];
+        let mut target = mon("Target", &["splash"]);
+        target.ability = Some(ability.into());
+        target.ability_suppressed = suppressed;
+        target.hp = hp;
+        let mut battle = game(user, target, dice);
+        turn(&mut battle, move_id, "splash");
+        assert_eq!(
+            ally(&battle).status,
+            expected.then_some(status),
+            "{ability}/{move_id}/{attacker_ability}/{suppressed}/{kind:?}/{dice}/{hp}"
+        );
+    }
+}
+
+#[test]
+fn static_has_thirty_percent_contact_paralysis_with_type_immunity() {
+    check_contact_status("static", Status::Paralyzed, PokemonType::Electric);
+}
