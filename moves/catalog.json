@@ -2635,7 +2635,6 @@
       "file": "moves/gravity.lua",
       "status": "partial",
       "limitations": [
-        "The Lua API cannot apply Gravity's global accuracy multiplier.",
         "Affected moves fail on execution; hiding them from legal choices requires a move-legality hook."
       ],
       "parameter_source": "https://pokeapi.co/api/v2/move/356/"

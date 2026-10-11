@@ -41,8 +41,7 @@ The main gaps are switching and benches, held-item activation, ability execution
 conditional action ordering, and complete terrain interactions. Trapping can be
 recorded but cannot cause or prevent an actual switch.
 These definitions use the current engine's general damage, status and rounding rules;
-the coverage count does not imply full official battle parity. No Rust mechanics
-were added for these gaps.
+the coverage count does not imply full official battle parity.
 
 Stockpile stores up to three charges and tracks each actual Defense and Special
 Defense increase, including stat-cap cases. Swallow consumes those charges,
@@ -50,9 +49,10 @@ heals the corresponding amount and removes only the recorded boosts.
 
 Gravity grounds everyone for five turns, cancels airborne charging, and activates
 the existing Gravity checks in Fly, Bounce, the jumping kicks, Flying Press and
-Grav Apple. It leaves Dig, Dive and disappearing moves alone. Its global accuracy
-bonus and preventing affected moves from being selected still require engine hooks;
-affected moves currently fail when executed under Gravity.
+Grav Apple. It leaves Dig, Dive and disappearing moves alone. A timed engine rule
+boosts ordinary accuracy checks by about 1.67 without changing stat stages or OHKO
+accuracy. Preventing affected moves from being selected still requires an engine
+hook; affected moves currently fail when executed under Gravity.
 
 The manifest maps included sheet IDs and rows to their slugs, display names,
 runtime IDs, files, statuses and limitations; excluded entries retain their IDs,

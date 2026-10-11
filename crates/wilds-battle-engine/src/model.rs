@@ -183,6 +183,10 @@ pub enum Rule {
         move_type: Option<PokemonType>,
         factor: f32,
     },
+    /// Ordinary accuracy checks are multiplied without changing stat stages or OHKO checks.
+    AccuracyMultiplier {
+        factor: f32,
+    },
     StatMultiplier {
         stat: CombatStat,
         factor: f32,

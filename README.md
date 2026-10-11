@@ -244,6 +244,7 @@ ctx:end_effect(ctx.target.team, "reflect")                  -- Brick Break
 | `DamageEachTurn`, `HealEachTurn` | `fraction` of max HP, `message` (`{name}` is the Pokémon); `except_types` for damage |
 | `DrainEachTurn` | `fraction`, `to` (who gets the HP), `message` |
 | `DamageTaken`, `DamageDealt` | `factor`, and optionally only for a `category` or `type`; `not_on_crit` for damage taken |
+| `AccuracyMultiplier` | `factor`; ordinary hit checks only, excludes OHKO and always-hit moves |
 | `StatMultiplier` | `stat`, `factor` |
 | `BlockStatus` | `statuses` (all if left out), `confusion`. Does not stop what a Pokémon does to itself. |
 | `BlockStatDrops`, `Grounded`, `Trapped`, `Endure` | |

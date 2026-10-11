@@ -1,6 +1,5 @@
 -- Move 356: Gravity. No local source JSON; identity and parameters from PokeAPI.
 -- Behavior checked against the reference recorded in catalog.json.
--- INCOMPLETE: The Lua API cannot apply Gravity's global accuracy multiplier.
 -- INCOMPLETE: Affected moves fail on execution; hiding them from legal choices requires a move-legality hook.
 
 return {
@@ -16,7 +15,10 @@ return {
   script = function(ctx)
     if not ctx:start_effect(ctx.field, "gravity", {
       turns = 5,
-      rules = {{kind = Rule.Grounded}},
+      rules = {
+        {kind = Rule.Grounded},
+        {kind = Rule.AccuracyMultiplier, factor = 6840 / 4096},
+      },
       end_message = "Gravity returned to normal!",
     }) then return ctx:fail() end
 

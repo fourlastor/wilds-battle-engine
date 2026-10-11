@@ -716,7 +716,7 @@ fn rule_of(value: &Value) -> mlua::Result<Rule> {
         RuleKind::DamageDealt => &["kind", "factor", "category", "type"],
         RuleKind::StatMultiplier => &["kind", "stat", "factor"],
         RuleKind::BlockStatus => &["kind", "statuses", "confusion"],
-        RuleKind::EffectChance => &["kind", "factor"],
+        RuleKind::AccuracyMultiplier | RuleKind::EffectChance => &["kind", "factor"],
         RuleKind::MoveType => &["kind", "from", "to"],
         RuleKind::AlwaysHit => &["kind", "against"],
         RuleKind::WithoutType => &["kind", "type"],
@@ -772,6 +772,7 @@ fn rule_of(value: &Value) -> mlua::Result<Rule> {
             move_type: options.pokemon_type("type")?,
             factor: factor()?,
         },
+        RuleKind::AccuracyMultiplier => Rule::AccuracyMultiplier { factor: factor()? },
         RuleKind::StatMultiplier => Rule::StatMultiplier {
             stat: combat_stat_of(&required("stat")?, "rule option stat")?,
             factor: factor()?,

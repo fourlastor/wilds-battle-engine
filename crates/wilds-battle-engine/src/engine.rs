@@ -961,7 +961,8 @@ impl Battle {
         } else {
             self.get(target).evasion_factor()
         };
-        let probability = value * self.get(actor).accuracy_factor() * evasion;
+        let probability =
+            value * self.get(actor).accuracy_factor() * evasion * self.accuracy_rule_factor(actor);
         self.rng.chance(probability)
     }
     // These inputs correspond to C# PEffectAttributes plus the event sink.

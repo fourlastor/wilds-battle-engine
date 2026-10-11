@@ -94,6 +94,13 @@ impl Battle {
         conditions.len() != before
     }
 
+    pub(crate) fn accuracy_rule_factor(&self, id: ParticipantId) -> f32 {
+        self.rules(id).fold(1.0, |factor, rule| match rule {
+            Rule::AccuracyMultiplier { factor: by } => factor * by,
+            _ => factor,
+        })
+    }
+
     pub(crate) fn stat_factor(&self, id: ParticipantId, stat: CombatStat) -> f32 {
         self.rules(id).fold(1.0, |factor, rule| match rule {
             Rule::StatMultiplier {

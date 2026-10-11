@@ -140,6 +140,39 @@ fn swallow_preserves_other_stat_changes() {
 }
 
 #[test]
+fn gravity_boosts_plain_and_scripted_accuracy_until_expiry_without_changing_stages() {
+    for move_id in ["fire-blast", "thunder"] {
+        let mut game = Game::duel(
+            &["gravity", move_id, "splash"],
+            mon("Foe", &["splash"]),
+            0.9,
+        );
+        game.turn(move_id, "splash");
+        assert_eq!(game.foe().hp, 1000);
+        game.turn("gravity", "splash");
+        game.turn(move_id, "splash");
+        assert!(game.foe().hp < 1000, "{move_id}");
+        assert_eq!(game.ally().stage(Stat::Accuracy), 0);
+        assert_eq!(game.foe().stage(Stat::Evasion), 0);
+        for _ in 0..3 {
+            game.turn("splash", "splash");
+        }
+        assert!(game.0.field_conditions().is_empty());
+        let hp = game.foe().hp;
+        game.turn(move_id, "splash");
+        assert_eq!(game.foe().hp, hp, "{move_id}");
+    }
+}
+
+#[test]
+fn gravity_does_not_boost_one_hit_knockout_accuracy() {
+    let mut game = Game::duel(&["gravity", "fissure"], mon("Foe", &["splash"]), 0.4);
+    game.turn("gravity", "splash");
+    game.turn("fissure", "splash");
+    assert_eq!(game.foe().hp, 1000);
+}
+
+#[test]
 fn gravity_grounds_flyers_and_expires_without_refreshing_on_failure() {
     let mut bird = mon("Bird", &["fly", "splash"]);
     bird.types = vec![PokemonType::Flying];
