@@ -992,3 +992,27 @@ fn keen_eye_blocks_accuracy_drops_and_ignores_positive_evasion() {
         assert_eq!(foe(&battle).hp < 1000, !suppressed);
     }
 }
+
+#[test]
+fn big_pecks_blocks_external_defense_drops_only() {
+    for (suppressed, breaker) in [(false, false), (true, false), (false, true)] {
+        let mut user = mon("User", &["tail-whip", "growl"]);
+        user.ability = breaker.then(|| "mold-breaker".into());
+        let mut target = mon("Target", &["superpower", "splash"]);
+        target.ability = Some("big-pecks".into());
+        target.ability_suppressed = suppressed;
+        let mut battle = game(user, target, 0.5);
+        turn(&mut battle, "tail-whip", "splash");
+        let external = if suppressed || breaker { -1 } else { 0 };
+        assert_eq!(
+            foe(&battle).stage(wilds_battle_engine::Stat::Defense),
+            external
+        );
+        turn(&mut battle, "growl", "superpower");
+        assert_eq!(
+            foe(&battle).stage(wilds_battle_engine::Stat::Defense),
+            external - 1
+        );
+        assert_eq!(foe(&battle).stage(wilds_battle_engine::Stat::Attack), -2);
+    }
+}

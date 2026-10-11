@@ -1821,7 +1821,8 @@ impl Battle {
             && delta < 0
             && (self.blocks_stat_drops_from(actor, recipient)
                 || (stat == Stat::Attack && self.has_ability(recipient, "hypercutter"))
-                || (stat == Stat::Accuracy && self.has_ability(recipient, "keeneye")))
+                || (stat == Stat::Accuracy && self.has_ability(recipient, "keeneye"))
+                || (stat == Stat::Defense && self.has_ability(recipient, "bigpecks")))
         {
             events.push(BattleEvent::Message(format!(
                 "{}'s stats were not lowered!",
