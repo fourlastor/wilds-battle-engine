@@ -328,6 +328,74 @@ fn merciless_criticals_respect_critical_immunity() {
 }
 
 #[test]
+fn paralysis_limber_prevents_and_cures_without_consuming_a_berry() {
+    for pre_paralyzed in [false, true] {
+        let mut target = mon("Target", &["splash"]);
+        target.status = pre_paralyzed.then_some(Status::Paralyzed);
+        target.ability = Some("limber".into());
+        target.item = Some("cheri-berry".into());
+        let mut battle = game(mon("User", &["glare"]), target, 0.5);
+        turn(&mut battle, "glare", "splash");
+        assert_eq!(foe(&battle).status, None);
+        assert_eq!(foe(&battle).item.as_deref(), Some("cheri-berry"));
+    }
+}
+
+#[test]
+fn quick_feet_removes_speed_penalty_but_not_full_paralysis() {
+    for (ability, suppressed, first) in [
+        (None, false, "Target"),
+        (Some("quick-feet"), false, "User"),
+        (Some("quick-feet"), true, "Target"),
+    ] {
+        let mut user = mon("User", &["tackle"]);
+        user.speed = 100;
+        user.status = Some(Status::Paralyzed);
+        user.ability = ability.map(str::to_owned);
+        user.ability_suppressed = suppressed;
+        let mut target = mon("Target", &["tackle"]);
+        target.speed = 120;
+        let mut battle = game(user.clone(), target.clone(), 0.5);
+        let events = turn(&mut battle, "tackle", "tackle");
+        let used = events
+            .iter()
+            .find_map(|e| match e {
+                BattleEvent::Message(m) if m.contains(" used ") => Some(m),
+                _ => None,
+            })
+            .unwrap();
+        assert!(used.starts_with(first), "{used}");
+        let mut battle = game(user, target, 0.1);
+        turn(&mut battle, "tackle", "tackle");
+        assert_eq!(foe(&battle).hp, 1000);
+        assert_eq!(
+            ally(&battle).move_pp["tackle"],
+            battle.catalog().get("tackle").unwrap().pp
+        );
+    }
+}
+
+#[test]
+fn paralysis_checks_after_flinch_and_confusion() {
+    let mut user = mon("User", &["splash"]);
+    user.status = Some(Status::Paralyzed);
+    user.confused_turns = Some(2);
+    let mut battle = game(user.clone(), mon("Target", &["splash"]), 0.1);
+    turn(&mut battle, "splash", "splash");
+    assert!(ally(&battle).hp < 1000);
+    assert_eq!(ally(&battle).confused_turns, Some(1));
+    user.flinched = true;
+    let mut battle = game(user, mon("Target", &["splash"]), 0.1);
+    let events = turn(&mut battle, "splash", "splash");
+    assert!(
+        events
+            .iter()
+            .any(|e| matches!(e, BattleEvent::Message(m) if m == "User flinched!"))
+    );
+    assert_eq!(ally(&battle).confused_turns, Some(2));
+}
+
+#[test]
 fn freeze_fire_hits_thaw_before_the_targets_pending_action() {
     for attack in ["ember", "fire-punch", "fire-spin", "flamethrower"] {
         let mut user = mon("User", &[attack]);

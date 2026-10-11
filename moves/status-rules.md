@@ -49,3 +49,12 @@ Regression tests are in `crates/wilds-battle-engine/tests/status_rules.rs`.
 - A Poison-type Toxic user bypasses accuracy and semi-invulnerability.
 - Toxic Boost increases physical move power while poisoned. Merciless forces
   critical hits against poisoned targets unless critical-hit immunity applies.
+
+## Paralysis
+
+- Speed is halved after other Speed modifiers. Quick Feet instead grants its
+  1.5× Speed boost, including with other major statuses.
+- The 25% chance to lose an action remains with Quick Feet, and is checked
+  after flinch, confusion and infatuation. Blocked actions spend no PP.
+- Electric types are immune; Ground types resist Electric paralysis moves.
+  Active Limber prevents and cures paralysis.

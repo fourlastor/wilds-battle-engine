@@ -1348,14 +1348,6 @@ impl Battle {
                     self.interrupt_script(actor, choice.target, &spec, events)?;
                     return Ok(false);
                 }
-                Some(Status::Paralyzed) if self.rng.chance(0.25) => {
-                    events.push(BattleEvent::Message(format!(
-                        "{user_name} is paralyzed! It can't move!"
-                    )));
-                    self.clear_consecutive(actor);
-                    self.interrupt_script(actor, choice.target, &spec, events)?;
-                    return Ok(false);
-                }
                 Some(Status::Asleep) if !spec.usable_while_asleep => {
                     events.push(BattleEvent::Message(format!("{user_name} is fast asleep.")));
                     self.clear_consecutive(actor);
@@ -1402,6 +1394,15 @@ impl Battle {
             if self.infatuation_prevents_move(actor) {
                 events.push(BattleEvent::Message(format!(
                     "{user_name} is immobilized by love!"
+                )));
+                self.clear_consecutive(actor);
+                self.interrupt_script(actor, choice.target, &spec, events)?;
+                return Ok(false);
+            }
+            // Paralysis follows flinch, confusion and attraction in Gen 8.
+            if self.get(actor).status == Some(Status::Paralyzed) && self.rng.chance(0.25) {
+                events.push(BattleEvent::Message(format!(
+                    "{user_name} is paralyzed! It can't move!"
                 )));
                 self.clear_consecutive(actor);
                 self.interrupt_script(actor, choice.target, &spec, events)?;

@@ -30,6 +30,7 @@ impl Battle {
             Status::Poisoned | Status::BadlyPoisoned => {
                 self.has_ability(who, "immunity") || self.team_status_ability(who, "pastelveil")
             }
+            Status::Paralyzed => self.has_ability(who, "limber"),
             _ => false,
         }
     }
@@ -77,5 +78,45 @@ impl Battle {
                 self.get(who).name
             )));
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::{CombatStat, Condition, MoveCatalog, Pokemon, Rule, Side};
+
+    #[test]
+    fn paralysis_rounds_after_speed_multipliers_and_quick_feet_uses_any_status() {
+        let mut user = Pokemon::new("User", vec!["splash".into()]);
+        user.speed = 201;
+        user.status = Some(Status::Paralyzed);
+        user.conditions.push(Condition {
+            name: "tailwind".into(),
+            value: 1,
+            turns_left: None,
+            rules: vec![Rule::StatMultiplier {
+                stat: CombatStat::Speed,
+                factor: 2.0,
+            }],
+            group: None,
+            end_message: None,
+        });
+        let target = Pokemon::new("Target", vec!["splash".into()]);
+        let mut battle = Battle::new(
+            1,
+            [vec![user], vec![target]],
+            MoveCatalog::builtin().unwrap(),
+        )
+        .unwrap();
+        let who = ParticipantId {
+            side: Side::Allies,
+            index: 0,
+        };
+        assert_eq!(battle.stat_value(who, CombatStat::Speed), 201.0);
+        battle.get_mut(who).ability = Some("quick-feet".into());
+        assert_eq!(battle.stat_value(who, CombatStat::Speed), 603.0);
+        battle.get_mut(who).status = Some(Status::Burned);
+        assert_eq!(battle.stat_value(who, CombatStat::Speed), 603.0);
     }
 }

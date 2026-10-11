@@ -333,7 +333,8 @@ impl Battle {
             2.0
         } else if self.get(who).status.is_some()
             && ((stat == Defense && self.has_ability(who, "marvelscale"))
-                || (stat == Attack && self.has_ability(who, "guts")))
+                || (stat == Attack && self.has_ability(who, "guts"))
+                || (stat == Speed && self.has_ability(who, "quickfeet")))
         {
             1.5
         } else {

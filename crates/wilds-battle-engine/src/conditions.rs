@@ -211,7 +211,8 @@ impl Battle {
     }
 
     pub(crate) fn battle_staged_stat(&self, id: ParticipantId, stat: CombatStat) -> f32 {
-        if self.swapped_defensive_stat(stat) == stat {
+        // Battle Speed applies paralysis after all other modifiers, below.
+        if stat != CombatStat::Speed && self.swapped_defensive_stat(stat) == stat {
             return self.get(id).effective_stat(stat);
         }
         let stage = f32::from(self.get(id).stage(stat.into()));
@@ -227,10 +228,14 @@ impl Battle {
     pub(crate) fn stat_value(&self, id: ParticipantId, stat: CombatStat) -> f32 {
         let value = self.battle_staged_stat(id, stat);
         let factor = self.stat_factor(id, stat);
-        if factor == 1.0 {
-            value
+        let modified = (value * factor).trunc();
+        if stat == CombatStat::Speed
+            && self.get(id).status == Some(Status::Paralyzed)
+            && !self.has_ability(id, "quickfeet")
+        {
+            (modified / 2.0).floor()
         } else {
-            (value * factor).trunc()
+            modified
         }
     }
 
