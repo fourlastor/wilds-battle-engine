@@ -1997,3 +1997,19 @@ fn throat_chop_blocks_selected_sound_moves_and_expires_after_the_next_turn() {
     });
     assert_eq!(b.participants(Side::Allies)[0].status, Some(Status::Asleep));
 }
+
+#[test]
+fn flower_shield_raises_defense_of_all_active_grass_types_through_protection() {
+    use wilds_battle_engine::Stat;
+    let mut user = mon("User", &["flower-shield"]);
+    user.types = vec![PokemonType::Grass];
+    let mut grass = mon("Grass", &["protect"]);
+    grass.types = vec![PokemonType::Grass];
+    grass.substitute_hp = 50;
+    let normal = mon("Normal", &["splash"]);
+    let mut b = game(user, vec![grass, normal], 0.5);
+    turn(&mut b);
+    assert_eq!(b.participants(Side::Allies)[0].stage(Stat::Defense), 1);
+    assert_eq!(b.participants(Side::Foes)[0].stage(Stat::Defense), 1);
+    assert_eq!(b.participants(Side::Foes)[1].stage(Stat::Defense), 0);
+}

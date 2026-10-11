@@ -5019,6 +5019,17 @@
       ]
     },
     {
+      "id": 579,
+      "slug": "flower-shield",
+      "name": "Flower Shield",
+      "sheet_row": null,
+      "runtime_id": "flower-shield",
+      "file": "moves/flower-shield.lua",
+      "status": "implemented",
+      "limitations": [],
+      "parameter_source": "https://pokeapi.co/api/v2/move/579/"
+    },
+    {
       "id": 583,
       "slug": "play-rough",
       "name": "Play Rough",
@@ -6924,7 +6935,8 @@
       "metal-burst",
       "pain-split",
       "toxic-thread",
-      "throat-chop"
+      "throat-chop",
+      "flower-shield"
     ]
   }
 }
