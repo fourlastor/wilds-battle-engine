@@ -4580,3 +4580,86 @@ fn gulp_missile_loads_with_surf_or_dive_and_retaliates_even_on_a_knockout() {
         -1
     );
 }
+
+#[test]
+fn neutralizing_gas_suppresses_abilities_and_restarts_them_when_last_source_leaves() {
+    for other_gas in [false, true] {
+        let mut gas = mon("Gas", &["splash"]);
+        gas.ability = Some("neutralizing-gas".into());
+        let mut extra = mon("Extra", &["splash"]);
+        extra.ability = other_gas.then(|| "neutralizing-gas".into());
+        let mut intimidator = mon("Intimidator", &["splash"]);
+        intimidator.ability = Some("intimidate".into());
+        let mut battle = Battle::with_rng(
+            Fixed(0.5),
+            [
+                vec![gas, mon("Reserve", &["splash"]), extra],
+                vec![intimidator],
+            ],
+            MoveCatalog::builtin().unwrap(),
+        )
+        .unwrap();
+        battle.set_active([vec![0, 2], vec![0]]).unwrap();
+        turn(&mut battle, "splash", "splash");
+        assert_eq!(ally(&battle).stage(wilds_battle_engine::Stat::Attack), 0);
+        turn(&mut battle, "switch:1", "splash");
+        assert_eq!(
+            battle.participants(Side::Allies)[1].stage(wilds_battle_engine::Stat::Attack),
+            if other_gas { 0 } else { -1 }
+        );
+    }
+    let mut gas = mon("Gas", &["thunder-wave", "splash"]);
+    gas.ability = Some("neutralizing-gas".into());
+    let mut immune = mon("Immune", &["splash", "gastro-acid"]);
+    immune.ability = Some("limber".into());
+    let mut battle = game(gas.clone(), immune, 0.5);
+    turn(&mut battle, "thunder-wave", "splash");
+    assert_eq!(foe(&battle).status, Some(Status::Paralyzed));
+    turn(&mut battle, "splash", "gastro-acid");
+    assert_eq!(foe(&battle).status, None);
+    let mut komala = mon("Komala", &["splash"]);
+    komala.ability = Some("comatose".into());
+    let mut battle = game(gas, komala, 0.5);
+    turn(&mut battle, "thunder-wave", "splash");
+    assert_eq!(foe(&battle).status, None);
+}
+
+#[test]
+fn neutralizing_gas_ends_extreme_weather_and_does_not_work_when_transformed() {
+    let mut sea = mon("Sea", &["splash"]);
+    sea.ability = Some("primordial-sea".into());
+    let mut gas = mon("Gas", &["splash"]);
+    gas.ability = Some("neutralizing-gas".into());
+    let mut battle = Battle::with_rng(
+        Fixed(0.5),
+        [
+            vec![mon("User", &["splash"]), gas.clone()],
+            vec![sea.clone()],
+        ],
+        MoveCatalog::builtin().unwrap(),
+    )
+    .unwrap();
+    battle.set_active([vec![0], vec![0]]).unwrap();
+    turn(&mut battle, "splash", "splash");
+    assert!(battle.weather().is_some());
+    turn(&mut battle, "switch:1", "splash");
+    assert!(battle.weather().is_none());
+    gas.moves = vec!["splash".into(), "gastro-acid".into()];
+    let mut sun = mon("Sun", &["splash"]);
+    sun.ability = Some("drought".into());
+    let mut battle = Battle::with_rng(
+        Fixed(0.5),
+        [vec![mon("Ditto", &["transform"])], vec![gas, sun]],
+        MoveCatalog::builtin().unwrap(),
+    )
+    .unwrap();
+    turn(&mut battle, "transform", "splash");
+    assert!(ally(&battle).transformed());
+    assert!(battle.weather().is_none());
+    turn(&mut battle, "gastro-acid", "splash");
+    assert!(foe(&battle).ability_suppressed);
+    assert_eq!(
+        battle.weather().unwrap().kind,
+        wilds_battle_engine::WeatherKind::Sun
+    );
+}

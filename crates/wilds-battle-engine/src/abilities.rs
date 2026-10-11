@@ -27,6 +27,46 @@ fn cannot_suppress(ability: &str) -> bool {
 }
 
 impl Battle {
+    fn neutralizing_gas_suppresses(&self, who: ParticipantId) -> bool {
+        let Some(ability) = self.get(who).ability.as_deref().map(item_key) else {
+            return false;
+        };
+        ability != "neutralizinggas"
+            && !cannot_suppress(&ability)
+            && self.actors().into_iter().any(|id| {
+                let p = self.get(id);
+                p.hp > 0
+                    && !p.transformed()
+                    && !p.ability_suppressed
+                    && p.ability
+                        .as_deref()
+                        .is_some_and(|a| item_key(a) == "neutralizinggas")
+            })
+    }
+
+    pub(crate) fn refresh_neutralizing_gas(&mut self, events: &mut Vec<BattleEvent>) {
+        let next: std::collections::BTreeSet<_> = self
+            .actors()
+            .into_iter()
+            .filter(|who| self.get(*who).hp > 0 && self.neutralizing_gas_suppresses(*who))
+            .collect();
+        let previous = std::mem::replace(&mut self.gas_suppressed, next.clone());
+        for who in next.difference(&previous) {
+            self.get_mut(*who)
+                .conditions
+                .retain(|c| !matches!(c.name.as_str(), "unburden" | "slow_start"));
+        }
+        let mut resume: Vec<_> = previous
+            .difference(&next)
+            .copied()
+            .filter(|who| self.ability_active(*who))
+            .collect();
+        resume.sort_by_key(|who| std::cmp::Reverse(self.action_speed(*who)));
+        for who in resume {
+            self.ability_on_entry(who, events);
+        }
+    }
+
     pub(crate) fn refresh_extreme_weather(&mut self, events: &mut Vec<BattleEvent>) {
         if let Some(kind) = self.weather.as_ref().map(|w| w.kind)
             && let Some(ability) = kind.owner_ability()
@@ -1356,7 +1396,10 @@ impl Battle {
             && self.is_active(who)
             && !pokemon.ability_suppressed
             && pokemon.ability.as_deref().is_some_and(|id| {
-                if id.is_empty() {
+                if id.is_empty()
+                    || self.neutralizing_gas_suppresses(who)
+                    || (pokemon.transformed() && ability_flag(&item_key(id), "notransform"))
+                {
                     return false;
                 }
                 let ignored = self.ignored_ability == Some(who)
@@ -1969,6 +2012,10 @@ impl Battle {
 pub(crate) fn ability_flag(ability: &str, flag: &str) -> bool {
     match flag {
         "cantsuppress" => cannot_suppress(ability),
+        "notransform" => matches!(
+            ability,
+            "disguise" | "gulpmissile" | "iceface" | "neutralizinggas"
+        ),
         "noreceiver" => ability == "gulpmissile" || ability_flag(ability, "failroleplay"),
         "notrace" => ability != "wonderguard" && ability_flag(ability, "noreceiver"),
         "failroleplay" => matches!(

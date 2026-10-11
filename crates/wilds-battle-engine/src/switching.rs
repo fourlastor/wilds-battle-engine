@@ -168,6 +168,7 @@ impl Battle {
         self.heal_replacement(to, events);
         let hp_before = self.get(to).hp;
         self.entry_hazards(to, events);
+        self.refresh_neutralizing_gas(events);
         if !self.imposter_on_entry(to, events) {
             self.ability_on_entry(to, events);
         }

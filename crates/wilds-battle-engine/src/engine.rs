@@ -14,6 +14,7 @@ pub struct Battle {
     pending_events: Vec<BattleEvent>,
     pub(crate) switching_target: Option<ParticipantId>,
     pub(crate) pivot: Option<ParticipantId>,
+    pub(crate) gas_suppressed: std::collections::BTreeSet<ParticipantId>,
     pub(crate) ability_exits: std::collections::VecDeque<ParticipantId>,
     pub(crate) baton_pass: Option<(ParticipantId, Vec<String>)>,
     pub(crate) forced_switches: Vec<(ParticipantId, ParticipantId)>,
@@ -244,6 +245,7 @@ impl Battle {
             pending_events: Vec::new(),
             forced_switches: Vec::new(),
             pivot: None,
+            gas_suppressed: std::collections::BTreeSet::new(),
             ability_exits: std::collections::VecDeque::new(),
             baton_pass: None,
             switching_target: None,
@@ -529,6 +531,7 @@ impl Battle {
         let mut events = std::mem::take(&mut self.pending_events);
         if !self.entry_abilities_started {
             self.entry_abilities_started = true;
+            self.refresh_neutralizing_gas(&mut events);
             let mut entrants = self.actors();
             entrants.sort_by_key(|&id| std::cmp::Reverse(self.action_speed(id)));
             for who in entrants {
