@@ -834,6 +834,7 @@ fn rule_of(value: &Value) -> mlua::Result<Rule> {
         RuleKind::NegateTypeImmunity => &["kind", "defending", "incoming"],
         RuleKind::IgnoreEvasionBoost => &["kind"],
         RuleKind::RequiresStatus => &["kind", "status"],
+        RuleKind::Infatuated => &["kind", "by"],
         RuleKind::TypeEffectiveness => &["kind", "type", "factor"],
         RuleKind::BlockForcedSwitch
         | RuleKind::BlockCritical
@@ -920,6 +921,9 @@ fn rule_of(value: &Value) -> mlua::Result<Rule> {
             incoming: options.list("incoming", type_of)?,
         },
         RuleKind::IgnoreEvasionBoost => Rule::IgnoreEvasionBoost,
+        RuleKind::Infatuated => {
+            Rule::InfatuatedBy(pokemon_of(&required("by")?, "infatuation source")?)
+        }
         RuleKind::RequiresStatus => Rule::RequiresStatus(
             status_of(&required("status")?, "required status")?.battle_status(),
         ),

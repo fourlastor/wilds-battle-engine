@@ -1104,6 +1104,14 @@ impl Battle {
                 }
             }
         }
+        if self.infatuation_prevents_move(actor) {
+            events.push(BattleEvent::Message(format!(
+                "{user_name} is immobilized by love!"
+            )));
+            self.clear_consecutive(actor);
+            self.interrupt_script(actor, choice.target, &spec, events)?;
+            return Ok(false);
+        }
         if self.get(actor).locked_move.is_none()
             && !forced_script
             && self.get(actor).move_pp.get(&spec.id) == Some(&0)

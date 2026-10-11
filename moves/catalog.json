@@ -2009,6 +2009,17 @@
       "parameter_source": "https://pokeapi.co/api/v2/move/212/"
     },
     {
+      "id": 213,
+      "slug": "attract",
+      "name": "Attract",
+      "sheet_row": null,
+      "runtime_id": "attract",
+      "file": "moves/attract.lua",
+      "status": "implemented",
+      "limitations": [],
+      "parameter_source": "https://pokeapi.co/api/v2/move/213/"
+    },
+    {
       "id": 215,
       "slug": "heal-bell",
       "name": "Heal Bell",
@@ -7308,7 +7319,8 @@
       "miracle-eye",
       "tar-shot",
       "magnitude",
-      "nightmare"
+      "nightmare",
+      "attract"
     ]
   }
 }

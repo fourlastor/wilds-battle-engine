@@ -3274,3 +3274,80 @@ fn nightmare_respects_protect_and_substitute_and_accepts_comatose() {
         );
     }
 }
+
+#[test]
+fn attract_can_prevent_an_opposite_gender_targets_action_without_spending_its_pp() {
+    use wilds_battle_engine::Gender;
+    for (dice, blocked) in [(0.25, true), (0.75, false)] {
+        let mut user = mon("User", &["attract"]);
+        user.gender = Gender::Male;
+        user.speed = 200;
+        let mut foe = mon("Foe", &["tackle"]);
+        foe.gender = Gender::Female;
+        foe.substitute_hp = 50;
+        let mut b = game(user, vec![foe], dice);
+        let pp = b.participants(Side::Foes)[0].move_pp["tackle"];
+        turn(&mut b);
+        assert!(b.participants(Side::Foes)[0].condition("attract").is_some());
+        assert_eq!(b.participants(Side::Allies)[0].hp == 1000, blocked);
+        assert_eq!(
+            b.participants(Side::Foes)[0].move_pp["tackle"],
+            pp - u8::from(!blocked)
+        );
+    }
+}
+
+#[test]
+fn attract_respects_gender_oblivious_and_protect() {
+    use wilds_battle_engine::Gender;
+    for (gender, ability, response) in [
+        (Gender::Male, None, "splash"),
+        (Gender::Genderless, None, "splash"),
+        (Gender::Female, Some("oblivious"), "splash"),
+        (Gender::Female, None, "protect"),
+    ] {
+        let mut user = mon("User", &["attract"]);
+        user.gender = Gender::Male;
+        let mut foe = mon("Foe", &[response]);
+        foe.gender = gender;
+        foe.ability = ability.map(str::to_owned);
+        let mut b = game(user, vec![foe], 0.5);
+        turn(&mut b);
+        assert!(b.participants(Side::Foes)[0].condition("attract").is_none());
+        assert!(b.participants(Side::Allies)[0].last_move_failed);
+    }
+}
+
+#[test]
+fn attract_ends_when_its_source_switches_out() {
+    use wilds_battle_engine::Gender;
+    let mut user = mon("User", &["attract"]);
+    user.gender = Gender::Male;
+    user.speed = 200;
+    let mut foe = mon("Foe", &["tackle"]);
+    foe.gender = Gender::Female;
+    let mut b = Battle::with_rng(
+        Fixed(0.25),
+        [vec![user, mon("Bench", &["splash"])], vec![foe]],
+        MoveCatalog::builtin().unwrap(),
+    )
+    .unwrap();
+    b.set_active([vec![0], vec![0]]).unwrap();
+    turn(&mut b);
+    assert_eq!(b.participants(Side::Allies)[0].hp, 1000);
+    turn_with(&mut b, |p| {
+        p.choices
+            .iter()
+            .find(|c| {
+                if p.actor.side == Side::Allies {
+                    matches!(c, Choice::Switch { .. })
+                } else {
+                    matches!(c, Choice::UseMove { .. })
+                }
+            })
+            .unwrap()
+            .id()
+    });
+    assert!(b.participants(Side::Foes)[0].condition("attract").is_none());
+    assert!(b.participants(Side::Allies)[1].hp < 1000);
+}

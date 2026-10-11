@@ -346,6 +346,23 @@ impl Battle {
         })
     }
 
+    pub(crate) fn infatuation_prevents_move(&mut self, id: ParticipantId) -> bool {
+        if self.has_ability(id, "oblivious") {
+            self.get_mut(id).conditions.retain(|condition| {
+                !condition
+                    .rules
+                    .iter()
+                    .any(|rule| matches!(rule, Rule::InfatuatedBy(_)))
+            });
+            return false;
+        }
+        let infatuated = self.rules(id).any(|rule| {
+            matches!(rule, Rule::InfatuatedBy(by)
+            if self.get(*by).hp > 0 && self.is_active(*by))
+        });
+        infatuated && self.rng.chance(0.5)
+    }
+
     pub(crate) fn endures(&self, id: ParticipantId) -> bool {
         self.rules(id).any(|rule| matches!(rule, Rule::Endure))
     }

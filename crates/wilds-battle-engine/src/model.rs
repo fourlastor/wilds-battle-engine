@@ -265,6 +265,8 @@ pub enum Rule {
     IgnoreEvasionBoost,
     /// Remove this Pokémon condition when it no longer has the required status.
     RequiresStatus(Status),
+    /// Source-linked infatuation; half of attempted moves are prevented.
+    InfatuatedBy(ParticipantId),
     /// Changes incoming type effectiveness, including immunity/ability and berry checks.
     TypeEffectiveness {
         move_type: PokemonType,
