@@ -1,6 +1,5 @@
 -- Move 722: Photon Geyser. Identity and parameters: pokemon_data/assets/moves/722.json.
 -- Behavior checked against PokeAPI; see catalog.json for scope and limitations.
--- INCOMPLETE: The engine does not execute abilities; explicit ability-bypass semantics require an ability engine.
 
 local move = {
     script = function(ctx)
@@ -16,5 +15,5 @@ move.pp = 5
 move.accuracy = 1
 move.priority = 0
 move.target = Target.Selected
-move.flags = {"incomplete"}
+move.flags = {"ignore_ability"}
 return move

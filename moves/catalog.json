@@ -4884,10 +4884,8 @@
       "sheet_row": 487,
       "runtime_id": "sunsteel-strike",
       "file": "moves/sunsteel-strike.lua",
-      "status": "partial",
-      "limitations": [
-        "The engine does not execute abilities; explicit ability-bypass semantics require an ability engine."
-      ]
+      "status": "implemented",
+      "limitations": []
     },
     {
       "id": 714,
@@ -4896,10 +4894,8 @@
       "sheet_row": 488,
       "runtime_id": "moongeist-beam",
       "file": "moves/moongeist-beam.lua",
-      "status": "partial",
-      "limitations": [
-        "The engine does not execute abilities; explicit ability-bypass semantics require an ability engine."
-      ]
+      "status": "implemented",
+      "limitations": []
     },
     {
       "id": 715,
@@ -4958,10 +4954,8 @@
       "sheet_row": 495,
       "runtime_id": "photon-geyser",
       "file": "moves/photon-geyser.lua",
-      "status": "partial",
-      "limitations": [
-        "The engine does not execute abilities; explicit ability-bypass semantics require an ability engine."
-      ]
+      "status": "implemented",
+      "limitations": []
     },
     {
       "id": 729,

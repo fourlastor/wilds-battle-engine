@@ -22,6 +22,8 @@ pub struct Battle {
     pub(crate) item_hits: Vec<(ParticipantId, ParticipantId, HitMeta)>,
     pub(crate) hit_reactions: Vec<HitReaction>,
     pub(crate) reaction_hit: Option<HitInfo>,
+    pub(crate) ignored_ability: Option<ParticipantId>,
+    pub(crate) ability_bypass: bool,
     pub(crate) side_conditions: [Vec<Condition>; 2],
     pub(crate) field_conditions: Vec<Condition>,
     pub(crate) last_faint_turn: [Option<u64>; 2],
@@ -87,6 +89,9 @@ pub(crate) struct Attack<'a> {
     pub(crate) always_crit: bool,
     pub(crate) force_stab: bool,
     pub(crate) no_gem: bool,
+    pub(crate) sound: bool,
+    pub(crate) bullet: bool,
+    pub(crate) contact: bool,
     pub(crate) consecutive_boost: u8,
     pub(crate) typeless: bool,
     pub(crate) move_type: PokemonType,
@@ -200,6 +205,8 @@ impl Battle {
             item_hits: Vec::new(),
             hit_reactions: Vec::new(),
             reaction_hit: None,
+            ignored_ability: None,
+            ability_bypass: false,
             side_conditions: [Vec::new(), Vec::new()],
             field_conditions: Vec::new(),
             last_faint_turn: [None, None],
@@ -640,8 +647,11 @@ impl Battle {
     ) -> Result<(), BattleError> {
         self.move_failed = false;
         self.active_gem = None;
-        let used = self.perform_move(actor, choice, events)?;
+        let result = self.perform_move(actor, choice, events);
         self.finish_item_hits(events);
+        self.ignored_ability = None;
+        self.ability_bypass = false;
+        let used = result?;
         let failed = self.move_failed;
         let pokemon = self.get_mut(actor);
         if used {
@@ -869,6 +879,11 @@ impl Battle {
                 self.get(target).name
             )));
         }
+        self.ability_bypass = spec.has_flag("ignore_ability")
+            || self.has_ability(actor, "moldbreaker")
+            || self.has_ability(actor, "teravolt")
+            || self.has_ability(actor, "turboblaze");
+        self.ignored_ability = self.ability_bypass.then_some(target);
         if spec.fail_on_full_hp && self.get(target).hp == self.get(target).max_hp {
             events.push(BattleEvent::Message(format!(
                 "{user_name} used {}!",
@@ -1114,6 +1129,7 @@ impl Battle {
         let user_level = self.get(actor).level;
         let target_level = self.get(target).level;
         user_level >= target_level
+            && !self.has_ability(target, "sturdy")
             && (never_miss
                 || self.always_hits(actor, target)
                 || self
@@ -1170,9 +1186,17 @@ impl Battle {
                     false,
                     &mut details,
                 ) {
-                    self.damage_from_move(actor, target, amount, &HitMeta::plain(spec), events)?;
+                    let amount = self.damage_from_move(
+                        actor,
+                        target,
+                        amount,
+                        &HitMeta::plain(spec),
+                        events,
+                    )?;
                     events.extend(details);
-                    if let Some(fraction) = recoil {
+                    if let Some(fraction) = recoil
+                        && amount > 0
+                    {
                         let recoil = ((amount as f32 * fraction).floor() as u16).max(1);
                         self.damage(actor, recoil, events);
                         events.push(BattleEvent::Message(format!(
@@ -1180,7 +1204,9 @@ impl Battle {
                             self.get(actor).name
                         )));
                     }
-                    if let Some(fraction) = drain {
+                    if let Some(fraction) = drain
+                        && amount > 0
+                    {
                         if self.get(actor).hp < self.get(actor).max_hp {
                             self.heal(
                                 actor,
@@ -1196,10 +1222,6 @@ impl Battle {
                 }
             }
             Effect::MultiHit { power, min, max } => {
-                if self.effectiveness(target, spec.move_type) == 0.0 {
-                    self.immune_message(target, events);
-                    return Ok(());
-                }
                 let hits = self.rng.range(*min, *max);
                 let mut count = 0;
                 let mut details = Vec::new();
@@ -1233,6 +1255,9 @@ impl Battle {
                                 details.push(event);
                             }
                         }
+                    } else {
+                        events.extend(hit_details);
+                        return Ok(());
                     }
                 }
                 events.extend(details);
@@ -1526,7 +1551,22 @@ impl Battle {
         amount: u16,
         events: &mut Vec<BattleEvent>,
     ) -> Result<(), BattleError> {
-        if self.effectiveness(target, spec.move_type) == 0.0 {
+        if self.ability_bypass {
+            self.ignored_ability = Some(target);
+        }
+        let effectiveness = self.effectiveness(target, spec.move_type);
+        if self.ability_blocks_damage(
+            actor,
+            target,
+            spec.move_type,
+            effectiveness,
+            spec.has_flag("sound"),
+            spec.has_flag("bullet"),
+            events,
+        ) {
+            return Ok(());
+        }
+        if effectiveness == 0.0 {
             self.immune_message(target, events);
         } else {
             self.damage_from_move(actor, target, amount, &HitMeta::plain(spec), events)?;
@@ -1553,6 +1593,9 @@ impl Battle {
             always_crit,
             force_stab: false,
             no_gem: spec.has_flag("no_gem"),
+            sound: spec.has_flag("sound"),
+            bullet: spec.has_flag("bullet"),
+            contact: spec.has_flag("contact"),
             consecutive_boost,
             typeless,
             move_type: self.converted_type(actor, spec.move_type),
@@ -1575,6 +1618,9 @@ impl Battle {
         attack: &Attack,
         events: &mut Vec<BattleEvent>,
     ) -> Option<Roll> {
+        if self.ability_bypass {
+            self.ignored_ability = Some(target);
+        }
         let defender = self.get(target).clone();
         let attacker = self.get(actor).clone();
         let source = self.get(attack.attack_from).clone();
@@ -1589,12 +1635,27 @@ impl Battle {
             2 => 0.5,
             _ => 1.0,
         };
-        let crit = attack.always_crit || self.rng.chance(chance);
+        let crit = (attack.always_crit || self.rng.chance(chance))
+            && !self.has_ability(target, "battlearmor")
+            && !self.has_ability(target, "shellarmor");
         let effectiveness = if typeless {
             1.0
         } else {
             self.matchup(target, attack)
         };
+        if !typeless
+            && self.ability_blocks_damage(
+                actor,
+                target,
+                move_type,
+                effectiveness,
+                attack.sound,
+                attack.bullet,
+                events,
+            )
+        {
+            return None;
+        }
         if effectiveness == 0.0 {
             self.immune_message(target, events);
             return None;
@@ -1606,14 +1667,14 @@ impl Battle {
         let atk_name = attack.attack_stat.unwrap_or(atk_name);
         let def_name = attack.defense_stat.unwrap_or(def_name);
         let attack_value = if crit && source.stage(atk_name.into()) < 0 {
-            raw_stat(&source, atk_name)
+            raw_stat(&source, atk_name) * self.stat_factor(attack.attack_from, atk_name)
         } else {
             self.stat_value(attack.attack_from, atk_name)
         };
         let mut defense = if attack.ignore_stages {
             (raw_stat(&defender, def_name) * self.stat_factor(target, def_name)).trunc()
         } else if crit && defender.stage(def_name.into()) > 0 {
-            raw_stat(&defender, def_name)
+            raw_stat(&defender, def_name) * self.stat_factor(target, def_name)
         } else {
             self.stat_value(target, def_name)
         };
@@ -1661,6 +1722,7 @@ impl Battle {
                 damage *= 0.5;
             }
         }
+        damage *= self.ability_damage_factor(actor, target, attack, effectiveness);
         damage *= effectiveness;
         if !typeless && (attack.force_stab || self.types_of(actor).contains(&move_type)) {
             damage *= 1.5;
@@ -1700,10 +1762,10 @@ impl Battle {
         amount: u16,
         meta: &HitMeta,
         events: &mut Vec<BattleEvent>,
-    ) -> Result<(), BattleError> {
+    ) -> Result<u16, BattleError> {
         let before = self.get(target).hp;
         if before == 0 {
-            return Ok(());
+            return Ok(0);
         }
         // Capture contact listeners before damage clears a fainted Pokémon's effects.
         let reactions: Vec<_> = self
@@ -1713,7 +1775,10 @@ impl Battle {
             .cloned()
             .collect();
         let mut amount = amount;
-        if amount >= before && self.endures(target) {
+        if amount >= before
+            && (self.endures(target)
+                || (before == self.get(target).max_hp && self.has_ability(target, "sturdy")))
+        {
             amount = before - 1;
             events.push(BattleEvent::Message(format!(
                 "{} endured the hit!",
@@ -1760,7 +1825,7 @@ impl Battle {
             self.reaction_hit = previous;
             result?;
         }
-        Ok(())
+        Ok(lost)
     }
 
     pub(crate) fn damage(

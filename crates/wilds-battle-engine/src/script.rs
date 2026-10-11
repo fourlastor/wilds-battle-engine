@@ -170,7 +170,7 @@ impl Battle {
         table.raw_set("item", pokemon.item.as_deref())?;
         table.raw_set(
             "ability",
-            if pokemon.ability_suppressed {
+            if !self.ability_active(id) {
                 None
             } else {
                 pokemon.ability.as_deref()
@@ -701,6 +701,9 @@ impl Battle {
             always_crit: options.always_crit,
             force_stab: options.force_stab,
             no_gem: frame.spec.has_flag("no_gem"),
+            sound: frame.spec.has_flag("sound"),
+            bullet: frame.spec.has_flag("bullet"),
+            contact: options.contact.unwrap_or(frame.spec.has_flag("contact")),
             consecutive_boost: 0,
             typeless: options.typeless,
             move_type: self.converted_type(
@@ -764,7 +767,7 @@ impl Battle {
             let actual = roll
                 .amount
                 .min(self.get(recipient).hp.saturating_sub(options.min_target_hp));
-            self.damage_from_move(
+            let actual = self.damage_from_move(
                 actor,
                 recipient,
                 actual,
@@ -837,14 +840,6 @@ impl Battle {
         let attack = self.attack(frame, power, options);
         let meta = HitMeta::of(frame.spec, attack.category, attack.move_type)
             .with_contact(options.contact);
-        if !attack.typeless && self.matchup(recipient, &attack) == 0.0 {
-            self.immune_message(recipient, events);
-            report.immune = true;
-            frame.failed = true;
-            report.unreached.push(recipient);
-            return Ok(report);
-        }
-        report.reached.push(recipient);
         let hits = self.rng.range(min, max);
         let mut details = Vec::new();
         for _ in 0..hits {
@@ -853,10 +848,13 @@ impl Battle {
             }
             let mut hit_details = Vec::new();
             if let Some(roll) = self.calculate(actor, recipient, &attack, &mut hit_details) {
+                if report.hits == 0 {
+                    report.reached.push(recipient);
+                }
                 let actual = roll
                     .amount
                     .min(self.get(recipient).hp.saturating_sub(options.min_target_hp));
-                self.damage_from_move(
+                let actual = self.damage_from_move(
                     actor,
                     recipient,
                     actual,
@@ -873,10 +871,18 @@ impl Battle {
                         details.push(event);
                     }
                 }
+            } else {
+                events.extend(hit_details);
+                report.immune = true;
+                frame.failed = true;
+                report.unreached.push(recipient);
+                break;
             }
         }
         events.extend(details);
-        events.push(BattleEvent::Message(format!("Hit {} times!", report.hits)));
+        if report.hits > 0 {
+            events.push(BattleEvent::Message(format!("Hit {} times!", report.hits)));
+        }
         report.hit = report.hits > 0;
         report.fainted = self.get(recipient).hp == 0;
         frame.any_hit = true;
@@ -1184,18 +1190,35 @@ impl Battle {
                     effectiveness: 1.0,
                     ..DamageReport::default()
                 };
+                if self.ability_bypass {
+                    self.ignored_ability = Some(who);
+                }
+                let effectiveness = self.effectiveness(who, spec.move_type);
                 if self.get(who).hp == 0 {
                     report.missed = true;
-                } else if !typeless && self.effectiveness(who, spec.move_type) == 0.0 {
+                } else if !typeless
+                    && self.ability_blocks_damage(
+                        actor,
+                        who,
+                        spec.move_type,
+                        effectiveness,
+                        spec.has_flag("sound"),
+                        spec.has_flag("bullet"),
+                        events,
+                    )
+                {
+                    report.immune = true;
+                    report.unreached.push(who);
+                } else if !typeless && effectiveness == 0.0 {
                     self.immune_message(who, events);
                     report.immune = true;
                     report.unreached.push(who);
                 } else {
                     report.reached.push(who);
-                    let actual = amount.min(self.get(who).hp.saturating_sub(min_target_hp));
+                    let mut actual = amount.min(self.get(who).hp.saturating_sub(min_target_hp));
                     if actual > 0 {
                         let meta = HitMeta::of(spec, spec.category, spec.move_type);
-                        self.damage_from_move(actor, who, actual, &meta, events)?;
+                        actual = self.damage_from_move(actor, who, actual, &meta, events)?;
                     }
                     report.hit = true;
                     report.hits = 1;

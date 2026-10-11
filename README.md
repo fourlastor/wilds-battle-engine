@@ -322,3 +322,22 @@ Relic Song uses the `meloetta-pirouette` preset for Meloetta (species ID 648), t
 restores the original form on its next successful use. If starting in Pirouette
 Forme, provide `form: "meloetta-pirouette"` and a `meloetta-aria` preset. Missing
 form data produces an explicit message and leaves the stats intact.
+
+Ability-owned rules are separate from ordinary conditions: Rust hosts can set
+`Pokemon.ability_rules`, or setup JSON can provide `ability_rules_lua` (for example,
+`"return {{kind=Rule.DamageTaken, factor=0.5}}"`). The same typed rule parser validates
+these definitions. `ability_bypassable` overrides the standard bypass metadata
+for a host-defined ability. Rules stop when the ability is suppressed; a move
+flagged `ignore_ability` bypasses eligible target abilities only for that move.
+Mold Breaker, Teravolt and Turboblaze use the same gate. End-of-turn rules become
+active again after temporary bypass ends.
+
+Native defensive hooks currently include Multiscale, Shadow Shield, Filter,
+Solid Rock, Prism Armor, Fur Coat, Marvel Scale, Ice Scales, Fluffy, Punk Rock's
+defense, Battle Armor, Shell Armor, Sturdy, Wonder Guard, Levitate, Soundproof,
+Bulletproof, Telepathy, and the type absorption/boost effects of Water Absorb,
+Volt Absorb, Dry Skin, Flash Fire, Lightning Rod, Storm Drain, Motor Drive and
+Sap Sipper. Huge Power and Pure Power also affect the computed Attack stat.
+The ability catalog is extensible and does not yet implement every canonical
+ability; move completion means the required mechanics are available, not full
+official battle parity. Shadow Shield and Prism Armor are not bypassable.

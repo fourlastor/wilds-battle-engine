@@ -130,6 +130,26 @@ fn damage_of(dice: f32, extra: &str, body: &str) -> u16 {
 // Status, stats and other things only plain moves could do before
 
 #[test]
+fn damage_reports_and_draining_use_hp_lost_after_sturdy() {
+    let script = test_move(
+        "",
+        "local hit = ctx:damage(100, {drain=0.75}); ctx:message('actual ' .. hit.damage)",
+    );
+    let mut user = mon("User", &["test"]);
+    user.hp = 200;
+    user.attack = 1000;
+    let mut target = mon("Target", &["wait"]);
+    target.hp = 100;
+    target.max_hp = 100;
+    target.ability = Some("sturdy".into());
+    let mut game = Game::new(&[&script], vec![user], vec![target]);
+    let lines = game.turn(&["test", "wait"]);
+    assert!(said(&lines, "actual 99"));
+    assert_eq!(game.foe(0).hp, 1);
+    assert_eq!(game.ally(0).hp, 274);
+}
+
+#[test]
 fn scripts_inflict_and_cure_status() {
     let script = test_move(
         "",

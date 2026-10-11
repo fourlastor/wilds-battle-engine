@@ -112,6 +112,137 @@ fn meloetta() -> Pokemon {
 }
 
 #[test]
+fn draining_uses_hp_lost_after_sturdy_for_plain_moves() {
+    for attack in ["draining_kiss", "oblivion-wing"] {
+        let mut user = mon("User", &[attack]);
+        user.hp = 600;
+        user.attack = 1000;
+        user.sp_attack = 1000;
+        let mut target = mon("Target", &["splash"]);
+        target.hp = 100;
+        target.max_hp = 100;
+        target.ability = Some("sturdy".into());
+        let mut game = Game::new(vec![user], vec![target], 0.5);
+        game.turn(attack, "splash");
+        assert_eq!(game.foe().hp, 1);
+        assert_eq!(game.ally().hp, 674, "{attack}");
+    }
+}
+
+#[test]
+fn ability_bypassing_moves_ignore_defenses_without_suppressing_them() {
+    for attack in ["sunsteel-strike", "moongeist-beam", "photon-geyser"] {
+        let run = |ability: Option<&str>, suppressed| {
+            let mut target = mon("Target", &["splash"]);
+            target.types = vec![PokemonType::Grass];
+            target.ability = ability.map(str::to_string);
+            target.ability_suppressed = suppressed;
+            let mut game = Game::duel(&[attack], target, 0.5);
+            game.turn(attack, "splash");
+            game
+        };
+        let baseline = run(None, false).foe().hp;
+        for ability in ["multiscale", "wonder-guard", "fur-coat", "ice-scales"] {
+            let game = run(Some(ability), false);
+            assert_eq!(game.foe().hp, baseline, "{attack}, {ability}");
+            assert!(!game.foe().ability_suppressed);
+            assert_eq!(game.foe().ability.as_deref(), Some(ability));
+        }
+        assert!(run(Some("shadow-shield"), false).foe().hp > baseline);
+        assert_eq!(run(Some("shadow-shield"), true).foe().hp, baseline);
+    }
+    for attack in [
+        "sunsteel-strike",
+        "moongeist-beam",
+        "photon-geyser",
+        "tackle",
+    ] {
+        let mut user = mon("User", &[attack]);
+        user.attack = 1000;
+        user.sp_attack = 1000;
+        let mut target = mon("Target", &["splash"]);
+        target.hp = 100;
+        target.max_hp = 100;
+        target.types = vec![PokemonType::Grass];
+        target.ability = Some("sturdy".into());
+        let mut game = Game::new(vec![user], vec![target], 0.5);
+        game.turn(attack, "splash");
+        assert_eq!(game.foe().hp, if attack == "tackle" { 1 } else { 0 });
+    }
+}
+
+#[test]
+fn defensive_abilities_execute_and_preserve_their_bypass_metadata() {
+    let run = |ability: Option<&str>, bypass, types: Vec<PokemonType>| {
+        let mut user = mon("User", &["ember"]);
+        if bypass {
+            user.ability = Some("mold-breaker".into());
+        }
+        let mut target = mon("Target", &["splash"]);
+        target.types = types;
+        target.ability = ability.map(str::to_string);
+        let mut game = Game::new(vec![user], vec![target], 0.5);
+        game.turn("ember", "splash");
+        1000 - game.foe().hp
+    };
+    let baseline = run(None, false, vec![PokemonType::Grass]);
+    for ability in [
+        "multiscale",
+        "filter",
+        "solid-rock",
+        "ice-scales",
+        "flash-fire",
+    ] {
+        assert!(
+            run(Some(ability), false, vec![PokemonType::Grass]) < baseline,
+            "{ability}"
+        );
+        assert_eq!(run(Some(ability), true, vec![PokemonType::Grass]), baseline);
+    }
+    assert!(run(Some("prism-armor"), true, vec![PokemonType::Grass]) < baseline);
+    assert_eq!(
+        run(Some("wonder-guard"), false, vec![PokemonType::Normal]),
+        0
+    );
+    assert!(run(Some("wonder-guard"), false, vec![PokemonType::Grass]) > 0);
+}
+
+#[test]
+fn host_ability_rules_are_temporarily_bypassed_and_permanently_suppressed() {
+    let rules = MoveCatalog::rules_from_lua(
+        "return {{kind=Rule.DamageTaken, factor=0.5}, {kind=Rule.HealEachTurn, fraction=0.1}}",
+    )
+    .unwrap();
+    let mut target = mon("Target", &["splash"]);
+    target.ability = Some("host-shield".into());
+    target.ability_bypassable = Some(true);
+    target.ability_rules = rules;
+    target.speed = 200;
+    let mut game = Game::duel(&["sunsteel-strike", "core-enforcer", "tackle"], target, 0.5);
+    let events = game.turn("sunsteel-strike", "splash");
+    // Suppression lasts only for the move; the same ability's residual heal still runs.
+    assert!(events.iter().any(
+        |e| matches!(e, BattleEvent::Heal { target, amount:100, .. } if target.side == Side::Foes)
+    ));
+    assert!(!game.foe().ability_suppressed);
+    game.turn("core-enforcer", "splash");
+    assert!(game.foe().ability_suppressed);
+    let events = game.turn("tackle", "splash");
+    assert!(!events.iter().any(|e| matches!(e, BattleEvent::Heal { .. })));
+}
+
+#[test]
+fn ability_bypass_is_cleared_after_a_miss_or_protected_move() {
+    let mut target = mon("Target", &["protect", "splash"]);
+    target.ability = Some("wonder-guard".into());
+    let mut game = Game::duel(&["sunsteel-strike", "tackle"], target, 0.5);
+    game.turn("sunsteel-strike", "protect");
+    game.turn("tackle", "splash");
+    assert_eq!(game.foe().hp, 1000);
+    assert!(!game.foe().ability_suppressed);
+}
+
+#[test]
 fn core_enforcer_suppresses_only_after_the_target_acts_and_changes_active_effects() {
     for (speed, suppressed) in [(200, true), (1, false)] {
         let mut target = mon("Target", &["splash"]);

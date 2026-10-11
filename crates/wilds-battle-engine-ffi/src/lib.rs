@@ -64,6 +64,8 @@ struct SetupPokemon {
     weight: f32,
     item: Option<String>,
     ability: Option<String>,
+    ability_rules_lua: Option<String>,
+    ability_bypassable: Option<bool>,
     /// HP, Attack, Defense, Sp. Attack, Sp. Defense, Speed.
     ivs: Option<[u8; 6]>,
     happiness: Option<u8>,
@@ -100,6 +102,11 @@ fn pokemon(config: SetupPokemon) -> Result<Pokemon, String> {
             other => Err(format!("unknown nature_down stat {other}")),
         })
         .transpose()?;
+    value.ability_bypassable = config.ability_bypassable;
+    if let Some(source) = config.ability_rules_lua {
+        value.ability_rules =
+            MoveCatalog::rules_from_lua(&source).map_err(|error| error.to_string())?;
+    }
     value.form = config.form;
     value.forms = config
         .forms
@@ -409,6 +416,20 @@ fn event(value: &BattleEvent) -> Value {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn setup_accepts_typed_ability_rules_and_bypass_metadata() {
+        let config = serde_json::from_value(json!({"name":"Target", "moves":["splash"],
+            "ability":"host-shield", "ability_bypassable":true,
+            "ability_rules_lua":"return {{kind=Rule.DamageTaken, factor=0.5}}"}))
+        .unwrap();
+        let pokemon = pokemon(config).unwrap();
+        assert_eq!(pokemon.ability_bypassable, Some(true));
+        assert!(matches!(
+            pokemon.ability_rules[0],
+            wilds_battle_engine::Rule::DamageTaken { factor: 0.5, .. }
+        ));
+    }
 
     #[test]
     fn c_api_accepts_forms_and_reports_transformation() {

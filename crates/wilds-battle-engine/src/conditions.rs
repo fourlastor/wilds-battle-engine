@@ -37,6 +37,12 @@ impl Battle {
             .chain(self.side_conditions[id.side.index()].iter())
             .chain(self.field_conditions.iter())
             .flat_map(|condition| condition.rules.iter())
+            .chain(
+                self.get(id)
+                    .ability_rules
+                    .iter()
+                    .filter(move |_| self.ability_active(id)),
+            )
     }
 
     /// Sets a mark, or changes the value of a condition that is already there.
@@ -102,13 +108,16 @@ impl Battle {
     }
 
     pub(crate) fn stat_factor(&self, id: ParticipantId, stat: CombatStat) -> f32 {
-        self.rules(id).fold(1.0, |factor, rule| match rule {
-            Rule::StatMultiplier {
-                stat: own,
-                factor: by,
-            } if *own == stat => factor * by,
-            _ => factor,
-        })
+        self.rules(id).fold(
+            self.ability_stat_factor(id, stat),
+            |factor, rule| match rule {
+                Rule::StatMultiplier {
+                    stat: own,
+                    factor: by,
+                } if *own == stat => factor * by,
+                _ => factor,
+            },
+        )
     }
 
     /// A stat with its stages and any multipliers from effects.

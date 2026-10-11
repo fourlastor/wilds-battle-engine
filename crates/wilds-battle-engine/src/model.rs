@@ -410,6 +410,10 @@ pub struct Pokemon {
     /// Ability id. Supported mechanics query its active/suppressed state.
     pub ability: Option<String>,
     pub ability_suppressed: bool,
+    /// Optional host-defined rules belonging to the ability, gated by suppression and bypass.
+    pub ability_rules: Vec<Rule>,
+    /// Overrides the standard ability metadata for a host-defined ability.
+    pub ability_bypassable: Option<bool>,
     /// HP, Attack, Defense, Sp. Attack, Sp. Defense, Speed.
     pub ivs: Option<[u8; 6]>,
     pub happiness: Option<u8>,
@@ -483,6 +487,8 @@ impl Pokemon {
             last_consumed_item: None,
             ability: None,
             ability_suppressed: false,
+            ability_rules: Vec::new(),
+            ability_bypassable: None,
             ivs: None,
             happiness: None,
             nature_down: None,

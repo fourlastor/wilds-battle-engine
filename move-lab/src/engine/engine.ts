@@ -135,6 +135,8 @@ export interface SetupMon {
   weight?: number;
   item?: string;
   ability?: string;
+  ability_rules_lua?: string;
+  ability_bypassable?: boolean;
 }
 
 export interface EngineSetup {

@@ -1191,6 +1191,16 @@ impl MoveCatalog {
             script_factory,
         })
     }
+    /// Parses declarative ability rules with the same typed symbols and validation as move effects.
+    pub fn rules_from_lua(source: &str) -> Result<Vec<Rule>, BattleError> {
+        let lua = Lua::new();
+        lua_symbols::install(&lua)?;
+        let table: Table = lua.load(source).eval()?;
+        table
+            .sequence_values::<Value>()
+            .map(|value| Ok(rule_of(&value?)?))
+            .collect()
+    }
     pub fn from_lua(source: &str) -> Result<Self, BattleError> {
         let lua = Lua::new();
         lua_symbols::install(&lua)?;
