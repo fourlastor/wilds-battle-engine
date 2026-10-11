@@ -862,8 +862,99 @@ impl Battle {
         Ok(report)
     }
 
-    /// Several hits in a row on one Pokémon, as `Effect::MultiHit` does them.
+    /// Split smart-target hits across eligible foes, concentrating on the remaining
+    /// recipient when protection, immunity, hiding or accuracy removes another.
     fn op_multi_hit(
+        &mut self,
+        frame: &mut Frame,
+        power: u16,
+        hits: (u8, u8),
+        options: &DamageOptions,
+        events: &mut Vec<BattleEvent>,
+    ) -> Result<DamageReport, BattleError> {
+        if !frame.spec.has_flag("smart_target") || options.target.is_some() {
+            return self.op_multi_hit_target(frame, power, hits, options, events);
+        }
+        let actor = frame.actor;
+        let mut candidates = vec![frame.target];
+        for foe in self.actors() {
+            if foe.side != actor.side && self.adjacent(actor, foe) {
+                let target = self.redirect_target(actor, foe, frame.spec);
+                if !candidates.contains(&target) {
+                    candidates.push(target);
+                }
+            }
+        }
+        let attack = self.attack(frame, power, options);
+        let mut eligible = vec![];
+        let mut report = DamageReport {
+            effectiveness: 1.0,
+            ..DamageReport::default()
+        };
+        for target in candidates.into_iter().take(usize::from(hits.1)) {
+            if self.ability_bypass {
+                self.ignored_ability = Some(target);
+            }
+            let effectiveness = self.matchup(target, &attack);
+            if effectiveness == 0.0 {
+                self.immune_message(target, events);
+                report.immune = true;
+            } else if self.ability_blocks_damage(
+                actor,
+                target,
+                attack.move_type,
+                effectiveness,
+                attack.sound,
+                attack.bullet,
+                events,
+            ) {
+                report.immune = true;
+            } else {
+                match self.hit_outcome(frame, target, &options.hit, events) {
+                    HitOutcome::Hit => {
+                        eligible.push(target);
+                        // Consume this accuracy result when the first dart lands.
+                        frame.checked.push((target, true));
+                        continue;
+                    }
+                    HitOutcome::Protected => report.blocked = true,
+                    _ => report.missed = true,
+                }
+            }
+            report.unreached.push(target);
+        }
+        if eligible.is_empty() {
+            frame.failed = true;
+            return Ok(report);
+        }
+        let count = self.rng.range(hits.0, hits.1);
+        for (index, target) in eligible.iter().copied().enumerate() {
+            if self.get(actor).hp == 0 {
+                break;
+            }
+            let count = count / eligible.len() as u8
+                + u8::from(index < usize::from(count) % eligible.len());
+            if count == 0 {
+                continue;
+            }
+            let mut options = options.clone();
+            options.target = Some(target);
+            let hit = self.op_multi_hit_target(frame, power, (count, count), &options, events)?;
+            report.hit |= hit.hit;
+            report.substitute |= hit.substitute;
+            report.damage = report.damage.saturating_add(hit.damage);
+            report.fainted |= hit.fainted;
+            report.critical |= hit.critical;
+            report.hits += hit.hits;
+            report.effectiveness = hit.effectiveness;
+            report.reached.extend(hit.reached);
+            report.unreached.extend(hit.unreached);
+        }
+        Ok(report)
+    }
+
+    /// Several hits in a row on one Pokémon, as `Effect::MultiHit` does them.
+    fn op_multi_hit_target(
         &mut self,
         frame: &mut Frame,
         power: u16,

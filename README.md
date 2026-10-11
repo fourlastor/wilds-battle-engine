@@ -1,9 +1,9 @@
 # Wilds battle engine
 
 `wilds-battle-engine` is the Rust battle simulation. Move definitions are loaded
-from Lua; `MoveCatalog::builtin()` embeds the 555 files under `moves/`,
+from Lua; `MoveCatalog::builtin()` embeds the 556 files under `moves/`,
 and `MoveCatalog::from_directory(path)` reads them from disk at runtime.
-Both catalogs also include the system move Struggle, for 556 moves in total.
+Both catalogs also include the system move Struggle, for 557 moves in total.
 The [move catalog](moves/README.md) includes 538 entries from the Saved moves sheet,
 plus support moves, additional local JSON moves and the original moves outside the sheet. Its manifest
 records the 34 excluded Z/Max Moves. Files use canonical slugs and source display
@@ -410,6 +410,11 @@ removed, while target secondary effects, contact reactions, theft, trapping and
 phazing do not pass through that hit. Residual damage still affects the owner.
 Sound moves, `bypass_substitute` moves and active Infiltrator bypass the pool.
 Switching and fainting clear it; Intimidate respects it.
+
+Dragon Darts uses `smart_target` with `ctx:multi_hit`: Rust checks each recipient
+once, then splits the hits between eligible adjacent foes. If one is protected,
+immune, hidden or missed, the other receives both hits. Redirection concentrates
+the hits on the redirector; these hits do not receive a spread-damage penalty.
 
 Lua exposes `pokemon.substitute_hp` and `ctx:substitute()`. Damage reports include
 `substitute`; `hit` still reports a successful attack on the doll, while `reached`

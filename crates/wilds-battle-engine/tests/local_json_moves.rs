@@ -130,3 +130,134 @@ fn seismic_toss_respects_ghost_immunity_and_substitute() {
         assert_eq!(battle.participants(Side::Foes)[0].substitute_hp, 0);
     }
 }
+
+#[test]
+fn dragon_darts_splits_two_hits_without_spread_damage_reduction() {
+    let mut single = game(
+        mon("User", &["dragon-darts"]),
+        vec![mon("Foe", &["splash"])],
+        0.5,
+    );
+    turn(&mut single);
+    let double_damage = 1000 - single.participants(Side::Foes)[0].hp;
+    assert!(double_damage > 0);
+    let mut double = game(
+        mon("User", &["dragon-darts"]),
+        vec![mon("Left", &["splash"]), mon("Right", &["splash"])],
+        0.5,
+    );
+    turn(&mut double);
+    for foe in double.participants(Side::Foes) {
+        assert_eq!(2 * (1000 - foe.hp), double_damage);
+    }
+    assert_eq!(
+        double.participants(Side::Allies)[0].move_pp["dragon-darts"],
+        9
+    );
+}
+
+#[test]
+fn dragon_darts_concentrates_on_the_eligible_opponent() {
+    use wilds_battle_engine::Stat;
+    let mut single = game(
+        mon("User", &["dragon-darts"]),
+        vec![mon("Foe", &["splash"])],
+        0.5,
+    );
+    turn(&mut single);
+    let expected = single.participants(Side::Foes)[0].hp;
+    for block in ["fairy", "protect", "evasion", "wonderguard", "fly"] {
+        let mut blocked = mon(
+            "Blocked",
+            &[if block == "protect" {
+                "protect"
+            } else if block == "fly" {
+                "fly"
+            } else {
+                "splash"
+            }],
+        );
+        match block {
+            "fairy" => blocked.types = vec![PokemonType::Fairy],
+            "evasion" => {
+                blocked.stages.insert(Stat::Evasion, 6);
+            }
+            "wonderguard" => blocked.ability = Some("wonder-guard".into()),
+            "fly" => blocked.speed = 999,
+            _ => {}
+        }
+        let mut battle = game(
+            mon("User", &["dragon-darts"]),
+            vec![blocked, mon("Other", &["splash"])],
+            0.5,
+        );
+        turn(&mut battle);
+        assert_eq!(battle.participants(Side::Foes)[0].hp, 1000, "{block}");
+        assert_eq!(battle.participants(Side::Foes)[1].hp, expected, "{block}");
+        assert!(!battle.participants(Side::Allies)[0].last_move_failed);
+    }
+}
+
+#[test]
+fn dragon_darts_breaks_substitute_and_fails_if_every_target_is_immune() {
+    let mut foe = mon("Foe", &["splash"]);
+    foe.substitute_hp = 1;
+    let mut battle = game(mon("User", &["dragon-darts"]), vec![foe], 0.5);
+    turn(&mut battle);
+    assert_eq!(battle.participants(Side::Foes)[0].substitute_hp, 0);
+    assert!(battle.participants(Side::Foes)[0].hp < 1000);
+    let foes = (0..2)
+        .map(|_| {
+            let mut p = mon("Fairy", &["splash"]);
+            p.types = vec![PokemonType::Fairy];
+            p
+        })
+        .collect();
+    let mut battle = game(mon("User", &["dragon-darts"]), foes, 0.5);
+    turn(&mut battle);
+    assert!(battle.participants(Side::Allies)[0].last_move_failed);
+    assert!(battle.participants(Side::Foes).iter().all(|p| p.hp == 1000));
+}
+
+#[test]
+fn dragon_darts_respects_redirection_and_does_not_target_the_bench() {
+    use wilds_battle_engine::{Condition, ParticipantId, Rule};
+    let mut selected = mon("Selected", &["splash"]);
+    selected.conditions.push(Condition {
+        name: "redirect".into(),
+        value: 1,
+        turns_left: None,
+        group: None,
+        end_message: None,
+        rules: vec![Rule::Redirect {
+            to: ParticipantId {
+                side: Side::Foes,
+                index: 1,
+            },
+            move_type: None,
+            priority: 1,
+        }],
+    });
+    let mut battle = game(
+        mon("User", &["dragon-darts"]),
+        vec![
+            selected,
+            mon("Redirector", &["splash"]),
+            mon("Bench", &["splash"]),
+        ],
+        0.5,
+    );
+    battle.set_active([vec![0], vec![0, 1]]).unwrap();
+    turn(&mut battle);
+    let foes = battle.participants(Side::Foes);
+    assert_eq!(foes[0].hp, 1000);
+    assert!(foes[1].hp < 1000);
+    assert_eq!(foes[2].hp, 1000);
+    let mut single = game(
+        mon("User", &["dragon-darts"]),
+        vec![mon("Foe", &["splash"])],
+        0.5,
+    );
+    turn(&mut single);
+    assert_eq!(foes[1].hp, single.participants(Side::Foes)[0].hp);
+}

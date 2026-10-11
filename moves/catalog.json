@@ -5176,6 +5176,16 @@
       "limitations": []
     },
     {
+      "id": 751,
+      "slug": "dragon-darts",
+      "name": "Dragon Darts",
+      "sheet_row": null,
+      "runtime_id": "dragon-darts",
+      "file": "moves/dragon-darts.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
       "id": 778,
       "slug": "drum-beating",
       "name": "Drum Beating",
@@ -5844,7 +5854,8 @@
       "sticky-web",
       "substitute",
       "sonic-boom",
-      "seismic-toss"
+      "seismic-toss",
+      "dragon-darts"
     ]
   }
 }
