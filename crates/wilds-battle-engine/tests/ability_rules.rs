@@ -2545,3 +2545,8 @@ fn refrigerate_converts_normal_moves_to_ice_and_boosts_power() {
 fn aerilate_converts_normal_moves_to_flying_and_boosts_power() {
     check_normal_conversion("aerilate", PokemonType::Flying);
 }
+
+#[test]
+fn pixilate_converts_normal_moves_to_fairy_and_boosts_power() {
+    check_normal_conversion("pixilate", PokemonType::Fairy);
+}
