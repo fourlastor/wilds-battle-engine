@@ -6935,3 +6935,89 @@ fn healing_wish_fails_without_a_living_bench_member() {
     assert_eq!(b.participants(Side::Allies)[0].hp, 1000);
     assert!(b.participants(Side::Allies)[0].last_move_failed);
 }
+
+#[test]
+fn lunar_dance_restores_health_status_and_all_pp_including_when_only_pp_is_missing() {
+    for hurt in [false, true] {
+        let mut bench = mon("Bench", &["pound", "splash"]);
+        bench.move_pp.insert("pound".into(), 0);
+        bench.move_pp.insert("splash".into(), 1);
+        if hurt {
+            bench.hp = 100;
+            bench.status = Some(wilds_battle_engine::Status::Burned);
+        }
+        let mut b = Battle::with_rng(
+            Fixed(0.5),
+            [
+                vec![mon("User", &["lunar-dance"]), bench],
+                vec![mon("Foe", &["splash"])],
+            ],
+            MoveCatalog::builtin().unwrap(),
+        )
+        .unwrap();
+        b.set_active([vec![0], vec![0]]).unwrap();
+        turn_with(&mut b, |p| {
+            if p.reason == wilds_battle_engine::PromptReason::Replacement {
+                p.choices[0].id()
+            } else {
+                choose_move(p, "lunar-dance", "splash")
+            }
+        });
+        let bench = &b.participants(Side::Allies)[1];
+        assert_eq!(bench.hp, 1000);
+        assert_eq!(bench.status, None);
+        assert_eq!(bench.move_pp["pound"], 35);
+        assert_eq!(bench.move_pp["splash"], 20);
+        assert_eq!(b.participants(Side::Allies)[0].hp, 0);
+    }
+}
+#[test]
+fn lunar_dance_fails_without_replacements_and_waits_through_a_fully_restored_member() {
+    let mut b = game(
+        mon("User", &["lunar-dance"]),
+        vec![mon("Foe", &["splash"])],
+        0.5,
+    );
+    turn(&mut b);
+    assert_eq!(b.participants(Side::Allies)[0].hp, 1000);
+    assert!(b.participants(Side::Allies)[0].last_move_failed);
+    let mut low_pp = mon("Low PP", &["pound"]);
+    low_pp.move_pp.insert("pound".into(), 0);
+    let mut b = Battle::with_rng(
+        Fixed(0.5),
+        [
+            vec![
+                mon("User", &["lunar-dance"]),
+                mon("Healthy", &["splash"]),
+                low_pp,
+            ],
+            vec![mon("Foe", &["splash"])],
+        ],
+        MoveCatalog::builtin().unwrap(),
+    )
+    .unwrap();
+    b.set_active([vec![0], vec![0]]).unwrap();
+    turn_with(&mut b, |p| {
+        if p.reason == wilds_battle_engine::PromptReason::Replacement {
+            p.choices
+                .iter()
+                .find(|c| matches!(c,Choice::Switch{to,..} if to.index==1))
+                .unwrap()
+                .id()
+        } else {
+            choose_move(p, "lunar-dance", "splash")
+        }
+    });
+    turn_with(&mut b, |p| {
+        if p.actor.side == Side::Allies {
+            p.choices
+                .iter()
+                .find(|c| matches!(c,Choice::Switch{to,..} if to.index==2))
+                .unwrap()
+                .id()
+        } else {
+            choose_move(p, "splash", "splash")
+        }
+    });
+    assert_eq!(b.participants(Side::Allies)[2].move_pp["pound"], 35);
+}

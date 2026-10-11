@@ -4651,6 +4651,17 @@
       "limitations": []
     },
     {
+      "id": 461,
+      "slug": "lunar-dance",
+      "name": "Lunar Dance",
+      "sheet_row": null,
+      "runtime_id": "lunar-dance",
+      "file": "moves/lunar-dance.lua",
+      "status": "implemented",
+      "limitations": [],
+      "parameter_source": "https://pokeapi.co/api/v2/move/461/"
+    },
+    {
       "id": 462,
       "slug": "crush-grip",
       "name": "Crush Grip",
@@ -8124,7 +8135,8 @@
       "encore",
       "beat-up",
       "wish",
-      "healing-wish"
+      "healing-wish",
+      "lunar-dance"
     ]
   }
 }
