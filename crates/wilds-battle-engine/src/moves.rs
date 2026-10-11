@@ -781,11 +781,11 @@ fn rule_of(value: &Value) -> mlua::Result<Rule> {
         RuleKind::AccuracyMultiplier | RuleKind::EffectChance => &["kind", "factor"],
         RuleKind::MoveType => &["kind", "from", "to"],
         RuleKind::AlwaysHit => &["kind", "against"],
+        RuleKind::Trapped => &["kind", "by"],
         RuleKind::WithoutType => &["kind", "type"],
         RuleKind::BlockFlinch
         | RuleKind::BlockStatDrops
         | RuleKind::Grounded
-        | RuleKind::Trapped
         | RuleKind::Endure => &["kind"],
     };
     let options = Options::new(Some(value), "rule", allowed)?;
@@ -883,7 +883,10 @@ fn rule_of(value: &Value) -> mlua::Result<Rule> {
             to: type_of(&required("to")?, "rule option to")?,
         },
         RuleKind::Grounded => Rule::Grounded,
-        RuleKind::Trapped => Rule::Trapped,
+        RuleKind::Trapped => match options.pokemon("by")? {
+            Some(source) => Rule::TrappedBy { source },
+            None => Rule::Trapped,
+        },
         RuleKind::Endure => Rule::Endure,
         RuleKind::AlwaysHit => Rule::AlwaysHit {
             against: options.pokemon("against")?,

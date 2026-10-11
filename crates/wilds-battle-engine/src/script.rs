@@ -218,6 +218,7 @@ impl Battle {
         )?;
         table.raw_set("grounded", self.is_grounded(id))?;
         table.raw_set("trapped", self.trapped(id))?;
+        table.raw_set("linked_trap", self.linked_trap(id))?;
         let (marks, effects) = self.conditions_tables(lua, Scope::Pokemon(id))?;
         table.raw_set("marks", marks)?;
         table.raw_set("effects", effects)?;
@@ -1341,12 +1342,14 @@ impl Battle {
                 min_turns,
                 max_turns,
             } => {
-                let bound = self.get(who).hp > 0
+                let bound = self.get(actor).hp > 0
+                    && self.get(who).hp > 0
                     && self.effectiveness(who, spec.move_type) != 0.0
                     && self.get(who).bound.is_none();
                 if bound {
                     let turns = self.rng.range(min_turns, max_turns);
                     self.get_mut(who).bound = Some(Bound {
+                        by: Some(actor),
                         turns_left: turns,
                         source: spec.name.clone(),
                     });

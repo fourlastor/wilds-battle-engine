@@ -78,6 +78,24 @@ impl Battle {
         if from.side != to.side || !self.bench(from.side).contains(&to) {
             return false;
         }
+        self.release_links(from);
+        // Draining effects attach their recovery to a field slot (for example Leech Seed).
+        for condition in self
+            .sides
+            .iter_mut()
+            .flatten()
+            .flat_map(|p| p.conditions.iter_mut())
+            .chain(self.side_conditions.iter_mut().flatten())
+            .chain(self.field_conditions.iter_mut())
+        {
+            for rule in &mut condition.rules {
+                if let crate::model::Rule::DrainEachTurn { to: recipient, .. } = rule
+                    && *recipient == from
+                {
+                    *recipient = to;
+                }
+            }
+        }
         self.restore_form(from, events);
         let outgoing = self.get_mut(from);
         if let Some((form, base)) = outgoing.battle_base_form.clone() {
@@ -127,5 +145,37 @@ impl Battle {
             self.get(to).name
         )));
         true
+    }
+}
+
+impl Battle {
+    /// A source which leaves or faints cannot trap its old targets again on reentry.
+    pub(crate) fn release_links(&mut self, source: ParticipantId) {
+        use crate::model::Rule;
+        for pokemon in self.sides.iter_mut().flatten() {
+            if pokemon
+                .bound
+                .as_ref()
+                .is_some_and(|bound| bound.by == Some(source))
+            {
+                pokemon.bound = None;
+            }
+        }
+        for conditions in self
+            .sides
+            .iter_mut()
+            .flatten()
+            .map(|p| &mut p.conditions)
+            .chain(self.side_conditions.iter_mut())
+            .chain(std::iter::once(&mut self.field_conditions))
+        {
+            conditions.retain_mut(|condition| {
+                let before = condition.rules.len();
+                condition.rules.retain(
+                    |rule| !matches!(rule, Rule::TrappedBy { source: by } if *by == source),
+                );
+                condition.rules.len() == before || !condition.rules.is_empty()
+            });
+        }
     }
 }

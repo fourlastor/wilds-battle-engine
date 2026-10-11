@@ -268,7 +268,8 @@ ctx:end_effect(ctx.target.team, "reflect")                  -- Brick Break
 | `MovePriority` | `amount` (-7 to 7); adds to priority. Applied after turn-start hooks, retaining existing speed/tie ordering. |
 | `BlockMoves` | nonempty `flags` list, optional `message`; prevents selection and execution of matching moves |
 | `BlockStatus` | `statuses` (all if left out), `confusion`. Does not stop what a Pokémon does to itself. |
-| `BlockStatDrops`, `BlockFlinch`, `Grounded`, `Trapped`, `Endure` | |
+| `BlockStatDrops`, `BlockFlinch`, `Grounded`, `Endure` | |
+| `Trapped` | Optional `by` Pokémon; the trap ends when that source leaves or faints. Without it, a self trap lasts until removed or the holder leaves. |
 | `EffectChance` | `factor` for the `chance` of the holder's extra effects |
 | `MoveType` | `from`, `to` |
 | `AlwaysHit` | `against` one Pokémon, or anyone |
@@ -294,8 +295,10 @@ Lua `pokemon.team.pokemon` includes the living party, while `ctx.allies`, `foes`
 `everyone`, and targets contain living active members. `pokemon.active` and
 `pokemon.position` distinguish the bench (`false`/`nil`) from a field slot.
 
-`Trapped` prevents voluntary switches; source-linked trapping and move-triggered
-switches are separate mechanics. Items and abilities are data that moves can
+`Trapped` prevents voluntary switches. Ghost types and holders of an active
+Shed Shell can escape. `pokemon.linked_trap` reports source-linked trapping
+independently of that escape permission. Binding also ends when its source leaves
+or faints. Move-triggered switches use separate mechanics. Items and abilities are data that moves can
 read, take, give and suppress. Power Herb now
 activates when a move charges: `Effect.TwoTurn`, or a scripted move flagged `charge`
 that calls `force_move(2, ...)`. Its second phase runs immediately, paying PP once.

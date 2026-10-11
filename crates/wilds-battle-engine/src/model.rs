@@ -230,6 +230,10 @@ pub enum Rule {
     Grounded,
     /// Cannot voluntarily switch out.
     Trapped,
+    /// Cannot voluntarily switch while this source remains alive on the field.
+    TrappedBy {
+        source: ParticipantId,
+    },
     /// Survives damage from moves with 1 HP.
     Endure,
     /// The holder's moves cannot miss (only against `against`, if given) and reach hidden targets.
@@ -315,6 +319,7 @@ impl AppliedStatus {
 }
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Bound {
+    pub by: Option<ParticipantId>,
     pub turns_left: u8,
     pub source: String,
 }

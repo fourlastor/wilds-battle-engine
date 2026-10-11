@@ -283,7 +283,19 @@ impl Battle {
     }
     /// Whether an effect keeps this Pokémon from leaving the battle.
     pub fn trapped(&self, id: ParticipantId) -> bool {
-        self.is_trapped(id) || self.get(id).bound.is_some()
+        if !self.is_active(id)
+            || self.get(id).hp == 0
+            || self.types_of(id).contains(&PokemonType::Ghost)
+        {
+            return false;
+        }
+        let shell = self
+            .get(id)
+            .item
+            .as_deref()
+            .is_some_and(|item| crate::items::item_key(item) == "shedshell")
+            && !self.has_ability(id, "klutz");
+        !shell && (self.is_trapped(id) || self.get(id).bound.is_some())
     }
     pub(crate) fn get(&self, id: ParticipantId) -> &Pokemon {
         &self.sides[id.side.index()][id.index]
@@ -1487,11 +1499,14 @@ impl Battle {
                 }
             }
             Effect::Bind => {
-                if self.effectiveness(target, spec.move_type) != 0.0
+                if self.get(actor).hp > 0
+                    && self.get(target).hp > 0
+                    && self.effectiveness(target, spec.move_type) != 0.0
                     && self.get(target).bound.is_none()
                 {
                     let turns = self.rng.range(4, 5);
                     self.get_mut(target).bound = Some(Bound {
+                        by: Some(actor),
                         turns_left: turns,
                         source: spec.name.clone(),
                     });
@@ -1984,6 +1999,7 @@ impl Battle {
         let name = p.name.clone();
         events.push(BattleEvent::Damage { target, amount, hp });
         if was_alive && hp == 0 {
+            self.release_links(target);
             self.restore_form(target, events);
             self.get_mut(target).conditions.clear();
             self.last_faint_turn[target.side.index()] = Some(turn);

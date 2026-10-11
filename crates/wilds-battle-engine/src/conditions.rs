@@ -296,7 +296,14 @@ impl Battle {
     }
 
     pub(crate) fn is_trapped(&self, id: ParticipantId) -> bool {
-        self.rules(id).any(|rule| matches!(rule, Rule::Trapped))
+        self.rules(id).any(|rule| matches!(rule, Rule::Trapped)) || self.linked_trap(id)
+    }
+
+    pub(crate) fn linked_trap(&self, id: ParticipantId) -> bool {
+        self.rules(id).any(|rule| {
+            matches!(rule, Rule::TrappedBy { source }
+            if self.is_active(*source) && self.get(*source).hp > 0)
+        })
     }
 
     pub(crate) fn blocks_flinch(&self, id: ParticipantId) -> bool {

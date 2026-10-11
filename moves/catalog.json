@@ -7,7 +7,7 @@
   ],
   "parameter_policy": "JSON names and parameters; actual behavior for conflicting spreadsheet descriptions; original runtime IDs and behaviors retained for existing moves. Gravity and Stockpile have no local source JSON and use PokeAPI parameters.",
   "global_limitations": [
-    "The engine supports benches, voluntary switching, selected item/ability effects, redirection and move-priority hooks. Move-triggered switching, linked traps, carrying and substitute remain unsupported; the item and ability catalogs are not exhaustive.",
+    "The engine supports benches, voluntary switching, selected item/ability effects, redirection and move-priority hooks. Move-triggered switching, carrying and substitute remain unsupported; the item and ability catalogs are not exhaustive.",
     "General battle interactions follow the current Rust engine; catalog coverage is not full official battle parity."
   ],
   "moves": [
@@ -4468,10 +4468,8 @@
       "sheet_row": 437,
       "runtime_id": "thousand-waves",
       "file": "moves/thousand-waves.lua",
-      "status": "partial",
-      "limitations": [
-        "Trapping is recorded as a Trapped rule for the host; the engine has no switching or bench."
-      ]
+      "status": "implemented",
+      "limitations": []
     },
     {
       "id": 616,
@@ -4560,10 +4558,8 @@
       "sheet_row": 447,
       "runtime_id": "spirit-shackle",
       "file": "moves/spirit-shackle.lua",
-      "status": "partial",
-      "limitations": [
-        "Trapping is recorded as a Trapped rule for the host; the engine has no switching or bench."
-      ]
+      "status": "implemented",
+      "limitations": []
     },
     {
       "id": 663,
@@ -4662,10 +4658,8 @@
       "sheet_row": 457,
       "runtime_id": "anchor-shot",
       "file": "moves/anchor-shot.lua",
-      "status": "partial",
-      "limitations": [
-        "Trapping is recorded as a Trapped rule for the host; the engine has no switching or bench."
-      ]
+      "status": "implemented",
+      "limitations": []
     },
     {
       "id": 679,
@@ -5097,10 +5091,8 @@
       "sheet_row": 515,
       "runtime_id": "jaw-lock",
       "file": "moves/jaw-lock.lua",
-      "status": "partial",
-      "limitations": [
-        "Trapping is recorded as a Trapped rule for the host; the engine has no switching or bench."
-      ]
+      "status": "implemented",
+      "limitations": []
     },
     {
       "id": 747,
@@ -5119,10 +5111,8 @@
       "sheet_row": 517,
       "runtime_id": "no-retreat",
       "file": "moves/no-retreat.lua",
-      "status": "partial",
-      "limitations": [
-        "Trapping is recorded as a Trapped rule for the host; the engine has no switching or bench."
-      ]
+      "status": "implemented",
+      "limitations": []
     },
     {
       "id": 778,
