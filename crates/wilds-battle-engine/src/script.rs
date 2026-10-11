@@ -297,6 +297,18 @@ impl Battle {
             consumed.raw_set(item.as_str(), true)?;
         }
         table.raw_set("consumed_items", consumed)?;
+        table.raw_set(
+            "item_kind",
+            pokemon.item.as_deref().and_then(|id| {
+                if crate::berries::is_berry(id) {
+                    Some("berry")
+                } else if crate::items::gem_type(id).is_some() {
+                    Some("gem")
+                } else {
+                    None
+                }
+            }),
+        )?;
         table.raw_set("ate_berry", self.has_eaten_berry(id))?;
         Ok(())
     }
@@ -663,6 +675,7 @@ impl Battle {
         let hit = if let Some(base) = ohko {
             self.ohko_hit_check(actor, recipient, base, options.never_miss)
         } else if options.never_miss || self.always_hits(actor, recipient) {
+            self.end_condition(Scope::Pokemon(actor), "micle_berry");
             true
         } else if let Some(value) = options.accuracy {
             self.hit_check_chance(actor, recipient, value, options.ignore_evasion)
@@ -685,6 +698,7 @@ impl Battle {
             high_crit: options.high_crit,
             always_crit: options.always_crit,
             force_stab: options.force_stab,
+            no_gem: frame.spec.has_flag("no_gem"),
             consecutive_boost: 0,
             typeless: options.typeless,
             move_type: self.converted_type(
@@ -708,6 +722,7 @@ impl Battle {
         options: &DamageOptions,
         events: &mut Vec<BattleEvent>,
     ) -> Result<DamageReport, BattleError> {
+        self.update_berries(events);
         let actor = frame.actor;
         let targets = match options.target {
             Some(one) => vec![one],
@@ -747,7 +762,13 @@ impl Battle {
             let actual = roll
                 .amount
                 .min(self.get(recipient).hp.saturating_sub(options.min_target_hp));
-            self.damage_from_move(actor, recipient, actual, &meta, events)?;
+            self.damage_from_move(
+                actor,
+                recipient,
+                actual,
+                &meta.clone().with_effectiveness(roll.effectiveness),
+                events,
+            )?;
             events.extend(details);
             report.hit = true;
             report.hits += 1;
@@ -823,35 +844,38 @@ impl Battle {
         }
         report.reached.push(recipient);
         let hits = self.rng.range(min, max);
-        // All hits are worked out against the target as it was before the first one.
-        let mut amounts = Vec::new();
         let mut details = Vec::new();
-        const CRIT: &str = "A critical hit!";
-        let is_crit =
-            |event: &BattleEvent| matches!(event, BattleEvent::Message(text) if text == CRIT);
         for _ in 0..hits {
+            if self.get(actor).hp == 0 || self.get(recipient).hp == 0 {
+                break;
+            }
             let mut hit_details = Vec::new();
             if let Some(roll) = self.calculate(actor, recipient, &attack, &mut hit_details) {
-                amounts.push(roll.amount);
+                let actual = roll
+                    .amount
+                    .min(self.get(recipient).hp.saturating_sub(options.min_target_hp));
+                self.damage_from_move(
+                    actor,
+                    recipient,
+                    actual,
+                    &meta.clone().with_effectiveness(roll.effectiveness),
+                    events,
+                )?;
+                self.update_berries(events);
+                report.damage = report.damage.saturating_add(actual);
+                report.hits += 1;
                 report.critical |= roll.critical;
                 report.effectiveness = roll.effectiveness;
-                if details.is_empty() {
-                    details.extend(hit_details.iter().filter(|event| !is_crit(event)).cloned());
-                }
-                if hit_details.iter().any(is_crit) && !details.iter().any(is_crit) {
-                    details.push(BattleEvent::Message(CRIT.into()));
+                for event in hit_details {
+                    if !details.contains(&event) {
+                        details.push(event);
+                    }
                 }
             }
         }
-        for amount in amounts {
-            let actual = amount.min(self.get(recipient).hp.saturating_sub(options.min_target_hp));
-            self.damage_from_move(actor, recipient, actual, &meta, events)?;
-            report.damage = report.damage.saturating_add(actual);
-        }
         events.extend(details);
-        events.push(BattleEvent::Message(format!("Hit {hits} times!")));
-        report.hit = true;
-        report.hits = hits;
+        events.push(BattleEvent::Message(format!("Hit {} times!", report.hits)));
+        report.hit = report.hits > 0;
         report.fainted = self.get(recipient).hp == 0;
         frame.any_hit = true;
         Ok(report)

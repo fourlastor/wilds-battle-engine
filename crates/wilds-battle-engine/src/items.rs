@@ -157,11 +157,68 @@ impl Battle {
     pub(crate) fn steal_item(&mut self, from: ParticipantId, to: ParticipantId) -> Option<String> {
         let receiver = self.get(to);
         let item = self.get(from).item.as_ref()?;
-        if receiver.hp == 0 || receiver.item.is_some() || bound_to(&item_key(item), receiver) {
+        if receiver.hp == 0
+            || receiver.item.is_some()
+            || bound_to(&item_key(item), receiver)
+            || self.active_gem.is_some_and(|(owner, _)| owner == to)
+        {
             return None;
         }
         let item = self.take_item(from, to)?;
         self.get_mut(to).item = Some(item.clone());
         Some(item)
+    }
+}
+
+pub(crate) fn gem_type(item: &str) -> Option<crate::model::PokemonType> {
+    use crate::model::PokemonType::*;
+    Some(match item_key(item).as_str() {
+        "normalgem" => Normal,
+        "firegem" => Fire,
+        "watergem" => Water,
+        "electricgem" => Electric,
+        "grassgem" => Grass,
+        "icegem" => Ice,
+        "fightinggem" => Fighting,
+        "poisongem" => Poison,
+        "groundgem" => Ground,
+        "flyinggem" => Flying,
+        "psychicgem" => Psychic,
+        "buggem" => Bug,
+        "rockgem" => Rock,
+        "ghostgem" => Ghost,
+        "dragongem" => Dragon,
+        "darkgem" => Dark,
+        "steelgem" => Steel,
+        "fairygem" => Fairy,
+        _ => return Option::None,
+    })
+}
+
+impl Battle {
+    pub(crate) fn gem_factor(
+        &mut self,
+        actor: ParticipantId,
+        kind: crate::model::PokemonType,
+        events: &mut Vec<BattleEvent>,
+    ) -> f32 {
+        if self.active_gem == Some((actor, kind)) {
+            return 1.3;
+        }
+        if self.has_ability(actor, "klutz")
+            || self.get(actor).item.as_deref().and_then(gem_type) != Some(kind)
+        {
+            return 1.0;
+        }
+        if let Some(item) = self.consume_item(actor) {
+            self.active_gem = Some((actor, kind));
+            events.push(BattleEvent::Message(format!(
+                "{} used its {item}!",
+                self.get(actor).name
+            )));
+            1.3
+        } else {
+            1.0
+        }
     }
 }

@@ -18,6 +18,8 @@ pub struct Battle {
     pub(crate) winner: Option<Option<Side>>,
     pub(crate) turn: u64,
     active_power_multiplier: f32,
+    pub(crate) active_gem: Option<(ParticipantId, PokemonType)>,
+    pub(crate) item_hits: Vec<(ParticipantId, ParticipantId, HitMeta)>,
     pub(crate) hit_reactions: Vec<HitReaction>,
     pub(crate) reaction_hit: Option<HitInfo>,
     pub(crate) side_conditions: [Vec<Condition>; 2],
@@ -43,11 +45,14 @@ pub(crate) struct HitReaction {
 }
 
 /// What a hit was, for the Pokémon it lands on.
+#[derive(Clone)]
 pub(crate) struct HitMeta {
     move_id: String,
-    category: Category,
-    move_type: PokemonType,
+    pub(crate) category: Category,
+    pub(crate) move_type: PokemonType,
     contact: bool,
+    pub(crate) defer_items: bool,
+    pub(crate) effectiveness: Option<f32>,
 }
 impl HitMeta {
     pub(crate) fn of(spec: &MoveSpec, category: Category, move_type: PokemonType) -> Self {
@@ -56,12 +61,18 @@ impl HitMeta {
             category,
             move_type,
             contact: spec.has_flag("contact"),
+            defer_items: spec.has_flag("item_effect_on_hit"),
+            effectiveness: None,
         }
     }
     pub(crate) fn with_contact(mut self, contact: Option<bool>) -> Self {
         if let Some(contact) = contact {
             self.contact = contact;
         }
+        self
+    }
+    pub(crate) fn with_effectiveness(mut self, effectiveness: f32) -> Self {
+        self.effectiveness = Some(effectiveness);
         self
     }
     fn plain(spec: &MoveSpec) -> Self {
@@ -75,6 +86,7 @@ pub(crate) struct Attack<'a> {
     pub(crate) high_crit: bool,
     pub(crate) always_crit: bool,
     pub(crate) force_stab: bool,
+    pub(crate) no_gem: bool,
     pub(crate) consecutive_boost: u8,
     pub(crate) typeless: bool,
     pub(crate) move_type: PokemonType,
@@ -171,6 +183,8 @@ impl Battle {
             winner: None,
             turn: 0,
             active_power_multiplier: 1.0,
+            active_gem: None,
+            item_hits: Vec::new(),
             hit_reactions: Vec::new(),
             reaction_hit: None,
             side_conditions: [Vec::new(), Vec::new()],
@@ -444,6 +458,7 @@ impl Battle {
     }
     fn resolve_turn(&mut self) -> Result<Vec<BattleEvent>, BattleError> {
         self.turn += 1;
+        let mut events = Vec::new();
         let mut ordered: Vec<_> = std::mem::take(&mut self.selections)
             .into_iter()
             .map(|(actor, choice)| {
@@ -457,7 +472,13 @@ impl Battle {
                     ),
                     SelectedAction::Recharge => 0,
                 };
-                let speed = self.stat_value(actor, CombatStat::Speed) as i32;
+                let speed = if matches!(choice, SelectedAction::Move(_))
+                    && self.custap_priority(actor, &mut events)
+                {
+                    i32::MAX
+                } else {
+                    self.stat_value(actor, CombatStat::Speed) as i32
+                };
                 (actor, choice, priority, speed, self.rng.next_u64())
             })
             .collect();
@@ -478,7 +499,6 @@ impl Battle {
             })
             .collect();
         self.hurry.clear();
-        let mut events = Vec::new();
         // Moves that get ready before anyone acts (Focus Punch, Beak Blast).
         for (actor, choice, ..) in &ordered {
             let SelectedAction::Move(choice) = choice else {
@@ -573,6 +593,7 @@ impl Battle {
         if self.winner.is_none() {
             let order: Vec<ParticipantId> = ordered.iter().map(|entry| entry.0).collect();
             self.tick_conditions(&order, &mut events);
+            self.residual_berries(&mut events);
             self.update_berries(&mut events);
             self.resolve_outcome(&mut events);
         }
@@ -605,7 +626,9 @@ impl Battle {
         events: &mut Vec<BattleEvent>,
     ) -> Result<(), BattleError> {
         self.move_failed = false;
+        self.active_gem = None;
         let used = self.perform_move(actor, choice, events)?;
+        self.finish_item_hits(events);
         let failed = self.move_failed;
         let pokemon = self.get_mut(actor);
         if used {
@@ -1053,11 +1076,18 @@ impl Battle {
         ignore_evasion: bool,
     ) -> bool {
         match spec.accuracy {
-            Accuracy::Always => true,
+            Accuracy::Always => {
+                self.end_condition(Scope::Pokemon(actor), "micle_berry");
+                true
+            }
             Accuracy::OneHitKnockout => self.ohko_hit_check(actor, target, 0.3, false),
             Accuracy::Chance(value) => {
-                self.always_hits(actor, target)
-                    || self.hit_check_chance(actor, target, value, ignore_evasion)
+                if self.always_hits(actor, target) {
+                    self.end_condition(Scope::Pokemon(actor), "micle_berry");
+                    true
+                } else {
+                    self.hit_check_chance(actor, target, value, ignore_evasion)
+                }
             }
         }
     }
@@ -1158,10 +1188,12 @@ impl Battle {
                     return Ok(());
                 }
                 let hits = self.rng.range(*min, *max);
-                // C# calculates all hits from the same pre-hit target snapshot.
-                let mut amounts = Vec::new();
+                let mut count = 0;
                 let mut details = Vec::new();
                 for _ in 0..hits {
+                    if self.get(actor).hp == 0 || self.get(target).hp == 0 {
+                        break;
+                    }
                     let mut hit_details = Vec::new();
                     if let Some(amount) = self.calculate_damage(
                         actor,
@@ -1174,21 +1206,24 @@ impl Battle {
                         false,
                         &mut hit_details,
                     ) {
-                        amounts.push(amount);
-                        if details.is_empty() {
-                            details.extend(hit_details.iter().filter(|event| !matches!(event, BattleEvent::Message(message) if message == "A critical hit!")).cloned());
-                        }
-                        if hit_details.iter().any(|event| matches!(event, BattleEvent::Message(message) if message == "A critical hit!"))
-                            && !details.iter().any(|event| matches!(event, BattleEvent::Message(message) if message == "A critical hit!")) {
-                            details.push(BattleEvent::Message("A critical hit!".into()));
+                        self.damage_from_move(
+                            actor,
+                            target,
+                            amount,
+                            &HitMeta::plain(spec),
+                            events,
+                        )?;
+                        self.update_berries(events);
+                        count += 1;
+                        for event in hit_details {
+                            if !details.contains(&event) {
+                                details.push(event);
+                            }
                         }
                     }
                 }
-                for amount in amounts {
-                    self.damage_from_move(actor, target, amount, &HitMeta::plain(spec), events)?;
-                }
                 events.extend(details);
-                events.push(BattleEvent::Message(format!("Hit {hits} times!")));
+                events.push(BattleEvent::Message(format!("Hit {count} times!")));
             }
             Effect::FixedDamage(amount) => {
                 self.direct_damage(actor, target, spec, *amount, events)?
@@ -1504,6 +1539,7 @@ impl Battle {
             high_crit,
             always_crit,
             force_stab: false,
+            no_gem: spec.has_flag("no_gem"),
             consecutive_boost,
             typeless,
             move_type: self.converted_type(actor, spec.move_type),
@@ -1582,7 +1618,13 @@ impl Battle {
             defense *= 1.5;
         }
         defense = defense.max(1.0);
-        let adjusted_power = f32::from(attack.power)
+        let gem = if typeless || attack.no_gem || actor == target {
+            1.0
+        } else {
+            self.gem_factor(actor, move_type, events)
+        };
+        let adjusted_power = gem
+            * f32::from(attack.power)
             * 2f32.powi(attack.consecutive_boost as i32)
             * self.active_power_multiplier;
         let mut damage =
@@ -1617,6 +1659,9 @@ impl Battle {
         let taken = self.damage_taken_factor(target, attack.category, move_type, crit);
         if dealt != 1.0 || taken != 1.0 {
             damage *= dealt * taken;
+        }
+        if !typeless {
+            damage *= self.resistance_berry_factor(target, move_type, effectiveness, events);
         }
         damage *= self.rng.damage_roll();
         let amount = (damage.round() as u16).max(1);
@@ -1666,6 +1711,10 @@ impl Battle {
             self.damage(target, amount, events);
         }
         let lost = before - self.get(target).hp;
+        self.item_hits.push((actor, target, meta.clone()));
+        if !meta.defer_items {
+            self.berry_hit(actor, target, meta, events);
+        }
         let hit = HitInfo {
             attacker: actor,
             move_id: meta.move_id.clone(),

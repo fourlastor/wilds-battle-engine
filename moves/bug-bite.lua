@@ -1,6 +1,5 @@
 -- Move 450: Bug Bite. Identity and parameters: pokemon_data/assets/moves/450.json.
 -- Behavior checked against PokeAPI; see catalog.json for scope and limitations.
--- INCOMPLETE: Berry consumption effects and history are implemented; resistance and reactive berry timing still require engine support.
 
 local move = {script = function(ctx)
 local hit = ctx:damage(60)
@@ -15,5 +14,5 @@ move.pp = 20
 move.accuracy = 1
 move.priority = 0
 move.target = Target.Selected
-move.flags = {"contact", "incomplete"}
+move.flags = {"item_effect_on_hit", "contact"}
 return move

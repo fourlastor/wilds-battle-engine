@@ -2660,10 +2660,8 @@
       "sheet_row": 258,
       "runtime_id": "pluck",
       "file": "moves/pluck.lua",
-      "status": "partial",
-      "limitations": [
-        "Berry consumption effects and history are implemented; resistance and reactive berry timing still require engine support."
-      ]
+      "status": "implemented",
+      "limitations": []
     },
     {
       "id": 369,
@@ -3246,10 +3244,8 @@
       "sheet_row": 316,
       "runtime_id": "bug-bite",
       "file": "moves/bug-bite.lua",
-      "status": "partial",
-      "limitations": [
-        "Berry consumption effects and history are implemented; resistance and reactive berry timing still require engine support."
-      ]
+      "status": "implemented",
+      "limitations": []
     },
     {
       "id": 451,
@@ -3664,10 +3660,8 @@
       "sheet_row": 357,
       "runtime_id": "incinerate",
       "file": "moves/incinerate.lua",
-      "status": "partial",
-      "limitations": [
-        "Removing berries/gems works, but pre-hit item activation timing requires an item engine."
-      ]
+      "status": "implemented",
+      "limitations": []
     },
     {
       "id": 512,

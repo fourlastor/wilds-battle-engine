@@ -295,3 +295,126 @@ impl Battle {
         }
     }
 }
+
+impl Battle {
+    pub(crate) fn resistance_berry_factor(
+        &mut self,
+        target: ParticipantId,
+        kind: PokemonType,
+        effectiveness: f32,
+        events: &mut Vec<BattleEvent>,
+    ) -> f32 {
+        let Some(Berry::Resist(resists)) = self.get(target).item.as_deref().and_then(berry) else {
+            return 1.0;
+        };
+        if resists != kind || (kind != PokemonType::Normal && effectiveness <= 1.0) {
+            return 1.0;
+        }
+        let ripen = self.has_ability(target, "ripen");
+        if self.eat_berry(target, false, events) {
+            if ripen { 0.25 } else { 0.5 }
+        } else {
+            1.0
+        }
+    }
+
+    pub(crate) fn berry_hit(
+        &mut self,
+        actor: ParticipantId,
+        target: ParticipantId,
+        meta: &crate::engine::HitMeta,
+        events: &mut Vec<BattleEvent>,
+    ) {
+        let Some(item) = self.get(target).item.as_deref().map(item_key) else {
+            return;
+        };
+        if item == "enigmaberry"
+            && meta
+                .effectiveness
+                .unwrap_or_else(|| self.effectiveness(target, meta.move_type))
+                > 1.0
+        {
+            let factor = if self.has_ability(target, "ripen") {
+                2
+            } else {
+                1
+            };
+            if self.eat_berry(target, false, events) {
+                self.heal(
+                    target,
+                    (self.get(target).max_hp / 4).max(1) * factor,
+                    events,
+                );
+            }
+        } else if ((item == "jabocaberry" && meta.category == crate::moves::Category::Physical)
+            || (item == "rowapberry" && meta.category == crate::moves::Category::Special))
+            && self.get(actor).hp > 0
+            && !self.has_ability(actor, "magicguard")
+        {
+            let divisor = if self.has_ability(target, "ripen") {
+                4
+            } else {
+                8
+            };
+            if self.eat_berry(target, false, events) {
+                self.damage(actor, (self.get(actor).max_hp / divisor).max(1), events);
+            }
+        }
+    }
+
+    pub(crate) fn finish_item_hits(&mut self, events: &mut Vec<BattleEvent>) {
+        for (actor, target, meta) in std::mem::take(&mut self.item_hits) {
+            if meta.defer_items {
+                self.berry_hit(actor, target, &meta, events);
+            }
+            let Some(item) = self.get(target).item.as_deref().map(item_key) else {
+                continue;
+            };
+            if (item == "keeberry" && meta.category == crate::moves::Category::Physical)
+                || (item == "marangaberry" && meta.category == crate::moves::Category::Special)
+            {
+                self.eat_berry(target, false, events);
+            }
+        }
+    }
+
+    pub(crate) fn custap_priority(
+        &mut self,
+        who: ParticipantId,
+        events: &mut Vec<BattleEvent>,
+    ) -> bool {
+        let p = self.get(who);
+        let low = p.hp
+            <= p.max_hp
+                / if self.has_ability(who, "gluttony") {
+                    2
+                } else {
+                    4
+                };
+        low && p
+            .item
+            .as_deref()
+            .is_some_and(|id| item_key(id) == "custapberry")
+            && self.eat_berry(who, false, events)
+    }
+
+    pub(crate) fn residual_berries(&mut self, events: &mut Vec<BattleEvent>) {
+        for who in self.actors() {
+            let p = self.get(who);
+            let low = p.hp
+                <= p.max_hp
+                    / if self.has_ability(who, "gluttony") {
+                        2
+                    } else {
+                        4
+                    };
+            if low
+                && p.item
+                    .as_deref()
+                    .is_some_and(|id| item_key(id) == "micleberry")
+            {
+                self.eat_berry(who, false, events);
+            }
+        }
+    }
+}

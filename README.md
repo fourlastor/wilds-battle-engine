@@ -281,7 +281,7 @@ The engine has no switching and no bench: `Trapped` is only reported
 abilities are data that moves can read, take, give and suppress. Power Herb now
 activates when a move charges: `Effect.TwoTurn`, or a scripted move flagged `charge`
 that calls `force_move(2, ...)`. Its second phase runs immediately, paying PP once.
-Weather shortcuts preserve the item. Other item activation and ability effects
+Weather shortcuts preserve the item. Berry and gem activation also run in the engine. Other item and ability effects
 remain separate mechanics.
 
 ### Host setup
@@ -293,8 +293,14 @@ Besides stats and moves, each Pokémon in the setup JSON can carry `species`,
 `field` and on both `sides`, and the `payout` earned by each side.
 
 Berry consumption supports the generation 3–8 berries. Health and status berries
-activate between actions and before choices; hit-triggered berries are tracked
-separately. `who.ate_berry` persists for the battle and gates Belch in both move
+activate between actions and before choices. Resistance berries activate before
+damage; reactive berries run after their hit or after all hits, as appropriate.
+Multi-hit attacks resolve each hit against current state, including healing
+between hits. `item_effect_on_hit` lets scripts remove or eat a target's item
+before its later reactions (Pluck, Bug Bite, Incinerate). Type gems boost the
+entire matching attack, including every target and hit, and are consumed once.
+Custap changes ordering within the existing priority bracket; Micle grants its
+next eligible accuracy check a bonus and then expires. `who.ate_berry` persists for the battle and gates Belch in both move
 selection and execution. Stuff Cheeks requires a held berry and consumes it after
 a successful Defense increase. Hosts may supply `nature_down` (a `CombatStat` in
 Rust or `"Attack"`, `"Defense"`, `"SpAttack"`, `"SpDefense"`, `"Speed"` in setup JSON)

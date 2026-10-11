@@ -87,6 +87,231 @@ fn said(events: &[BattleEvent], text: &str) -> bool {
 }
 
 #[test]
+fn pledge_moves_do_not_consume_gems() {
+    for (attack, item) in [
+        ("fire-pledge", "fire-gem"),
+        ("water-pledge", "water-gem"),
+        ("grass-pledge", "grass-gem"),
+    ] {
+        let mut user = mon("User", &[attack]);
+        user.item = Some(item.into());
+        let mut game = Game::new(vec![user], vec![mon("Target", &["splash"])], 0.5);
+        game.turn(attack, "splash");
+        assert_eq!(game.ally().item.as_deref(), Some(item));
+    }
+}
+
+#[test]
+fn item_effects_cover_spread_hits_and_stop_multi_hits_after_a_knockout() {
+    let mut user = mon("User", &["incinerate"]);
+    user.item = Some("fire-gem".into());
+    let mut game = Game::new(
+        vec![user],
+        vec![mon("A", &["splash"]), mon("B", &["splash"])],
+        0.5,
+    );
+    let events = game.turn("incinerate", "splash");
+    assert_eq!(
+        game.0.participants(Side::Foes)[0].hp,
+        game.0.participants(Side::Foes)[1].hp
+    );
+    assert_eq!(
+        events
+            .iter()
+            .filter(
+                |e| matches!(e, BattleEvent::Message(text) if text.contains("used its fire-gem"))
+            )
+            .count(),
+        1
+    );
+    for attack in ["double_kick", "arm-thrust"] {
+        let mut target = mon("Target", &["splash"]);
+        target.hp = 1;
+        let mut game = Game::duel(&[attack], target, 0.5);
+        let events = game.turn(attack, "splash");
+        assert!(said(&events, "Hit 1 times!"));
+        let mut target = mon("Target", &["splash"]);
+        target.item = Some("kee-berry".into());
+        let mut game = Game::duel(&[attack], target, 0.5);
+        let events = game.turn(attack, "splash");
+        let hits: Vec<_> = events
+            .iter()
+            .filter_map(|e| match e {
+                BattleEvent::Damage { target, amount, .. } if target.side == Side::Foes => {
+                    Some(*amount)
+                }
+                _ => None,
+            })
+            .collect();
+        assert!(hits.iter().all(|amount| *amount == hits[0]));
+        assert_eq!(game.foe().stage(Stat::Defense), 1);
+    }
+}
+
+#[test]
+fn resistance_berries_activate_before_the_hit_and_cannot_be_stolen_afterward() {
+    for (attack, berry, kind) in [
+        ("ember", "occa-berry", PokemonType::Grass),
+        ("bug-bite", "tanga-berry", PokemonType::Grass),
+        ("tackle", "chilan-berry", PokemonType::Normal),
+    ] {
+        let run = |item: Option<&str>| {
+            let mut target = mon("Target", &["splash"]);
+            target.types = vec![kind];
+            target.item = item.map(str::to_string);
+            let mut game = Game::duel(&[attack], target, 0.5);
+            game.turn(attack, "splash");
+            game
+        };
+        let baseline = 1000 - run(None).foe().hp;
+        let reduced = run(Some(berry));
+        assert!((i32::from(1000 - reduced.foe().hp) * 2 - i32::from(baseline)).abs() <= 1);
+        assert!(reduced.foe().ate_berry);
+        assert!(!reduced.ally().ate_berry);
+    }
+    let mut target = mon("Target", &["protect"]);
+    target.item = Some("chilan-berry".into());
+    let mut game = Game::duel(&["tackle"], target, 0.5);
+    game.turn("tackle", "protect");
+    assert!(game.foe().item.is_some());
+    assert!(!game.foe().ate_berry);
+}
+
+#[test]
+fn multi_hit_attacks_consume_resistance_once_and_heal_between_hits() {
+    for attack in ["double_kick", "arm-thrust", "triple_kick"] {
+        let run = |item: Option<&str>| {
+            let mut target = mon("Target", &["splash"]);
+            target.item = item.map(str::to_string);
+            let mut game = Game::duel(&[attack], target, 0.5);
+            let events = game.turn(attack, "splash");
+            events
+                .iter()
+                .filter_map(|e| match e {
+                    BattleEvent::Damage { target, amount, .. } if target.side == Side::Foes => {
+                        Some(*amount)
+                    }
+                    _ => None,
+                })
+                .collect::<Vec<_>>()
+        };
+        let baseline = run(None);
+        let reduced = run(Some("chople-berry"));
+        assert_eq!(baseline.len(), reduced.len());
+        assert_eq!(baseline[1..], reduced[1..], "{attack}");
+        assert!(reduced[0] < baseline[0]);
+    }
+    let mut attacker = mon("User", &["double_kick"]);
+    attacker.attack = 400;
+    let mut target = mon("Target", &["splash"]);
+    target.hp = 600;
+    target.item = Some("sitrus-berry".into());
+    let mut game = Game::new(vec![attacker], vec![target], 0.5);
+    let events = game.turn("double_kick", "splash");
+    let damage_indices: Vec<_> = events
+        .iter()
+        .enumerate()
+        .filter_map(|(i, e)| {
+            matches!(e, BattleEvent::Damage { target, .. } if target.side == Side::Foes)
+                .then_some(i)
+        })
+        .collect();
+    let heal_index = events
+        .iter()
+        .position(|e| matches!(e, BattleEvent::Heal { target, .. } if target.side == Side::Foes))
+        .unwrap();
+    assert!(damage_indices[0] < heal_index && heal_index < damage_indices[1]);
+}
+
+#[test]
+fn berry_theft_and_destruction_precede_reactive_berries() {
+    for attack in ["pluck", "bug-bite", "incinerate"] {
+        for berry in [
+            "jaboca-berry",
+            "rowap-berry",
+            "kee-berry",
+            "maranga-berry",
+            "enigma-berry",
+        ] {
+            let mut user = mon("User", &[attack]);
+            user.item = Some("leftovers".into());
+            let mut target = mon("Target", &["splash"]);
+            target.types = vec![PokemonType::Grass];
+            target.item = Some(berry.into());
+            let mut game = Game::new(vec![user], vec![target], 0.5);
+            game.turn(attack, "splash");
+            assert!(game.foe().item.is_none());
+            assert!(!game.foe().ate_berry);
+            assert_eq!(game.foe().stage(Stat::Defense), 0);
+            assert_eq!(game.foe().stage(Stat::SpDefense), 0);
+            assert_eq!(game.ally().hp, 1000);
+            assert_eq!(game.ally().item.as_deref(), Some("leftovers"));
+        }
+    }
+    let mut target = mon("Target", &["splash"]);
+    target.item = Some("jaboca-berry".into());
+    let mut game = Game::duel(&["thief"], target, 0.5);
+    game.turn("thief", "splash");
+    assert_eq!(game.ally().hp, 875);
+    assert!(game.ally().item.is_none());
+    assert!(game.foe().ate_berry);
+}
+
+#[test]
+fn gems_activate_once_per_move_and_prevent_same_move_theft() {
+    let run = |item: Option<&str>| {
+        let mut user = mon("User", &["thief"]);
+        user.item = item.map(str::to_string);
+        let mut foe = mon("Target", &["splash"]);
+        foe.item = Some("leftovers".into());
+        let mut game = Game::new(vec![user], vec![foe], 0.5);
+        game.turn("thief", "splash");
+        game
+    };
+    let baseline = run(None);
+    let boosted = run(Some("dark-gem"));
+    assert!(boosted.foe().hp < baseline.foe().hp);
+    assert!(boosted.ally().item.is_none());
+    assert_eq!(boosted.foe().item.as_deref(), Some("leftovers"));
+    assert!(boosted.ally().consumed_items.contains("dark-gem"));
+    assert!(!boosted.ally().ate_berry);
+    let mut target = mon("Target", &["splash"]);
+    target.item = Some("berry-sweet".into());
+    let mut game = Game::duel(&["incinerate"], target, 0.5);
+    game.turn("incinerate", "splash");
+    assert!(game.foe().item.is_some());
+}
+
+#[test]
+fn custap_and_micle_berries_activate_at_their_order_and_accuracy_hooks() {
+    let mut user = mon("User", &["tackle"]);
+    user.hp = 200;
+    user.speed = 1;
+    user.item = Some("custap-berry".into());
+    let mut game = Game::new(vec![user], vec![mon("Target", &["tackle"])], 0.5);
+    let events = game.turn("tackle", "tackle");
+    let first = events
+        .iter()
+        .find_map(|e| match e {
+            BattleEvent::Message(text) if text.contains("used Tackle") => Some(text),
+            _ => None,
+        })
+        .unwrap();
+    assert!(first.starts_with("User"));
+    assert!(game.ally().ate_berry);
+    let mut user = mon("User", &["splash", "fire-blast"]);
+    user.hp = 200;
+    user.item = Some("micle-berry".into());
+    let mut game = Game::new(vec![user], vec![mon("Target", &["splash"])], 0.95);
+    game.turn("splash", "splash");
+    game.turn("fire-blast", "splash");
+    let before = game.foe().hp;
+    assert!(before < 1000);
+    game.turn("fire-blast", "splash");
+    assert_eq!(game.foe().hp, before);
+}
+
+#[test]
 fn stuff_cheeks_consumes_berries_and_applies_their_effects() {
     for (item, hp, attack, defense, special_defense) in [
         ("sitrus-berry", 850, 0, 2, 0),
