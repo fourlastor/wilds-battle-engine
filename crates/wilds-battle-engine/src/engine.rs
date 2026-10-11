@@ -2950,7 +2950,10 @@ impl Battle {
         };
         for id in order {
             let p = self.get(*id).clone();
-            if p.hp == 0 || p.types.iter().any(|kind| spared.contains(kind)) {
+            if p.hp == 0
+                || p.types.iter().any(|kind| spared.contains(kind))
+                || self.has_ability(*id, "overcoat")
+            {
                 continue;
             }
             events.push(BattleEvent::Message(format!(

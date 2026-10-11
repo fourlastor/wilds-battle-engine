@@ -140,7 +140,7 @@ id,ability,status,verification
 139,harvest,MISSING,No native battle behavior
 140,telepathy,IMPLEMENTED,Source inventory; existing tests only
 141,moody,MISSING,No native battle behavior
-142,overcoat,PARTIAL,Source inventory; existing tests only
+142,overcoat,IMPLEMENTED,ability_rules::overcoat_prevents_sand_and_hail_damage_only_while_active
 143,poison-touch,MISSING,No native battle behavior
 144,regenerator,IMPLEMENTED,Source inventory; existing tests only
 145,big-pecks,MISSING,No native battle behavior

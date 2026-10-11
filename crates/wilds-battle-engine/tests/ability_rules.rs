@@ -547,3 +547,18 @@ fn cloud_nine_suppresses_weather_damage_modifiers_and_lua_weather_without_cleari
 fn air_lock_suppresses_weather_damage_and_lua_weather() {
     check_weather_suppression("air-lock");
 }
+
+#[test]
+fn overcoat_prevents_sand_and_hail_damage_only_while_active() {
+    for move_id in ["hail", "sandstorm"] {
+        for suppressed in [false, true] {
+            let mut target = mon("Target", &["splash"]);
+            target.ability = Some("overcoat".into());
+            target.ability_suppressed = suppressed;
+            let mut battle = game(mon("User", &[move_id]), target, 0.5);
+            turn(&mut battle, move_id, "splash");
+            assert_eq!(foe(&battle).hp, if suppressed { 938 } else { 1000 });
+            assert_eq!(ally(&battle).hp, 938);
+        }
+    }
+}
