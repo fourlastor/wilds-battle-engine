@@ -4278,3 +4278,37 @@ fn multitype_uses_plates_despite_magic_room_and_only_for_untransformed_arceus() 
         }
     }
 }
+
+#[test]
+fn rks_system_uses_existing_memories_and_transformation_keeps_copied_types() {
+    for (item, expected) in [
+        (Some("fire-memory"), PokemonType::Fire),
+        (Some("fairy_memory"), PokemonType::Fairy),
+        (None, PokemonType::Normal),
+    ] {
+        let mut user = mon("User", &["magic-room", "splash"]);
+        user.species_id = 773;
+        user.ability = Some("rks-system".into());
+        user.item = item.map(str::to_owned);
+        let mut battle = game(user, mon("Target", &["splash", "soak"]), 0.5);
+        turn(&mut battle, "magic-room", "splash");
+        assert_eq!(ally(&battle).types, [expected]);
+        turn(&mut battle, "splash", "soak");
+        assert_eq!(ally(&battle).types, [expected]);
+    }
+    for (species, ability, item, own_item) in [
+        (773, "rks-system", "fire-memory", "water-memory"),
+        (493, "multitype", "flame-plate", "splash-plate"),
+    ] {
+        let mut user = mon("User", &["transform"]);
+        user.item = Some(own_item.into());
+        let mut target = mon("Target", &["splash"]);
+        target.species_id = species;
+        target.ability = Some(ability.into());
+        target.item = Some(item.into());
+        let mut battle = game(user, target, 0.5);
+        turn(&mut battle, "transform", "splash");
+        assert!(ally(&battle).transformed());
+        assert_eq!(ally(&battle).types, [PokemonType::Fire]);
+    }
+}

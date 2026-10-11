@@ -33,6 +33,30 @@ impl Battle {
                 },
             );
         }
+        if self.has_ability(who, "rkssystem") && self.species_is(who, 773, "silvally") {
+            return Some(
+                match item_key(self.get(who).item.as_deref().unwrap_or_default()).as_str() {
+                    "firememory" => Fire,
+                    "watermemory" => Water,
+                    "grassmemory" => Grass,
+                    "electricmemory" => Electric,
+                    "icememory" => Ice,
+                    "fightingmemory" => Fighting,
+                    "poisonmemory" => Poison,
+                    "groundmemory" => Ground,
+                    "flyingmemory" => Flying,
+                    "psychicmemory" => Psychic,
+                    "bugmemory" => Bug,
+                    "rockmemory" => Rock,
+                    "ghostmemory" => Ghost,
+                    "dragonmemory" => Dragon,
+                    "darkmemory" => Dark,
+                    "steelmemory" => Steel,
+                    "fairymemory" => Fairy,
+                    _ => Normal,
+                },
+            );
+        }
         Option::None
     }
 
