@@ -5185,3 +5185,39 @@ fn simple_beam_changes_stage_multipliers_and_respects_ability_exceptions() {
         }
     }
 }
+
+#[test]
+fn entrainment_transfers_supported_ability_rules_and_honors_restrictions() {
+    use wilds_battle_engine::{Rule, Stat};
+    for (own, other, response, sub, success) in [
+        ("contrary", "pressure", "splash", 0, true),
+        ("wonder-guard", "pressure", "splash", 0, false),
+        ("pressure", "truant", "splash", 0, false),
+        ("pressure", "multitype", "splash", 0, false),
+        ("pressure", "pressure", "splash", 0, false),
+        ("contrary", "pressure", "protect", 0, false),
+        ("contrary", "pressure", "splash", 50, false),
+    ] {
+        let mut user = mon("User", &["entrainment", "growl"]);
+        user.ability = Some(own.into());
+        user.ability_rules = vec![Rule::BlockCritical];
+        let mut foe = mon("Foe", &[response, "splash"]);
+        foe.ability = Some(other.into());
+        foe.substitute_hp = sub;
+        let mut b = game(user, vec![foe], 0.5);
+        turn(&mut b);
+        assert_eq!(b.participants(Side::Allies)[0].last_move_failed, !success);
+        assert_eq!(
+            b.participants(Side::Foes)[0].ability.as_deref(),
+            Some(if success { own } else { other })
+        );
+        if success {
+            assert_eq!(
+                b.participants(Side::Foes)[0].ability_rules,
+                [Rule::BlockCritical]
+            );
+            turn_with(&mut b, |p| choose_move(p, "growl", "splash"));
+            assert_eq!(b.participants(Side::Foes)[0].stage(Stat::Attack), 1);
+        }
+    }
+}

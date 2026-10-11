@@ -4733,6 +4733,17 @@
       "parameter_source": "https://pokeapi.co/api/v2/move/493/"
     },
     {
+      "id": 494,
+      "slug": "entrainment",
+      "name": "Entrainment",
+      "sheet_row": null,
+      "runtime_id": "entrainment",
+      "file": "moves/entrainment.lua",
+      "status": "implemented",
+      "limitations": [],
+      "parameter_source": "https://pokeapi.co/api/v2/move/494/"
+    },
+    {
       "id": 495,
       "slug": "after-you",
       "name": "After You",
@@ -7752,7 +7763,8 @@
       "conversion-2",
       "role-play",
       "worry-seed",
-      "simple-beam"
+      "simple-beam",
+      "entrainment"
     ]
   }
 }
