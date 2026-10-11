@@ -1442,3 +1442,30 @@ fn snow_cloak_reduces_accuracy_and_grants_hail_immunity() {
     check_weather_evasion("snow-cloak", "hail");
     check_weather_immunity("snow-cloak", "hail");
 }
+
+#[test]
+fn sand_force_boosts_only_rock_ground_and_steel_in_sand() {
+    check_weather_immunity("sand-force", "sandstorm");
+    for attack in ["rock-slide", "earthquake", "iron-head", "tackle"] {
+        let run = |suppressed| {
+            let mut user = mon("User", &["sandstorm", attack]);
+            user.ability = Some("sand-force".into());
+            user.ability_suppressed = suppressed;
+            let mut target = mon("Target", &["splash"]);
+            target.types = vec![PokemonType::Ground];
+            let mut battle = game(user, target, 0.5);
+            turn(&mut battle, "sandstorm", "splash");
+            turn(&mut battle, attack, "splash");
+            1000 - foe(&battle).hp
+        };
+        if attack == "tackle" {
+            assert_eq!(run(false), run(true));
+        } else {
+            assert!(run(false) > run(true));
+        }
+    }
+    assert_eq!(
+        ability_damage("iron-head", "sand-force", "", false),
+        ability_damage("iron-head", "", "", false)
+    );
+}

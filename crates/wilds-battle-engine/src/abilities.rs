@@ -181,7 +181,9 @@ impl Battle {
         kind: crate::model::WeatherKind,
     ) -> bool {
         (kind == crate::model::WeatherKind::Sandstorm
-            && (self.has_ability(who, "sandrush") || self.has_ability(who, "sandveil")))
+            && (self.has_ability(who, "sandrush")
+                || self.has_ability(who, "sandveil")
+                || self.has_ability(who, "sandforce")))
             || self.has_ability(who, "overcoat")
             || (kind == crate::model::WeatherKind::Hail
                 && (self.has_ability(who, "icebody") || self.has_ability(who, "snowcloak")))
@@ -672,6 +674,17 @@ impl Battle {
         target: ParticipantId,
         attack: &crate::engine::Attack,
     ) -> f32 {
+        if self.has_ability(actor, "sandforce")
+            && self.effective_weather() == Some(crate::model::WeatherKind::Sandstorm)
+            && matches!(
+                attack.move_type,
+                crate::model::PokemonType::Rock
+                    | crate::model::PokemonType::Ground
+                    | crate::model::PokemonType::Steel
+            )
+        {
+            return 1.3;
+        }
         if self.has_ability(actor, "rivalry") {
             let a = self.get(actor).gender;
             let b = self.get(target).gender;
