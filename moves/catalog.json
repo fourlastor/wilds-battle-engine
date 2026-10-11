@@ -1844,6 +1844,17 @@
       "limitations": []
     },
     {
+      "id": 216,
+      "slug": "return",
+      "name": "Return",
+      "sheet_row": null,
+      "runtime_id": "return",
+      "file": "moves/return.lua",
+      "status": "implemented",
+      "limitations": [],
+      "parameter_source": "https://pokeapi.co/api/v2/move/216/"
+    },
+    {
       "id": 221,
       "slug": "sacred-fire",
       "name": "Sacred Fire",
@@ -6204,7 +6215,8 @@
       "reflect",
       "haze",
       "flail",
-      "reversal"
+      "reversal",
+      "return"
     ]
   }
 }

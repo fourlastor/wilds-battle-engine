@@ -443,3 +443,29 @@ fn reversal_uses_the_current_hp_brackets() {
         assert_eq!(1000 - b.participants(Side::Foes)[0].hp, expected, "HP {hp}");
     }
 }
+
+#[test]
+fn return_uses_host_supplied_happiness() {
+    for (happiness, power) in [
+        (0, 1),
+        (1, 1),
+        (2, 1),
+        (3, 1),
+        (5, 2),
+        (100, 40),
+        (254, 101),
+        (255, 102),
+    ] {
+        let mut user = mon("User", &["return"]);
+        user.happiness = Some(happiness);
+        let foe = mon("Foe", &["splash"]);
+        let expected = control_damage(power, "Normal", "Physical", user.clone(), foe.clone());
+        let mut b = game(user, vec![foe], 0.5);
+        turn(&mut b);
+        assert_eq!(
+            1000 - b.participants(Side::Foes)[0].hp,
+            expected,
+            "happiness {happiness}"
+        );
+    }
+}
