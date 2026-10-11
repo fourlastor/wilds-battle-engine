@@ -207,7 +207,7 @@ id,ability,status,verification
 206,galvanize,IMPLEMENTED,ability_rules::galvanize_converts_normal_moves_to_electric_and_boosts_power
 207,surge-surfer,IMPLEMENTED,ability_rules::surge_surfer_doubles_speed_during_electric_terrain_even_when_airborne
 208,schooling,IMPLEMENTED,ability_rules::schooling_checks_level_and_quarter_hp_on_entry_and_at_turn_end
-209,disguise,MISSING,No native battle behavior
+209,disguise,IMPLEMENTED,ability_rules::disguise_blocks_one_hit_loses_an_eighth_hp_and_respects_substitutes_and_mold_breaker
 210,battle-bond,MISSING,No native battle behavior
 211,power-construct,MISSING,No native battle behavior
 212,corrosion,IMPLEMENTED,Source inventory; existing tests only

@@ -2699,6 +2699,8 @@ impl Battle {
             2 => 0.5,
             _ => 1.0,
         };
+        let shielded = self.form_shields_hit(target, attack.category)
+            && !self.substitute_intercepts(actor, target, attack.bypass_substitute);
         let crit = (attack.always_crit
             || (self.has_ability(actor, "merciless")
                 && matches!(
@@ -2710,7 +2712,8 @@ impl Battle {
                 .rules(target)
                 .any(|rule| matches!(rule, Rule::BlockCritical))
             && !self.has_ability(target, "battlearmor")
-            && !self.has_ability(target, "shellarmor");
+            && !self.has_ability(target, "shellarmor")
+            && !shielded;
         let effectiveness = if typeless {
             1.0
         } else {
@@ -2734,6 +2737,7 @@ impl Battle {
             self.immune_message(target, events);
             return None;
         }
+        let effectiveness = if shielded { 1.0 } else { effectiveness };
         let (atk_name, def_name) = match attack.category {
             Category::Physical => (CombatStat::Attack, CombatStat::Defense),
             _ => (CombatStat::SpAttack, CombatStat::SpDefense),
@@ -2911,6 +2915,9 @@ impl Battle {
                 }
             )));
             return Ok(lost);
+        }
+        if self.break_form_shield(target, meta.category, events) {
+            return Ok(0);
         }
         let deplete_pp = self
             .rules(target)

@@ -3928,3 +3928,24 @@ fn mimicry_changes_on_terrain_transitions_and_restores_original_types() {
     }
     assert_eq!(ally(&battle).types, [PokemonType::Flying]);
 }
+
+#[test]
+fn disguise_blocks_one_hit_loses_an_eighth_hp_and_respects_substitutes_and_mold_breaker() {
+    for (breaker, substitute, busted) in [(false, 0, true), (true, 0, false), (false, 999, false)] {
+        let mut user = mon("User", &["water-gun"]);
+        user.ability = breaker.then(|| "mold-breaker".into());
+        let mut target = mon("Target", &["splash"]);
+        target.species_id = 778;
+        target.ability = Some("disguise".into());
+        target.substitute_hp = substitute;
+        add_form(&mut target, "mimikyu-busted", PokemonType::Fairy);
+        let mut battle = game(user, target, 0.5);
+        turn(&mut battle, "water-gun", "splash");
+        assert_eq!(foe(&battle).form.is_some(), busted);
+        if busted {
+            assert_eq!(foe(&battle).hp, 875);
+            turn(&mut battle, "water-gun", "splash");
+            assert!(foe(&battle).hp < 875);
+        }
+    }
+}

@@ -4,6 +4,63 @@ use crate::items::item_key;
 use crate::model::{BattleEvent, ParticipantId, WeatherKind};
 
 impl Battle {
+    pub(crate) fn form_shields_hit(
+        &self,
+        who: ParticipantId,
+        category: crate::moves::Category,
+    ) -> bool {
+        category != crate::moves::Category::Status
+            && self.has_ability(who, "disguise")
+            && self.species_is(who, 778, "mimikyu")
+            && !self.get(who).transformed()
+            && !self
+                .get(who)
+                .form
+                .as_deref()
+                .is_some_and(|id| id.contains("busted"))
+    }
+
+    fn persistent_ability_form(
+        &mut self,
+        who: ParticipantId,
+        form: &str,
+        events: &mut Vec<BattleEvent>,
+    ) -> bool {
+        if !self.change_form(who, form, events) {
+            return false;
+        }
+        let p = self.get_mut(who);
+        p.original_form = None;
+        p.battle_base_form = Some((p.form.clone(), crate::model::PokemonForm::of(p)));
+        true
+    }
+
+    pub(crate) fn break_form_shield(
+        &mut self,
+        who: ParticipantId,
+        category: crate::moves::Category,
+        events: &mut Vec<BattleEvent>,
+    ) -> bool {
+        if !self.form_shields_hit(who, category) {
+            return false;
+        }
+        let form = if self
+            .get(who)
+            .form
+            .as_deref()
+            .is_some_and(|id| id.contains("totem"))
+        {
+            "mimikyu-totem-busted"
+        } else {
+            "mimikyu-busted"
+        };
+        if !self.persistent_ability_form(who, form, events) {
+            return false;
+        }
+        self.damage(who, (self.get(who).max_hp / 8).max(1), events);
+        true
+    }
+
     fn update_mimicry(&mut self, who: ParticipantId, events: &mut Vec<BattleEvent>) {
         use crate::model::{PokemonType, Scope};
         if !self.has_ability(who, "mimicry") {
