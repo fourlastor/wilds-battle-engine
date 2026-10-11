@@ -396,6 +396,17 @@ impl Battle {
         types
     }
 
+    pub(crate) fn remove_expired_status_conditions(&mut self, id: ParticipantId) {
+        let status = self.get(id).status;
+        let comatose = self.has_ability(id, "comatose");
+        self.get_mut(id).conditions.retain(|condition| {
+            !condition.rules.iter().any(|rule| {
+                matches!(rule, Rule::RequiresStatus(required) if status != Some(*required)
+                && !(*required == Status::Asleep && comatose))
+            })
+        });
+    }
+
     /// End of turn: what timed effects do each turn, then their countdown.
     pub(crate) fn tick_conditions(
         &mut self,
@@ -406,6 +417,7 @@ impl Battle {
             if self.winner.is_some() {
                 return;
             }
+            self.remove_expired_status_conditions(id);
             let each_turn: Vec<Rule> = self
                 .rules(id)
                 .filter(|rule| {

@@ -903,6 +903,7 @@ impl Battle {
         if self.get(id).status_turns == 0 {
             let name = self.get(id).name.clone();
             self.get_mut(id).status = None;
+            self.remove_expired_status_conditions(id);
             events.push(BattleEvent::Status {
                 target: id,
                 status: None,

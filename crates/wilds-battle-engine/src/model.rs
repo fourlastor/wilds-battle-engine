@@ -263,6 +263,8 @@ pub enum Rule {
         incoming: Vec<PokemonType>,
     },
     IgnoreEvasionBoost,
+    /// Remove this Pokémon condition when it no longer has the required status.
+    RequiresStatus(Status),
     /// Changes incoming type effectiveness, including immunity/ability and berry checks.
     TypeEffectiveness {
         move_type: PokemonType,

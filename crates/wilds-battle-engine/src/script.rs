@@ -1182,6 +1182,7 @@ impl Battle {
         let pokemon = self.get_mut(who);
         pokemon.status = None;
         pokemon.status_turns = 0;
+        self.remove_expired_status_conditions(who);
         events.push(BattleEvent::Status {
             target: who,
             status: None,

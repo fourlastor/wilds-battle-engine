@@ -3213,3 +3213,64 @@ fn magnitude_hits_adjacent_allies_and_foes_but_not_distant_slots_or_flying_types
     assert!(b.participants(Side::Foes)[1].hp < 1000);
     assert_eq!(b.participants(Side::Foes)[2].hp, 1000);
 }
+
+#[test]
+fn nightmare_drains_sleeping_targets_and_ends_when_they_wake() {
+    let mut foe = mon("Foe", &["splash"]);
+    foe.status = Some(wilds_battle_engine::Status::Asleep);
+    foe.status_turns = 1;
+    let mut b = game(mon("User", &["nightmare", "splash"]), vec![foe], 0.5);
+    turn(&mut b);
+    assert_eq!(b.participants(Side::Foes)[0].hp, 750);
+    turn_with(&mut b, |p| choose_move(p, "splash", "splash"));
+    assert_eq!(b.participants(Side::Foes)[0].hp, 750);
+    assert!(
+        b.participants(Side::Foes)[0]
+            .condition("nightmare")
+            .is_none()
+    );
+}
+
+#[test]
+fn cured_nightmare_does_not_resume_during_a_later_sleep() {
+    let mut user = mon("User", &["nightmare", "purify", "splash"]);
+    user.speed = 200;
+    let mut foe = mon("Foe", &["splash", "rest"]);
+    foe.status = Some(wilds_battle_engine::Status::Asleep);
+    foe.status_turns = 4;
+    let mut b = game(user, vec![foe], 0.5);
+    turn_with(&mut b, |p| choose_move(p, "nightmare", "splash"));
+    turn_with(&mut b, |p| choose_move(p, "purify", "splash"));
+    assert_eq!(b.participants(Side::Foes)[0].hp, 750);
+    assert!(
+        b.participants(Side::Foes)[0]
+            .condition("nightmare")
+            .is_none()
+    );
+    turn_with(&mut b, |p| choose_move(p, "splash", "rest"));
+    assert_eq!(b.participants(Side::Foes)[0].hp, 1000);
+    assert_eq!(
+        b.participants(Side::Foes)[0].status,
+        Some(wilds_battle_engine::Status::Asleep)
+    );
+}
+
+#[test]
+fn nightmare_respects_protect_and_substitute_and_accepts_comatose() {
+    for (ability, response, sub, works) in [
+        (None, "splash", 0, false),
+        (Some("comatose"), "splash", 0, true),
+        (Some("comatose"), "protect", 0, false),
+        (Some("comatose"), "splash", 50, false),
+    ] {
+        let mut foe = mon("Foe", &[response]);
+        foe.ability = ability.map(str::to_owned);
+        foe.substitute_hp = sub;
+        let mut b = game(mon("User", &["nightmare"]), vec![foe], 0.5);
+        turn(&mut b);
+        assert_eq!(
+            b.participants(Side::Foes)[0].hp,
+            if works { 750 } else { 1000 }
+        );
+    }
+}

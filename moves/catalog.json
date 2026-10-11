@@ -1642,6 +1642,17 @@
       "parameter_source": "https://pokeapi.co/api/v2/move/170/"
     },
     {
+      "id": 171,
+      "slug": "nightmare",
+      "name": "Nightmare",
+      "sheet_row": null,
+      "runtime_id": "nightmare",
+      "file": "moves/nightmare.lua",
+      "status": "implemented",
+      "limitations": [],
+      "parameter_source": "https://pokeapi.co/api/v2/move/171/"
+    },
+    {
       "id": 172,
       "slug": "flame-wheel",
       "name": "Flame Wheel",
@@ -7296,7 +7307,8 @@
       "odor-sleuth",
       "miracle-eye",
       "tar-shot",
-      "magnitude"
+      "magnitude",
+      "nightmare"
     ]
   }
 }
