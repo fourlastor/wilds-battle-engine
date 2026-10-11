@@ -1816,6 +1816,17 @@
       "limitations": []
     },
     {
+      "id": 199,
+      "slug": "lock-on",
+      "name": "Lock-On",
+      "sheet_row": null,
+      "runtime_id": "lock-on",
+      "file": "moves/lock-on.lua",
+      "status": "implemented",
+      "limitations": [],
+      "parameter_source": "https://pokeapi.co/api/v2/move/199/"
+    },
+    {
       "id": 200,
       "slug": "outrage",
       "name": "Outrage",
@@ -6720,7 +6731,8 @@
       "laser-focus",
       "lucky-chant",
       "psych-up",
-      "mind-reader"
+      "mind-reader",
+      "lock-on"
     ]
   }
 }

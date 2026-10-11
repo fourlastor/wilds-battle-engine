@@ -1519,3 +1519,8 @@ fn check_lock_on(move_id: &str) {
 fn mind_reader_locks_on_for_one_turn_and_releases_when_target_switches() {
     check_lock_on("mind-reader");
 }
+
+#[test]
+fn lock_on_locks_on_for_one_turn_and_releases_when_target_switches() {
+    check_lock_on("lock-on");
+}
