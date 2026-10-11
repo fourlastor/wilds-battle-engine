@@ -642,6 +642,9 @@ impl Battle {
     ) -> f32 {
         use crate::model::PokemonType::*;
         let mut factor = 1.0;
+        if self.has_ability(actor, "neuroforce") && effectiveness > 1.0 {
+            factor *= 1.25;
+        }
         if self.has_ability(actor, "tintedlens") && effectiveness > 0.0 && effectiveness < 1.0 {
             factor *= 2.0;
         }

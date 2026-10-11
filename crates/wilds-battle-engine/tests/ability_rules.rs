@@ -1105,3 +1105,24 @@ fn tintedlens_only_modifies_the_relevant_type_matchups() {
         assert!((f32::from(run(false)) - f32::from(run(true)) * multiplier).abs() <= 1.0);
     }
 }
+
+#[test]
+fn neuroforce_only_modifies_the_relevant_type_matchups() {
+    for (kind, multiplier) in [
+        (PokemonType::Grass, 1.25),
+        (PokemonType::Normal, 1.0),
+        (PokemonType::Water, 1.0),
+    ] {
+        let run = |suppressed| {
+            let mut user = mon("User", &["ember"]);
+            user.ability = Some("neuroforce".into());
+            user.ability_suppressed = suppressed;
+            let mut target = mon("Target", &["splash"]);
+            target.types = vec![kind];
+            let mut battle = game(user, target, 0.5);
+            turn(&mut battle, "ember", "splash");
+            1000 - foe(&battle).hp
+        };
+        assert!((f32::from(run(false)) - f32::from(run(true)) * multiplier).abs() <= 1.0);
+    }
+}

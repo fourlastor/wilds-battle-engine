@@ -231,7 +231,7 @@ id,ability,status,verification
 230,full-metal-body,IMPLEMENTED,Source inventory; existing tests only
 231,shadow-shield,IMPLEMENTED,Source inventory; existing tests only
 232,prism-armor,IMPLEMENTED,Source inventory; existing tests only
-233,neuroforce,MISSING,No native battle behavior
+233,neuroforce,IMPLEMENTED,ability_rules::neuroforce_only_modifies_the_relevant_type_matchups
 234,intrepid-sword,MISSING,No native battle behavior
 235,dauntless-shield,MISSING,No native battle behavior
 236,libero,MISSING,No native battle behavior
