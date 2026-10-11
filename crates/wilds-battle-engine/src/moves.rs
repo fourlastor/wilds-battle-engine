@@ -395,6 +395,10 @@ pub(crate) enum ScriptOperation {
     ItemRemovable {
         who: ParticipantId,
     },
+    SwapItems {
+        a: ParticipantId,
+        b: ParticipantId,
+    },
     StealItem {
         from: ParticipantId,
         to: ParticipantId,
@@ -1204,6 +1208,10 @@ fn parse_op(name: &str, args: &[Value]) -> mlua::Result<ScriptOperation> {
         "consume_item" => ScriptOperation::ConsumeItem { who: who(0)? },
         "recycle_item" => ScriptOperation::RecycleItem { who: who(0)? },
         "delay" => ScriptOperation::Delay { who: who(0)? },
+        "swap_items" => ScriptOperation::SwapItems {
+            a: who(0)?,
+            b: who(1)?,
+        },
         "item_removable" => ScriptOperation::ItemRemovable { who: who(0)? },
         "steal_item" => ScriptOperation::StealItem {
             from: who(0)?,

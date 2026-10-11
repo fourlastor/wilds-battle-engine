@@ -206,6 +206,7 @@ return function(api, fields, roster)
     end
   end
   -- Transfers atomically, respecting species binding and Sticky Hold.
+  function ctx:swap_items(a, b) return op("swap_items", a, b) end
   function ctx:steal_item(from, to) return op("steal_item", from, to) end
   function ctx:item_removable(who) return op("item_removable", who) end
   -- Takes one type away from a Pokémon for as long as it stays in the battle.

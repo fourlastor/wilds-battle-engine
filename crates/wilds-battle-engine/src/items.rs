@@ -161,6 +161,32 @@ impl Battle {
         self.get_mut(who).item.take()
     }
 
+    /// Exchange atomically. A rejected item on either side leaves both held items untouched.
+    pub(crate) fn swap_items(&mut self, source: ParticipantId, target: ParticipantId) -> bool {
+        let mine = self.get(source);
+        let theirs = self.get(target);
+        if source == target
+            || mine.hp == 0
+            || theirs.hp == 0
+            || (mine.item.is_none() && theirs.item.is_none())
+            || self.has_ability(target, "stickyhold")
+            || mine.item.as_ref().is_some_and(|item| {
+                !self.item_removable(source) || bound_to(&item_key(item), theirs)
+            })
+            || theirs
+                .item
+                .as_ref()
+                .is_some_and(|item| !self.item_removable(target) || bound_to(&item_key(item), mine))
+        {
+            return false;
+        }
+        let my_item = self.get_mut(source).item.take();
+        let your_item = self.get_mut(target).item.take();
+        self.get_mut(source).item = your_item;
+        self.get_mut(target).item = my_item;
+        true
+    }
+
     pub(crate) fn steal_item(&mut self, from: ParticipantId, to: ParticipantId) -> Option<String> {
         let receiver = self.get(to);
         let item = self.get(from).item.as_ref()?;

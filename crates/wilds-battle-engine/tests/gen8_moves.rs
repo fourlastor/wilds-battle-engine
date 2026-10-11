@@ -2787,3 +2787,76 @@ fn spotlight_respects_protect_and_substitute_and_fails_in_singles() {
         assert!(b.participants(Side::Allies)[0].last_move_failed);
     }
 }
+
+fn check_item_exchange(move_id: &str) {
+    for (mine, theirs) in [
+        (Some("power-herb"), Some("normal-gem")),
+        (Some("power-herb"), None),
+        (None, Some("normal-gem")),
+        (None, None),
+    ] {
+        let mut user = mon("User", &[move_id]);
+        user.item = mine.map(str::to_owned);
+        user.ability = Some("sticky-hold".into());
+        let mut foe = mon("Foe", &["splash"]);
+        foe.item = theirs.map(str::to_owned);
+        let mut b = game(user, vec![foe], 0.5);
+        turn(&mut b);
+        let user = &b.participants(Side::Allies)[0];
+        let foe = &b.participants(Side::Foes)[0];
+        assert_eq!(user.item.as_deref(), theirs);
+        assert_eq!(foe.item.as_deref(), mine);
+        assert_eq!(user.last_move_failed, mine.is_none() && theirs.is_none());
+        assert!(user.consumed_items.is_empty() && foe.consumed_items.is_empty());
+    }
+    for (ability, response, sub) in [
+        (Some("sticky-hold"), "splash", 0),
+        (None, "protect", 0),
+        (None, "splash", 50),
+    ] {
+        let mut user = mon("User", &[move_id]);
+        user.item = Some("power-herb".into());
+        let mut foe = mon("Foe", &[response]);
+        foe.item = Some("normal-gem".into());
+        foe.ability = ability.map(str::to_owned);
+        foe.substitute_hp = sub;
+        let mut b = game(user, vec![foe], 0.5);
+        turn(&mut b);
+        assert_eq!(
+            b.participants(Side::Allies)[0].item.as_deref(),
+            Some("power-herb")
+        );
+        assert_eq!(
+            b.participants(Side::Foes)[0].item.as_deref(),
+            Some("normal-gem")
+        );
+        assert!(b.participants(Side::Allies)[0].last_move_failed);
+    }
+    for bound_to_receiver in [false, true] {
+        let mut user = mon("User", &[move_id]);
+        user.item = Some("griseous-orb".into());
+        let mut foe = mon("Foe", &["splash"]);
+        foe.item = Some("power-herb".into());
+        if bound_to_receiver {
+            foe.species_id = 487;
+        } else {
+            user.species_id = 487;
+        }
+        let mut b = game(user, vec![foe], 0.5);
+        turn(&mut b);
+        assert_eq!(
+            b.participants(Side::Allies)[0].item.as_deref(),
+            Some("griseous-orb")
+        );
+        assert_eq!(
+            b.participants(Side::Foes)[0].item.as_deref(),
+            Some("power-herb")
+        );
+        assert!(b.participants(Side::Allies)[0].last_move_failed);
+    }
+}
+
+#[test]
+fn trick_swaps_existing_items_atomically_with_empty_slots_and_removal_restrictions() {
+    check_item_exchange("trick");
+}

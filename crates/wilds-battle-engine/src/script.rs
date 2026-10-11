@@ -1247,6 +1247,7 @@ impl Battle {
             | ScriptOperation::TakeItem { who }
             | ScriptOperation::GiveItem { who, .. }
             | ScriptOperation::ConsumeItem { who } => Some((*who, Value::Nil)),
+            ScriptOperation::SwapItems { b, .. } => Some((*b, Value::Boolean(false))),
             ScriptOperation::StealItem { from, .. } => Some((*from, Value::Nil)),
             ScriptOperation::EatStolenBerry { from, .. } => Some((*from, Value::Boolean(false))),
             ScriptOperation::StartEffect {
@@ -1802,6 +1803,7 @@ impl Battle {
                 None => Value::Nil,
             },
             ScriptOperation::ItemRemovable { who } => Value::Boolean(self.item_removable(who)),
+            ScriptOperation::SwapItems { a, b } => Value::Boolean(self.swap_items(a, b)),
             ScriptOperation::StealItem { from, to } => match self.steal_item(from, to) {
                 Some(item) => Value::String(self.catalog.lua().create_string(&item)?),
                 None => Value::Nil,
