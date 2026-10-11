@@ -1,11 +1,11 @@
 # Wilds battle engine
 
 `wilds-battle-engine` is the Rust battle simulation. Move definitions are loaded
-from Lua; `MoveCatalog::builtin()` embeds the 548 files under `moves/`,
+from Lua; `MoveCatalog::builtin()` embeds the 554 files under `moves/`,
 and `MoveCatalog::from_directory(path)` reads them from disk at runtime.
-Both catalogs also include the system move Struggle, for 549 moves in total.
+Both catalogs also include the system move Struggle, for 555 moves in total.
 The [move catalog](moves/README.md) includes 538 entries from the Saved moves sheet,
-plus Gravity, Stockpile and the original moves outside the sheet. Its manifest
+plus support moves, additional local JSON moves and the original moves outside the sheet. Its manifest
 records the 34 excluded Z/Max Moves. Files use canonical slugs and source display
 names. [catalog.json](moves/catalog.json) records per-move coverage and the
 remaining general engine limitations.

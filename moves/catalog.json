@@ -466,6 +466,16 @@
       "limitations": []
     },
     {
+      "id": 49,
+      "slug": "sonic-boom",
+      "name": "Sonic Boom",
+      "sheet_row": null,
+      "runtime_id": "sonic-boom",
+      "file": "moves/sonic-boom.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
       "id": 51,
       "slug": "acid",
       "name": "Acid",
@@ -5822,7 +5832,8 @@
       "toxic-spikes",
       "stealth-rock",
       "sticky-web",
-      "substitute"
+      "substitute",
+      "sonic-boom"
     ]
   }
 }
