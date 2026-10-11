@@ -78,6 +78,7 @@ pub(crate) struct HitMeta {
     bypass_substitute: bool,
     pub(crate) defer_items: bool,
     pub(crate) effectiveness: Option<f32>,
+    critical: bool,
 }
 impl HitMeta {
     pub(crate) fn of(spec: &MoveSpec, category: Category, move_type: PokemonType) -> Self {
@@ -89,6 +90,7 @@ impl HitMeta {
             bypass_substitute: spec.has_flag("sound") || spec.has_flag("bypass_substitute"),
             defer_items: spec.has_flag("item_effect_on_hit"),
             effectiveness: None,
+            critical: false,
         }
     }
     pub(crate) fn with_contact(mut self, contact: Option<bool>) -> Self {
@@ -97,8 +99,9 @@ impl HitMeta {
         }
         self
     }
-    pub(crate) fn with_effectiveness(mut self, effectiveness: f32) -> Self {
-        self.effectiveness = Some(effectiveness);
+    pub(crate) fn with_roll(mut self, roll: &Roll) -> Self {
+        self.effectiveness = Some(roll.effectiveness);
+        self.critical = roll.critical;
         self
     }
     fn plain(spec: &MoveSpec) -> Self {
@@ -2039,7 +2042,7 @@ impl Battle {
                 always_crit,
             } => {
                 let mut details = Vec::new();
-                if let Some(amount) = self.calculate_damage(
+                if let Some(roll) = self.calculate_damage(
                     actor,
                     target,
                     spec,
@@ -2053,8 +2056,8 @@ impl Battle {
                     let amount = self.damage_from_move(
                         actor,
                         target,
-                        amount,
-                        &HitMeta::plain(spec),
+                        roll.amount,
+                        &HitMeta::plain(spec).with_roll(&roll),
                         events,
                     )?;
                     events.extend(details);
@@ -2095,7 +2098,7 @@ impl Battle {
                         break;
                     }
                     let mut hit_details = Vec::new();
-                    if let Some(amount) = self.calculate_damage(
+                    if let Some(roll) = self.calculate_damage(
                         actor,
                         target,
                         spec,
@@ -2109,8 +2112,8 @@ impl Battle {
                         self.damage_from_move(
                             actor,
                             target,
-                            amount,
-                            &HitMeta::plain(spec),
+                            roll.amount,
+                            &HitMeta::plain(spec).with_roll(&roll),
                             events,
                         )?;
                         self.update_berries(events);
@@ -2271,7 +2274,7 @@ impl Battle {
                     ));
                 } else {
                     let mut details = Vec::new();
-                    if let Some(amount) = self.calculate_damage(
+                    if let Some(roll) = self.calculate_damage(
                         actor,
                         target,
                         spec,
@@ -2285,8 +2288,8 @@ impl Battle {
                         self.damage_from_move(
                             actor,
                             target,
-                            amount,
-                            &HitMeta::plain(spec),
+                            roll.amount,
+                            &HitMeta::plain(spec).with_roll(&roll),
                             events,
                         )?;
                     }
@@ -2308,7 +2311,7 @@ impl Battle {
                 };
                 let boost = if *double_power { turns - 1 } else { 0 };
                 let mut details = Vec::new();
-                if let Some(amount) = self.calculate_damage(
+                if let Some(roll) = self.calculate_damage(
                     actor,
                     target,
                     spec,
@@ -2319,7 +2322,13 @@ impl Battle {
                     false,
                     &mut details,
                 ) {
-                    self.damage_from_move(actor, target, amount, &HitMeta::plain(spec), events)?;
+                    self.damage_from_move(
+                        actor,
+                        target,
+                        roll.amount,
+                        &HitMeta::plain(spec).with_roll(&roll),
+                        events,
+                    )?;
                 }
                 events.extend(details);
                 if turns < max_turns {
@@ -2480,7 +2489,7 @@ impl Battle {
         consecutive_boost: u8,
         typeless: bool,
         events: &mut Vec<BattleEvent>,
-    ) -> Option<u16> {
+    ) -> Option<Roll> {
         let attack = Attack {
             move_id: &spec.id,
             hits_airborne: spec.has_flag("hits_airborne"),
@@ -2505,7 +2514,6 @@ impl Battle {
             ignore_stages: false,
         };
         self.calculate(actor, target, &attack, events)
-            .map(|roll| roll.amount)
     }
     /// The damage formula. Returns nothing if the target is immune.
     pub(crate) fn calculate(
@@ -2813,6 +2821,9 @@ impl Battle {
             let pokemon = self.get_mut(target);
             pokemon.damage_taken = pokemon.damage_taken.saturating_add(lost);
             pokemon.last_hit = Some(hit.clone());
+        }
+        if lost > 0 && meta.critical && self.has_ability(target, "angerpoint") {
+            self.change_stat(target, Stat::Attack, 12, events);
         }
         self.ability_damaging_hit(target, &hit_ability, &hit, events);
         for reaction in reactions {

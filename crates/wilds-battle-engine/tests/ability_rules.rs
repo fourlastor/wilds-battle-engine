@@ -2225,3 +2225,22 @@ fn innards_out_returns_actual_hp_lost_only_on_a_direct_knockout() {
         assert_eq!(1000 - ally(&battle).hp, expected);
     }
 }
+
+#[test]
+fn anger_point_maximizes_attack_after_a_critical_hit() {
+    use wilds_battle_engine::Stat;
+    for (move_id, suppressed, expected) in [
+        ("frost-breath", false, 6),
+        ("tackle", false, -4),
+        ("frost-breath", true, -4),
+    ] {
+        let user = mon("User", &[move_id]);
+        let mut target = mon("Target", &["splash"]);
+        target.ability = Some("anger-point".into());
+        target.ability_suppressed = suppressed;
+        target.stages.insert(Stat::Attack, -4);
+        let mut battle = game(user, target, 0.5);
+        turn(&mut battle, move_id, "splash");
+        assert_eq!(foe(&battle).stage(Stat::Attack), expected);
+    }
+}

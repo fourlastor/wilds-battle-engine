@@ -980,7 +980,7 @@ impl Battle {
                 actor,
                 recipient,
                 actual,
-                &meta.clone().with_effectiveness(roll.effectiveness),
+                &meta.clone().with_roll(&roll),
                 events,
             )?;
             let absorbed = self.substitute_hits.contains(&recipient);
@@ -1176,7 +1176,7 @@ impl Battle {
                     actor,
                     recipient,
                     actual,
-                    &meta.clone().with_effectiveness(roll.effectiveness),
+                    &meta.clone().with_roll(&roll),
                     events,
                 )?;
                 report.substitute |= self.substitute_hits.contains(&recipient);

@@ -81,7 +81,7 @@ id,ability,status,verification
 80,steadfast,IMPLEMENTED,Source inventory; existing tests only
 81,snow-cloak,IMPLEMENTED,ability_rules::snow_cloak_reduces_accuracy_and_grants_hail_immunity
 82,gluttony,IMPLEMENTED,Source inventory; existing tests only
-83,anger-point,MISSING,No native battle behavior
+83,anger-point,IMPLEMENTED,ability_rules::anger_point_maximizes_attack_after_a_critical_hit
 84,unburden,MISSING,No native battle behavior
 85,heatproof,IMPLEMENTED,ability_rules::heatproof_halves_fire_damage_and_is_bypassable
 86,simple,IMPLEMENTED,Source inventory; existing tests only
