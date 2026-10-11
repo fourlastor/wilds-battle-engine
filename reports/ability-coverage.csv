@@ -171,7 +171,7 @@ id,ability,status,verification
 170,magician,MISSING,No native battle behavior
 171,bulletproof,IMPLEMENTED,Source inventory; existing tests only
 172,competitive,MISSING,No native battle behavior
-173,strong-jaw,MISSING,No native battle behavior
+173,strong-jaw,IMPLEMENTED,ability_rules::strongjaw_boosts_matching_moves_only
 174,refrigerate,MISSING,No native battle behavior
 175,sweet-veil,IMPLEMENTED,Source inventory; existing tests only
 176,stance-change,MISSING,No native battle behavior
