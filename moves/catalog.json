@@ -3107,6 +3107,17 @@
       "parameter_source": "https://pokeapi.co/api/v2/move/378/"
     },
     {
+      "id": 384,
+      "slug": "power-swap",
+      "name": "Power Swap",
+      "sheet_row": null,
+      "runtime_id": "power-swap",
+      "file": "moves/power-swap.lua",
+      "status": "implemented",
+      "limitations": [],
+      "parameter_source": "https://pokeapi.co/api/v2/move/384/"
+    },
+    {
       "id": 386,
       "slug": "punishment",
       "name": "Punishment",
@@ -6576,7 +6587,8 @@
       "rain-dance",
       "hail",
       "flatter",
-      "shell-smash"
+      "shell-smash",
+      "power-swap"
     ]
   }
 }
