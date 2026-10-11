@@ -6356,6 +6356,17 @@
       "limitations": []
     },
     {
+      "id": 816,
+      "slug": "jungle-healing",
+      "name": "Jungle Healing",
+      "sheet_row": null,
+      "runtime_id": "jungle-healing",
+      "file": "moves/jungle-healing.lua",
+      "status": "implemented",
+      "limitations": [],
+      "parameter_source": "https://pokeapi.co/api/v2/move/816/"
+    },
+    {
       "id": 817,
       "slug": "wicked-blow",
       "name": "Wicked Blow",
@@ -6828,7 +6839,8 @@
       "gastro-acid",
       "acupressure",
       "heal-bell",
-      "aromatherapy"
+      "aromatherapy",
+      "jungle-healing"
     ]
   }
 }

@@ -1714,3 +1714,31 @@ fn aromatherapy_cures_the_party_including_bench_members() {
     assert_eq!(b.participants(Side::Allies)[1].status, None);
     assert_eq!(b.participants(Side::Allies)[2].status, Some(Status::Burned));
 }
+
+#[test]
+fn jungle_healing_recovers_active_allies_and_cures_status_through_substitute() {
+    use wilds_battle_engine::Status;
+    let mut user = mon("User", &["jungle-healing"]);
+    user.hp = 500;
+    user.status = Some(Status::Burned);
+    let mut ally = mon("Ally", &["protect"]);
+    ally.status = Some(Status::Poisoned);
+    ally.substitute_hp = 50;
+    let mut bench = mon("Bench", &["splash"]);
+    bench.hp = 500;
+    bench.status = Some(Status::Burned);
+    let mut b = Battle::with_rng(
+        Fixed(0.5),
+        [vec![user, ally, bench], vec![mon("Foe", &["splash"])]],
+        MoveCatalog::builtin().unwrap(),
+    )
+    .unwrap();
+    b.set_active([vec![0, 1], vec![0]]).unwrap();
+    turn(&mut b);
+    let allies = b.participants(Side::Allies);
+    assert_eq!(allies[0].hp, 750);
+    assert_eq!(allies[0].status, None);
+    assert_eq!(allies[1].status, None);
+    assert_eq!(allies[2].hp, 500);
+    assert_eq!(allies[2].status, Some(Status::Burned));
+}
