@@ -3045,3 +3045,47 @@ fn foresight_preserves_negative_evasion_for_incoming_accuracy() {
 fn odor_sleuth_identifies_ghost_types_and_bypasses_positive_evasion() {
     check_foresight("odor-sleuth");
 }
+
+#[test]
+fn miracle_eye_enables_psychic_hits_against_dark_types_through_positive_evasion() {
+    use wilds_battle_engine::Stat;
+    let mut foe = mon("Foe", &["splash"]);
+    foe.types = vec![PokemonType::Dark];
+    foe.change_stage(Stat::Evasion, 6);
+    let mut b = game(mon("User", &["miracle-eye", "psychic"]), vec![foe], 0.5);
+    turn_with(&mut b, |p| choose_move(p, "miracle-eye", "splash"));
+    turn_with(&mut b, |p| choose_move(p, "psychic", "splash"));
+    assert!(b.participants(Side::Foes)[0].hp < 1000);
+    assert_eq!(b.participants(Side::Foes)[0].types, vec![PokemonType::Dark]);
+}
+#[test]
+fn miracle_eye_cannot_stack_with_foresight_and_respects_protect_but_not_substitute() {
+    for first in ["foresight", "odor-sleuth", "miracle-eye"] {
+        let mut b = game(
+            mon("User", &["foresight", "odor-sleuth", "miracle-eye"]),
+            vec![mon("Foe", &["splash"])],
+            0.5,
+        );
+        turn_with(&mut b, |p| choose_move(p, first, "splash"));
+        let second = if first == "miracle-eye" {
+            "foresight"
+        } else {
+            "miracle-eye"
+        };
+        turn_with(&mut b, |p| choose_move(p, second, "splash"));
+        assert!(b.participants(Side::Allies)[0].last_move_failed);
+        assert_eq!(b.participants(Side::Foes)[0].conditions.len(), 1);
+    }
+    for (response, lands) in [("splash", true), ("protect", false)] {
+        let mut foe = mon("Foe", &[response]);
+        foe.substitute_hp = 50;
+        let mut b = game(mon("User", &["miracle-eye"]), vec![foe], 0.5);
+        turn(&mut b);
+        assert_eq!(
+            b.participants(Side::Foes)[0]
+                .condition("miracle_eye")
+                .is_some(),
+            lands
+        );
+    }
+}
