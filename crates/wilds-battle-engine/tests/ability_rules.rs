@@ -1674,3 +1674,11 @@ fn arena_trap_only_prevents_grounded_non_ghost_switches() {
     check_trap("arena-trap", PokemonType::Ghost, "", false, false);
     check_trap("arena-trap", PokemonType::Normal, "", true, false);
 }
+
+#[test]
+fn magnet_pull_traps_only_steel_types_even_when_airborne() {
+    check_trap("magnet-pull", PokemonType::Steel, "", false, true);
+    check_trap("magnet-pull", PokemonType::Normal, "", false, false);
+    check_trap("magnet-pull", PokemonType::Steel, "levitate", false, true);
+    check_trap("magnet-pull", PokemonType::Steel, "", true, false);
+}

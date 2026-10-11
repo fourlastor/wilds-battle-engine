@@ -467,7 +467,11 @@ impl Battle {
             source.side != who.side
                 && self.adjacent(source, who)
                 && ((self.has_ability(source, "shadowtag") && !self.has_ability(who, "shadowtag"))
-                    || (self.has_ability(source, "arenatrap") && self.on_ground(who)))
+                    || (self.has_ability(source, "arenatrap") && self.on_ground(who))
+                    || (self.has_ability(source, "magnetpull")
+                        && self
+                            .types_of(who)
+                            .contains(&crate::model::PokemonType::Steel)))
         })
     }
 

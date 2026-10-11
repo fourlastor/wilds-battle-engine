@@ -40,7 +40,7 @@ id,ability,status,verification
 39,inner-focus,IMPLEMENTED,Source inventory; existing tests only
 40,magma-armor,IMPLEMENTED,Source inventory; existing tests only
 41,water-veil,IMPLEMENTED,Source inventory; existing tests only
-42,magnet-pull,MISSING,No native battle behavior
+42,magnet-pull,IMPLEMENTED,ability_rules::magnet_pull_traps_only_steel_types_even_when_airborne
 43,soundproof,IMPLEMENTED,Source inventory; existing tests only
 44,rain-dish,IMPLEMENTED,ability_rules::rain_dish_heals_one_sixteenth_in_effective_rain
 45,sand-stream,IMPLEMENTED,ability_rules::sandstream_starts_weather_on_entry_only_when_active
