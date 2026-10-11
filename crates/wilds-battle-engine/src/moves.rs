@@ -205,6 +205,11 @@ pub(crate) enum ScriptOperation {
         who: ParticipantId,
         restore_pp: bool,
     },
+    ScheduleAttack {
+        target: ParticipantId,
+        power: u16,
+        delay: u8,
+    },
     MoveInfo(String),
     MoveIds,
     CallMove {
@@ -1416,6 +1421,11 @@ fn parse_op(name: &str, args: &[Value]) -> mlua::Result<ScriptOperation> {
                 Value::Boolean(value) => *value,
                 _ => return Err(bad("prepare_replacement_heal restore_pp must be a boolean")),
             },
+        },
+        "schedule_attack" => ScriptOperation::ScheduleAttack {
+            target: who(0)?,
+            power: power_of(arg(1))?,
+            delay: whole(arg(2), "schedule_attack delay", 1.0, 255.0)? as u8,
         },
         "move_info" => ScriptOperation::MoveInfo(text_of(arg(0), name)?),
         "set_types" => {

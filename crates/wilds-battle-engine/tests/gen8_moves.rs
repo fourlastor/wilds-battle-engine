@@ -7021,3 +7021,93 @@ fn lunar_dance_fails_without_replacements_and_waits_through_a_fully_restored_mem
     });
     assert_eq!(b.participants(Side::Allies)[2].move_pp["pound"], 35);
 }
+
+#[test]
+fn future_sight_hits_after_two_more_turns_and_ignores_protect_at_both_ends() {
+    let user = mon("User", &["future-sight", "splash"]);
+    let foe = mon("Foe", &["protect", "splash"]);
+    let expected = control_damage(120, "Psychic", "Special", user.clone(), foe.clone());
+    let mut b = game(user, vec![foe], 0.5);
+    turn(&mut b);
+    assert_eq!(b.participants(Side::Foes)[0].hp, 1000);
+    turn_with(&mut b, |p| choose_move(p, "future-sight", "splash"));
+    assert!(b.participants(Side::Allies)[0].last_move_failed);
+    assert_eq!(b.participants(Side::Foes)[0].hp, 1000);
+    turn_with(&mut b, |p| choose_move(p, "splash", "protect"));
+    assert_eq!(1000 - b.participants(Side::Foes)[0].hp, expected);
+}
+#[test]
+fn future_sight_targets_the_replacement_after_its_user_switches_out() {
+    let user = mon("User", &["future-sight"]);
+    let foe = mon("Foe", &["splash"]);
+    let expected = control_damage(120, "Psychic", "Special", user.clone(), foe.clone());
+    let mut b = Battle::with_rng(
+        Fixed(0.5),
+        [
+            vec![user, mon("Ally reserve", &["splash"])],
+            vec![foe, mon("Foe reserve", &["splash"])],
+        ],
+        MoveCatalog::builtin().unwrap(),
+    )
+    .unwrap();
+    b.set_active([vec![0], vec![0]]).unwrap();
+    turn(&mut b);
+    turn_with(&mut b, |p| {
+        p.choices
+            .iter()
+            .find(|c| matches!(c, Choice::Switch { .. }))
+            .unwrap()
+            .id()
+    });
+    turn(&mut b);
+    assert_eq!(b.participants(Side::Foes)[0].hp, 1000);
+    assert_eq!(1000 - b.participants(Side::Foes)[1].hp, expected);
+}
+#[test]
+fn future_sight_checks_type_immunity_hiding_and_substitute_when_it_arrives() {
+    for (kind, sub, third) in [
+        (PokemonType::Dark, 0, "splash"),
+        (PokemonType::Normal, 500, "splash"),
+        (PokemonType::Normal, 0, "dig"),
+    ] {
+        let mut foe = mon("Foe", &["splash", "dig"]);
+        foe.types = vec![kind];
+        foe.substitute_hp = sub;
+        let mut b = game(mon("User", &["future-sight", "splash"]), vec![foe], 0.5);
+        turn(&mut b);
+        turn_with(&mut b, |p| choose_move(p, "splash", "splash"));
+        turn_with(&mut b, |p| choose_move(p, "splash", third));
+        assert_eq!(b.participants(Side::Foes)[0].hp, 1000);
+        if sub > 0 {
+            assert!(b.participants(Side::Foes)[0].substitute_hp < sub);
+        }
+    }
+}
+#[test]
+fn future_sight_still_hits_after_the_user_faints_without_its_old_stat_boosts() {
+    use wilds_battle_engine::Stat;
+    let mut user = mon("User", &["future-sight", "memento"]);
+    user.stages.insert(Stat::SpAttack, 6);
+    let foe = mon("Foe", &["splash"]);
+    let mut ordinary = user.clone();
+    ordinary.stages.clear();
+    let expected = control_damage(120, "Psychic", "Special", ordinary, foe.clone());
+    let mut b = Battle::with_rng(
+        Fixed(0.5),
+        [vec![user, mon("Bench", &["splash"])], vec![foe]],
+        MoveCatalog::builtin().unwrap(),
+    )
+    .unwrap();
+    b.set_active([vec![0], vec![0]]).unwrap();
+    turn(&mut b);
+    turn_with(&mut b, |p| {
+        if p.reason == wilds_battle_engine::PromptReason::Replacement {
+            p.choices[0].id()
+        } else {
+            choose_move(p, "memento", "splash")
+        }
+    });
+    turn(&mut b);
+    assert_eq!(b.participants(Side::Allies)[0].hp, 0);
+    assert_eq!(1000 - b.participants(Side::Foes)[0].hp, expected);
+}

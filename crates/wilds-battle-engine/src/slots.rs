@@ -118,3 +118,77 @@ impl Battle {
         }
     }
 }
+
+pub(crate) struct DelayedAttack {
+    side: Side,
+    position: usize,
+    due: u64,
+    source: ParticipantId,
+    spec: crate::moves::MoveSpec,
+    power: u16,
+}
+
+impl Battle {
+    pub(crate) fn schedule_attack(
+        &mut self,
+        source: ParticipantId,
+        target: ParticipantId,
+        spec: &crate::moves::MoveSpec,
+        power: u16,
+        delay: u8,
+    ) -> bool {
+        let Some(position) = self.position(target) else {
+            return false;
+        };
+        if self
+            .delayed_attacks
+            .iter()
+            .any(|effect| effect.side == target.side && effect.position == position)
+        {
+            return false;
+        }
+        self.delayed_attacks.push(DelayedAttack {
+            side: target.side,
+            position,
+            due: self.turn + u64::from(delay),
+            source,
+            spec: spec.clone(),
+            power,
+        });
+        true
+    }
+
+    pub(crate) fn resolve_delayed_attacks(
+        &mut self,
+        events: &mut Vec<BattleEvent>,
+    ) -> Result<(), crate::model::BattleError> {
+        for effect in std::mem::take(&mut self.delayed_attacks) {
+            if effect.due > self.turn {
+                self.delayed_attacks.push(effect);
+                continue;
+            }
+            let Some(&index) = self.active[effect.side.index()].get(effect.position) else {
+                continue;
+            };
+            let target = ParticipantId {
+                side: effect.side,
+                index,
+            };
+            if target == effect.source || self.get(target).hp == 0 {
+                continue;
+            }
+            events.push(BattleEvent::Message(format!(
+                "{} took the {} attack!",
+                self.get(target).name,
+                effect.spec.name
+            )));
+            self.delayed_hit(effect.source, target, &effect.spec, effect.power, events)?;
+            self.update_berries(events);
+            self.resolve_outcome(events);
+            if self.winner.is_some() {
+                break;
+            }
+        }
+        Ok(())
+    }
+}

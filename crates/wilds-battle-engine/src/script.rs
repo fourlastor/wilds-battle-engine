@@ -836,7 +836,13 @@ impl Battle {
             contact: options.contact.unwrap_or(frame.spec.has_flag("contact")),
             consecutive_boost: 0,
             typeless: options.typeless,
-            move_type: if frame.spec.auto_only {
+            move_type: if frame.spec.has_flag("future_move") {
+                if self.has_ability(frame.actor, "normalize") {
+                    crate::model::PokemonType::Normal
+                } else {
+                    frame.spec.move_type
+                }
+            } else if frame.spec.auto_only {
                 frame.spec.move_type
             } else {
                 self.converted_type(
@@ -852,6 +858,49 @@ impl Battle {
             defense_stat: options.defense_stat,
             ignore_stages: options.ignore_stages,
         }
+    }
+
+    pub(crate) fn delayed_hit(
+        &mut self,
+        actor: ParticipantId,
+        target: ParticipantId,
+        spec: &MoveSpec,
+        power: u16,
+        events: &mut Vec<BattleEvent>,
+    ) -> Result<(), BattleError> {
+        let mut frame = Frame {
+            actor,
+            target,
+            spec,
+            hook: ScriptHook::Main,
+            any_hit: false,
+            failed: false,
+            checked: Vec::new(),
+        };
+        let options = DamageOptions {
+            target: Some(target),
+            hit: HitOptions {
+                ignore_protect: true,
+                ..Default::default()
+            },
+            ..Default::default()
+        };
+        let old_power = std::mem::replace(&mut self.active_power_multiplier, 1.0);
+        let gem = self.active_gem.take();
+        let bypass = self.ability_bypass;
+        let ignored = self.ignored_ability.take();
+        self.ability_bypass = self.has_ability(actor, "moldbreaker")
+            || self.has_ability(actor, "teravolt")
+            || self.has_ability(actor, "turboblaze");
+        self.substitute_hits.clear();
+        let result = self.op_damage(&mut frame, power, &options, events);
+        self.finish_item_hits(events);
+        self.substitute_hits.clear();
+        self.active_power_multiplier = old_power;
+        self.active_gem = gem;
+        self.ability_bypass = bypass;
+        self.ignored_ability = ignored;
+        result.map(|_| ())
     }
 
     fn op_damage(
@@ -1409,6 +1458,11 @@ impl Battle {
             ScriptOperation::PrepareReplacementHeal { who, restore_pp } => {
                 Value::Boolean(self.prepare_replacement_heal(who, restore_pp))
             }
+            ScriptOperation::ScheduleAttack {
+                target,
+                power,
+                delay,
+            } => Value::Boolean(self.schedule_attack(actor, target, spec, power, delay)),
             ScriptOperation::MoveInfo(id) => match self.catalog.get(&id) {
                 None => Value::Nil,
                 Some(info) => {

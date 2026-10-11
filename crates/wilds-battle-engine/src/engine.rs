@@ -26,7 +26,7 @@ pub struct Battle {
     next_prompt_id: u64,
     pub(crate) winner: Option<Option<Side>>,
     pub(crate) turn: u64,
-    active_power_multiplier: f32,
+    pub(crate) active_power_multiplier: f32,
     pub(crate) active_gem: Option<(ParticipantId, PokemonType)>,
     pub(crate) item_hits: Vec<(ParticipantId, ParticipantId, HitMeta)>,
     pub(crate) hit_reactions: Vec<HitReaction>,
@@ -38,6 +38,7 @@ pub struct Battle {
     pub(crate) side_conditions: [Vec<Condition>; 2],
     pub(crate) field_conditions: Vec<Condition>,
     pub(crate) delayed_heals: Vec<crate::slots::DelayedHeal>,
+    pub(crate) delayed_attacks: Vec<crate::slots::DelayedAttack>,
     pub(crate) replacement_heals: Vec<crate::slots::ReplacementHeal>,
     pub(crate) last_faint_turn: [Option<u64>; 2],
     pub(crate) payout: [u32; 2],
@@ -257,6 +258,7 @@ impl Battle {
             side_conditions: [Vec::new(), Vec::new()],
             field_conditions: Vec::new(),
             delayed_heals: Vec::new(),
+            delayed_attacks: Vec::new(),
             replacement_heals: Vec::new(),
             last_faint_turn: [None, None],
             payout: [0, 0],
@@ -963,6 +965,9 @@ impl Battle {
                 index: self.active[side.index()][pos],
             })
             .collect();
+        if self.winner.is_none() {
+            self.resolve_delayed_attacks(events)?;
+        }
         if self.winner.is_none() {
             self.resolve_delayed_heals(events);
             for actor in &order {
@@ -2635,6 +2640,7 @@ impl Battle {
             self.release_links(target);
             self.restore_form(target, events);
             self.get_mut(target).conditions.clear();
+            self.get_mut(target).stages.clear();
             self.last_faint_turn[target.side.index()] = Some(turn);
             self.hit_reactions
                 .retain(|reaction| reaction.owner != target);
