@@ -5323,6 +5323,17 @@
       "limitations": []
     },
     {
+      "id": 685,
+      "slug": "purify",
+      "name": "Purify",
+      "sheet_row": null,
+      "runtime_id": "purify",
+      "file": "moves/purify.lua",
+      "status": "implemented",
+      "limitations": [],
+      "parameter_source": "https://pokeapi.co/api/v2/move/685/"
+    },
+    {
       "id": 686,
       "slug": "revelation-dance",
       "name": "Revelation Dance",
@@ -6636,7 +6647,8 @@
       "guard-swap",
       "heart-swap",
       "topsy-turvy",
-      "refresh"
+      "refresh",
+      "purify"
     ]
   }
 }

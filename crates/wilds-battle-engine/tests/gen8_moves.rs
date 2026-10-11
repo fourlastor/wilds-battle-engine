@@ -1304,3 +1304,26 @@ fn refresh_cures_burn_poison_and_paralysis_and_fails_when_healthy() {
         );
     }
 }
+
+#[test]
+fn purify_heals_user_only_when_it_cures_the_target() {
+    use wilds_battle_engine::Status;
+    for (status, sub, expected) in [
+        (Some(Status::Burned), 0, 1000),
+        (None, 0, 500),
+        (Some(Status::Burned), 50, 500),
+    ] {
+        let mut user = mon("User", &["purify"]);
+        user.hp = 500;
+        user.speed = 200;
+        let mut foe = mon("Foe", &["splash"]);
+        foe.status = status;
+        foe.substitute_hp = sub;
+        let mut b = game(user, vec![foe], 0.5);
+        turn(&mut b);
+        assert_eq!(b.participants(Side::Allies)[0].hp, expected);
+        if sub == 0 {
+            assert_eq!(b.participants(Side::Foes)[0].status, None);
+        }
+    }
+}
