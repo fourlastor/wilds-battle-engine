@@ -2054,3 +2054,18 @@ fn water_compaction_boosts_defense_by_two_when_damaged_by_water() {
     check_hit_stat_boost("water-compaction", "water-gun", Stat::Defense, 2);
     check_hit_stat_boost("water-compaction", "tackle", Stat::Defense, 0);
 }
+
+#[test]
+fn steam_engine_raises_speed_six_stages_after_water_or_fire_damage() {
+    use wilds_battle_engine::Stat;
+    check_hit_stat_boost("steam-engine", "water-gun", Stat::Speed, 6);
+    check_hit_stat_boost("steam-engine", "ember", Stat::Speed, 6);
+    check_hit_stat_boost("steam-engine", "tackle", Stat::Speed, 0);
+    let user = mon("User", &["water-gun"]);
+    let mut target = mon("Target", &["splash"]);
+    target.ability = Some("steam-engine".into());
+    target.stages.insert(Stat::Speed, -4);
+    let mut battle = game(user, target, 0.5);
+    turn(&mut battle, "water-gun", "splash");
+    assert_eq!(foe(&battle).stage(Stat::Speed), 2);
+}

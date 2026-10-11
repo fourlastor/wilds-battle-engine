@@ -41,6 +41,9 @@ impl Battle {
             self.change_stat(target, crate::model::Stat::Defense, 1, events);
         }
         let typed_boost = match (ability, hit.move_type) {
+            ("steamengine", crate::model::PokemonType::Water | crate::model::PokemonType::Fire) => {
+                Some((crate::model::Stat::Speed, 6))
+            }
             ("watercompaction", crate::model::PokemonType::Water) => {
                 Some((crate::model::Stat::Defense, 2))
             }

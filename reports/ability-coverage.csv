@@ -241,7 +241,7 @@ id,ability,status,verification
 240,mirror-armor,MISSING,No native battle behavior
 241,gulp-missile,MISSING,No native battle behavior
 242,stalwart,MISSING,No native battle behavior
-243,steam-engine,MISSING,No native battle behavior
+243,steam-engine,IMPLEMENTED,ability_rules::steam_engine_raises_speed_six_stages_after_water_or_fire_damage
 244,punk-rock,IMPLEMENTED,ability_rules::punk_rock_boosts_only_sound_attacks_and_reduces_incoming_sound
 245,sand-spit,MISSING,No native battle behavior
 246,ice-scales,IMPLEMENTED,Source inventory; existing tests only
