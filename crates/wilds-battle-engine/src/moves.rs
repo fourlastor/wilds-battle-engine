@@ -755,6 +755,7 @@ fn rule_of(value: &Value) -> mlua::Result<Rule> {
         RuleKind::BlockStatus => &["kind", "statuses", "confusion"],
         RuleKind::BlockMoves => &["kind", "flags", "message"],
         RuleKind::MovePriority => &["kind", "amount"],
+        RuleKind::Redirect => &["kind", "to", "type", "priority"],
         RuleKind::AccuracyMultiplier | RuleKind::EffectChance => &["kind", "factor"],
         RuleKind::MoveType => &["kind", "from", "to"],
         RuleKind::AlwaysHit => &["kind", "against"],
@@ -831,6 +832,11 @@ fn rule_of(value: &Value) -> mlua::Result<Rule> {
                 .map(AppliedStatus::battle_status)
                 .collect(),
             confusion: options.flag("confusion")?,
+        },
+        RuleKind::Redirect => Rule::Redirect {
+            to: pokemon_of(&required("to")?, "rule option to")?,
+            move_type: options.pokemon_type("type")?,
+            priority: options.whole("priority", -7.0, 7.0)?.unwrap_or(0.0) as i8,
         },
         RuleKind::MovePriority => Rule::MovePriority {
             amount: whole(&required("amount")?, "rule option amount", -7.0, 7.0)? as i8,

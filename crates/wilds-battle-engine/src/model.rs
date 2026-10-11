@@ -198,6 +198,12 @@ pub enum Rule {
         statuses: Vec<Status>,
         confusion: bool,
     },
+    /// Redirects single-target moves aimed at the holder; higher priority rules win.
+    Redirect {
+        to: ParticipantId,
+        move_type: Option<PokemonType>,
+        priority: i8,
+    },
     /// Adds to the priority of the holder's selected move, before turn actions begin.
     MovePriority {
         amount: i8,

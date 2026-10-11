@@ -817,6 +817,14 @@ impl Battle {
         if self.get(target).hp == 0 && spec.target == Target::UserOrAlly {
             target = actor;
         }
+        let redirected = self.redirect_target(actor, target, &spec);
+        if redirected != target {
+            target = redirected;
+            events.push(BattleEvent::Message(format!(
+                "{} drew in the move!",
+                self.get(target).name
+            )));
+        }
         if spec.fail_on_full_hp && self.get(target).hp == self.get(target).max_hp {
             events.push(BattleEvent::Message(format!(
                 "{user_name} used {}!",

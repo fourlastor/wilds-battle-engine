@@ -6,7 +6,7 @@ use crate::engine::Battle;
 use crate::model::{
     BattleEvent, CombatStat, Condition, ParticipantId, PokemonType, Rule, Scope, Side, Status,
 };
-use crate::moves::{Category, MoveSpec};
+use crate::moves::{Category, MoveSpec, Target};
 
 /// Fills in `{name}` in a message written by a move.
 pub(crate) fn named(message: &str, name: &str) -> String {
@@ -216,6 +216,43 @@ impl Battle {
                 _ => None,
             })
             .unwrap_or(move_type)
+    }
+
+    pub(crate) fn redirect_target(
+        &self,
+        actor: ParticipantId,
+        target: ParticipantId,
+        spec: &MoveSpec,
+    ) -> ParticipantId {
+        if spec.has_flag("ignore_redirection")
+            || !matches!(
+                spec.target,
+                Target::Selected | Target::AnyOther | Target::UserOrAlly | Target::RandomOpponent
+            )
+            || actor == target
+        {
+            return target;
+        }
+        let move_type = self.converted_type(actor, spec.move_type);
+        self.rules(target)
+            .enumerate()
+            .filter_map(|(order, rule)| match rule {
+                Rule::Redirect {
+                    to,
+                    move_type: only_type,
+                    priority,
+                } if to.side == target.side
+                    && *to != actor
+                    && self.get(*to).hp > 0
+                    && self.adjacent(actor, *to)
+                    && only_type.is_none_or(|kind| kind == move_type) =>
+                {
+                    Some((*priority, order, *to))
+                }
+                _ => None,
+            })
+            .max_by_key(|(priority, order, _)| (*priority, *order))
+            .map_or(target, |(_, _, to)| to)
     }
 
     pub(crate) fn move_priority(&self, id: ParticipantId, base: i8) -> i8 {

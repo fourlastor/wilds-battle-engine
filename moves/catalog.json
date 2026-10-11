@@ -5113,10 +5113,8 @@
       "sheet_row": 514,
       "runtime_id": "snipe-shot",
       "file": "moves/snipe-shot.lua",
-      "status": "partial",
-      "limitations": [
-        "The engine has no redirection mechanic; targeting already goes directly to the selected opponent."
-      ]
+      "status": "implemented",
+      "limitations": []
     },
     {
       "id": 746,

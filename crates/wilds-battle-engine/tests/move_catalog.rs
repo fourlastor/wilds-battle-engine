@@ -84,6 +84,112 @@ fn said(events: &[BattleEvent], text: &str) -> bool {
 }
 
 #[test]
+fn redirection_checks_type_scope_liveness_and_priority() {
+    for (attack, alive, redirects) in [
+        ("water-gun", true, true),
+        ("ember", true, false),
+        ("water-gun", false, false),
+        ("swift", true, false),
+    ] {
+        let mut target = mon("Target", &["splash"]);
+        target.conditions.push(wilds_battle_engine::Condition {
+            name: "draw".into(),
+            value: 1,
+            turns_left: Some(1),
+            group: None,
+            end_message: None,
+            rules: vec![wilds_battle_engine::Rule::Redirect {
+                to: ParticipantId {
+                    side: Side::Foes,
+                    index: 1,
+                },
+                move_type: Some(PokemonType::Water),
+                priority: 1,
+            }],
+        });
+        let mut redirector = mon("Redirector", &["splash"]);
+        if !alive {
+            redirector.hp = 0;
+        }
+        let mut game = Game::new(vec![mon("Ally", &[attack])], vec![target, redirector], 0.5);
+        assert_eq!(
+            said(&game.turn(attack, "splash"), "drew in the move"),
+            redirects
+        );
+    }
+    let mut target = mon("Target", &["splash"]);
+    target.conditions.push(wilds_battle_engine::Condition {
+        name: "draw".into(),
+        value: 1,
+        turns_left: Some(1),
+        group: None,
+        end_message: None,
+        rules: vec![
+            wilds_battle_engine::Rule::Redirect {
+                to: ParticipantId {
+                    side: Side::Foes,
+                    index: 2,
+                },
+                move_type: None,
+                priority: 2,
+            },
+            wilds_battle_engine::Rule::Redirect {
+                to: ParticipantId {
+                    side: Side::Foes,
+                    index: 1,
+                },
+                move_type: None,
+                priority: 1,
+            },
+        ],
+    });
+    let mut game = Game::new(
+        vec![mon("Ally", &["water-gun"])],
+        vec![target, mon("Low", &["splash"]), mon("High", &["splash"])],
+        0.5,
+    );
+    assert!(said(
+        &game.turn("water-gun", "splash"),
+        "High drew in the move"
+    ));
+}
+
+#[test]
+fn snipe_shot_bypasses_redirection_that_affects_plain_and_scripted_moves() {
+    for attack in ["water-gun", "brine", "snipe-shot"] {
+        let mut target = mon("Target", &["splash"]);
+        target.conditions.push(wilds_battle_engine::Condition {
+            name: "draw".into(),
+            value: 1,
+            turns_left: Some(1),
+            group: None,
+            end_message: None,
+            rules: vec![wilds_battle_engine::Rule::Redirect {
+                to: ParticipantId {
+                    side: Side::Foes,
+                    index: 1,
+                },
+                move_type: Some(PokemonType::Water),
+                priority: 1,
+            }],
+        });
+        let mut game = Game::new(
+            vec![mon("Ally", &[attack])],
+            vec![target, mon("Redirector", &["splash"])],
+            0.5,
+        );
+        let events = game.turn(attack, "splash");
+        let foes = game.0.participants(Side::Foes);
+        assert_eq!(foes[0].hp < 1000, attack == "snipe-shot");
+        assert_eq!(foes[1].hp < 1000, attack != "snipe-shot");
+        assert_eq!(said(&events, "drew in the move"), attack != "snipe-shot");
+        let hp = foes[0].hp;
+        game.turn(attack, "splash");
+        assert!(game.foe().hp < hp); // expired
+    }
+}
+
+#[test]
 fn flame_burst_only_splashes_neighbors_and_fainting_does_not_collapse_positions() {
     for middle_alive in [true, false] {
         let mut middle = mon("Middle", &["splash"]);
