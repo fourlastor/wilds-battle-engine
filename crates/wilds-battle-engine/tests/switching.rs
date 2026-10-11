@@ -678,3 +678,124 @@ fn two_pivots_in_one_turn_resume_each_other_without_replaying_actions() {
     assert!(b.participants(Side::Allies)[1].hp < 1000);
     assert_eq!(b.participants(Side::Foes)[1].hp, 1000);
 }
+
+#[test]
+fn pursuit_intercepts_voluntary_and_pivot_switches_once_at_double_power() {
+    let run =
+        |pivot: bool, leaving: bool| {
+            let mut lead = mon("Lead", &["u-turn", "splash"]);
+            lead.speed = 200;
+            let mut b = game(
+                vec![lead, mon("Reserve", &["splash"])],
+                vec![mon("Foe", &["pursuit"])],
+                [vec![0], vec![0]],
+            );
+            if leaving && !pivot {
+                switch(&mut b, id(Side::Allies, 0), 1);
+            } else {
+                pick(
+                    &mut b,
+                    id(Side::Allies, 0),
+                    if pivot { "u-turn" } else { "splash" },
+                );
+            }
+            pick(&mut b, id(Side::Foes, 0), "pursuit");
+            if pivot {
+                let first = switch(&mut b, id(Side::Allies, 0), 1);
+                assert!(first.events.iter().any(
+                    |e| matches!(e,BattleEvent::Damage{target,..}if *target==id(Side::Allies,0))
+                ));
+            }
+            b.advance().unwrap();
+            assert_eq!(b.participants(Side::Foes)[0].move_pp["pursuit"], 19);
+            assert_eq!(b.participants(Side::Allies)[1].hp, 1000);
+            1000 - b.participants(Side::Allies)[0].hp
+        };
+    let ordinary = run(false, false);
+    let switched = run(false, true);
+    let pivot = run(true, true);
+    assert!(switched > ordinary * 17 / 10);
+    assert_eq!(switched, pivot);
+}
+
+#[test]
+fn pursuit_can_faint_a_switcher_before_replacement_and_cannot_miss_that_switch() {
+    for hp in [1, 1000] {
+        let mut lead = mon("Lead", &["splash"]);
+        lead.hp = hp;
+        lead.stages.insert(Stat::Evasion, 6);
+        let mut foe = mon("Foe", &["pursuit"]);
+        foe.stages.insert(Stat::Accuracy, -6);
+        let mut b = game(
+            vec![lead, mon("Reserve", &["splash"])],
+            vec![foe],
+            [vec![0], vec![0]],
+        );
+        switch(&mut b, id(Side::Allies, 0), 1);
+        pick(&mut b, id(Side::Foes, 0), "pursuit");
+        let result = b.advance().unwrap();
+        assert!(b.participants(Side::Allies)[0].hp < hp);
+        assert_eq!(b.participants(Side::Allies)[1].hp, 1000);
+        assert_eq!(b.participants(Side::Foes)[0].move_pp["pursuit"], 19);
+        let AdvanceStatus::Awaiting(p) = result.status else {
+            panic!()
+        };
+        if hp == 1 {
+            assert_eq!(p.reason, PromptReason::Replacement);
+            assert!(
+                !result
+                    .events
+                    .iter()
+                    .any(|e| matches!(e, BattleEvent::Switched { .. }))
+            );
+        } else {
+            assert_eq!(p.actor, id(Side::Allies, 1));
+        }
+    }
+}
+
+#[test]
+fn pursuit_that_already_acted_does_not_intercept_a_later_pivot() {
+    let mut foe = mon("Foe", &["pursuit"]);
+    foe.speed = 200;
+    let mut b = game(
+        vec![mon("Lead", &["u-turn"]), mon("Reserve", &["splash"])],
+        vec![foe],
+        [vec![0], vec![0]],
+    );
+    pick(&mut b, id(Side::Allies, 0), "u-turn");
+    pick(&mut b, id(Side::Foes, 0), "pursuit");
+    let first = switch(&mut b, id(Side::Allies, 0), 1);
+    let hp = b.participants(Side::Allies)[0].hp;
+    let second = b.advance().unwrap();
+    assert_eq!(b.participants(Side::Allies)[0].hp, hp);
+    assert_eq!(b.participants(Side::Foes)[0].move_pp["pursuit"], 19);
+    assert_eq!(
+        first
+            .events
+            .iter()
+            .chain(second.events.iter())
+            .filter(|e| matches!(e,BattleEvent::Damage{target,..}if *target==id(Side::Allies,0)))
+            .count(),
+        1
+    );
+}
+
+#[test]
+fn an_intercepted_pursuit_still_checks_sleep_once() {
+    let mut foe = mon("Foe", &["pursuit"]);
+    foe.status = Some(Status::Asleep);
+    foe.status_turns = 3;
+    let mut b = game(
+        vec![mon("Lead", &["splash"]), mon("Reserve", &["splash"])],
+        vec![foe],
+        [vec![0], vec![0]],
+    );
+    switch(&mut b, id(Side::Allies, 0), 1);
+    pick(&mut b, id(Side::Foes, 0), "pursuit");
+    b.advance().unwrap();
+    assert_eq!(b.participants(Side::Allies)[0].hp, 1000);
+    assert_eq!(b.participants(Side::Allies)[1].hp, 1000);
+    assert_eq!(b.participants(Side::Foes)[0].status_turns, 2);
+    assert_eq!(b.participants(Side::Foes)[0].move_pp["pursuit"], 20);
+}

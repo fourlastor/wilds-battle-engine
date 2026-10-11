@@ -12,6 +12,7 @@ pub struct Battle {
     pub(crate) sides: [Vec<Pokemon>; 2],
     pub(crate) active: [Vec<usize>; 2],
     pending_events: Vec<BattleEvent>,
+    pub(crate) switching_target: Option<ParticipantId>,
     pub(crate) pivot: Option<ParticipantId>,
     pub(crate) forced_switches: Vec<(ParticipantId, ParticipantId)>,
     pub(crate) weather: Option<Weather>,
@@ -223,6 +224,7 @@ impl Battle {
             pending_events: Vec::new(),
             forced_switches: Vec::new(),
             pivot: None,
+            switching_target: None,
             sides,
             weather: None,
             rng: Box::new(rng),
@@ -727,7 +729,10 @@ impl Battle {
             match &choice {
                 SelectedAction::Switch(to) => {
                     if self.get(actor).hp > 0 && !self.trapped(actor) {
-                        self.switch_member(actor, *to, events);
+                        self.intercept_switch(actor, events)?;
+                        if self.get(actor).hp > 0 {
+                            self.switch_member(actor, *to, events);
+                        }
                     }
                 }
                 SelectedAction::Move(choice) => self.execute_move(actor, choice, events)?,
@@ -760,6 +765,10 @@ impl Battle {
                 && self.get(who).hp > 0
                 && self.is_active(who)
             {
+                self.intercept_switch(who, events)?;
+                if self.get(who).hp == 0 || self.winner.is_some() {
+                    continue;
+                }
                 let choices: Vec<_> = self
                     .bench(who.side)
                     .into_iter()
@@ -1053,7 +1062,12 @@ impl Battle {
         if self.get(target).hp == 0 && spec.target == Target::UserOrAlly {
             target = actor;
         }
-        let redirected = self.redirect_target(actor, target, &spec);
+        let redirected =
+            if self.switching_target == Some(target) && spec.has_flag("intercepts_switch") {
+                target
+            } else {
+                self.redirect_target(actor, target, &spec)
+            };
         if redirected != target {
             target = redirected;
             events.push(BattleEvent::Message(format!(
@@ -2154,4 +2168,48 @@ impl Battle {
 
 fn fractional(max_hp: u16, denominator: u16, numerator: u16) -> u16 {
     ((u32::from(max_hp) * u32::from(numerator) / u32::from(denominator)) as u16).max(1)
+}
+
+impl Battle {
+    /// Pursuit consumes the waiting action once and executes it before withdrawal.
+    fn intercept_switch(
+        &mut self,
+        who: ParticipantId,
+        events: &mut Vec<BattleEvent>,
+    ) -> Result<(), BattleError> {
+        while self.get(who).hp > 0 && self.is_active(who) && self.winner.is_none() {
+            let Some(index) = self.turn_queue.iter().position(|entry| {
+                self.get(entry.actor).hp > 0 && self.is_active(entry.actor)
+                    && entry.actor.side != who.side && self.adjacent(entry.actor,who)
+                    && matches!(&entry.action, SelectedAction::Move(choice)
+                        if self.catalog.get(&choice.move_id).is_some_and(|spec| spec.has_flag("intercepts_switch")))
+            }) else { break; };
+            let entry = self.turn_queue.remove(index).expect("pending interceptor");
+            let SelectedAction::Move(mut choice) = entry.action else {
+                unreachable!()
+            };
+            choice.target = who;
+            choice.target_position = self.position(who).expect("active switcher");
+            self.pending_actors = self
+                .turn_queue
+                .iter()
+                .filter_map(|entry| {
+                    matches!(entry.action, SelectedAction::Move(_)).then_some(entry.actor)
+                })
+                .collect();
+            self.hit_reactions
+                .retain(|reaction| reaction.owner != entry.actor);
+            self.check_sleep(entry.actor, events);
+            self.switching_target = Some(who);
+            let result = self.execute_move(entry.actor, &choice, events);
+            self.switching_target = None;
+            result?;
+            self.update_berries(events);
+            self.get_mut(entry.actor).acted = true;
+            self.completed_slots
+                .push((entry.actor.side, entry.position));
+            self.resolve_outcome(events);
+        }
+        Ok(())
+    }
 }

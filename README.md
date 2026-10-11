@@ -173,7 +173,7 @@ STAB bonus even when the attacker lacks the hit's type, without doubling an exis
 | `hidden` | A `Hidden` value (`Air`, `Underground`, `Underwater`, `Vanished`) or nil. |
 | `item`, `ability` | Item/ability IDs or nil. Power Herb activates on charging; supported berries activate or can be eaten by move scripts. |
 | `marks[name]`, `effects[name]` | See below. |
-| `acted`, `selected_move` | This turn. `selected_move` has `id`, `name`, `type`, `category`, `damaging`, `priority`. |
+| `acted`, `selected_move`, `switching` | This turn. `selected_move` has `id`, `name`, `type`, `category`, `damaging`, `priority`. |
 | `damage_taken`, `hurt_this_turn`, `last_attacker`, `last_hit` | This turn. `last_hit` has `damage`, `move`, `category`, `type`, `contact`. |
 | `turns_on_field`, `moves`, `used_moves[id]`, `pp[id]`, `last_move`, `last_move_failed`, `streak` | `streak` counts the turns in a row this move was used without failing. |
 | `side`, `team`, `is_user`, `is_ally`, `is_foe` | `team` is the side table. |
@@ -292,6 +292,11 @@ so they hit the incoming occupant. Fainted slots prompt for a replacement before
 the next turn. Switching resets stages and volatile effects, restores temporary
 forms/types, and preserves HP, nonvolatile status, PP, items and consumption history.
 Bench members do not act, receive residual effects or activate abilities/items.
+A pending move flagged `intercepts_switch` runs once before an adjacent foe
+withdraws voluntarily or pivots. Its target has `switching = true` during that
+action; Pursuit uses this for doubled power and guaranteed accuracy. A knockout
+cancels withdrawal and the host chooses a faint replacement. Forced switches do
+not trigger interception.
 Lua `pokemon.team.pokemon` includes the living party, while `ctx.allies`, `foes`,
 `everyone`, and targets contain living active members. `pokemon.active` and
 `pokemon.position` distinguish the bench (`false`/`nil`) from a field slot.

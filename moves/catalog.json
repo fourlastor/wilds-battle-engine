@@ -7,7 +7,7 @@
   ],
   "parameter_policy": "JSON names and parameters; actual behavior for conflicting spreadsheet descriptions; original runtime IDs and behaviors retained for existing moves. Gravity and Stockpile have no local source JSON and use PokeAPI parameters.",
   "global_limitations": [
-    "The engine supports benches, voluntary switching, selected item/ability effects, redirection and move-priority hooks. Switch interception, carrying and substitute remain unsupported; the item and ability catalogs are not exhaustive.",
+    "The engine supports benches, voluntary switching, selected item/ability effects, redirection and move-priority hooks. Carrying and substitute remain unsupported; the item and ability catalogs are not exhaustive.",
     "General battle interactions follow the current Rust engine; catalog coverage is not full official battle parity."
   ],
   "moves": [
@@ -1694,10 +1694,8 @@
       "sheet_row": 165,
       "runtime_id": "pursuit",
       "file": "moves/pursuit.lua",
-      "status": "partial",
-      "limitations": [
-        "Switching, bench selection and switch interception are not implemented; only the on-field damage/stat effect runs."
-      ]
+      "status": "implemented",
+      "limitations": []
     },
     {
       "id": 229,

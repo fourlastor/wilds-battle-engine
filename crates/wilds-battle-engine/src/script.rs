@@ -223,6 +223,7 @@ impl Battle {
         table.raw_set("marks", marks)?;
         table.raw_set("effects", effects)?;
         table.raw_set("acted", pokemon.acted)?;
+        table.raw_set("switching", self.switching_target == Some(id))?;
         table.raw_set("position", self.position(id))?;
         table.raw_set("active", self.is_active(id))?;
         let selected = self
