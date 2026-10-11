@@ -577,3 +577,65 @@ fn behemoth_bash_makes_contact_and_hits_substitute() {
     assert_eq!(battle.participants(Side::Foes)[0].hp, 1000);
     assert_eq!(battle.participants(Side::Foes)[0].substitute_hp, 0);
 }
+
+#[test]
+fn aura_wheel_requires_morpeko_and_uses_its_current_form() {
+    use wilds_battle_engine::Stat;
+    for (species_id, species, form, hits, boost) in [
+        (0, "ditto", None, false, 0),
+        (877, "morpeko", None, false, 0),
+        (877, "morpeko", Some("morpeko-hangry"), true, 1),
+        (0, "morpeko-hangry", None, true, 1),
+    ] {
+        let mut user = mon("User", &["aura-wheel"]);
+        user.species_id = species_id;
+        user.species = species.into();
+        user.form = form.map(str::to_owned);
+        let mut foe = mon("Foe", &["splash"]);
+        foe.types = vec![PokemonType::Ground];
+        let mut battle = game(user, vec![foe], 0.5);
+        turn(&mut battle);
+        assert_eq!(battle.participants(Side::Foes)[0].hp < 1000, hits);
+        assert_eq!(
+            battle.participants(Side::Allies)[0].stage(Stat::Speed),
+            boost
+        );
+    }
+}
+
+#[test]
+fn aura_wheel_boosts_after_substitute_or_ko_but_not_protect_or_absorption() {
+    use wilds_battle_engine::Stat;
+    for outcome in ["hit", "substitute", "ko", "protect", "absorb"] {
+        let mut user = mon("User", &["aura-wheel"]);
+        user.species_id = 877;
+        let mut foe = mon(
+            "Foe",
+            &[if outcome == "protect" {
+                "protect"
+            } else {
+                "splash"
+            }],
+        );
+        if outcome == "substitute" {
+            foe.substitute_hp = 1;
+        }
+        if outcome == "ko" {
+            foe.hp = 1;
+        }
+        if outcome == "absorb" {
+            foe.ability = Some("volt-absorb".into());
+        }
+        let mut battle = game(user, vec![foe], 0.5);
+        turn(&mut battle);
+        assert_eq!(
+            battle.participants(Side::Allies)[0].stage(Stat::Speed),
+            if matches!(outcome, "protect" | "absorb") {
+                0
+            } else {
+                1
+            },
+            "{outcome}"
+        );
+    }
+}

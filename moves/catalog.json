@@ -5276,6 +5276,16 @@
       "limitations": []
     },
     {
+      "id": 783,
+      "slug": "aura-wheel",
+      "name": "Aura Wheel",
+      "sheet_row": null,
+      "runtime_id": "aura-wheel",
+      "file": "moves/aura-wheel.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
       "id": 784,
       "slug": "breaking-swipe",
       "name": "Breaking Swipe",
@@ -5932,7 +5942,8 @@
       "body-press",
       "decorate",
       "behemoth-blade",
-      "behemoth-bash"
+      "behemoth-bash",
+      "aura-wheel"
     ]
   }
 }
