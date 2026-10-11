@@ -1294,3 +1294,8 @@ fn drizzle_starts_rain_on_entry_only_when_active() {
 fn drought_starts_weather_on_entry_only_when_active() {
     check_weather_entry("drought", wilds_battle_engine::WeatherKind::Sun);
 }
+
+#[test]
+fn sandstream_starts_weather_on_entry_only_when_active() {
+    check_weather_entry("sand-stream", wilds_battle_engine::WeatherKind::Sandstorm);
+}
