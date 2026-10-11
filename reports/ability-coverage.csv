@@ -155,7 +155,7 @@ id,ability,status,verification
 154,justified,MISSING,No native battle behavior
 155,rattled,PARTIAL,Source inventory; existing tests only
 156,magic-bounce,IMPLEMENTED,Source inventory; existing tests only
-157,sap-sipper,PARTIAL,Source inventory; existing tests only
+157,sap-sipper,IMPLEMENTED,ability_rules::sap_sipper_blocks_grass_status_moves_without_secondary_effects
 158,prankster,MISSING,No native battle behavior
 159,sand-force,MISSING,No native battle behavior
 160,iron-barbs,MISSING,No native battle behavior

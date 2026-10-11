@@ -383,7 +383,8 @@ impl Battle {
             && (self.has_ability(target, "voltabsorb") || self.has_ability(target, "motordrive")))
             || (kind == crate::model::PokemonType::Water
                 && self.has_ability(target, "waterabsorb"))
-            || (kind == crate::model::PokemonType::Fire && self.has_ability(target, "flashfire"));
+            || (kind == crate::model::PokemonType::Fire && self.has_ability(target, "flashfire"))
+            || (kind == crate::model::PokemonType::Grass && self.has_ability(target, "sapsipper"));
         absorbs && self.ability_blocks_damage(actor, target, kind, 2.0, false, false, true, events)
     }
 

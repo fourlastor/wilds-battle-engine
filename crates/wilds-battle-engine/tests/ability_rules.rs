@@ -162,3 +162,29 @@ fn motor_drive_absorbs_thunder_wave_and_boosts_speed_once() {
         assert_eq!(foe(&battle).status, (!active).then_some(Status::Paralyzed));
     }
 }
+
+#[test]
+fn sap_sipper_blocks_grass_status_moves_without_secondary_effects() {
+    for move_id in ["spore", "leech-seed", "worry-seed"] {
+        for (suppressed, breaker) in [(false, false), (true, false), (false, true)] {
+            let mut user = mon("User", &[move_id]);
+            user.ability = breaker.then(|| "mold-breaker".into());
+            let mut target = mon("Target", &["splash"]);
+            target.ability = Some("sap-sipper".into());
+            target.ability_suppressed = suppressed;
+            let mut battle = game(user, target, 0.5);
+            turn(&mut battle, move_id, "splash");
+            let active = !suppressed && !breaker;
+            assert_eq!(
+                foe(&battle).stage(wilds_battle_engine::Stat::Attack),
+                i8::from(active),
+                "{move_id}"
+            );
+            if active {
+                assert_eq!(foe(&battle).status, None);
+                assert_eq!(foe(&battle).ability.as_deref(), Some("sap-sipper"));
+                assert_eq!(foe(&battle).hp, 1000);
+            }
+        }
+    }
+}
