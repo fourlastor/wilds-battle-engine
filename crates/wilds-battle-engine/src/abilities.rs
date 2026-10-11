@@ -32,7 +32,7 @@ impl Battle {
         if self
             .actors()
             .into_iter()
-            .any(|who| self.has_ability(who, "cloudnine"))
+            .any(|who| self.has_ability(who, "cloudnine") || self.has_ability(who, "airlock"))
         {
             None
         } else {

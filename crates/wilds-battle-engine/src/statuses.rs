@@ -24,10 +24,6 @@ impl Battle {
 
     pub(crate) fn status_weather_active(&self, kind: WeatherKind) -> bool {
         self.effective_weather() == Some(kind)
-            && !self
-                .actors()
-                .into_iter()
-                .any(|who| self.has_ability(who, "airlock"))
     }
 
     pub(crate) fn status_ability_immunity(&self, who: ParticipantId, status: Status) -> bool {

@@ -74,7 +74,7 @@ id,ability,status,verification
 73,white-smoke,IMPLEMENTED,Source inventory; existing tests only
 74,pure-power,IMPLEMENTED,Source inventory; existing tests only
 75,shell-armor,IMPLEMENTED,Source inventory; existing tests only
-76,air-lock,PARTIAL,Source inventory; existing tests only
+76,air-lock,IMPLEMENTED,ability_rules::air_lock_suppresses_weather_damage_and_lua_weather
 77,tangled-feet,IMPLEMENTED,Source inventory; existing tests only
 78,motor-drive,IMPLEMENTED,ability_rules::motor_drive_absorbs_thunder_wave_and_boosts_speed_once
 79,rivalry,MISSING,No native battle behavior
