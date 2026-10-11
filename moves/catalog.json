@@ -2119,6 +2119,17 @@
       "parameter_source": "https://pokeapi.co/api/v2/move/213/"
     },
     {
+      "id": 214,
+      "slug": "sleep-talk",
+      "name": "Sleep Talk",
+      "sheet_row": null,
+      "runtime_id": "sleep-talk",
+      "file": "moves/sleep-talk.lua",
+      "status": "implemented",
+      "limitations": [],
+      "parameter_source": "https://pokeapi.co/api/v2/move/214/"
+    },
+    {
       "id": 215,
       "slug": "heal-bell",
       "name": "Heal Bell",
@@ -8004,7 +8015,8 @@
       "fling",
       "mimic",
       "sketch",
-      "nature-power"
+      "nature-power",
+      "sleep-talk"
     ]
   }
 }

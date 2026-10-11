@@ -6371,3 +6371,55 @@ fn called_move_recursion_is_bounded_without_spending_additional_pp() {
     assert_eq!(b.participants(Side::Allies)[0].move_pp["loop"], 9);
     assert!(b.participants(Side::Allies)[0].last_move_failed);
 }
+
+#[test]
+fn sleep_talk_calls_a_zero_pp_move_without_waking_or_spending_its_pp() {
+    let mut user = mon("User", &["sleep-talk", "pound"]);
+    user.status = Some(wilds_battle_engine::Status::Asleep);
+    user.status_turns = 3;
+    user.move_pp.insert("pound".into(), 0);
+    let mut b = game(user, vec![mon("Foe", &["splash"])], 0.5);
+    turn(&mut b);
+    assert!(b.participants(Side::Foes)[0].hp < 1000);
+    let user = &b.participants(Side::Allies)[0];
+    assert_eq!(user.status, Some(wilds_battle_engine::Status::Asleep));
+    assert_eq!(user.status_turns, 2);
+    assert_eq!(user.move_pp["pound"], 0);
+    assert_eq!(user.move_pp["sleep-talk"], 9);
+    assert_eq!(user.last_used.as_deref(), Some("sleep-talk"));
+}
+#[test]
+fn sleep_talk_rejects_awake_users_and_forbidden_moves() {
+    for asleep in [false, true] {
+        let mut user = mon("User", &["sleep-talk", "dig", "mimic", "uproar"]);
+        if asleep {
+            user.status = Some(wilds_battle_engine::Status::Asleep);
+            user.status_turns = 3;
+        }
+        let mut b = game(user, vec![mon("Foe", &["splash"])], 0.5);
+        turn(&mut b);
+        assert_eq!(b.participants(Side::Foes)[0].hp, 1000);
+        assert!(b.participants(Side::Allies)[0].last_move_failed);
+        assert!(
+            b.participants(Side::Allies)[0]
+                .script_continuation
+                .is_none()
+        );
+    }
+}
+#[test]
+fn sleep_talk_can_call_self_targeted_healing_and_still_checks_target_protection() {
+    let mut user = mon("User", &["sleep-talk", "recover"]);
+    user.hp = 200;
+    user.status = Some(wilds_battle_engine::Status::Asleep);
+    user.status_turns = 3;
+    let mut b = game(user, vec![mon("Foe", &["splash"])], 0.5);
+    turn(&mut b);
+    assert_eq!(b.participants(Side::Allies)[0].hp, 700);
+    let mut user = mon("User", &["sleep-talk", "pound"]);
+    user.ability = Some("comatose".into());
+    let mut b = game(user, vec![mon("Foe", &["protect"])], 0.5);
+    turn(&mut b);
+    assert_eq!(b.participants(Side::Foes)[0].hp, 1000);
+    assert!(b.participants(Side::Allies)[0].last_move_failed);
+}
