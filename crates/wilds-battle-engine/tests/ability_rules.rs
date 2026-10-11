@@ -289,3 +289,24 @@ fn heatproof_halves_fire_damage_and_is_bypassable() {
         ability_damage("tackle", "", "", false)
     );
 }
+
+#[test]
+fn water_bubble_boosts_water_and_resists_fire() {
+    for move_id in ["water-gun", "aqua-jet"] {
+        let base = ability_damage(move_id, "", "", false);
+        let boosted = ability_damage(move_id, "water-bubble", "", false);
+        assert!((i32::from(boosted) - 2 * i32::from(base)).abs() <= 1);
+    }
+    let base = ability_damage("ember", "", "", false);
+    let reduced = ability_damage("ember", "", "water-bubble", false);
+    assert!((i32::from(base) - 2 * i32::from(reduced)).abs() <= 1);
+    assert_eq!(
+        base,
+        ability_damage("ember", "mold-breaker", "water-bubble", false)
+    );
+    assert_eq!(base, ability_damage("ember", "", "water-bubble", true));
+    assert_eq!(
+        ability_damage("tackle", "water-bubble", "", false),
+        ability_damage("tackle", "", "", false)
+    );
+}

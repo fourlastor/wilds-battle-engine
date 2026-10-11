@@ -197,7 +197,7 @@ id,ability,status,verification
 196,merciless,IMPLEMENTED,Source inventory; existing tests only
 197,shields-down,MISSING,No native battle behavior
 198,stakeout,MISSING,No native battle behavior
-199,water-bubble,PARTIAL,Source inventory; existing tests only
+199,water-bubble,IMPLEMENTED,ability_rules::water_bubble_boosts_water_and_resists_fire
 200,steelworker,MISSING,No native battle behavior
 201,berserk,MISSING,No native battle behavior
 202,slush-rush,MISSING,No native battle behavior

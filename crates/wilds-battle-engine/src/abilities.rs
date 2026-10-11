@@ -490,6 +490,12 @@ impl Battle {
         if attack.move_type == Fire && self.has_ability(target, "heatproof") {
             factor *= 0.5;
         }
+        if attack.move_type == Fire && self.has_ability(target, "waterbubble") {
+            factor *= 0.5;
+        }
+        if attack.move_type == Water && self.has_ability(actor, "waterbubble") {
+            factor *= 2.0;
+        }
         if attack.sound && self.has_ability(target, "punkrock") {
             factor *= 0.5;
         }
