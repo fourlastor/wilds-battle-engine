@@ -6590,3 +6590,46 @@ fn copycat_rejects_no_history_and_forbidden_moves_then_can_use_prior_turn_histor
     assert!(b.participants(Side::Allies)[0].last_move_failed);
     assert_eq!(b.participants(Side::Foes)[0].hp, 1000);
 }
+
+#[test]
+fn me_first_uses_the_pending_attack_with_a_one_action_power_bonus() {
+    let mut user = mon("User", &["me-first", "pound"]);
+    user.speed = 200;
+    let foe = mon("Foe", &["pound"]);
+    let ordinary = control_damage(40, "Normal", "Physical", user.clone(), foe.clone());
+    let boosted = control_damage(60, "Normal", "Physical", user.clone(), foe.clone());
+    let mut b = game(user, vec![foe], 0.5);
+    turn(&mut b);
+    assert_eq!(1000 - b.participants(Side::Foes)[0].hp, boosted);
+    assert_eq!(b.participants(Side::Allies)[0].move_pp["pound"], 35);
+    assert_eq!(b.participants(Side::Allies)[0].move_pp["me-first"], 19);
+    turn_with(&mut b, |p| choose_move(p, "pound", "pound"));
+    assert_eq!(1000 - b.participants(Side::Foes)[0].hp, boosted + ordinary);
+}
+#[test]
+fn me_first_rejects_completed_status_and_forbidden_attacks() {
+    for (speed, response) in [
+        (50, "pound"),
+        (200, "growl"),
+        (200, "thief"),
+        (200, "counter"),
+    ] {
+        let mut user = mon("User", &["me-first"]);
+        user.speed = speed;
+        let mut b = game(user, vec![mon("Foe", &[response])], 0.5);
+        turn(&mut b);
+        assert_eq!(b.participants(Side::Foes)[0].hp, 1000);
+        assert!(b.participants(Side::Allies)[0].last_move_failed);
+    }
+}
+#[test]
+fn me_first_copies_through_substitute_but_the_attack_damages_the_substitute() {
+    let mut user = mon("User", &["me-first"]);
+    user.speed = 200;
+    let mut foe = mon("Foe", &["pound"]);
+    foe.substitute_hp = 500;
+    let mut b = game(user, vec![foe], 0.5);
+    turn(&mut b);
+    assert_eq!(b.participants(Side::Foes)[0].hp, 1000);
+    assert!(b.participants(Side::Foes)[0].substitute_hp < 500);
+}
