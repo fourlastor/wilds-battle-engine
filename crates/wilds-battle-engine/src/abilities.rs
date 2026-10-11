@@ -355,6 +355,16 @@ impl Battle {
         stat: crate::model::CombatStat,
     ) -> f32 {
         use crate::model::CombatStat::*;
+        if stat == SpAttack
+            && self.has_ability(who, "plus")
+            && self.actors().into_iter().any(|ally| {
+                ally != who
+                    && ally.side == who.side
+                    && (self.has_ability(ally, "plus") || self.has_ability(ally, "minus"))
+            })
+        {
+            return 1.5;
+        }
         if (stat == Defense && self.has_ability(who, "furcoat"))
             || (stat == Attack
                 && (self.has_ability(who, "hugepower") || self.has_ability(who, "purepower")))

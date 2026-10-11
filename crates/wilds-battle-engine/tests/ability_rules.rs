@@ -43,7 +43,9 @@ fn turn(battle: &mut Battle, ally: &str, foe: &str) -> Vec<BattleEvent> {
         let AdvanceStatus::Awaiting(prompt) = result.status else {
             return events;
         };
-        let wanted = if prompt.actor.side == Side::Allies {
+        let wanted = if prompt.actor.index > 0 {
+            "splash"
+        } else if prompt.actor.side == Side::Allies {
             ally
         } else {
             foe
@@ -854,4 +856,33 @@ fn mega_launcher_boosts_pulses_and_heal_pulse() {
         turn(&mut battle, "heal-pulse", "splash");
         assert_eq!(foe(&battle).hp, if suppressed { 501 } else { 751 });
     }
+}
+
+fn check_plus_minus(ability: &str) {
+    let run = |partner: &str, suppressed, attack: &str| {
+        let mut user = mon("User", &[attack]);
+        user.ability = Some(ability.into());
+        let mut teammate = mon("Partner", &["splash"]);
+        teammate.ability = Some(partner.into());
+        teammate.ability_suppressed = suppressed;
+        let mut battle = Battle::with_rng(
+            Fixed(0.5),
+            [vec![user, teammate], vec![mon("Target", &["splash"])]],
+            MoveCatalog::builtin().unwrap(),
+        )
+        .unwrap();
+        turn(&mut battle, attack, "splash");
+        1000 - foe(&battle).hp
+    };
+    let base = run("", false, "water-gun");
+    for partner in ["plus", "minus"] {
+        assert!(run(partner, false, "water-gun") > base);
+        assert_eq!(run(partner, true, "water-gun"), base);
+        assert_eq!(run(partner, false, "tackle"), run("", false, "tackle"));
+    }
+}
+
+#[test]
+fn plus_needs_an_active_plus_or_minus_teammate() {
+    check_plus_minus("plus");
 }
