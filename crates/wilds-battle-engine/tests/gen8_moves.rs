@@ -1255,3 +1255,30 @@ fn heart_swap_swaps_stages_through_substitute_without_ability_scaling() {
         }
     }
 }
+
+#[test]
+fn topsy_turvy_inverts_positive_and_negative_stages_without_contrary() {
+    use wilds_battle_engine::Stat;
+    for (sub, changed) in [(0, true), (50, false)] {
+        let mut foe = mon("Foe", &["splash"]);
+        foe.ability = Some("contrary".into());
+        foe.substitute_hp = sub;
+        foe.stages.insert(Stat::Attack, 4);
+        foe.stages.insert(Stat::Defense, -3);
+        foe.stages.insert(Stat::Accuracy, 2);
+        let mut b = game(mon("User", &["topsy-turvy"]), vec![foe], 0.5);
+        turn(&mut b);
+        let p = &b.participants(Side::Foes)[0];
+        let sign = if changed { -1 } else { 1 };
+        assert_eq!(p.stage(Stat::Attack), 4 * sign);
+        assert_eq!(p.stage(Stat::Defense), -3 * sign);
+        assert_eq!(p.stage(Stat::Accuracy), 2 * sign);
+    }
+    let mut b = game(
+        mon("User", &["topsy-turvy"]),
+        vec![mon("Foe", &["splash"])],
+        0.5,
+    );
+    turn(&mut b);
+    assert!(b.participants(Side::Allies)[0].last_move_failed);
+}

@@ -4787,6 +4787,17 @@
       "limitations": []
     },
     {
+      "id": 576,
+      "slug": "topsy-turvy",
+      "name": "Topsy-Turvy",
+      "sheet_row": null,
+      "runtime_id": "topsy-turvy",
+      "file": "moves/topsy-turvy.lua",
+      "status": "implemented",
+      "limitations": [],
+      "parameter_source": "https://pokeapi.co/api/v2/move/576/"
+    },
+    {
       "id": 577,
       "slug": "draining-kiss",
       "name": "Draining Kiss",
@@ -6612,7 +6623,8 @@
       "shell-smash",
       "power-swap",
       "guard-swap",
-      "heart-swap"
+      "heart-swap",
+      "topsy-turvy"
     ]
   }
 }
