@@ -221,6 +221,21 @@ impl Battle {
     pub(crate) fn get(&self, id: ParticipantId) -> &Pokemon {
         &self.sides[id.side.index()][id.index]
     }
+    /// Field slots are ordered from each trainer's perspective. Opposing rows face each other.
+    /// Fainted occupants retain their slot, so neighbors never shift when a Pokémon faints.
+    pub fn adjacent(&self, a: ParticipantId, b: ParticipantId) -> bool {
+        if a == b {
+            return false;
+        }
+        let width = self.sides.iter().map(Vec::len).max().unwrap_or(1);
+        if a.side == b.side {
+            a.index.abs_diff(b.index) == 1
+        } else if width <= 2 {
+            true
+        } else {
+            a.index.abs_diff(width - 1 - b.index) <= 1
+        }
+    }
     pub(crate) fn get_mut(&mut self, id: ParticipantId) -> &mut Pokemon {
         &mut self.sides[id.side.index()][id.index]
     }

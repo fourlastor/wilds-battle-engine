@@ -3466,10 +3466,8 @@
       "sheet_row": 337,
       "runtime_id": "flame-burst",
       "file": "moves/flame-burst.lua",
-      "status": "partial",
-      "limitations": [
-        "The engine has no adjacency/position model; splash damage reaches all other active Pokemon on the target side."
-      ]
+      "status": "implemented",
+      "limitations": []
     },
     {
       "id": 482,

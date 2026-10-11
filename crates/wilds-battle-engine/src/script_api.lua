@@ -155,6 +155,7 @@ return function(api, fields, roster)
   function ctx:set_types(who, types) return op("set_types", who, types) end
   function ctx:set_weight(who, kilograms) return op("set_weight", who, kilograms) end
   function ctx:reduce_pp(who, move_id, amount) return op("reduce_pp", who, move_id, amount) end
+  function ctx:adjacent(a, b) return op("adjacent", a, b) end
   function ctx:consume_item(who) return op("consume_item", who) end
   function ctx:take_item(who) return op("take_item", who) end
   function ctx:give_item(who, item) return op("give_item", who, item) end

@@ -220,6 +220,7 @@ impl Battle {
         table.raw_set("marks", marks)?;
         table.raw_set("effects", effects)?;
         table.raw_set("acted", pokemon.acted)?;
+        table.raw_set("position", id.index)?;
         let selected = self
             .turn_choices
             .iter()
@@ -1410,6 +1411,7 @@ impl Battle {
                 };
                 Value::Integer(i64::from(lost))
             }
+            ScriptOperation::Adjacent { a, b } => Value::Boolean(self.adjacent(a, b)),
             ScriptOperation::ConsumeItem { who } => match self.consume_item(who) {
                 Some(item) => Value::String(self.catalog.lua().create_string(&item)?),
                 None => Value::Nil,
@@ -1502,6 +1504,7 @@ fn reaction_may(operation: &ScriptOperation, hook: ScriptHook) -> bool {
         | Op::EffectChance(_)
         | Op::RandomInt { .. }
         | Op::ReducePp { .. }
+        | Op::Adjacent { .. }
         | Op::ConsumeItem { .. }
         | Op::TakeItem { .. }
         | Op::GiveItem { .. }

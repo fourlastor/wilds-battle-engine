@@ -84,6 +84,50 @@ fn said(events: &[BattleEvent], text: &str) -> bool {
 }
 
 #[test]
+fn flame_burst_only_splashes_neighbors_and_fainting_does_not_collapse_positions() {
+    for middle_alive in [true, false] {
+        let mut middle = mon("Middle", &["splash"]);
+        if !middle_alive {
+            middle.hp = 0;
+        }
+        let mut game = Game::new(
+            vec![mon("Ally", &["flame-burst"])],
+            vec![mon("Target", &["splash"]), middle, mon("Far", &["splash"])],
+            0.5,
+        );
+        game.turn("flame-burst", "splash");
+        let foes = game.0.participants(Side::Foes);
+        assert!(foes[0].hp < 1000);
+        assert_eq!(foes[1].hp, if middle_alive { 938 } else { 0 });
+        assert_eq!(foes[2].hp, 1000);
+    }
+}
+
+#[test]
+fn field_adjacency_uses_facing_rows_and_excludes_the_same_slot() {
+    let game = Game::new(
+        (0..3).map(|_| mon("Ally", &["splash"])).collect(),
+        (0..3).map(|_| mon("Foe", &["splash"])).collect(),
+        0.5,
+    );
+    let a = |index| ParticipantId {
+        side: Side::Allies,
+        index,
+    };
+    let b = |index| ParticipantId {
+        side: Side::Foes,
+        index,
+    };
+    assert!(!game.0.adjacent(a(0), a(0)));
+    assert!(game.0.adjacent(a(0), a(1)));
+    assert!(!game.0.adjacent(a(0), a(2)));
+    assert!(!game.0.adjacent(a(0), b(0)));
+    assert!(game.0.adjacent(a(0), b(1)));
+    assert!(game.0.adjacent(a(0), b(2)));
+    assert!(game.0.adjacent(b(2), a(0)));
+}
+
+#[test]
 fn power_herb_completes_charge_moves_immediately_and_pays_pp_once() {
     for move_id in [
         "razor-wind",
