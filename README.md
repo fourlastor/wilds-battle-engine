@@ -1,9 +1,9 @@
 # Wilds battle engine
 
 `wilds-battle-engine` is the Rust battle simulation. Move definitions are loaded
-from Lua; `MoveCatalog::builtin()` embeds the 729 files under `moves/`,
+from Lua; `MoveCatalog::builtin()` embeds the 730 files under `moves/`,
 and `MoveCatalog::from_directory(path)` reads them from disk at runtime.
-Both catalogs also include the system move Struggle, for 730 moves in total.
+Both catalogs also include the system move Struggle, for 731 moves in total.
 The [move catalog](moves/README.md) includes 538 entries from the Saved moves sheet,
 plus support moves, additional local JSON moves and the original moves outside the sheet. Its manifest
 records the 34 excluded Z/Max Moves. Files use canonical slugs and source display
@@ -506,3 +506,8 @@ attempts an action; an interrupted action also clears it. `Rule.FaintAttacker`
 takes down the opposing attacker only when direct move damage knocks out the holder.
 `Rule.DepleteAttackerPp` empties the PP of the direct attacker's selected move.
 Both faint reactions exclude delayed attacks and residual damage.
+
+`Rule.BlockItems` suppresses existing held-item effects without removing the item.
+`Battle::item_active` and Lua `who.item_active` expose activation separately from
+physical possession. Suppression covers berries, gems, Power Herb, Shed Shell and
+item-dependent move types; forced berry eating still works.

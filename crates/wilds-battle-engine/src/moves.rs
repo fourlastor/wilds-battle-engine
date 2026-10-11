@@ -847,6 +847,7 @@ fn rule_of(value: &Value) -> mlua::Result<Rule> {
         _ => return Err(bad("rule kind requires a Rule value")),
     };
     let allowed: &[&str] = match kind {
+        RuleKind::BlockItems => &["kind"],
         RuleKind::ExpiresOnAction => &["kind", "except_move"],
         RuleKind::FaintAttacker | RuleKind::DepleteAttackerPp => &["kind"],
         RuleKind::Guard => &[
@@ -939,6 +940,7 @@ fn rule_of(value: &Value) -> mlua::Result<Rule> {
         }
     };
     Ok(match kind {
+        RuleKind::BlockItems => Rule::BlockItems,
         RuleKind::ExpiresOnAction => Rule::ExpiresOnAction {
             except_move: options.text("except_move")?,
         },

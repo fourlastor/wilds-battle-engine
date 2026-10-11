@@ -195,6 +195,7 @@ impl Battle {
         )?;
         table.raw_set("weight", pokemon.weight)?;
         table.raw_set("item", pokemon.item.as_deref())?;
+        table.raw_set("item_active", self.item_active(id))?;
         table.raw_set(
             "ability",
             if !self.ability_active(id) {

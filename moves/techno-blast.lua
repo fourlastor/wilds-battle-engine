@@ -3,7 +3,7 @@
 
 local move = {script = function(ctx)
 local drives = {["shock-drive"] = Type.Electric, ["burn-drive"] = Type.Fire, ["chill-drive"] = Type.Ice, ["douse-drive"] = Type.Water}
-local item = ctx.user.item and ctx.user.item:gsub("_", "-")
+local item = ctx.user.item_active and ctx.user.item and ctx.user.item:gsub("_", "-")
 ctx:damage(120, {type = drives[item]})
 end}
 

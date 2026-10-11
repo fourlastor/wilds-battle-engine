@@ -153,6 +153,8 @@ pub enum Scope {
 /// A rule on a side applies to every Pokémon of that side, one on the field to everyone.
 #[derive(Clone, Debug, PartialEq)]
 pub enum Rule {
+    /// Suppresses ordinary held-item effects without removing the item.
+    BlockItems,
     /// Expires when the holder attempts its next action, except an optional move id.
     ExpiresOnAction {
         except_move: Option<String>,

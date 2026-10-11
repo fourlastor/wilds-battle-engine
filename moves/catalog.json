@@ -3613,6 +3613,17 @@
       "limitations": []
     },
     {
+      "id": 373,
+      "slug": "embargo",
+      "name": "Embargo",
+      "sheet_row": null,
+      "runtime_id": "embargo",
+      "file": "moves/embargo.lua",
+      "status": "implemented",
+      "limitations": [],
+      "parameter_source": "https://pokeapi.co/api/v2/move/373/"
+    },
+    {
       "id": 375,
       "slug": "psycho-shift",
       "name": "Psycho Shift",
@@ -7920,7 +7931,8 @@
       "destiny-bond",
       "grudge",
       "bide",
-      "present"
+      "present",
+      "embargo"
     ]
   }
 }

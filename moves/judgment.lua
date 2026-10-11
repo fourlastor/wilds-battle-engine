@@ -9,7 +9,7 @@ local plates = {flame_plate = Type.Fire, splash_plate = Type.Water, meadow_plate
 
 local move = {
     script = function(ctx)
-      local item = ctx.user.item and ctx.user.item:gsub("-", "_")
+      local item = ctx.user.item_active and ctx.user.item and ctx.user.item:gsub("-", "_")
       ctx:damage(100, {type = plates[item]})
     end}
 

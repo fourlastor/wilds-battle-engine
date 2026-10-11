@@ -5846,3 +5846,74 @@ fn present_healing_respects_heal_block_without_blocking_its_damage_branches() {
     assert_eq!(b.participants(Side::Foes)[0].hp, 500);
     assert!(b.participants(Side::Allies)[0].last_move_failed);
 }
+
+#[test]
+fn embargo_prevents_berry_activation_until_its_fifth_turn_ends() {
+    let mut user = mon("User", &["embargo", "pound", "splash"]);
+    user.speed = 200;
+    let mut foe = mon("Foe", &["splash"]);
+    foe.hp = 520;
+    foe.item = Some("sitrus-berry".into());
+    let mut b = game(user, vec![foe], 0.5);
+    turn(&mut b);
+    turn_with(&mut b, |p| choose_move(p, "pound", "splash"));
+    let hp = b.participants(Side::Foes)[0].hp;
+    assert!(hp <= 500);
+    assert_eq!(
+        b.participants(Side::Foes)[0].item.as_deref(),
+        Some("sitrus-berry")
+    );
+    for _ in 0..3 {
+        turn_with(&mut b, |p| choose_move(p, "splash", "splash"));
+    }
+    assert_eq!(b.participants(Side::Foes)[0].item, None);
+    assert_eq!(b.participants(Side::Foes)[0].hp, hp + 250);
+}
+
+#[test]
+fn embargo_disables_gems_and_power_herb_without_removing_them() {
+    for (item, attack) in [("normal-gem", "pound"), ("power-herb", "solar_beam")] {
+        let mut user = mon("User", &["embargo"]);
+        user.speed = 200;
+        let mut foe = mon("Foe", &[attack]);
+        foe.item = Some(item.into());
+        let mut ordinary_attacker = foe.clone();
+        ordinary_attacker.item = None;
+        let expected = if item == "normal-gem" {
+            control_damage(40, "Normal", "Physical", ordinary_attacker, user.clone())
+        } else {
+            0
+        };
+        let mut b = game(user, vec![foe], 0.5);
+        turn(&mut b);
+        assert_eq!(b.participants(Side::Foes)[0].item.as_deref(), Some(item));
+        assert_eq!(1000 - b.participants(Side::Allies)[0].hp, expected);
+    }
+}
+
+#[test]
+fn embargo_blocks_item_type_changes_but_allows_forced_berry_eating() {
+    for (item, attack, power, category) in [
+        ("flame-plate", "judgment", 100, "Special"),
+        ("fire-memory", "multi-attack", 120, "Physical"),
+        ("burn-drive", "techno-blast", 120, "Special"),
+    ] {
+        let mut user = mon("User", &["embargo"]);
+        user.speed = 200;
+        let mut foe = mon("Foe", &[attack]);
+        foe.item = Some(item.into());
+        let expected = control_damage(power, "Normal", category, foe.clone(), user.clone());
+        let mut b = game(user, vec![foe], 0.5);
+        turn(&mut b);
+        assert_eq!(1000 - b.participants(Side::Allies)[0].hp, expected);
+    }
+    let mut user = mon("User", &["embargo"]);
+    user.speed = 200;
+    let mut foe = mon("Foe", &["stuff-cheeks"]);
+    foe.hp = 600;
+    foe.item = Some("sitrus-berry".into());
+    let mut b = game(user, vec![foe], 0.5);
+    turn(&mut b);
+    assert_eq!(b.participants(Side::Foes)[0].item, None);
+    assert_eq!(b.participants(Side::Foes)[0].hp, 850);
+}

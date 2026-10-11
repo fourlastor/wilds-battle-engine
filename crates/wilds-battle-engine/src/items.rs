@@ -3,6 +3,22 @@ use crate::engine::Battle;
 use crate::model::{BattleEvent, ParticipantId};
 
 impl Battle {
+    /// Whether the held item may provide its ordinary effects. Physical possession is separate.
+    pub fn item_active(&self, who: ParticipantId) -> bool {
+        let pokemon = self.get(who);
+        let Some(item) = pokemon.item.as_deref() else {
+            return false;
+        };
+        if pokemon.hp == 0 || !self.is_active(who) {
+            return false;
+        }
+        matches!(item_key(item).as_str(), "redorb" | "blueorb")
+            || (!self.has_ability(who, "klutz")
+                && !self
+                    .rules(who)
+                    .any(|rule| matches!(rule, crate::model::Rule::BlockItems)))
+    }
+
     pub(crate) fn consume_item(&mut self, who: ParticipantId) -> Option<String> {
         let pokemon = self.get_mut(who);
         if pokemon.hp == 0 {
@@ -34,10 +50,12 @@ impl Battle {
         who: ParticipantId,
         events: &mut Vec<BattleEvent>,
     ) -> bool {
-        if !matches!(
-            self.get(who).item.as_deref(),
-            Some("power-herb" | "power_herb")
-        ) {
+        if !self.item_active(who)
+            || !matches!(
+                self.get(who).item.as_deref(),
+                Some("power-herb" | "power_herb")
+            )
+        {
             return false;
         }
         if self.consume_item(who).is_none() {
@@ -243,7 +261,7 @@ impl Battle {
         if self.active_gem == Some((actor, kind)) {
             return 1.3;
         }
-        if self.has_ability(actor, "klutz")
+        if !self.item_active(actor)
             || self.get(actor).item.as_deref().and_then(gem_type) != Some(kind)
         {
             return 1.0;

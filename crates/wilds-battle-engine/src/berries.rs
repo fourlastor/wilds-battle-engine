@@ -90,7 +90,7 @@ impl Battle {
     }
 
     fn berry_blocked(&self, who: ParticipantId) -> bool {
-        self.has_ability(who, "klutz")
+        !self.item_active(who)
             || self.actors().into_iter().any(|id| {
                 id.side != who.side
                     && (self.has_ability(id, "unnerve")

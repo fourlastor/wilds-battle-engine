@@ -4,7 +4,7 @@
 local function grounded(who)
   -- The engine's grounded field means explicitly grounded by a rule, not naturally on land.
   return who.grounded or (not who:has_type(Type.Flying) and who.ability ~= "levitate"
-    and who.item ~= "air-balloon" and who.item ~= "air_balloon" and who.hidden ~= Hidden.Air and not who.airborne)
+    and (not who.item_active or (who.item ~= "air-balloon" and who.item ~= "air_balloon")) and who.hidden ~= Hidden.Air and not who.airborne)
 end
 
 local move = {script = function(ctx)
