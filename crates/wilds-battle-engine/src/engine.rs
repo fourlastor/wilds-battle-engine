@@ -1989,6 +1989,7 @@ impl Battle {
             return true;
         }
         let evasion = if ignore_evasion
+            || self.has_ability(actor, "unaware")
             || (self.get(target).stage(Stat::Evasion) > 0
                 && (self.has_ability(actor, "keeneye")
                     || self
@@ -2015,7 +2016,11 @@ impl Battle {
             value
         };
         let probability = value
-            * self.get(actor).accuracy_factor()
+            * if self.has_ability(target, "unaware") {
+                1.0
+            } else {
+                self.get(actor).accuracy_factor()
+            }
             * evasion
             * self.accuracy_rule_factor(actor)
             * tangled
@@ -2674,16 +2679,18 @@ impl Battle {
             .map(|stat| self.swapped_defensive_stat(stat))
             .unwrap_or(atk_name);
         let def_name = attack.defense_stat.unwrap_or(def_name);
+        let ignore_attack_stages =
+            self.has_ability(target, "unaware") && attack.attack_from == actor;
         let mut attack_value = if attack.attack_stat.is_some() {
             // An offensive-stat override changes the base stat and stages, not
             // the user's category-based modifiers (Body Press still uses ModifyAtk).
-            let value = if crit && source.stage(atk_name.into()) < 0 {
+            let value = if ignore_attack_stages || (crit && source.stage(atk_name.into()) < 0) {
                 self.battle_raw_stat(attack.attack_from, atk_name)
             } else {
                 self.battle_staged_stat(attack.attack_from, atk_name)
             };
             (value * self.stat_factor(actor, category_attack_stat)).trunc()
-        } else if crit && source.stage(atk_name.into()) < 0 {
+        } else if ignore_attack_stages || (crit && source.stage(atk_name.into()) < 0) {
             self.battle_raw_stat(attack.attack_from, atk_name)
                 * self.stat_factor(attack.attack_from, atk_name)
         } else {
@@ -2695,7 +2702,7 @@ impl Battle {
         {
             attack_value *= 2.0;
         }
-        let mut defense = if attack.ignore_stages {
+        let mut defense = if attack.ignore_stages || self.has_ability(actor, "unaware") {
             (self.battle_raw_stat(target, def_name) * self.stat_factor(target, def_name)).trunc()
         } else if crit && defender.stage(def_name.into()) > 0 {
             self.battle_raw_stat(target, def_name) * self.stat_factor(target, def_name)

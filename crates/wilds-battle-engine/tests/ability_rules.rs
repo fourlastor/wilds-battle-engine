@@ -3209,3 +3209,48 @@ fn stakeout_boosts_attacks_only_on_the_targets_switch_in_turn() {
         assert_eq!(boosted.1, base.1);
     }
 }
+
+#[test]
+fn unaware_ignores_opponents_relevant_stages_but_preserves_foul_play_source() {
+    use wilds_battle_engine::Stat;
+    let run =
+        |move_id, attacking_ability: &str, defending_ability: &str, attack_stage, defense_stage| {
+            let mut user = mon("User", &[move_id]);
+            user.ability = Some(attacking_ability.into());
+            user.stages.insert(Stat::Attack, attack_stage);
+            user.stages.insert(Stat::Defense, attack_stage);
+            let mut target = mon("Target", &["splash"]);
+            target.ability = Some(defending_ability.into());
+            target.stages.insert(Stat::Defense, defense_stage);
+            target.stages.insert(Stat::Attack, attack_stage);
+            let mut battle = game(user, target, 0.5);
+            turn(&mut battle, move_id, "splash");
+            1000 - foe(&battle).hp
+        };
+    for move_id in ["tackle", "body-press"] {
+        let base = run(move_id, "", "", 0, 0);
+        assert_eq!(run(move_id, "", "unaware", 4, 0), base);
+        assert_eq!(run(move_id, "", "unaware", -4, 0), base);
+        assert!(run(move_id, "mold-breaker", "unaware", 4, 0) > base);
+        for stage in [-4, 4] {
+            assert_eq!(run(move_id, "unaware", "", 0, stage), base);
+        }
+    }
+    assert_eq!(
+        run("foul-play", "", "unaware", 4, 0),
+        run("foul-play", "", "", 4, 0)
+    );
+    for (attacker_ability, defender_ability, accuracy, evasion) in
+        [("unaware", "", 0, 6), ("", "unaware", -6, 0)]
+    {
+        let mut user = mon("User", &["tackle"]);
+        user.ability = Some(attacker_ability.into());
+        user.stages.insert(Stat::Accuracy, accuracy);
+        let mut target = mon("Target", &["splash"]);
+        target.ability = Some(defender_ability.into());
+        target.stages.insert(Stat::Evasion, evasion);
+        let mut battle = game(user, target, 0.75);
+        turn(&mut battle, "tackle", "splash");
+        assert!(foe(&battle).hp < 1000);
+    }
+}
