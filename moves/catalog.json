@@ -2668,6 +2668,17 @@
       "limitations": []
     },
     {
+      "id": 312,
+      "slug": "aromatherapy",
+      "name": "Aromatherapy",
+      "sheet_row": null,
+      "runtime_id": "aromatherapy",
+      "file": "moves/aromatherapy.lua",
+      "status": "implemented",
+      "limitations": [],
+      "parameter_source": "https://pokeapi.co/api/v2/move/312/"
+    },
+    {
       "id": 313,
       "slug": "fake-tears",
       "name": "Fake Tears",
@@ -6816,7 +6827,8 @@
       "spite",
       "gastro-acid",
       "acupressure",
-      "heal-bell"
+      "heal-bell",
+      "aromatherapy"
     ]
   }
 }

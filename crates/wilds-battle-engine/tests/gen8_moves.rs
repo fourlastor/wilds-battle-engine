@@ -1691,3 +1691,26 @@ fn heal_bell_cures_the_party_including_bench_members() {
     assert_eq!(b.participants(Side::Allies)[1].status, None);
     assert_eq!(b.participants(Side::Allies)[2].status, Some(Status::Burned));
 }
+
+#[test]
+fn aromatherapy_cures_the_party_including_bench_members() {
+    use wilds_battle_engine::Status;
+    let mut user = mon("User", &["aromatherapy"]);
+    user.status = Some(Status::Burned);
+    let mut bench = mon("Bench", &["splash"]);
+    bench.status = Some(Status::Poisoned);
+    let mut blocked = mon("Blocked", &["splash"]);
+    blocked.status = Some(Status::Burned);
+    blocked.ability = Some("sapsipper".into());
+    let mut b = Battle::with_rng(
+        Fixed(0.5),
+        [vec![user, bench, blocked], vec![mon("Foe", &["splash"])]],
+        MoveCatalog::builtin().unwrap(),
+    )
+    .unwrap();
+    b.set_active([vec![0, 2], vec![0]]).unwrap();
+    turn(&mut b);
+    assert_eq!(b.participants(Side::Allies)[0].status, None);
+    assert_eq!(b.participants(Side::Allies)[1].status, None);
+    assert_eq!(b.participants(Side::Allies)[2].status, Some(Status::Burned));
+}
