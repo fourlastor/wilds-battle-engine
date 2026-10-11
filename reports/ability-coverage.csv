@@ -256,7 +256,7 @@ id,ability,status,verification
 255,gorilla-tactics,IMPLEMENTED,ability_rules::gorilla_tactics_boosts_attack_locks_moves_and_forces_struggle_without_pp
 256,neutralizing-gas,MISSING,No native battle behavior
 257,pastel-veil,IMPLEMENTED,Source inventory; existing tests only
-258,hunger-switch,MISSING,No native battle behavior
+258,hunger-switch,IMPLEMENTED,ability_rules::hunger_switch_alternates_at_turn_end_and_changes_aura_wheel_type
 259,quick-draw,IMPLEMENTED,ability_rules::quick_draw_acts_first_on_thirty_percent_of_attacks_within_priority
 260,unseen-fist,IMPLEMENTED,ability_rules::unseen_fist_contact_moves_pierce_protection_without_reprisals
 261,curious-medicine,IMPLEMENTED,ability_rules::curious_medicine_resets_only_active_teammates

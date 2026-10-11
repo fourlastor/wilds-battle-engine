@@ -3839,3 +3839,24 @@ fn schooling_checks_level_and_quarter_hp_on_entry_and_at_turn_end() {
     turn(&mut battle, "recover", "splash");
     assert_eq!(ally(&battle).form.as_deref(), Some("wishiwashi-school"));
 }
+
+#[test]
+fn hunger_switch_alternates_at_turn_end_and_changes_aura_wheel_type() {
+    let mut user = mon("User", &["aura-wheel"]);
+    user.species_id = 877;
+    user.ability = Some("hunger-switch".into());
+    add_form(&mut user, "morpeko-hangry", PokemonType::Electric);
+    let mut battle = game(user, mon("Target", &["splash"]), 0.5);
+    turn(&mut battle, "aura-wheel", "splash");
+    assert_eq!(
+        foe(&battle).last_hit.as_ref().unwrap().move_type,
+        PokemonType::Electric
+    );
+    assert_eq!(ally(&battle).form.as_deref(), Some("morpeko-hangry"));
+    turn(&mut battle, "aura-wheel", "splash");
+    assert_eq!(
+        foe(&battle).last_hit.as_ref().unwrap().move_type,
+        PokemonType::Dark
+    );
+    assert!(ally(&battle).form.is_none());
+}

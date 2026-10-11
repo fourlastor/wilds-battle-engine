@@ -7,6 +7,14 @@ impl Battle {
     pub(crate) fn residual_ability_forms(&mut self, events: &mut Vec<BattleEvent>) {
         for who in self.actors() {
             self.health_ability_form(who, false, events);
+            if self.has_ability(who, "hungerswitch") && self.species_is(who, 877, "morpeko") {
+                let form = if self.get(who).form.as_deref() == Some("morpeko-hangry") {
+                    "morpeko-full-belly"
+                } else {
+                    "morpeko-hangry"
+                };
+                self.ability_form(who, form, "morpeko-full-belly", events);
+            }
         }
     }
 
