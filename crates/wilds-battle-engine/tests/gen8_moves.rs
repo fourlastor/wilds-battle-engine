@@ -6020,3 +6020,82 @@ fn natural_gift_fails_for_suppressed_or_nonberry_items_but_ignores_unnerve() {
     turn(&mut b);
     assert!(b.participants(Side::Foes)[0].hp < 1000);
 }
+
+#[test]
+fn fling_uses_existing_item_powers_and_spends_items() {
+    for (item, power) in [
+        ("power-herb", 10),
+        ("shed-shell", 10),
+        ("burn-drive", 70),
+        ("fire-memory", 50),
+        ("flame-plate", 90),
+        ("abomasite", 80),
+    ] {
+        let mut user = mon("User", &["fling"]);
+        user.item = Some(item.into());
+        let foe = mon("Foe", &["splash"]);
+        let expected = control_damage(power, "Dark", "Physical", user.clone(), foe.clone());
+        let mut b = game(user, vec![foe], 0.5);
+        turn(&mut b);
+        assert_eq!(1000 - b.participants(Side::Foes)[0].hp, expected, "{item}");
+        assert!(b.participants(Side::Allies)[0].item.is_none());
+    }
+}
+#[test]
+fn fling_feeds_the_recipient_without_eating_or_replacing_its_item() {
+    let mut user = mon("User", &["fling"]);
+    user.item = Some("sitrus-berry".into());
+    let mut foe = mon("Foe", &["splash"]);
+    foe.hp = 600;
+    foe.item = Some("power-herb".into());
+    foe.ability = Some("klutz".into());
+    let mut control = foe.clone();
+    control.hp = 1000;
+    let damage = control_damage(10, "Dark", "Physical", user.clone(), control);
+    let mut b = game(user, vec![foe], 0.5);
+    turn(&mut b);
+    assert_eq!(b.participants(Side::Foes)[0].hp, 850 - damage);
+    assert_eq!(
+        b.participants(Side::Foes)[0].item.as_deref(),
+        Some("power-herb")
+    );
+    assert!(b.participants(Side::Foes)[0].ate_berry);
+    assert!(!b.participants(Side::Allies)[0].ate_berry);
+    assert_eq!(b.participants(Side::Foes)[0].recyclable_item, None);
+}
+#[test]
+fn fling_spends_items_even_when_protected_but_does_not_feed_substitutes() {
+    for response in ["protect", "splash"] {
+        let mut user = mon("User", &["fling"]);
+        user.item = Some("sitrus-berry".into());
+        let mut foe = mon("Foe", &[response]);
+        foe.hp = 600;
+        foe.substitute_hp = 100;
+        let mut b = game(user, vec![foe], 0.5);
+        turn(&mut b);
+        assert_eq!(b.participants(Side::Foes)[0].hp, 600);
+        assert!(!b.participants(Side::Foes)[0].ate_berry);
+        assert!(b.participants(Side::Allies)[0].item.is_none());
+    }
+}
+#[test]
+fn fling_rejects_bound_suppressed_and_unsupported_items() {
+    for (item, species, ability) in [
+        ("flame-plate", 493, None),
+        ("fire-memory", 773, None),
+        ("abomasite", 460, None),
+        ("normal-gem", 0, None),
+        ("power-herb", 0, Some("klutz")),
+        ("not-an-item", 0, None),
+    ] {
+        let mut user = mon("User", &["fling"]);
+        user.item = Some(item.into());
+        user.species_id = species;
+        user.ability = ability.map(str::to_owned);
+        let mut b = game(user, vec![mon("Foe", &["splash"])], 0.5);
+        turn(&mut b);
+        assert_eq!(b.participants(Side::Foes)[0].hp, 1000);
+        assert_eq!(b.participants(Side::Allies)[0].item.as_deref(), Some(item));
+        assert!(b.participants(Side::Allies)[0].last_move_failed);
+    }
+}

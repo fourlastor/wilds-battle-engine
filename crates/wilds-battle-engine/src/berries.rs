@@ -142,6 +142,19 @@ impl Battle {
         true
     }
 
+    pub(crate) fn receive_berry(
+        &mut self,
+        who: ParticipantId,
+        item: String,
+        events: &mut Vec<BattleEvent>,
+    ) -> bool {
+        if self.get(who).hp == 0 || !is_berry(&item) {
+            return false;
+        }
+        self.berry_effect(who, item, true, events);
+        true
+    }
+
     fn berry_effect(
         &mut self,
         who: ParticipantId,

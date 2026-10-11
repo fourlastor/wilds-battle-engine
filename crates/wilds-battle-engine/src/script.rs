@@ -1302,6 +1302,7 @@ impl Battle {
             | ScriptOperation::CureStatus { who, .. }
             | ScriptOperation::ChangeForm { who, .. }
             | ScriptOperation::RestoreForm { who }
+            | ScriptOperation::ReceiveBerry { who, .. }
             | ScriptOperation::EatBerry { who, .. } => Some((*who, Value::Boolean(false))),
             ScriptOperation::ChangeStat { who, .. }
             | ScriptOperation::SetHp { who, .. }
@@ -1955,6 +1956,9 @@ impl Battle {
             ScriptOperation::EatStolenBerry { from, to } => {
                 Value::Boolean(self.eat_stolen_berry(from, to, events))
             }
+            ScriptOperation::ReceiveBerry { who, item } => {
+                Value::Boolean(self.receive_berry(who, item, events))
+            }
             ScriptOperation::EatBerry { who, forced } => {
                 Value::Boolean(self.eat_berry(who, forced, events))
             }
@@ -2080,6 +2084,7 @@ fn reaction_may(operation: &ScriptOperation, hook: ScriptHook) -> bool {
         | Op::Adjacent { .. }
         | Op::RedirectTarget { .. }
         | Op::EatStolenBerry { .. }
+        | Op::ReceiveBerry { .. }
         | Op::EatBerry { .. }
         | Op::ConsumeItem { .. }
         | Op::ItemRemovable { .. }

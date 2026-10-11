@@ -178,6 +178,7 @@ return function(api, fields, roster)
   function ctx:reduce_pp(who, move_id, amount) return op("reduce_pp", who, move_id, amount) end
   function ctx:adjacent(a, b) return op("adjacent", a, b) end
   function ctx:eat_stolen_berry(from, to) return op("eat_stolen_berry", from, to) end
+  function ctx:receive_berry(who, item) return op("receive_berry", who, item) end
   function ctx:eat_berry(who, forced) return op("eat_berry", who, forced) end
   function ctx:recycle_item(who) return op("recycle_item", who) end
   function ctx:consume_item(who, eaten) return op("consume_item", who, eaten) end

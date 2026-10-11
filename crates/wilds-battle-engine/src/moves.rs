@@ -418,6 +418,10 @@ pub(crate) enum ScriptOperation {
         from: ParticipantId,
         to: ParticipantId,
     },
+    ReceiveBerry {
+        who: ParticipantId,
+        item: String,
+    },
     EatBerry {
         who: ParticipantId,
         forced: bool,
@@ -1403,6 +1407,10 @@ fn parse_op(name: &str, args: &[Value]) -> mlua::Result<ScriptOperation> {
         "eat_stolen_berry" => ScriptOperation::EatStolenBerry {
             from: who(0)?,
             to: who(1)?,
+        },
+        "receive_berry" => ScriptOperation::ReceiveBerry {
+            who: who(0)?,
+            item: name_of(arg(1), "receive_berry item")?,
         },
         "eat_berry" => ScriptOperation::EatBerry {
             who: who(0)?,
