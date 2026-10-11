@@ -719,6 +719,18 @@ impl Battle {
                 }
             }
         }
+        if self.get(actor).locked_move.is_none()
+            && !forced_script
+            && self.get(actor).move_pp.get(&spec.id) == Some(&0)
+        {
+            events.push(BattleEvent::Message(format!(
+                "{user_name} has no PP left for {}!",
+                spec.name
+            )));
+            self.move_failed = true;
+            self.clear_consecutive(actor);
+            return Ok(true);
+        }
         {
             let pokemon = self.get_mut(actor);
             pokemon.last_used = Some(spec.id.clone());

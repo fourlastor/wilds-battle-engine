@@ -431,6 +431,23 @@ fn burning_jealousy_checks_each_targets_actual_stat_increases() {
 }
 
 #[test]
+fn eerie_spell_can_exhaust_a_selected_move_before_it_executes() {
+    let mut ally = mon("Ally", &["splash", "eerie-spell"]);
+    ally.speed = 200;
+    let mut foe = mon("Foe", &["tackle"]);
+    foe.move_pp.insert("tackle".into(), 4);
+    let mut game = Game::new(vec![ally], vec![foe], 0.5);
+    game.turn("splash", "tackle");
+    let hp = game.ally().hp;
+    let events = game.turn("eerie-spell", "tackle");
+    assert!(said(&events, "no PP left for Tackle"));
+    assert!(!said(&events, "Foe used Tackle"));
+    assert_eq!(game.ally().hp, hp);
+    assert_eq!(game.foe().move_pp["tackle"], 0);
+    assert!(said(&game.turn("splash", "struggle"), "used Struggle"));
+}
+
+#[test]
 fn eerie_spell_reduces_last_move_pp_only_after_a_surviving_hit() {
     let mut foe = mon("Foe", &["splash", "protect"]);
     foe.speed = 200;
