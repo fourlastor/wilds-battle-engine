@@ -2288,3 +2288,8 @@ fn check_drop_response(ability: &str, boosted_stat: wilds_battle_engine::Stat) {
 fn defiant_responds_to_opposing_stat_drops_and_intimidate() {
     check_drop_response("defiant", wilds_battle_engine::Stat::Attack);
 }
+
+#[test]
+fn competitive_responds_to_opposing_stat_drops_and_intimidate() {
+    check_drop_response("competitive", wilds_battle_engine::Stat::SpAttack);
+}

@@ -1861,6 +1861,10 @@ impl Battle {
         if changed < 0 && actor.side != recipient.side && self.has_ability(recipient, "defiant") {
             self.change_stat(recipient, Stat::Attack, 2, events);
         }
+        if changed < 0 && actor.side != recipient.side && self.has_ability(recipient, "competitive")
+        {
+            self.change_stat(recipient, Stat::SpAttack, 2, events);
+        }
         changed
     }
 
