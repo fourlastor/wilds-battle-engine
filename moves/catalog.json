@@ -5602,6 +5602,17 @@
       ]
     },
     {
+      "id": 578,
+      "slug": "crafty-shield",
+      "name": "Crafty Shield",
+      "sheet_row": null,
+      "runtime_id": "crafty-shield",
+      "file": "moves/crafty-shield.lua",
+      "status": "implemented",
+      "limitations": [],
+      "parameter_source": "https://pokeapi.co/api/v2/move/578/"
+    },
+    {
       "id": 579,
       "slug": "flower-shield",
       "name": "Flower Shield",
@@ -7800,7 +7811,8 @@
       "entrainment",
       "skill-swap",
       "wide-guard",
-      "quick-guard"
+      "quick-guard",
+      "crafty-shield"
     ]
   }
 }

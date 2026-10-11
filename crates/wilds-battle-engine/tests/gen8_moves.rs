@@ -5356,3 +5356,28 @@ fn quick_guard_includes_priority_from_grassy_terrain() {
     turn_with(&mut b, |p| choose_move(p, "quick-guard", "grassy-glide"));
     assert_eq!(b.participants(Side::Allies)[0].hp, 1000);
 }
+
+#[test]
+fn crafty_shield_blocks_status_including_protect_bypassing_moves_but_allows_damage() {
+    use wilds_battle_engine::Stat;
+    for attack in ["growl", "play-nice", "pound"] {
+        let mut b = game(
+            mon("User", &["crafty-shield"]),
+            vec![mon("Foe", &[attack])],
+            0.5,
+        );
+        turn(&mut b);
+        assert_eq!(b.participants(Side::Allies)[0].hp < 1000, attack == "pound");
+        assert_eq!(b.participants(Side::Allies)[0].stage(Stat::Attack), 0);
+    }
+    let mut b = game(
+        mon("User", &["crafty-shield", "detect"]),
+        vec![mon("Foe", &["pound"])],
+        0.5,
+    );
+    turn(&mut b);
+    let hp = b.participants(Side::Allies)[0].hp;
+    turn_with(&mut b, |p| choose_move(p, "detect", "pound"));
+    assert_eq!(b.participants(Side::Allies)[0].hp, hp);
+    assert!(!b.participants(Side::Allies)[0].last_move_failed);
+}
