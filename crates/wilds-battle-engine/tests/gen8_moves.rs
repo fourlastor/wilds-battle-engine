@@ -2193,3 +2193,70 @@ fn recycle_ignores_stolen_berries_and_preserves_prior_consumption_history() {
         assert!(user.ate_berry);
     }
 }
+
+#[test]
+fn power_split_averages_raw_offenses_without_copying_stages_or_abilities() {
+    use wilds_battle_engine::Stat;
+    for (response, sub, lands) in [
+        ("splash", 0, true),
+        ("protect", 0, false),
+        ("splash", 50, false),
+    ] {
+        let mut user = mon("User", &["power-split"]);
+        user.attack = 51;
+        user.sp_attack = 73;
+        user.change_stage(Stat::Attack, 4);
+        user.ability = Some("huge-power".into());
+        let mut foe = mon("Foe", &[response]);
+        foe.attack = 202;
+        foe.sp_attack = 300;
+        foe.substitute_hp = sub;
+        foe.change_stage(Stat::Attack, -2);
+        let mut b = game(user, vec![foe], 0.5);
+        turn(&mut b);
+        let mine = &b.participants(Side::Allies)[0];
+        let theirs = &b.participants(Side::Foes)[0];
+        assert_eq!(
+            (mine.attack, mine.sp_attack),
+            if lands { (126, 186) } else { (51, 73) }
+        );
+        assert_eq!(
+            (theirs.attack, theirs.sp_attack),
+            if lands { (126, 186) } else { (202, 300) }
+        );
+        assert_eq!(mine.stage(Stat::Attack), 4);
+        assert_eq!(theirs.stage(Stat::Attack), -2);
+    }
+}
+
+#[test]
+fn power_split_raw_stats_are_restored_when_the_user_switches_out() {
+    let mut user = mon("User", &["power-split"]);
+    user.attack = 40;
+    let mut foe = mon("Foe", &["splash"]);
+    foe.attack = 200;
+    let mut b = Battle::with_rng(
+        Fixed(0.5),
+        [vec![user, mon("Bench", &["splash"])], vec![foe]],
+        MoveCatalog::builtin().unwrap(),
+    )
+    .unwrap();
+    b.set_active([vec![0], vec![0]]).unwrap();
+    turn(&mut b);
+    assert_eq!(b.participants(Side::Allies)[0].attack, 120);
+    turn_with(&mut b, |p| {
+        p.choices
+            .iter()
+            .find(|c| {
+                if p.actor.side == Side::Allies {
+                    matches!(c, Choice::Switch { .. })
+                } else {
+                    matches!(c, Choice::UseMove { .. })
+                }
+            })
+            .unwrap()
+            .id()
+    });
+    assert_eq!(b.participants(Side::Allies)[0].attack, 40);
+    assert_eq!(b.participants(Side::Foes)[0].attack, 120);
+}

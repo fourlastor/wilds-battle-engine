@@ -553,14 +553,17 @@ impl Pokemon {
         self.stages.insert(stat, new);
         new - old
     }
-    pub fn effective_stat(&self, stat: CombatStat) -> f32 {
-        let base = match stat {
+    pub fn raw_stat(&self, stat: CombatStat) -> u16 {
+        match stat {
             CombatStat::Attack => self.attack,
             CombatStat::Defense => self.defense,
             CombatStat::SpAttack => self.sp_attack,
             CombatStat::SpDefense => self.sp_defense,
             CombatStat::Speed => self.speed,
-        } as f32;
+        }
+    }
+    pub fn effective_stat(&self, stat: CombatStat) -> f32 {
+        let base = f32::from(self.raw_stat(stat));
         let stage = self.stage(stat.into()) as f32;
         let factor = if stage >= 0.0 {
             (stage + 2.0) / 2.0

@@ -154,6 +154,20 @@ impl Battle {
             )?;
         }
         table.raw_set("stages", stages)?;
+        let raw_stats = lua.create_table()?;
+        for stat in [
+            CombatStat::Attack,
+            CombatStat::Defense,
+            CombatStat::SpAttack,
+            CombatStat::SpDefense,
+            CombatStat::Speed,
+        ] {
+            raw_stats.raw_set(
+                symbol(lua, "Stat", &format!("{stat:?}"))?,
+                pokemon.raw_stat(stat),
+            )?;
+        }
+        table.raw_set("raw_stats", raw_stats)?;
         for (key, stat) in [
             ("attack", CombatStat::Attack),
             ("defense", CombatStat::Defense),
@@ -1205,6 +1219,7 @@ impl Battle {
             | ScriptOperation::EatBerry { who, .. } => Some((*who, Value::Boolean(false))),
             ScriptOperation::ChangeStat { who, .. }
             | ScriptOperation::SetHp { who, .. }
+            | ScriptOperation::SetRawStat { who, .. }
             | ScriptOperation::SetStage { who, .. }
             | ScriptOperation::ReducePp { who, .. }
             | ScriptOperation::Heal { who, .. } => Some((*who, Value::Integer(0))),
@@ -1545,6 +1560,17 @@ impl Battle {
                     self.change_stat_from(actor, who, stat, stages, events)
                 };
                 Value::Integer(i64::from(change))
+            }
+            ScriptOperation::SetRawStat { who, stat, value } => {
+                let p = self.get_mut(who);
+                match stat {
+                    CombatStat::Attack => p.attack = value,
+                    CombatStat::Defense => p.defense = value,
+                    CombatStat::SpAttack => p.sp_attack = value,
+                    CombatStat::SpDefense => p.sp_defense = value,
+                    CombatStat::Speed => p.speed = value,
+                }
+                Value::Nil
             }
             ScriptOperation::SetStage { who, stat, stage } => {
                 let delta = stage - self.get(who).stage(stat);

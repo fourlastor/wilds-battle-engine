@@ -283,6 +283,11 @@ pub(crate) enum ScriptOperation {
         side: crate::model::Side,
         hazard: crate::hazards::Hazard,
     },
+    SetRawStat {
+        who: ParticipantId,
+        stat: CombatStat,
+        value: u16,
+    },
     SetStage {
         who: ParticipantId,
         stat: Stat,
@@ -1041,6 +1046,11 @@ fn parse_op(name: &str, args: &[Value]) -> mlua::Result<ScriptOperation> {
             },
             hazard: crate::hazards::Hazard::parse(&text_of(arg(1), name)?)
                 .ok_or_else(|| bad("unknown entry hazard"))?,
+        },
+        "set_raw_stat" => ScriptOperation::SetRawStat {
+            who: who(0)?,
+            stat: combat_stat_of(arg(1), "set_raw_stat")?,
+            value: whole(arg(2), "raw stat", 1.0, 65535.0)? as u16,
         },
         "set_stage" => ScriptOperation::SetStage {
             who: who(0)?,
