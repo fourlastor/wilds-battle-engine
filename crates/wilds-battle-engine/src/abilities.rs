@@ -688,6 +688,12 @@ impl Battle {
             return;
         }
         self.ability_terrain_entry(who, events);
+        if self.has_ability(who, "truant") {
+            self.end_condition(crate::model::Scope::Pokemon(who), "truant");
+            if self.get(who).acted && self.get(who).entered_turn < self.turn {
+                self.set_mark(crate::model::Scope::Pokemon(who), "truant", 1, None);
+            }
+        }
         if self.has_ability(who, "slowstart") {
             self.set_mark(crate::model::Scope::Pokemon(who), "slow_start", 5, None);
         }

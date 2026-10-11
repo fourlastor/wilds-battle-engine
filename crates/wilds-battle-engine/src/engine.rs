@@ -966,6 +966,7 @@ impl Battle {
                 SelectedAction::Move(choice) => self.execute_move(actor, choice, events)?,
                 SelectedAction::Recharge => {
                     self.get_mut(actor).recharging = false;
+                    self.end_condition(Scope::Pokemon(actor), "truant");
                     if self.get(actor).hp > 0 {
                         events.push(BattleEvent::Message(format!(
                             "{} must recharge!",
@@ -1368,6 +1369,17 @@ impl Battle {
                     return Ok(false);
                 }
                 _ => {}
+            }
+            if self.has_ability(actor, "truant") {
+                if self.end_condition(Scope::Pokemon(actor), "truant") {
+                    events.push(BattleEvent::Message(format!(
+                        "{user_name} is loafing around!"
+                    )));
+                    self.clear_consecutive(actor);
+                    self.interrupt_script(actor, choice.target, &spec, events)?;
+                    return Ok(false);
+                }
+                self.set_mark(Scope::Pokemon(actor), "truant", 1, None);
             }
             if self.get(actor).flinched {
                 events.push(BattleEvent::Message(format!("{user_name} flinched!")));

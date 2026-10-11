@@ -3301,3 +3301,25 @@ fn slow_start_halves_attack_and_speed_for_five_turns() {
     assert!(losses[..5].iter().all(|x| *x == losses[0]));
     assert!((f32::from(losses[5]) - f32::from(losses[0]) * 2.0).abs() <= 3.0);
 }
+
+#[test]
+fn truant_skips_alternate_actions_without_spending_pp_and_shares_recharge() {
+    let mut user = mon("User", &["tackle"]);
+    user.ability = Some("truant".into());
+    let mut battle = game(user, mon("Target", &["splash"]), 0.5);
+    for n in 0..4 {
+        let before = foe(&battle).hp;
+        let pp = ally(&battle).move_pp["tackle"];
+        turn(&mut battle, "tackle", "splash");
+        assert_eq!(foe(&battle).hp < before, n % 2 == 0);
+        assert_eq!(ally(&battle).move_pp["tackle"], pp - u8::from(n % 2 == 0));
+    }
+    let mut user = mon("User", &["hyper_beam", "tackle"]);
+    user.ability = Some("truant".into());
+    let mut battle = game(user, mon("Target", &["splash"]), 0.5);
+    turn(&mut battle, "hyper_beam", "splash");
+    turn(&mut battle, "tackle", "splash");
+    let before = foe(&battle).hp;
+    turn(&mut battle, "tackle", "splash");
+    assert!(foe(&battle).hp < before);
+}
