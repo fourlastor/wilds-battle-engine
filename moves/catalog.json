@@ -3520,6 +3520,17 @@
       "limitations": []
     },
     {
+      "id": 363,
+      "slug": "natural-gift",
+      "name": "Natural Gift",
+      "sheet_row": null,
+      "runtime_id": "natural-gift",
+      "file": "moves/natural-gift.lua",
+      "status": "implemented",
+      "limitations": [],
+      "parameter_source": "https://pokeapi.co/api/v2/move/363/"
+    },
+    {
       "id": 364,
       "slug": "feint",
       "name": "Feint",
@@ -7944,7 +7955,8 @@
       "bide",
       "present",
       "embargo",
-      "magic-room"
+      "magic-room",
+      "natural-gift"
     ]
   }
 }

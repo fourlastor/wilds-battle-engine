@@ -1316,7 +1316,7 @@ impl Battle {
             | ScriptOperation::Unhide { who }
             | ScriptOperation::TakeItem { who }
             | ScriptOperation::GiveItem { who, .. }
-            | ScriptOperation::ConsumeItem { who } => Some((*who, Value::Nil)),
+            | ScriptOperation::ConsumeItem { who, .. } => Some((*who, Value::Nil)),
             ScriptOperation::SwapAbilities { b, .. } | ScriptOperation::SwapItems { b, .. } => {
                 Some((*b, Value::Boolean(false)))
             }
@@ -1959,7 +1959,7 @@ impl Battle {
                 Value::Boolean(self.eat_berry(who, forced, events))
             }
             ScriptOperation::RecycleItem { who } => Value::Boolean(self.recycle_item(who)),
-            ScriptOperation::ConsumeItem { who } => match self.consume_item(who) {
+            ScriptOperation::ConsumeItem { who, eaten } => match self.spend_item(who, eaten) {
                 Some(item) => Value::String(self.catalog.lua().create_string(&item)?),
                 None => Value::Nil,
             },

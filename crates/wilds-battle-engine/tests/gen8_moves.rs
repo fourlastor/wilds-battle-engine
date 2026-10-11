@@ -5956,3 +5956,67 @@ fn magic_room_expires_after_five_turns_and_held_berries_resume() {
     assert!(b.participants(Side::Foes)[0].item.is_none());
     assert_eq!(b.participants(Side::Foes)[0].hp, hp + 250);
 }
+
+#[test]
+fn natural_gift_uses_berry_type_and_power_without_eating_it() {
+    for (berry, power, kind) in [
+        ("cheri-berry", 80, "Fire"),
+        ("sitrus-berry", 80, "Psychic"),
+        ("belue-berry", 100, "Electric"),
+    ] {
+        let mut user = mon("User", &["natural-gift", "recycle"]);
+        user.hp = 750;
+        user.item = Some(berry.into());
+        let foe = mon("Foe", &["splash"]);
+        let expected = control_damage(power, kind, "Physical", user.clone(), foe.clone());
+        let mut b = game(user, vec![foe], 0.5);
+        turn(&mut b);
+        assert_eq!(1000 - b.participants(Side::Foes)[0].hp, expected);
+        assert_eq!(b.participants(Side::Allies)[0].hp, 750);
+        assert!(!b.participants(Side::Allies)[0].ate_berry);
+        assert!(b.participants(Side::Allies)[0].item.is_none());
+        turn_with(&mut b, |p| choose_move(p, "recycle", "splash"));
+        assert_eq!(b.participants(Side::Allies)[0].item.as_deref(), Some(berry));
+    }
+}
+#[test]
+fn natural_gift_spends_the_berry_on_protection_immunity_and_misses() {
+    for (response, kind, dice) in [
+        ("protect", PokemonType::Normal, 0.5),
+        ("splash", PokemonType::Dark, 0.5),
+        ("splash", PokemonType::Normal, 0.99),
+    ] {
+        let mut user = mon("User", &["natural-gift"]);
+        user.item = Some("sitrus-berry".into());
+        if dice > 0.9 {
+            user.stages.insert(wilds_battle_engine::Stat::Accuracy, -6);
+        }
+        let mut foe = mon("Foe", &[response]);
+        foe.types = vec![kind];
+        let mut b = game(user, vec![foe], dice);
+        turn(&mut b);
+        assert_eq!(b.participants(Side::Foes)[0].hp, 1000);
+        assert!(b.participants(Side::Allies)[0].item.is_none());
+        assert!(!b.participants(Side::Allies)[0].ate_berry);
+    }
+}
+#[test]
+fn natural_gift_fails_for_suppressed_or_nonberry_items_but_ignores_unnerve() {
+    for (item, ability) in [("sitrus-berry", Some("klutz")), ("power-herb", None)] {
+        let mut user = mon("User", &["natural-gift"]);
+        user.item = Some(item.into());
+        user.ability = ability.map(str::to_owned);
+        let mut b = game(user, vec![mon("Foe", &["splash"])], 0.5);
+        turn(&mut b);
+        assert_eq!(b.participants(Side::Foes)[0].hp, 1000);
+        assert_eq!(b.participants(Side::Allies)[0].item.as_deref(), Some(item));
+        assert!(b.participants(Side::Allies)[0].last_move_failed);
+    }
+    let mut user = mon("User", &["natural-gift"]);
+    user.item = Some("sitrus-berry".into());
+    let mut foe = mon("Foe", &["splash"]);
+    foe.ability = Some("unnerve".into());
+    let mut b = game(user, vec![foe], 0.5);
+    turn(&mut b);
+    assert!(b.participants(Side::Foes)[0].hp < 1000);
+}

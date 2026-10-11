@@ -20,12 +20,16 @@ impl Battle {
     }
 
     pub(crate) fn consume_item(&mut self, who: ParticipantId) -> Option<String> {
+        self.spend_item(who, true)
+    }
+
+    pub(crate) fn spend_item(&mut self, who: ParticipantId, eaten: bool) -> Option<String> {
         let pokemon = self.get_mut(who);
         if pokemon.hp == 0 {
             return None;
         }
         let item = pokemon.item.take()?;
-        pokemon.ate_berry |= crate::berries::is_berry(&item);
+        pokemon.ate_berry |= eaten && crate::berries::is_berry(&item);
         pokemon.recyclable_item = Some(item.clone());
         pokemon.last_consumed_item = Some(item.clone());
         pokemon.consumed_items.insert(item.clone());

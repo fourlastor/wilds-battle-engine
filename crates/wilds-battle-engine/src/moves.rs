@@ -427,6 +427,7 @@ pub(crate) enum ScriptOperation {
     },
     ConsumeItem {
         who: ParticipantId,
+        eaten: bool,
     },
     ItemRemovable {
         who: ParticipantId,
@@ -1411,7 +1412,14 @@ fn parse_op(name: &str, args: &[Value]) -> mlua::Result<ScriptOperation> {
                 _ => return Err(bad("eat_berry forced must be a boolean")),
             },
         },
-        "consume_item" => ScriptOperation::ConsumeItem { who: who(0)? },
+        "consume_item" => ScriptOperation::ConsumeItem {
+            who: who(0)?,
+            eaten: match args.get(1) {
+                None | Some(Value::Nil) => true,
+                Some(Value::Boolean(value)) => *value,
+                _ => return Err(bad("consume_item eaten must be a boolean")),
+            },
+        },
         "recycle_item" => ScriptOperation::RecycleItem { who: who(0)? },
         "delay" => ScriptOperation::Delay { who: who(0)? },
         "swap_items" => ScriptOperation::SwapItems {
