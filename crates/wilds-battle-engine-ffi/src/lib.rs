@@ -84,6 +84,7 @@ struct SetupPokemon {
 
 #[derive(Deserialize)]
 struct SetupForm {
+    max_hp: Option<u16>,
     attack: u16,
     defense: u16,
     sp_attack: u16,
@@ -123,6 +124,7 @@ fn pokemon(config: SetupPokemon) -> Result<Pokemon, String> {
             Ok((
                 id,
                 PokemonForm {
+                    max_hp: form.max_hp,
                     attack: form.attack,
                     defense: form.defense,
                     sp_attack: form.sp_attack,

@@ -209,7 +209,7 @@ id,ability,status,verification
 208,schooling,IMPLEMENTED,ability_rules::schooling_checks_level_and_quarter_hp_on_entry_and_at_turn_end
 209,disguise,IMPLEMENTED,ability_rules::disguise_blocks_one_hit_loses_an_eighth_hp_and_respects_substitutes_and_mold_breaker
 210,battle-bond,IMPLEMENTED,ability_rules::battle_bond_changes_to_ash_after_a_knockout_and_strengthens_water_shuriken
-211,power-construct,MISSING,No native battle behavior
+211,power-construct,IMPLEMENTED,ability_rules::power_construct_adds_form_hp_preserves_missing_hp_and_survives_switching
 212,corrosion,IMPLEMENTED,Source inventory; existing tests only
 213,comatose,IMPLEMENTED,Source inventory; existing tests only
 214,queenly-majesty,IMPLEMENTED,ability_rules::queenly_majesty_protects_allies_from_priority_and_allows_mold_breaker

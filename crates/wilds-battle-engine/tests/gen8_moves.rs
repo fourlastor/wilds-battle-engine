@@ -7506,6 +7506,7 @@ fn transform_keeps_roosted_flying_types_and_copied_relic_song_cannot_change_form
     foe.forms.insert(
         "meloetta-pirouette".into(),
         wilds_battle_engine::PokemonForm {
+            max_hp: None,
             attack: 300,
             defense: 200,
             sp_attack: 80,

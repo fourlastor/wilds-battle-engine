@@ -4496,3 +4496,42 @@ fn battle_bond_changes_to_ash_after_a_knockout_and_strengthens_water_shuriken() 
     turn(&mut battle, "water-shuriken", "splash");
     assert!(ash_damage * 5 > (1000 - foe(&battle).hp) * 3);
 }
+
+#[test]
+fn power_construct_adds_form_hp_preserves_missing_hp_and_survives_switching() {
+    for hp in [501, 500, 250] {
+        let mut user = mon("Zygarde", &["splash"]);
+        user.species_id = 718;
+        user.ability = Some("power-construct".into());
+        user.hp = hp;
+        add_form(&mut user, "zygarde-complete", PokemonType::Dragon);
+        let complete = user.forms.get_mut("zygarde-complete").unwrap();
+        complete.max_hp = Some(1400);
+        complete.defense = 222;
+        let mut battle = Battle::with_rng(
+            Fixed(0.5),
+            [
+                vec![user, mon("Reserve", &["splash"])],
+                vec![mon("Target", &["splash"])],
+            ],
+            MoveCatalog::builtin().unwrap(),
+        )
+        .unwrap();
+        battle.set_active([vec![0], vec![0]]).unwrap();
+        // Does not transform on entry, even when starting below half.
+        let result = battle.advance().unwrap();
+        assert_eq!(ally(&battle).form, None);
+        assert!(matches!(result.status, AdvanceStatus::Awaiting(_)));
+        turn(&mut battle, "splash", "splash");
+        if hp > 500 {
+            assert_eq!(ally(&battle).form, None);
+        } else {
+            assert_eq!(ally(&battle).form.as_deref(), Some("zygarde-complete"));
+            assert_eq!((ally(&battle).hp, ally(&battle).max_hp), (hp + 400, 1400));
+            assert_eq!(ally(&battle).defense, 222);
+            turn(&mut battle, "switch:1", "splash");
+            assert_eq!(ally(&battle).form.as_deref(), Some("zygarde-complete"));
+            assert_eq!(ally(&battle).hp, hp + 400);
+        }
+    }
+}

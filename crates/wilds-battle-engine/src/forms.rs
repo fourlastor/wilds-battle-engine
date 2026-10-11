@@ -5,6 +5,7 @@ use crate::model::{BattleEvent, ParticipantId, Pokemon, PokemonForm};
 impl PokemonForm {
     pub fn of(pokemon: &Pokemon) -> Self {
         Self {
+            max_hp: Some(pokemon.max_hp),
             attack: pokemon.attack,
             defense: pokemon.defense,
             sp_attack: pokemon.sp_attack,
@@ -12,6 +13,15 @@ impl PokemonForm {
             speed: pokemon.speed,
             types: pokemon.types.clone(),
             weight: pokemon.weight,
+        }
+    }
+    fn apply_hp(&self, pokemon: &mut Pokemon) {
+        if let Some(max_hp) = self.max_hp.filter(|hp| *hp > 0) {
+            let missing = pokemon.max_hp.saturating_sub(pokemon.hp);
+            pokemon.max_hp = max_hp;
+            if pokemon.hp > 0 {
+                pokemon.hp = max_hp.saturating_sub(missing).max(1);
+            }
         }
     }
     pub(crate) fn apply(&self, pokemon: &mut Pokemon) {
@@ -58,6 +68,7 @@ impl Battle {
         let pokemon = self.get_mut(who);
         pokemon.original_form.get_or_insert(original);
         next.apply(pokemon);
+        next.apply_hp(pokemon);
         pokemon.form = Some(form.into());
         events.push(BattleEvent::FormChanged {
             target: who,
@@ -80,6 +91,7 @@ impl Battle {
             return false;
         };
         original.apply(pokemon);
+        original.apply_hp(pokemon);
         pokemon.form = form.clone();
         events.push(BattleEvent::FormChanged { target: who, form });
         events.push(BattleEvent::Message(format!(

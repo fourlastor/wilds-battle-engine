@@ -101,6 +101,7 @@ fn meloetta() -> Pokemon {
     pokemon.forms.insert(
         "meloetta-pirouette".into(),
         wilds_battle_engine::PokemonForm {
+            max_hp: None,
             attack: 315,
             defense: 220,
             sp_attack: 177,

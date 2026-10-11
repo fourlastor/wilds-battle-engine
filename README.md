@@ -401,6 +401,9 @@ Gluttony, Klutz and Unnerve when those abilities are active.
 Hosts supply form presets through `Pokemon.forms` (`PokemonForm` values), or the
 setup JSON's `forms` object keyed by form ID. Each entry contains `attack`,
 `defense`, `sp_attack`, `sp_defense`, `speed`, `types`, and optional `weight`.
+An optional `max_hp` changes the HP ceiling while preserving missing HP (it never
+revives a fainted Pokémon). Power Construct requires this field on the
+`zygarde-complete` preset. Transform copies neither current nor maximum HP.
 These are computed battle stats, just like the initial Pokémon's stats; the engine
 does not infer IVs, EVs or nature modifiers. Optional `form` identifies an initial
 alternate form. Form changes emit `BattleEvent::FormChanged` (`kind: "form"` in

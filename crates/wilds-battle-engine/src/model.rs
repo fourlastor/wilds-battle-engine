@@ -516,9 +516,11 @@ pub struct NextMovePowerBoost {
     pub multiplier: f32,
 }
 
-/// One form's already-computed battle stats. HP, stages, status and PP are preserved on change.
+/// One form's host-computed stats. Optional max HP preserves missing HP on a form change.
+/// Transform never copies HP; stages, status and PP are preserved by form changes.
 #[derive(Clone, Debug, PartialEq)]
 pub struct PokemonForm {
+    pub max_hp: Option<u16>,
     pub attack: u16,
     pub defense: u16,
     pub sp_attack: u16,

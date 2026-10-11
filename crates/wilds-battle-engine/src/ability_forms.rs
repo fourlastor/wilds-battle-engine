@@ -285,6 +285,25 @@ impl Battle {
             };
             self.ability_form(who, form, "wishiwashi-solo", events);
         }
+        if !entry
+            && self.has_ability(who, "powerconstruct")
+            && self.species_is(who, 718, "zygarde")
+            && self.get(who).hp <= self.get(who).max_hp / 2
+            && self.get(who).form.as_deref() != Some("zygarde-complete")
+        {
+            if self
+                .get(who)
+                .forms
+                .get("zygarde-complete")
+                .is_some_and(|f| f.max_hp.is_some_and(|hp| hp > 0))
+            {
+                self.persistent_ability_form(who, "zygarde-complete", events);
+            } else {
+                events.push(BattleEvent::Message(
+                    "Power Construct requires host-computed max HP for zygarde-complete.".into(),
+                ));
+            }
+        }
         if !entry && self.has_ability(who, "zenmode") && self.species_is(who, 555, "darmanitan") {
             let galar = self
                 .get(who)
