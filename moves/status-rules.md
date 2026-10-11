@@ -23,3 +23,15 @@ with [Gen 8 overrides](https://github.com/smogon/pokemon-showdown/blob/942cda71d
   Burn Up requires its user to still be Fire-type for this automatic thaw.
 
 Regression tests are in `crates/wilds-battle-engine/tests/status_rules.rs`.
+
+## Burn
+
+- Residual damage is 1/16 maximum HP, rounded down with a minimum of 1.
+  Heatproof halves that damage; Magic Guard prevents it.
+- Physical move damage is halved, except Facade or an active Guts user.
+  Guts boosts Attack for any major status; Flare Boost increases special move
+  power while burned.
+- Fire types cannot be burned. Water Veil and Water Bubble prevent and cure
+  burns while active, including after acquiring the ability.
+- This audit implements status interactions of these abilities; their unrelated
+  type-based damage modifiers are outside this status audit.

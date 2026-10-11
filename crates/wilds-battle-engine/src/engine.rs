@@ -2530,6 +2530,7 @@ impl Battle {
             .max(1.0);
         let adjusted_power = gem
             * base_power
+            * self.status_power_factor(actor, attack.category)
             * 2f32.powi(attack.consecutive_boost as i32)
             * self.active_power_multiplier;
         let mut damage =
@@ -2537,7 +2538,14 @@ impl Battle {
                 / defense
                 / 50.0
                 + 2.0;
-        if attacker.status == Some(Status::Burned) && attack.category == Category::Physical {
+        if attacker.status == Some(Status::Burned)
+            && attack.category == Category::Physical
+            && !self.has_ability(actor, "guts")
+            && !self
+                .catalog
+                .get(attack.move_id)
+                .is_some_and(|m| m.has_flag("ignore_burn"))
+        {
             damage /= 2.0;
         }
         if !typeless {
@@ -2793,7 +2801,14 @@ impl Battle {
                 fractional(p.max_hp, 16, p.status_turns as u16),
                 Status::BadlyPoisoned,
             )),
-            Some(Status::Burned) => Some((fractional(p.max_hp, 8, 1), Status::Burned)),
+            Some(Status::Burned) if !self.has_ability(id, "magicguard") => {
+                let divisor = if self.has_ability(id, "heatproof") {
+                    32
+                } else {
+                    16
+                };
+                Some(((p.max_hp / divisor).max(1), Status::Burned))
+            }
             _ => None,
         };
         if let Some((amount, cause)) = dot {

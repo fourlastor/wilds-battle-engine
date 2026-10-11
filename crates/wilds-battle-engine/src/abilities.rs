@@ -331,9 +331,24 @@ impl Battle {
                 && (self.has_ability(who, "hugepower") || self.has_ability(who, "purepower")))
         {
             2.0
-        } else if stat == Defense
-            && self.get(who).status.is_some()
-            && self.has_ability(who, "marvelscale")
+        } else if self.get(who).status.is_some()
+            && ((stat == Defense && self.has_ability(who, "marvelscale"))
+                || (stat == Attack && self.has_ability(who, "guts")))
+        {
+            1.5
+        } else {
+            1.0
+        }
+    }
+
+    pub(crate) fn status_power_factor(
+        &self,
+        who: ParticipantId,
+        category: crate::moves::Category,
+    ) -> f32 {
+        if self.get(who).status == Some(crate::model::Status::Burned)
+            && category == crate::moves::Category::Special
+            && self.has_ability(who, "flareboost")
         {
             1.5
         } else {

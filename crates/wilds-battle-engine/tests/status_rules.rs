@@ -71,6 +71,93 @@ fn ally(battle: &Battle) -> &Pokemon {
 }
 
 #[test]
+fn burn_residual_uses_gen8_fraction_floor_and_active_abilities() {
+    for (ability, suppressed, max_hp, loss) in [
+        ("", false, 159, 9),
+        ("", false, 15, 1),
+        ("heatproof", false, 159, 4),
+        ("heatproof", false, 15, 1),
+        ("magic-guard", false, 159, 0),
+        ("magic-guard", true, 159, 9),
+        ("heatproof", true, 159, 9),
+    ] {
+        let mut target = mon("Target", &["splash"]);
+        target.hp = max_hp;
+        target.max_hp = max_hp;
+        target.status = Some(Status::Burned);
+        target.ability = Some(ability.into());
+        target.ability_suppressed = suppressed;
+        let mut battle = game(mon("User", &["splash"]), target, 0.5);
+        turn(&mut battle, "splash", "splash");
+        assert_eq!(
+            foe(&battle).hp,
+            max_hp - loss,
+            "{ability} suppressed={suppressed}"
+        );
+    }
+}
+
+#[test]
+fn burn_immunity_abilities_prevent_and_cure_burn_unless_suppressed() {
+    for ability in ["water-veil", "water-bubble"] {
+        for suppressed in [false, true] {
+            for pre_burned in [false, true] {
+                let mut target = mon("Target", &["splash"]);
+                target.status = pre_burned.then_some(Status::Burned);
+                target.ability = Some(ability.into());
+                target.ability_suppressed = suppressed;
+                let mut battle = game(mon("User", &["will-o-wisp"]), target, 0.5);
+                turn(&mut battle, "will-o-wisp", "splash");
+                assert_eq!(foe(&battle).status, suppressed.then_some(Status::Burned));
+            }
+        }
+    }
+}
+
+fn attack_damage(move_id: &str, status: Option<Status>, ability: Option<&str>) -> u16 {
+    let mut user = mon("User", &[move_id]);
+    user.status = status;
+    user.ability = ability.map(str::to_owned);
+    let mut battle = game(user, mon("Target", &["splash"]), 0.5);
+    turn(&mut battle, move_id, "splash");
+    1000 - foe(&battle).hp
+}
+
+#[test]
+fn burn_halves_physical_damage_except_facade_and_guts() {
+    let normal = attack_damage("tackle", None, None);
+    let burned = attack_damage("tackle", Some(Status::Burned), None);
+    assert!((i32::from(normal) - 2 * i32::from(burned)).abs() <= 1);
+    assert_eq!(
+        attack_damage("swift", None, None),
+        attack_damage("swift", Some(Status::Burned), None)
+    );
+    assert_eq!(
+        attack_damage("facade", Some(Status::Burned), None),
+        attack_damage("facade", Some(Status::Poisoned), None)
+    );
+    let guts = attack_damage("tackle", Some(Status::Burned), Some("guts"));
+    assert!(guts > normal);
+    assert_eq!(
+        guts,
+        attack_damage("tackle", Some(Status::Poisoned), Some("guts"))
+    );
+    assert_eq!(normal, attack_damage("tackle", None, Some("guts")));
+}
+
+#[test]
+fn flare_boost_only_boosts_special_attacks_while_burned() {
+    assert!(
+        attack_damage("swift", Some(Status::Burned), Some("flare-boost"))
+            > attack_damage("swift", None, Some("flare-boost"))
+    );
+    assert_eq!(
+        attack_damage("tackle", Some(Status::Burned), Some("flare-boost")),
+        attack_damage("tackle", Some(Status::Burned), None)
+    );
+}
+
+#[test]
 fn freeze_fire_hits_thaw_before_the_targets_pending_action() {
     for attack in ["ember", "fire-punch", "fire-spin", "flamethrower"] {
         let mut user = mon("User", &[attack]);

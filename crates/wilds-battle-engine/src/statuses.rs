@@ -14,7 +14,13 @@ impl Battle {
     }
 
     pub(crate) fn status_ability_immunity(&self, who: ParticipantId, status: Status) -> bool {
-        status == Status::Frozen && self.has_ability(who, "magmaarmor")
+        match status {
+            Status::Frozen => self.has_ability(who, "magmaarmor"),
+            Status::Burned => {
+                self.has_ability(who, "waterveil") || self.has_ability(who, "waterbubble")
+            }
+            _ => false,
+        }
     }
 
     pub(crate) fn update_status_abilities(&mut self, events: &mut Vec<BattleEvent>) {
