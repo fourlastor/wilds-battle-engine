@@ -146,7 +146,7 @@ id,ability,status,verification
 145,big-pecks,IMPLEMENTED,ability_rules::big_pecks_blocks_external_defense_drops_only
 146,sand-rush,IMPLEMENTED,ability_rules::sand_rush_doubles_speed_and_prevents_sandstorm_damage
 147,wonder-skin,IMPLEMENTED,ability_rules::wonder_skin_caps_status_accuracy_but_not_always_hit_moves
-148,analytic,MISSING,No native battle behavior
+148,analytic,IMPLEMENTED,ability_rules::analytic_boosts_only_after_every_other_pokemon_has_moved
 149,illusion,MISSING,No native battle behavior
 150,imposter,MISSING,No native battle behavior
 151,infiltrator,IMPLEMENTED,ability_rules::infiltrator_bypasses_mist_but_not_ability_stat_protection

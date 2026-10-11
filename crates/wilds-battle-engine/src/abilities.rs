@@ -1303,6 +1303,14 @@ impl Battle {
         target: ParticipantId,
         attack: &crate::engine::Attack,
     ) -> f32 {
+        if self.has_ability(actor, "analytic")
+            && !self
+                .pending_actors
+                .iter()
+                .any(|who| *who != actor && self.is_active(*who) && self.get(*who).hp > 0)
+        {
+            return 1.3;
+        }
         if self.has_ability(actor, "reckless")
             && self.catalog.get(attack.move_id).is_some_and(|spec| {
                 spec.has_flag("crash_damage")

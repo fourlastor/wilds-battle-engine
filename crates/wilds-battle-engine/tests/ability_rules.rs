@@ -3152,3 +3152,32 @@ fn anticipation_warns_about_weaknesses_ohko_and_hidden_power() {
         );
     }
 }
+
+#[test]
+fn analytic_boosts_only_after_every_other_pokemon_has_moved() {
+    let run = |ability: &str, user_speed, partner| {
+        let mut user = mon("User", &["tackle"]);
+        user.ability = Some(ability.into());
+        user.speed = user_speed;
+        let mut target = mon("Target", &["splash"]);
+        target.speed = 100;
+        let mut party = vec![user];
+        if partner {
+            let mut p = mon("Partner", &["splash"]);
+            p.speed = 1;
+            party.push(p);
+        }
+        let mut battle = Battle::with_rng(
+            Fixed(0.5),
+            [party, vec![target]],
+            MoveCatalog::builtin().unwrap(),
+        )
+        .unwrap();
+        turn(&mut battle, "tackle", "splash");
+        1000 - foe(&battle).hp
+    };
+    let base = run("", 10, false);
+    assert_eq!(run("analytic", 200, false), base);
+    assert_eq!(run("analytic", 10, true), base);
+    assert!((f32::from(run("analytic", 10, false)) - f32::from(base) * 1.3).abs() <= 3.0);
+}
