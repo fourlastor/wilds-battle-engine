@@ -1515,3 +1515,40 @@ fn intrepid_sword_boosts_attack_on_every_gen8_entry() {
 fn dauntless_shield_boosts_defense_on_every_gen8_entry() {
     check_repeated_entry_boost("dauntless-shield", wilds_battle_engine::Stat::Defense);
 }
+
+#[test]
+fn download_compares_opponents_combined_staged_defenses_and_breaks_ties_to_special() {
+    use wilds_battle_engine::Stat;
+    for (first_def, second_def, stage, boosted) in [
+        (50, 50, 0, Stat::Attack),
+        (100, 100, 0, Stat::SpAttack),
+        (50, 150, 0, Stat::SpAttack),
+        (50, 100, 2, Stat::SpAttack),
+    ] {
+        let mut user = mon("User", &["splash"]);
+        user.ability = Some("download".into());
+        let mut first = mon("First", &["splash"]);
+        first.defense = first_def;
+        first.sp_defense = 100;
+        first.stages.insert(Stat::Defense, stage);
+        let mut second = mon("Second", &["splash"]);
+        second.defense = second_def;
+        second.sp_defense = 100;
+        let mut battle = Battle::with_rng(
+            Fixed(0.5),
+            [vec![user], vec![first, second]],
+            MoveCatalog::builtin().unwrap(),
+        )
+        .unwrap();
+        battle.advance().unwrap();
+        assert_eq!(ally(&battle).stage(boosted), 1);
+        assert_eq!(
+            ally(&battle).stage(if boosted == Stat::Attack {
+                Stat::SpAttack
+            } else {
+                Stat::Attack
+            }),
+            0
+        );
+    }
+}

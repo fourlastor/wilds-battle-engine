@@ -210,6 +210,23 @@ impl Battle {
     }
 
     pub(crate) fn ability_on_entry(&mut self, who: ParticipantId, events: &mut Vec<BattleEvent>) {
+        if self.has_ability(who, "download") {
+            let (defense, special) = self
+                .actors()
+                .into_iter()
+                .filter(|foe| foe.side != who.side)
+                .fold((0.0, 0.0), |(a, b), foe| {
+                    (
+                        a + self.battle_staged_stat(foe, crate::model::CombatStat::Defense),
+                        b + self.battle_staged_stat(foe, crate::model::CombatStat::SpDefense),
+                    )
+                });
+            if defense > 0.0 && defense >= special {
+                self.change_stat(who, crate::model::Stat::SpAttack, 1, events);
+            } else if special > 0.0 {
+                self.change_stat(who, crate::model::Stat::Attack, 1, events);
+            }
+        }
         if self.has_ability(who, "dauntlessshield") {
             self.change_stat(who, crate::model::Stat::Defense, 1, events);
         }
