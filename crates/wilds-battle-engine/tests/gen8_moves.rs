@@ -6513,3 +6513,39 @@ fn metronome_filters_the_loaded_catalog_and_rejects_an_empty_eligible_pool() {
         );
     }
 }
+
+#[test]
+fn mirror_move_repeats_the_targets_last_move_without_spending_its_pp() {
+    let mut user = mon("User", &["mirror-move", "pound"]);
+    user.speed = 50;
+    let foe = mon("Foe", &["pound"]);
+    let expected = control_damage(40, "Normal", "Physical", user.clone(), foe.clone());
+    let mut b = game(user, vec![foe], 0.5);
+    turn(&mut b);
+    assert_eq!(1000 - b.participants(Side::Foes)[0].hp, expected);
+    assert_eq!(b.participants(Side::Allies)[0].move_pp["pound"], 35);
+    assert_eq!(b.participants(Side::Allies)[0].move_pp["mirror-move"], 19);
+}
+#[test]
+fn mirror_move_rejects_missing_or_ineligible_history() {
+    for (speed, response) in [(200, "pound"), (50, "splash"), (50, "protect")] {
+        let mut user = mon("User", &["mirror-move"]);
+        user.speed = speed;
+        let mut b = game(user, vec![mon("Foe", &[response])], 0.5);
+        turn(&mut b);
+        assert_eq!(b.participants(Side::Foes)[0].hp, 1000);
+        assert!(b.participants(Side::Allies)[0].last_move_failed);
+    }
+}
+#[test]
+fn mirror_move_calls_through_a_substitute_but_the_copied_attack_hits_it() {
+    let mut user = mon("User", &["mirror-move"]);
+    user.speed = 50;
+    let mut foe = mon("Foe", &["pound"]);
+    foe.substitute_hp = 100;
+    let mut b = game(user, vec![foe], 0.5);
+    turn(&mut b);
+    assert_eq!(b.participants(Side::Foes)[0].hp, 1000);
+    assert!(b.participants(Side::Foes)[0].substitute_hp < 100);
+    assert!(!b.participants(Side::Allies)[0].last_move_failed);
+}
