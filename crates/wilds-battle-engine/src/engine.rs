@@ -2402,6 +2402,17 @@ impl Battle {
         amount: u16,
         events: &mut Vec<BattleEvent>,
     ) {
+        if !self.healing_blocked(target) {
+            self.heal_unchecked(target, amount, events);
+        }
+    }
+
+    pub(crate) fn heal_unchecked(
+        &mut self,
+        target: ParticipantId,
+        amount: u16,
+        events: &mut Vec<BattleEvent>,
+    ) {
         let p = self.get_mut(target);
         p.hp = p.hp.saturating_add(amount).min(p.max_hp);
         events.push(BattleEvent::Heal {

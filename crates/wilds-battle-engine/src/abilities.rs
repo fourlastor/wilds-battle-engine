@@ -40,7 +40,7 @@ impl Battle {
     pub(crate) fn ability_on_exit(&mut self, who: ParticipantId, events: &mut Vec<BattleEvent>) {
         // Run before volatile state and suppression are cleared, and only while alive.
         if self.has_ability(who, "regenerator") {
-            self.heal(who, self.get(who).max_hp / 3, events);
+            self.heal_unchecked(who, self.get(who).max_hp / 3, events);
         }
         if self.has_ability(who, "naturalcure") {
             self.cure_status(who, None, events);

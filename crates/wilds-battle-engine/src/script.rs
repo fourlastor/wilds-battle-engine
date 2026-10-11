@@ -1332,7 +1332,7 @@ impl Battle {
             ScriptOperation::HealSelf(fraction) => {
                 let pokemon = self.get(actor);
                 let amount = (pokemon.max_hp as f32 * fraction).ceil() as u16;
-                if pokemon.hp < pokemon.max_hp {
+                if pokemon.hp < pokemon.max_hp && !self.healing_blocked(actor) {
                     self.heal(actor, amount, events);
                     events.push(BattleEvent::Message(format!(
                         "{} regained health!",
@@ -1572,7 +1572,7 @@ impl Battle {
             ScriptOperation::Heal { who, amount } => {
                 let pokemon = self.get(who);
                 let missing = pokemon.max_hp - pokemon.hp;
-                let points = if pokemon.hp == 0 {
+                let points = if pokemon.hp == 0 || self.healing_blocked(who) {
                     0
                 } else {
                     self.hp_points(who, amount, true).min(missing)

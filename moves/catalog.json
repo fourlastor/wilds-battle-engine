@@ -3536,6 +3536,17 @@
       "parameter_source": "https://pokeapi.co/api/v2/move/376/"
     },
     {
+      "id": 377,
+      "slug": "heal-block",
+      "name": "Heal Block",
+      "sheet_row": null,
+      "runtime_id": "heal-block",
+      "file": "moves/heal-block.lua",
+      "status": "implemented",
+      "limitations": [],
+      "parameter_source": "https://pokeapi.co/api/v2/move/377/"
+    },
+    {
       "id": 378,
       "slug": "wring-out",
       "name": "Wring Out",
@@ -7596,7 +7607,8 @@
       "powder",
       "court-change",
       "aurora-veil",
-      "defog"
+      "defog",
+      "heal-block"
     ]
   }
 }

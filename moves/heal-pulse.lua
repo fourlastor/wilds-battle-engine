@@ -15,5 +15,5 @@ move.pp = 10
 move.accuracy = Accuracy.Always
 move.priority = 0
 move.target = Target.AnyOther
-move.flags = {"reflectable", "pulse"}
+move.flags = {"reflectable", "pulse", "heal"}
 return move

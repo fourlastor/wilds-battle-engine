@@ -152,6 +152,10 @@ impl Battle {
         changed
     }
 
+    pub(crate) fn healing_blocked(&self, who: ParticipantId) -> bool {
+        self.rules(who).any(|r| matches!(r, Rule::BlockHealing))
+    }
+
     pub(crate) fn action_speed(&self, id: ParticipantId) -> i32 {
         let speed = (self.stat_value(id, CombatStat::Speed) as i32).clamp(0, 10000);
         let speed = if self

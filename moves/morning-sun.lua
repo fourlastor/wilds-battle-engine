@@ -1,4 +1,4 @@
-return {
+return { flags = {"heal"},
   id="morning_sun", name="Morning Sun", type=Type.Normal, category=Category.Status,
   pp=5, target=Target.User, accuracy=Accuracy.Always,
   script=function(ctx)

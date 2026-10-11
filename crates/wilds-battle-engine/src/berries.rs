@@ -112,6 +112,15 @@ impl Battle {
         if !is_berry(&item) || self.get(who).hp == 0 || (!forced && self.berry_blocked(who)) {
             return false;
         }
+        if !forced
+            && self.healing_blocked(who)
+            && matches!(
+                berry(&item),
+                Some(Berry::Heal(_) | Berry::HealFraction(_) | Berry::Flavor(_) | Berry::Enigma)
+            )
+        {
+            return false;
+        }
         self.get_mut(who).item = None;
         self.berry_effect(who, item, false, events);
         true

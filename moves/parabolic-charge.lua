@@ -12,5 +12,5 @@ move.pp = 20
 move.accuracy = 1
 move.priority = 0
 move.target = Target.AllOthers
-move.flags = {}
+move.flags = {"heal"}
 return move

@@ -13,5 +13,5 @@ move.pp = 5
 move.accuracy = Accuracy.Always
 move.priority = 0
 move.target = Target.User
-move.flags = {"snatch"}
+move.flags = {"snatch", "heal"}
 return move

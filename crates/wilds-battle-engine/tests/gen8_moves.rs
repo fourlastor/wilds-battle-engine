@@ -4490,3 +4490,72 @@ fn defog_clears_both_sides_hazards_and_only_targets_screens_while_substitute_blo
     assert_eq!(b.participants(Side::Foes)[0].stage(Stat::Evasion), 0);
     assert!(b.participants(Side::Allies)[0].last_move_failed);
 }
+
+#[test]
+fn heal_block_interrupts_queued_healing_and_disables_healing_and_drain_moves_for_five_turns() {
+    let mut user = mon("User", &["heal-block", "splash"]);
+    user.speed = 200;
+    let mut foe = mon("Foe", &["recover", "absorb", "splash"]);
+    foe.hp = 600;
+    let mut b = game(user, vec![foe], 0.5);
+    turn(&mut b);
+    assert_eq!(b.participants(Side::Foes)[0].hp, 600);
+    assert_eq!(b.participants(Side::Foes)[0].move_pp["recover"], 5);
+    for _ in 0..4 {
+        turn_with(&mut b, |p| {
+            if p.actor.side == Side::Foes {
+                assert!(p.choices.iter().all(|c| !matches!(c,Choice::UseMove {move_id,..} if move_id=="recover" || move_id=="absorb")));
+            }
+            choose_move(p, "splash", "splash")
+        });
+    }
+    turn_with(&mut b, |p| choose_move(p, "splash", "recover"));
+    assert_eq!(b.participants(Side::Foes)[0].hp, 1000);
+}
+
+#[test]
+fn heal_block_prevents_passive_recovery_and_retains_healing_berries_until_expiry() {
+    let mut user = mon("User", &["splash", "heal-block", "super-fang"]);
+    user.speed = 200;
+    let mut foe = mon("Foe", &["aqua-ring", "splash"]);
+    foe.hp = 600;
+    foe.item = Some("sitrus-berry".into());
+    let mut b = game(user, vec![foe], 0.5);
+    turn(&mut b);
+    assert_eq!(b.participants(Side::Foes)[0].hp, 662);
+    turn_with(&mut b, |p| choose_move(p, "heal-block", "splash"));
+    assert_eq!(b.participants(Side::Foes)[0].hp, 662);
+    turn_with(&mut b, |p| choose_move(p, "super-fang", "splash"));
+    assert_eq!(b.participants(Side::Foes)[0].hp, 331);
+    assert!(b.participants(Side::Foes)[0].item.is_some());
+    for _ in 0..3 {
+        turn_with(&mut b, |p| choose_move(p, "splash", "splash"));
+    }
+    assert!(b.participants(Side::Foes)[0].item.is_none());
+    assert_eq!(b.participants(Side::Foes)[0].hp, 581);
+}
+
+#[test]
+fn heal_block_does_not_prevent_pain_split_or_regenerator_on_switch_out() {
+    let mut user = mon("User", &["heal-block", "splash"]);
+    user.speed = 200;
+    let mut foe = mon("Foe", &["pain-split", "splash"]);
+    foe.hp = 200;
+    foe.ability = Some("regenerator".into());
+    let mut b = game(user, vec![foe, mon("Bench", &["splash"])], 0.5);
+    b.set_active([vec![0], vec![0]]).unwrap();
+    turn(&mut b);
+    assert_eq!(b.participants(Side::Foes)[0].hp, 600);
+    turn_with(&mut b, |p| {
+        if p.actor.side == Side::Foes {
+            p.choices
+                .iter()
+                .find(|c| matches!(c, Choice::Switch { .. }))
+                .unwrap()
+                .id()
+        } else {
+            choose_move(p, "splash", "splash")
+        }
+    });
+    assert_eq!(b.participants(Side::Foes)[0].hp, 933);
+}
