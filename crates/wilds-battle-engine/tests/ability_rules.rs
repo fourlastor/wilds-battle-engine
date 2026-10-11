@@ -828,3 +828,9 @@ fn torrent_boosts_matching_moves_only() {
     check_power_ability("torrent", &["water-gun"], "tackle", 1.5, 333);
     check_power_ability("torrent", &[], "water-gun", 1.0, 334);
 }
+
+#[test]
+fn swarm_boosts_matching_moves_only() {
+    check_power_ability("swarm", &["bug-bite"], "tackle", 1.5, 333);
+    check_power_ability("swarm", &[], "bug-bite", 1.0, 334);
+}
