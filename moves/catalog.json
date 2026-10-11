@@ -2740,6 +2740,17 @@
       "limitations": []
     },
     {
+      "id": 293,
+      "slug": "camouflage",
+      "name": "Camouflage",
+      "sheet_row": null,
+      "runtime_id": "camouflage",
+      "file": "moves/camouflage.lua",
+      "status": "implemented",
+      "limitations": [],
+      "parameter_source": "https://pokeapi.co/api/v2/move/293/"
+    },
+    {
       "id": 294,
       "slug": "tail-glow",
       "name": "Tail Glow",
@@ -7680,7 +7691,8 @@
       "electric-terrain",
       "misty-terrain",
       "grassy-terrain",
-      "psychic-terrain"
+      "psychic-terrain",
+      "camouflage"
     ]
   }
 }

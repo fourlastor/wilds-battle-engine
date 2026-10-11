@@ -4942,3 +4942,37 @@ fn psychic_terrain_boosts_psychic_power_and_does_not_block_helping_hand_from_an_
     });
     assert_eq!(1000 - b.participants(Side::Foes)[0].hp, expected);
 }
+
+#[test]
+fn camouflage_uses_environment_and_terrain_overrides_even_while_airborne() {
+    for (environment, kind) in [
+        (None, PokemonType::Normal),
+        (Some("cave"), PokemonType::Rock),
+        (Some("water"), PokemonType::Water),
+        (Some("forest"), PokemonType::Bug),
+        (Some("desert"), PokemonType::Ground),
+    ] {
+        let mut user = mon("User", &["camouflage"]);
+        user.types = vec![PokemonType::Flying, PokemonType::Normal];
+        let mut b = game(user, vec![mon("Foe", &["splash"])], 0.5);
+        b.set_environment(environment.map(str::to_owned));
+        turn(&mut b);
+        assert_eq!(b.participants(Side::Allies)[0].types, [kind]);
+        turn(&mut b);
+        assert!(b.participants(Side::Allies)[0].last_move_failed);
+    }
+    let mut user = mon("User", &["camouflage"]);
+    user.types = vec![PokemonType::Flying];
+    user.speed = 50;
+    let mut b = game(user, vec![mon("Foe", &["misty-terrain"])], 0.5);
+    b.set_environment(Some("cave".into()));
+    turn(&mut b);
+    assert_eq!(b.participants(Side::Allies)[0].types, [PokemonType::Fairy]);
+    let mut user = mon("Arceus", &["camouflage"]);
+    user.species_id = 493;
+    let mut b = game(user, vec![mon("Foe", &["splash"])], 0.5);
+    b.set_environment(Some("cave".into()));
+    turn(&mut b);
+    assert_eq!(b.participants(Side::Allies)[0].types, [PokemonType::Normal]);
+    assert!(b.participants(Side::Allies)[0].last_move_failed);
+}
