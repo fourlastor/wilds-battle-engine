@@ -35,3 +35,17 @@ Regression tests are in `crates/wilds-battle-engine/tests/status_rules.rs`.
   burns while active, including after acquiring the ability.
 - This audit implements status interactions of these abilities; their unrelated
   type-based damage modifiers are outside this status audit.
+
+## Poison and toxic poison
+
+- Ordinary poison deals floor(maximum HP / 8), minimum 1. Toxic deals
+  floor(maximum HP / 16), minimum 1, multiplied by a stage from 1 to 15.
+  The counter resets on switching; the status remains toxic poison.
+- Magic Guard prevents damage. Poison Heal replaces it with 1/8-HP healing,
+  blocked by Heal Block; Toxic's counter still advances with either ability.
+- Immunity and Pastel Veil prevent and cure poison; Pastel Veil also protects
+  active allies. Corrosion bypasses Poison/Steel status immunity, but cannot
+  make Poison-type attacks damage Steel or make Toxic Spikes poison Steel.
+- A Poison-type Toxic user bypasses accuracy and semi-invulnerability.
+- Toxic Boost increases physical move power while poisoned. Merciless forces
+  critical hits against poisoned targets unless critical-hit immunity applies.

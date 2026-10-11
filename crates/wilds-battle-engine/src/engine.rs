@@ -1706,7 +1706,10 @@ impl Battle {
         if !first_charge
             && actor != target
             && let Some(place) = self.get(target).hidden()
-            && !(spec.hits_hidden.contains(&place) || self.always_hits(actor, target))
+            && !(spec.hits_hidden.contains(&place)
+                || self.always_hits(actor, target)
+                || (spec.has_flag("poison_always_hits")
+                    && self.types_of(actor).contains(&PokemonType::Poison)))
         {
             events.push(BattleEvent::Message(format!(
                 "{} avoided the attack!",
@@ -1857,6 +1860,11 @@ impl Battle {
         spec: &MoveSpec,
         ignore_evasion: bool,
     ) -> bool {
+        if spec.has_flag("poison_always_hits")
+            && self.types_of(actor).contains(&PokemonType::Poison)
+        {
+            return true;
+        }
         match spec.accuracy {
             Accuracy::Always => {
                 self.end_condition(Scope::Pokemon(actor), "micle_berry");
@@ -2441,7 +2449,13 @@ impl Battle {
             2 => 0.5,
             _ => 1.0,
         };
-        let crit = (attack.always_crit || self.rng.chance(chance))
+        let crit = (attack.always_crit
+            || (self.has_ability(actor, "merciless")
+                && matches!(
+                    self.get(target).status,
+                    Some(Status::Poisoned | Status::BadlyPoisoned)
+                ))
+            || self.rng.chance(chance))
             && !self
                 .rules(target)
                 .any(|rule| matches!(rule, Rule::BlockCritical))
@@ -2796,11 +2810,10 @@ impl Battle {
         }
         let p = self.get(id).clone();
         let dot = match p.status {
-            Some(Status::Poisoned) => Some((fractional(p.max_hp, 8, 1), Status::Poisoned)),
-            Some(Status::BadlyPoisoned) => Some((
-                fractional(p.max_hp, 16, p.status_turns as u16),
-                Status::BadlyPoisoned,
-            )),
+            Some(Status::Poisoned | Status::BadlyPoisoned) => {
+                self.poison_residual(id, events);
+                None
+            }
             Some(Status::Burned) if !self.has_ability(id, "magicguard") => {
                 let divisor = if self.has_ability(id, "heatproof") {
                     32
@@ -2812,8 +2825,6 @@ impl Battle {
             _ => None,
         };
         if let Some((amount, cause)) = dot {
-            // C# increments StackedStatusTurns for ordinary poison and burn too.
-            self.get_mut(id).status_turns = p.status_turns.saturating_add(1);
             events.push(BattleEvent::Message(format!(
                 "{} is hurt by {}!",
                 p.name,

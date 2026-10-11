@@ -88,7 +88,7 @@ impl Battle {
                             "{} absorbed the toxic spikes!",
                             self.get(who).name
                         )));
-                    } else {
+                    } else if !self.types_of(who).contains(&PokemonType::Steel) {
                         self.inflict_status(
                             source,
                             who,

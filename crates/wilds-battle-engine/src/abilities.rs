@@ -346,9 +346,14 @@ impl Battle {
         who: ParticipantId,
         category: crate::moves::Category,
     ) -> f32 {
-        if self.get(who).status == Some(crate::model::Status::Burned)
+        if (self.get(who).status == Some(crate::model::Status::Burned)
             && category == crate::moves::Category::Special
-            && self.has_ability(who, "flareboost")
+            && self.has_ability(who, "flareboost"))
+            || (matches!(
+                self.get(who).status,
+                Some(crate::model::Status::Poisoned | crate::model::Status::BadlyPoisoned)
+            ) && category == crate::moves::Category::Physical
+                && self.has_ability(who, "toxicboost"))
         {
             1.5
         } else {

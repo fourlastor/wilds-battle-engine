@@ -51,7 +51,10 @@ fn turn(battle: &mut Battle, ally: &str, foe: &str) -> Vec<BattleEvent> {
         let choice = prompt
             .choices
             .iter()
-            .find(|c| matches!(c, Choice::UseMove { move_id, .. } if move_id == wanted))
+            .find(|c| match c {
+                Choice::UseMove { move_id, .. } => move_id == wanted,
+                Choice::Switch { to, .. } => wanted == format!("switch:{}", to.index),
+            })
             .unwrap();
         battle
             .set_response(ActionSelection {
@@ -155,6 +158,173 @@ fn flare_boost_only_boosts_special_attacks_while_burned() {
         attack_damage("tackle", Some(Status::Burned), Some("flare-boost")),
         attack_damage("tackle", Some(Status::Burned), None)
     );
+}
+
+#[test]
+fn poison_rounds_down_and_toxic_multiplies_the_floored_unit_with_a_capped_counter() {
+    for (status, stage, loss, next) in [
+        (Status::Poisoned, 0, 19, 0),
+        (Status::BadlyPoisoned, 0, 9, 2),
+        (Status::BadlyPoisoned, 2, 18, 3),
+        (Status::BadlyPoisoned, 15, 135, 15),
+        (Status::BadlyPoisoned, 255, 135, 15),
+    ] {
+        let mut target = mon("Target", &["splash"]);
+        target.hp = 159;
+        target.max_hp = 159;
+        target.status = Some(status);
+        target.status_turns = stage;
+        let mut battle = game(mon("User", &["splash"]), target, 0.5);
+        turn(&mut battle, "splash", "splash");
+        assert_eq!(foe(&battle).hp, 159 - loss);
+        assert_eq!(foe(&battle).status_turns, next);
+    }
+}
+
+#[test]
+fn poison_heal_and_magic_guard_keep_toxic_counting_and_respect_suppression() {
+    for (ability, suppressed, move_id, hp) in [
+        ("poison-heal", false, "splash", 119),
+        ("poison-heal", true, "splash", 82),
+        ("poison-heal", false, "heal-block", 100),
+        ("magic-guard", false, "splash", 100),
+        ("magic-guard", true, "splash", 82),
+    ] {
+        let mut target = mon("Target", &["splash"]);
+        target.hp = 100;
+        target.max_hp = 159;
+        target.status = Some(Status::BadlyPoisoned);
+        target.status_turns = 2;
+        target.ability = Some(ability.into());
+        target.ability_suppressed = suppressed;
+        let mut battle = game(mon("User", &[move_id]), target, 0.5);
+        turn(&mut battle, move_id, "splash");
+        assert_eq!(
+            foe(&battle).hp,
+            hp,
+            "{ability} {move_id} suppressed={suppressed}"
+        );
+        assert_eq!(foe(&battle).status_turns, 3);
+    }
+}
+
+#[test]
+fn toxic_resets_on_switching_but_keeps_the_bad_poison_status() {
+    let mut poisoned = mon("Poisoned", &["splash"]);
+    poisoned.status = Some(Status::BadlyPoisoned);
+    poisoned.status_turns = 10;
+    let mut battle = Battle::with_rng(
+        Fixed(0.5),
+        [
+            vec![poisoned, mon("Bench", &["splash"])],
+            vec![mon("Foe", &["splash"])],
+        ],
+        MoveCatalog::builtin().unwrap(),
+    )
+    .unwrap();
+    battle.set_active([vec![0], vec![0]]).unwrap();
+    turn(&mut battle, "switch:1", "splash");
+    assert_eq!(ally(&battle).status, Some(Status::BadlyPoisoned));
+    assert_eq!(ally(&battle).status_turns, 1);
+    turn(&mut battle, "switch:0", "splash");
+    assert_eq!(ally(&battle).hp, 938);
+    assert_eq!(ally(&battle).status_turns, 2);
+}
+
+#[test]
+fn poison_immunity_and_pastel_veil_protect_and_cure_active_allies() {
+    for ability in ["immunity", "pastel-veil"] {
+        let mut target = mon("Target", &["splash"]);
+        target.status = Some(Status::BadlyPoisoned);
+        target.ability = Some(ability.into());
+        let mut battle = game(mon("User", &["toxic"]), target, 0.5);
+        turn(&mut battle, "toxic", "splash");
+        assert_eq!(foe(&battle).status, None);
+    }
+    let mut poisoned = mon("Poisoned", &["splash"]);
+    poisoned.status = Some(Status::Poisoned);
+    let mut veil = mon("Veil", &["splash"]);
+    veil.ability = Some("pastel-veil".into());
+    let mut battle = Battle::with_rng(
+        Fixed(0.5),
+        [vec![mon("User", &["toxic"])], vec![poisoned, veil]],
+        MoveCatalog::builtin().unwrap(),
+    )
+    .unwrap();
+    battle.set_active([vec![0], vec![0, 1]]).unwrap();
+    turn(&mut battle, "toxic", "splash");
+    assert!(
+        battle
+            .participants(Side::Foes)
+            .iter()
+            .all(|p| p.status.is_none())
+    );
+}
+
+#[test]
+fn corrosion_bypasses_poison_status_type_immunity_but_not_damage_immunity() {
+    for kind in [PokemonType::Steel, PokemonType::Poison] {
+        let mut user = mon("User", &["toxic"]);
+        user.ability = Some("corrosion".into());
+        let mut target = mon("Target", &["splash"]);
+        target.types = vec![kind];
+        let mut battle = game(user, target, 0.5);
+        turn(&mut battle, "toxic", "splash");
+        assert_eq!(foe(&battle).status, Some(Status::BadlyPoisoned));
+    }
+    let mut user = mon("User", &["sludge-bomb"]);
+    user.ability = Some("corrosion".into());
+    let mut target = mon("Target", &["splash"]);
+    target.types = vec![PokemonType::Steel];
+    let mut battle = game(user, target, 0.01);
+    turn(&mut battle, "sludge-bomb", "splash");
+    assert_eq!(foe(&battle).status, None);
+    assert_eq!(foe(&battle).hp, 1000);
+}
+
+#[test]
+fn poison_type_toxic_bypasses_accuracy_and_semi_invulnerability() {
+    for poison in [false, true] {
+        let mut user = mon("User", &["toxic"]);
+        user.speed = 1;
+        if poison {
+            user.types = vec![PokemonType::Poison];
+        }
+        let mut battle = game(user, mon("Target", &["fly"]), 0.99);
+        turn(&mut battle, "toxic", "fly");
+        assert_eq!(foe(&battle).status, poison.then_some(Status::BadlyPoisoned));
+    }
+}
+
+#[test]
+fn toxic_boost_only_boosts_physical_power_while_poisoned() {
+    assert!(
+        attack_damage("tackle", Some(Status::Poisoned), Some("toxic-boost"))
+            > attack_damage("tackle", None, Some("toxic-boost"))
+    );
+    assert_eq!(
+        attack_damage("swift", Some(Status::Poisoned), Some("toxic-boost")),
+        attack_damage("swift", Some(Status::Poisoned), None)
+    );
+}
+
+#[test]
+fn merciless_criticals_respect_critical_immunity() {
+    for armor in [None, Some("battle-armor"), Some("shell-armor")] {
+        let mut user = mon("User", &["tackle"]);
+        user.ability = Some("merciless".into());
+        let mut target = mon("Target", &["splash"]);
+        target.status = Some(Status::Poisoned);
+        target.ability = armor.map(str::to_owned);
+        let mut battle = game(user, target, 0.5);
+        let events = turn(&mut battle, "tackle", "splash");
+        assert_eq!(
+            events
+                .iter()
+                .any(|e| matches!(e, BattleEvent::Message(m) if m == "A critical hit!")),
+            armor.is_none()
+        );
+    }
 }
 
 #[test]

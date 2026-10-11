@@ -1249,11 +1249,13 @@ impl Battle {
         move_type: crate::model::PokemonType,
         ignore_terrain: bool,
     ) -> bool {
-        type_chart::status_immune(
+        (type_chart::status_immune(
             status,
             self.converted_type(actor, move_type),
             &self.types_of(who),
-        ) || (who != actor && self.blocks_status(who, status))
+        ) && !(matches!(status, Status::Poisoned | Status::BadlyPoisoned)
+            && self.has_ability(actor, "corrosion")))
+            || (who != actor && self.blocks_status(who, status))
             || (!ignore_terrain && self.blocks_grounded_status(who, status))
             || (status == Status::Asleep
                 && (self.has_ability(who, "insomnia") || self.has_ability(who, "vitalspirit")))
