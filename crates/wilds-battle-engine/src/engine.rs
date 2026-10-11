@@ -14,6 +14,7 @@ pub struct Battle {
     pending_events: Vec<BattleEvent>,
     pub(crate) switching_target: Option<ParticipantId>,
     pub(crate) pivot: Option<ParticipantId>,
+    pub(crate) baton_pass: Option<(ParticipantId, Vec<String>)>,
     pub(crate) forced_switches: Vec<(ParticipantId, ParticipantId)>,
     pub(crate) weather: Option<Weather>,
     pub(crate) rng: Box<dyn BattleRng>,
@@ -234,6 +235,7 @@ impl Battle {
             pending_events: Vec::new(),
             forced_switches: Vec::new(),
             pivot: None,
+            baton_pass: None,
             switching_target: None,
             sides,
             weather: None,
@@ -990,7 +992,14 @@ impl Battle {
                 && self.get(who).hp > 0
                 && self.is_active(who)
             {
-                self.intercept_switch(who, events)?;
+                // Gen 8 Baton Pass skips Pursuit's BeforeSwitchOut interception.
+                if self
+                    .baton_pass
+                    .as_ref()
+                    .is_none_or(|(source, _)| *source != who)
+                {
+                    self.intercept_switch(who, events)?;
+                }
                 if self.get(who).hp == 0 || self.winner.is_some() {
                     continue;
                 }
@@ -1006,6 +1015,7 @@ impl Battle {
                 }
             }
         }
+        self.baton_pass = None;
         let order: Vec<_> = std::mem::take(&mut self.completed_slots)
             .into_iter()
             .map(|(side, pos)| ParticipantId {
@@ -1305,7 +1315,7 @@ impl Battle {
         {
             self.get_mut(actor).semi_invulnerable = false;
         }
-        if !spec.has_flag("calls_move") {
+        if !spec.has_flag("calls_move") && !spec.has_flag("pass_volatiles") {
             self.active_power_multiplier = self
                 .get_mut(actor)
                 .next_move_power_boost
@@ -2728,6 +2738,13 @@ impl Battle {
         let name = p.name.clone();
         events.push(BattleEvent::Damage { target, amount, hp });
         if was_alive && hp == 0 {
+            if self
+                .baton_pass
+                .as_ref()
+                .is_some_and(|(source, _)| *source == target)
+            {
+                self.baton_pass = None;
+            }
             self.restore_transform(target, events);
             self.get_mut(target).restore_moves();
             self.get_mut(target).substitute_hp = 0;

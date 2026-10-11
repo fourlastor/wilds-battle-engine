@@ -18,8 +18,8 @@ otherwise Electric. The host supplies its current form; automatic Hunger Switch
 form changes remain part of the unfinished ability catalog.
 
 With seven additional support moves, 14 further moves from the local JSON data,
-185 further Gen 1–8 moves and the nine original moves outside the sheet,
-the runtime catalog has 753 moves: 752 files here and Struggle in
+186 further Gen 1–8 moves and the nine original moves outside the sheet,
+the runtime catalog has 754 moves: 753 files here and Struggle in
 `src/system_moves.lua` inside the crate.
 The 22 original filenames containing underscores have been renamed with hyphens.
 
@@ -45,7 +45,10 @@ Voluntary switches and faint replacements now use host-selected bench choices.
 Source-linked traps now prevent switches and end when their source leaves or faints.
 Circle Throw and Dragon Tail now force a random eligible bench replacement.
 U-turn, Volt Switch, Flip Turn and Parting Shot pause for a host-selected replacement.
-Pursuit intercepts voluntary and pivot switches before withdrawal.
+Pursuit intercepts voluntary and pivot switches before withdrawal, except Baton Pass.
+Baton Pass transfers stages and eligible volatile effects to the host-selected
+replacement before entry hazards and abilities. Transform copies battle traits and
+move slots temporarily, restoring originals on withdrawal or fainting.
 Sky Drop links both participants in the air, blocks carrying-related switches and
 actions, and releases them on the drop, interruption, fainting or grounding.
 Flying targets are carried without taking drop damage, targets at least 200 kg

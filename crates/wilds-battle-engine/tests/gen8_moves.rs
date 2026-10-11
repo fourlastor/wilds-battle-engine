@@ -7539,3 +7539,331 @@ fn transforming_into_mega_gengar_ends_existing_telekinesis() {
             .any(|c| c.name == "telekinesis")
     );
 }
+
+fn baton_choice(prompt: &Prompt, allies: &str, foes: &str) -> u32 {
+    if prompt.reason != wilds_battle_engine::PromptReason::Action {
+        prompt
+            .choices
+            .iter()
+            .find(|c| matches!(c, Choice::Switch { .. }))
+            .unwrap()
+            .id()
+    } else {
+        choose_move(prompt, allies, foes)
+    }
+}
+fn baton_game(user: Pokemon, bench: Pokemon, foe: Pokemon) -> Battle {
+    let mut b = Battle::with_rng(
+        Fixed(0.5),
+        [vec![user, bench], vec![foe]],
+        MoveCatalog::builtin().unwrap(),
+    )
+    .unwrap();
+    b.set_active([vec![0], vec![0]]).unwrap();
+    b
+}
+#[test]
+fn baton_pass_transfers_stages_substitute_and_confusion_to_the_host_chosen_replacement() {
+    use wilds_battle_engine::{Stat, Status};
+    let mut user = mon("Passer", &["baton-pass"]);
+    user.stages.insert(Stat::Attack, 2);
+    user.stages.insert(Stat::Defense, -1);
+    user.stages.insert(Stat::Evasion, 3);
+    user.substitute_hp = 250;
+    user.confused_turns = Some(4);
+    user.status = Some(Status::Poisoned);
+    user.crit_stage = 2;
+    user.item = Some("shed-shell".into());
+    user.ability = Some("simple".into());
+    let mut recipient = mon("Chosen", &["pound"]);
+    recipient.hp = 300;
+    recipient.max_hp = 400;
+    recipient.ability = Some("limber".into());
+    let mut b = Battle::with_rng(
+        Fixed(0.5),
+        [
+            vec![user, mon("Unchosen", &["splash"]), recipient],
+            vec![mon("Foe", &["splash"])],
+        ],
+        MoveCatalog::builtin().unwrap(),
+    )
+    .unwrap();
+    b.set_active([vec![0], vec![0]]).unwrap();
+    turn_with(&mut b, |p| {
+        if p.reason == wilds_battle_engine::PromptReason::Pivot {
+            p.choices
+                .iter()
+                .find(|c| matches!(c,Choice::Switch{to,..} if to.index==2))
+                .unwrap()
+                .id()
+        } else {
+            choose_move(p, "baton-pass", "splash")
+        }
+    });
+    assert_eq!(b.active_indices(Side::Allies), [2]);
+    let old = &b.participants(Side::Allies)[0];
+    let new = &b.participants(Side::Allies)[2];
+    assert_eq!(new.stage(Stat::Attack), 2);
+    assert_eq!(new.stage(Stat::Defense), -1);
+    assert_eq!(new.stage(Stat::Evasion), 3);
+    assert_eq!(new.substitute_hp, 250);
+    assert_eq!(new.confused_turns, Some(3));
+    assert_eq!(new.crit_stage, 2);
+    assert_eq!((new.hp, new.max_hp), (300, 400));
+    assert_eq!(new.status, None);
+    assert_eq!(new.item, None);
+    assert_eq!(new.ability.as_deref(), Some("limber"));
+    assert_eq!(new.moves, ["pound"]);
+    assert_eq!(old.status, Some(Status::Poisoned));
+    assert_eq!(old.move_pp["baton-pass"], 39);
+    assert!(old.stages.is_empty());
+    assert_eq!(old.substitute_hp, 0);
+    assert_eq!(old.confused_turns, None);
+}
+#[test]
+fn baton_pass_keeps_supported_effects_and_their_remaining_duration() {
+    for (id, effect) in [
+        ("aqua-ring", "aqua_ring"),
+        ("ingrain", "ingrain"),
+        ("focus-energy", "focus_energy"),
+        ("magnet-rise", "magnet_rise"),
+        ("no-retreat", "no_retreat"),
+    ] {
+        let mut bench = mon("Bench", &["splash"]);
+        bench.hp = 500;
+        let mut b = baton_game(
+            mon("Passer", &[id, "baton-pass"]),
+            bench,
+            mon("Foe", &["splash"]),
+        );
+        turn(&mut b);
+        turn_with(&mut b, |p| baton_choice(p, "baton-pass", "splash"));
+        let new = &b.participants(Side::Allies)[1];
+        assert!(new.conditions.iter().any(|c| c.name == effect), "{id}");
+        if id == "magnet-rise" {
+            assert_eq!(
+                new.conditions
+                    .iter()
+                    .find(|c| c.name == effect)
+                    .unwrap()
+                    .turns_left,
+                Some(3)
+            );
+        }
+        if id == "aqua-ring" || id == "ingrain" {
+            assert_eq!(new.hp, 562);
+        }
+    }
+}
+#[test]
+fn baton_pass_keeps_leech_seed_on_a_grass_replacement_and_preserves_perish_count() {
+    let mut bench = mon("Grass", &["splash"]);
+    bench.types = vec![PokemonType::Grass];
+    let mut b = baton_game(
+        mon("Passer", &["splash", "baton-pass"]),
+        bench,
+        mon("Foe", &["leech-seed", "splash"]),
+    );
+    turn(&mut b);
+    turn_with(&mut b, |p| baton_choice(p, "baton-pass", "splash"));
+    assert_eq!(b.participants(Side::Allies)[1].hp, 875);
+    assert!(
+        b.participants(Side::Allies)[1]
+            .conditions
+            .iter()
+            .any(|c| c.name == "leech_seed")
+    );
+    let mut b = baton_game(
+        mon("Passer", &["splash", "baton-pass"]),
+        mon("Bench", &["splash"]),
+        mon("Foe", &["perish-song", "splash"]),
+    );
+    turn(&mut b);
+    turn_with(&mut b, |p| baton_choice(p, "baton-pass", "splash"));
+    assert_eq!(
+        b.participants(Side::Allies)[1]
+            .conditions
+            .iter()
+            .find(|c| c.name == "perish_song")
+            .unwrap()
+            .turns_left,
+        Some(2)
+    );
+    turn_with(&mut b, |p| baton_choice(p, "splash", "splash"));
+    turn_with(&mut b, |p| baton_choice(p, "splash", "splash"));
+    assert_eq!(b.participants(Side::Allies)[1].hp, 0);
+    assert_eq!(b.participants(Side::Allies)[0].hp, 1000);
+}
+#[test]
+fn baton_pass_leaves_stockpile_defense_curl_minimize_and_raw_stat_changes_behind() {
+    use wilds_battle_engine::Stat;
+    let mut user = mon(
+        "Passer",
+        &[
+            "stockpile",
+            "defense-curl",
+            "minimize",
+            "power-split",
+            "baton-pass",
+        ],
+    );
+    user.attack = 300;
+    let mut bench = mon("Bench", &["spit-up"]);
+    bench.attack = 50;
+    bench.defense = 250;
+    let mut b = baton_game(user, bench, mon("Foe", &["splash"]));
+    for id in ["stockpile", "defense-curl", "minimize", "power-split"] {
+        turn_with(&mut b, |p| choose_move(p, id, "splash"));
+    }
+    assert_eq!(b.participants(Side::Allies)[0].attack, 200);
+    turn_with(&mut b, |p| baton_choice(p, "baton-pass", "splash"));
+    let new = &b.participants(Side::Allies)[1];
+    assert_eq!((new.attack, new.defense), (50, 250));
+    assert_eq!(new.stage(Stat::Defense), 2);
+    assert_eq!(new.stage(Stat::SpDefense), 1);
+    assert_eq!(new.stage(Stat::Evasion), 2);
+    assert!(new.conditions.is_empty());
+    turn(&mut b);
+    assert!(b.participants(Side::Allies)[1].last_move_failed);
+}
+#[test]
+fn baton_pass_applies_power_trick_to_the_recipients_own_stats() {
+    let mut user = mon("Passer", &["power-trick", "baton-pass"]);
+    user.attack = 300;
+    user.defense = 100;
+    let mut bench = mon("Bench", &["power-trick"]);
+    bench.attack = 50;
+    bench.defense = 250;
+    let mut b = baton_game(user, bench, mon("Foe", &["splash"]));
+    turn(&mut b);
+    turn_with(&mut b, |p| baton_choice(p, "baton-pass", "splash"));
+    let new = &b.participants(Side::Allies)[1];
+    assert_eq!((new.attack, new.defense), (250, 50));
+    assert!(new.conditions.iter().any(|c| c.name == "power_trick"));
+    turn(&mut b);
+    let new = &b.participants(Side::Allies)[1];
+    assert_eq!((new.attack, new.defense), (50, 250));
+}
+#[test]
+fn baton_pass_installs_grounding_before_spikes_and_does_not_protect_hp_with_substitute() {
+    let mut user = mon("Passer", &["ingrain", "baton-pass"]);
+    user.substitute_hp = 250;
+    let mut bench = mon("Flying", &["splash"]);
+    bench.types = vec![PokemonType::Flying];
+    let mut b = baton_game(user, bench, mon("Foe", &["spikes", "splash"]));
+    turn(&mut b);
+    turn_with(&mut b, |p| baton_choice(p, "baton-pass", "splash"));
+    let new = &b.participants(Side::Allies)[1];
+    assert_eq!(new.hp, 937);
+    assert_eq!(new.substitute_hp, 250);
+}
+#[test]
+fn baton_pass_transfers_suppression_before_entry_abilities_except_protected_abilities() {
+    for ability in ["intimidate", "multitype"] {
+        let mut bench = mon("Bench", &["splash"]);
+        bench.ability = Some(ability.into());
+        let mut user = mon("Passer", &["splash", "baton-pass"]);
+        user.ability = Some("limber".into());
+        let mut b = baton_game(user, bench, mon("Foe", &["gastro-acid", "splash"]));
+        turn(&mut b);
+        turn_with(&mut b, |p| baton_choice(p, "baton-pass", "splash"));
+        assert_eq!(
+            b.participants(Side::Allies)[1].ability_suppressed,
+            ability == "intimidate"
+        );
+        assert_eq!(
+            b.participants(Side::Foes)[0].stage(wilds_battle_engine::Stat::Attack),
+            0
+        );
+    }
+}
+#[test]
+fn baton_pass_escapes_mean_look_without_passing_it_but_passes_partial_binding() {
+    for (id, binds) in [("mean-look", false), ("wrap", true)] {
+        let mut b = baton_game(
+            mon("Passer", &["splash", "baton-pass"]),
+            mon("Bench", &["splash"]),
+            mon("Foe", &[id, "splash"]),
+        );
+        turn(&mut b);
+        turn_with(&mut b, |p| baton_choice(p, "baton-pass", "splash"));
+        let new = &b.participants(Side::Allies)[1];
+        assert_eq!(new.bound.is_some(), binds);
+        assert!(!new.conditions.iter().any(|c| c.name == "trapped"));
+        assert_eq!(new.hp, if binds { 875 } else { 1000 });
+    }
+}
+#[test]
+fn baton_pass_skips_pursuit_interception_and_fails_without_a_bench() {
+    let mut user = mon("Passer", &["baton-pass"]);
+    user.speed = 200;
+    let foe = mon("Foe", &["pursuit"]);
+    let bench = mon("Bench", &["splash"]);
+    let expected = control_damage(40, "Dark", "Physical", foe.clone(), bench.clone());
+    let mut b = baton_game(user, bench, foe);
+    turn_with(&mut b, |p| baton_choice(p, "baton-pass", "pursuit"));
+    assert_eq!(b.participants(Side::Allies)[0].hp, 1000);
+    assert_eq!(1000 - b.participants(Side::Allies)[1].hp, expected);
+    let mut b = game(
+        mon("Passer", &["baton-pass"]),
+        vec![mon("Foe", &["splash"])],
+        0.5,
+    );
+    turn(&mut b);
+    assert!(b.participants(Side::Allies)[0].last_move_failed);
+    assert_eq!(b.active_indices(Side::Allies), [0]);
+}
+#[test]
+fn baton_pass_keeps_charge_for_the_replacements_next_electric_attack() {
+    let bench = mon("Bench", &["thunder_shock"]);
+    let foe = mon("Foe", &["splash"]);
+    let expected = control_damage(80, "Electric", "Special", bench.clone(), foe.clone());
+    let mut b = baton_game(mon("Passer", &["charge", "baton-pass"]), bench, foe);
+    turn(&mut b);
+    turn_with(&mut b, |p| baton_choice(p, "baton-pass", "splash"));
+    assert!(
+        b.participants(Side::Allies)[1]
+            .next_move_power_boost
+            .is_some()
+    );
+    turn(&mut b);
+    assert_eq!(1000 - b.participants(Side::Foes)[0].hp, expected);
+    assert!(
+        b.participants(Side::Allies)[1]
+            .next_move_power_boost
+            .is_none()
+    );
+}
+#[test]
+fn baton_pass_does_not_transfer_a_transform_identity_or_move_set() {
+    let mut user = mon("Ditto", &["transform"]);
+    user.species_id = 132;
+    let mut foe = mon("Foe", &["splash", "baton-pass"]);
+    foe.species_id = 6;
+    foe.stages.insert(wilds_battle_engine::Stat::Attack, 2);
+    let mut bench = mon("Bench", &["pound"]);
+    bench.species_id = 25;
+    let mut b = baton_game(user, bench, foe);
+    turn(&mut b);
+    assert!(b.participants(Side::Allies)[0].transformed());
+    turn_with(&mut b, |p| baton_choice(p, "baton-pass", "splash"));
+    let old = &b.participants(Side::Allies)[0];
+    let new = &b.participants(Side::Allies)[1];
+    assert_eq!(old.species_id, 132);
+    assert!(!old.transformed());
+    assert_eq!(old.moves, ["transform"]);
+    assert_eq!(new.species_id, 25);
+    assert!(!new.transformed());
+    assert_eq!(new.moves, ["pound"]);
+    assert_eq!(new.stage(wilds_battle_engine::Stat::Attack), 2);
+}
+#[test]
+fn baton_pass_confusion_is_cured_by_the_recipients_active_own_tempo() {
+    let mut user = mon("Passer", &["baton-pass"]);
+    user.confused_turns = Some(4);
+    let mut bench = mon("Bench", &["splash"]);
+    bench.ability = Some("own-tempo".into());
+    let mut b = baton_game(user, bench, mon("Foe", &["splash"]));
+    turn_with(&mut b, |p| baton_choice(p, "baton-pass", "splash"));
+    assert_eq!(b.participants(Side::Allies)[1].confused_turns, None);
+}

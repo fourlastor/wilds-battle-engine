@@ -405,6 +405,7 @@ pub(crate) enum ScriptOperation {
     },
     ReleaseCarry,
     SwitchOut,
+    BatonPass(Vec<String>),
     ForceSwitch {
         who: ParticipantId,
     },
@@ -1478,6 +1479,16 @@ fn parse_op(name: &str, args: &[Value]) -> mlua::Result<ScriptOperation> {
         "carry" => ScriptOperation::Carry { who: who(0)? },
         "release" => ScriptOperation::ReleaseCarry,
         "switch_out" => ScriptOperation::SwitchOut,
+        "baton_pass" => {
+            let Value::Table(table) = arg(0) else {
+                return Err(bad("baton_pass requires a list of effect names"));
+            };
+            let names = table
+                .sequence_values::<Value>()
+                .map(|v| name_of(&v?, "effect name"))
+                .collect::<mlua::Result<Vec<_>>>()?;
+            ScriptOperation::BatonPass(names)
+        }
         "force_switch" => ScriptOperation::ForceSwitch { who: who(0)? },
         "adjacent" => ScriptOperation::Adjacent {
             a: who(0)?,

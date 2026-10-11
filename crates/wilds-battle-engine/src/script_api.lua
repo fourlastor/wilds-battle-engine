@@ -175,6 +175,7 @@ return function(api, fields, roster)
   function ctx:release() return op("release") end
   function ctx:swap_positions(a, b) return op("swap_positions", a, b) end
   function ctx:swap_side_effects(names) return op("swap_side_effects", names) end
+  function ctx:baton_pass(effects) return op("baton_pass", effects) end
   function ctx:switch_out() return op("switch_out") end
   function ctx:force_switch(who) return op("force_switch", who) end
   function ctx:change_form(who, form) return op("change_form", who, form) end

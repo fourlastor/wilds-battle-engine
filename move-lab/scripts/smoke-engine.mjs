@@ -254,3 +254,34 @@ for (const state of [transformed, JSON.parse(text(engine._mlab_state(transformBa
 }
 engine._wbe_destroy(transformBattle);
 console.log('ok: Transform identity, stats, copied PP and original base Attack round-trip through both wasm snapshots');
+
+const batonBattle = withStrings([JSON.stringify({
+  allies: [{name: 'Passer', max_hp: 1000, moves: ['swords-dance', 'baton-pass']}, {name: 'Bench', max_hp: 1000, moves: ['pound']}],
+  foes: [{name: 'Foe', max_hp: 1000, moves: ['splash']}],
+  active: {allies: [0], foes: [0]},
+}), '/moves'], (json, dir) => engine._wbe_create(json, dir));
+assert.notEqual(batonBattle, 0, lastError());
+let sawBatonPrompt = false;
+let batonState;
+for (let i = 0; i < 8; i++) {
+  batonState = JSON.parse(text(engine._wbe_advance(batonBattle)));
+  if (batonState.active.allies[0] === 1) break;
+  const prompt = batonState.status;
+  let choice;
+  if (prompt.reason === 'pivot') {
+    sawBatonPrompt = true;
+    choice = prompt.choices.find(c => c.kind === 'switch' && c.to.index === 1);
+  } else {
+    const id = prompt.actor.side === 'allies' ? (batonState.turn === 0 ? 'swords-dance' : 'baton-pass') : 'splash';
+    choice = prompt.choices.find(c => c.move_id === id);
+  }
+  assert.ok(choice, JSON.stringify(prompt));
+  assert.ok(engine._wbe_respond(batonBattle, BigInt(prompt.prompt_id), choice.id));
+}
+assert.ok(sawBatonPrompt);
+assert.deepEqual(batonState.active.allies, [1]);
+const batonDetailed = JSON.parse(text(engine._mlab_state(batonBattle)));
+assert.ok(batonDetailed.allies[1].stages.some(([stat, value]) => stat === 'Attack' && value === 2));
+assert.deepEqual(batonDetailed.allies[0].stages, []);
+engine._wbe_destroy(batonBattle);
+console.log('ok: Baton Pass prompts the host and transfers stages through wasm');

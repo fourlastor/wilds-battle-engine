@@ -2017,6 +2017,9 @@ impl Battle {
             }
             ScriptOperation::Carry { who } => Value::Boolean(self.carry(actor, who)),
             ScriptOperation::ReleaseCarry => Value::Boolean(self.release_carry(actor, events)),
+            ScriptOperation::BatonPass(effects) => {
+                Value::Boolean(self.request_baton_pass(actor, effects))
+            }
             ScriptOperation::SwitchOut => Value::Boolean(self.request_pivot(actor)),
             ScriptOperation::ForceSwitch { who } => {
                 Value::Boolean(self.request_forced_switch(actor, who))

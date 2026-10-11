@@ -2280,6 +2280,17 @@
       "limitations": []
     },
     {
+      "id": 226,
+      "slug": "baton-pass",
+      "name": "Baton Pass",
+      "sheet_row": null,
+      "runtime_id": "baton-pass",
+      "file": "moves/baton-pass.lua",
+      "status": "implemented",
+      "limitations": [],
+      "parameter_source": "https://pokeapi.co/api/v2/move/226/"
+    },
+    {
       "id": 227,
       "slug": "encore",
       "name": "Encore",
@@ -8196,7 +8207,8 @@
       "doom-desire",
       "snatch",
       "instruct",
-      "transform"
+      "transform",
+      "baton-pass"
     ]
   }
 }

@@ -78,6 +78,7 @@ impl Battle {
         if from.side != to.side || !self.bench(from.side).contains(&to) {
             return false;
         }
+        let passed = self.take_baton_pass(from);
         self.ability_on_exit(from, events);
         self.release_carry(from, events);
         self.release_links(from);
@@ -160,6 +161,9 @@ impl Battle {
         )));
         // Move-scoped ability bypass must not leak into the incoming Pokémon's entry.
         let ignored = self.ignored_ability.take();
+        if let Some(passed) = passed {
+            self.receive_baton_pass(to, passed, events);
+        }
         self.heal_replacement(to, events);
         self.entry_hazards(to, events);
         self.ability_on_entry(to, events);
