@@ -793,7 +793,10 @@ impl Battle {
             return HitOutcome::Protected;
         }
         if self.guard_hit(actor, recipient, frame.spec, options, events)
-            || (self.get(recipient).protected && recipient != actor && !options.ignore_protect)
+            || (self.get(recipient).protected
+                && recipient != actor
+                && !options.ignore_protect
+                && !(frame.spec.has_flag("contact") && self.has_ability(actor, "unseenfist")))
         {
             events.push(BattleEvent::Message(format!(
                 "{} protected itself!",

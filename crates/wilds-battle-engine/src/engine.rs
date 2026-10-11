@@ -1725,7 +1725,10 @@ impl Battle {
             self.clear_consecutive(actor);
             return Ok(true);
         }
-        if self.get(target).protected && actor != target {
+        if self.get(target).protected
+            && actor != target
+            && !(spec.has_flag("contact") && self.has_ability(actor, "unseenfist"))
+        {
             events.push(BattleEvent::Message(format!(
                 "{} protected itself!",
                 self.get(target).name

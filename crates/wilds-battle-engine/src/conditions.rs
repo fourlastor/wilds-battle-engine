@@ -534,6 +534,8 @@ impl Battle {
         if actor == target || matches!(spec.target, Target::Field | Target::All) {
             return None;
         }
+        let ignore_protect =
+            ignore_protect || (spec.has_flag("contact") && self.has_ability(actor, "unseenfist"));
         self.rules(target).filter(|rule| matches!(rule, Rule::Guard {spread_only, priority_only, damaging_only, status_only, unbypassable, ..}
             if (!ignore_protect || *unbypassable)
                 && (!*spread_only || matches!(spec.target, Target::AllOthers | Target::AllOpponents))

@@ -258,7 +258,7 @@ id,ability,status,verification
 257,pastel-veil,IMPLEMENTED,Source inventory; existing tests only
 258,hunger-switch,MISSING,No native battle behavior
 259,quick-draw,MISSING,No native battle behavior
-260,unseen-fist,MISSING,No native battle behavior
+260,unseen-fist,IMPLEMENTED,ability_rules::unseen_fist_contact_moves_pierce_protection_without_reprisals
 261,curious-medicine,IMPLEMENTED,ability_rules::curious_medicine_resets_only_active_teammates
 262,transistor,IMPLEMENTED,ability_rules::transistor_boosts_matching_moves_only
 263,dragons-maw,IMPLEMENTED,ability_rules::dragonsmaw_boosts_matching_moves_only

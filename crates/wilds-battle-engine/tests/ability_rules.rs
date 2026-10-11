@@ -2873,3 +2873,31 @@ fn stalwart_ignores_redirection_without_ignoring_type_absorption() {
 fn propeller_tail_ignores_redirection_without_ignoring_type_absorption() {
     check_redirection_bypass("propeller-tail");
 }
+
+#[test]
+fn unseen_fist_contact_moves_pierce_protection_without_reprisals() {
+    for protect in ["protect", "spiky-shield", "baneful-bunker", "kings-shield"] {
+        for (attack, suppressed, hits) in [
+            ("tackle", false, true),
+            ("aerial-ace", false, true),
+            ("swift", false, false),
+            ("tackle", true, false),
+        ] {
+            let mut user = mon("User", &[attack]);
+            user.ability = Some("unseen-fist".into());
+            user.ability_suppressed = suppressed;
+            let mut battle = game(user, mon("Target", &[protect]), 0.5);
+            turn(&mut battle, attack, protect);
+            assert_eq!(
+                foe(&battle).hp < 1000,
+                hits,
+                "{protect}/{attack}/{suppressed}"
+            );
+            if hits {
+                assert_eq!(ally(&battle).hp, 1000);
+                assert_eq!(ally(&battle).status, None);
+                assert_eq!(ally(&battle).stage(wilds_battle_engine::Stat::Attack), 0);
+            }
+        }
+    }
+}
