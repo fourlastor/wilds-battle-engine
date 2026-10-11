@@ -2550,3 +2550,8 @@ fn aerilate_converts_normal_moves_to_flying_and_boosts_power() {
 fn pixilate_converts_normal_moves_to_fairy_and_boosts_power() {
     check_normal_conversion("pixilate", PokemonType::Fairy);
 }
+
+#[test]
+fn galvanize_converts_normal_moves_to_electric_and_boosts_power() {
+    check_normal_conversion("galvanize", PokemonType::Electric);
+}

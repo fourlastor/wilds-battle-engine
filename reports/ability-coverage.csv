@@ -204,7 +204,7 @@ id,ability,status,verification
 203,long-reach,IMPLEMENTED,ability_rules::long_reach_removes_contact_for_hit_reactions_and_fluffy
 204,liquid-voice,MISSING,No native battle behavior
 205,triage,IMPLEMENTED,ability_rules::triage_gives_healing_and_drain_moves_three_priority
-206,galvanize,MISSING,No native battle behavior
+206,galvanize,IMPLEMENTED,ability_rules::galvanize_converts_normal_moves_to_electric_and_boosts_power
 207,surge-surfer,MISSING,No native battle behavior
 208,schooling,MISSING,No native battle behavior
 209,disguise,MISSING,No native battle behavior

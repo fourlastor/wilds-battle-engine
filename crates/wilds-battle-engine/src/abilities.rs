@@ -977,6 +977,10 @@ impl Battle {
                 self.has_ability(actor, "pixilate")
                     .then_some(crate::model::PokemonType::Fairy)
             })
+            .or_else(|| {
+                self.has_ability(actor, "galvanize")
+                    .then_some(crate::model::PokemonType::Electric)
+            })
     }
 
     pub(crate) fn ability_base_power_factor(
