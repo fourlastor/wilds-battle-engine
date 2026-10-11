@@ -79,6 +79,58 @@ fn said(events: &[BattleEvent], text: &str) -> bool {
 }
 
 #[test]
+fn lash_out_uses_actual_drops_this_turn_and_forgets_previous_turns() {
+    let damage = |capped: bool, lowered: bool| {
+        let mut ally = mon("Ally", &["lash-out"]);
+        if capped {
+            ally.change_stage(Stat::Defense, -6);
+        }
+        let mut foe = mon("Foe", &["leer", "splash"]);
+        foe.speed = 200;
+        let mut game = Game::new(vec![ally], vec![foe], 0.5);
+        game.turn("lash-out", if lowered { "leer" } else { "splash" });
+        let first = 1000 - game.foe().hp;
+        game.turn("lash-out", "splash");
+        let second = 1000 - first - game.foe().hp;
+        assert!(!game.ally().stats_lowered_this_turn);
+        (first, second)
+    };
+    let (base, _) = damage(false, false);
+    let (boosted, next) = damage(false, true);
+    assert!(boosted >= base * 19 / 10 && boosted <= base * 21 / 10);
+    assert_eq!(next, base);
+    assert_eq!(damage(true, true).0, base);
+}
+
+#[test]
+fn burning_jealousy_checks_each_targets_actual_stat_increases() {
+    let mut boosted = mon("Boosted", &["stockpile", "splash"]);
+    boosted.speed = 200;
+    let mut capped = boosted.clone();
+    capped.name = "Capped".into();
+    capped.change_stage(Stat::Defense, 6);
+    capped.change_stage(Stat::SpDefense, 6);
+    let mut game = Game::new(
+        vec![mon("Ally", &["burning-jealousy"])],
+        vec![boosted, capped],
+        0.5,
+    );
+    game.turn("burning-jealousy", "stockpile");
+    assert_eq!(
+        game.0.participants(Side::Foes)[0].status,
+        Some(Status::Burned)
+    );
+    assert_eq!(game.0.participants(Side::Foes)[1].status, None);
+
+    let mut foe = mon("Foe", &["stockpile", "splash"]);
+    foe.speed = 200;
+    let mut game = Game::duel(&["splash", "burning-jealousy"], foe, 0.5);
+    game.turn("splash", "stockpile");
+    game.turn("burning-jealousy", "splash");
+    assert_eq!(game.foe().status, None);
+}
+
+#[test]
 fn eerie_spell_reduces_last_move_pp_only_after_a_surviving_hit() {
     let mut foe = mon("Foe", &["splash", "protect"]);
     foe.speed = 200;

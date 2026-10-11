@@ -433,6 +433,8 @@ impl Battle {
             pokemon.acted = false;
             pokemon.damage_taken = 0;
             pokemon.hurt_this_turn = false;
+            pokemon.stats_raised_this_turn = false;
+            pokemon.stats_lowered_this_turn = false;
             pokemon.last_hit = None;
         }
         self.turn_choices = ordered
@@ -920,7 +922,10 @@ impl Battle {
         delta: i8,
         events: &mut Vec<BattleEvent>,
     ) -> i8 {
-        let change = self.get_mut(recipient).change_stage(stat, delta);
+        let pokemon = self.get_mut(recipient);
+        let change = pokemon.change_stage(stat, delta);
+        pokemon.stats_raised_this_turn |= change > 0;
+        pokemon.stats_lowered_this_turn |= change < 0;
         let tail = match change {
             3.. => "rose drastically!",
             2 => "rose sharply!",

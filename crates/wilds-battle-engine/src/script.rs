@@ -264,6 +264,8 @@ impl Battle {
         )?;
         table.raw_set("last_move", pokemon.last_used.as_deref())?;
         table.raw_set("last_move_failed", pokemon.last_move_failed)?;
+        table.raw_set("stats_raised_this_turn", pokemon.stats_raised_this_turn)?;
+        table.raw_set("stats_lowered_this_turn", pokemon.stats_lowered_this_turn)?;
         table.raw_set(
             "streak",
             if pokemon.streak_move.as_deref() == Some(frame.spec.id.as_str()) {

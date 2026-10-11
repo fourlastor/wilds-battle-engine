@@ -389,6 +389,9 @@ pub struct Pokemon {
     pub damage_taken: u16,
     /// Whether it lost HP for any reason this turn.
     pub hurt_this_turn: bool,
+    /// Whether an actual stage increase/decrease occurred this turn; resets before turn-start hooks.
+    pub stats_raised_this_turn: bool,
+    pub stats_lowered_this_turn: bool,
     pub last_hit: Option<HitInfo>,
     pub moves_used: BTreeSet<String>,
     /// The move it last tried to use, whatever came of it.
@@ -444,6 +447,8 @@ impl Pokemon {
             acted: false,
             damage_taken: 0,
             hurt_this_turn: false,
+            stats_raised_this_turn: false,
+            stats_lowered_this_turn: false,
             last_hit: None,
             moves_used: BTreeSet::new(),
             last_used: None,

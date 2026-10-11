@@ -182,6 +182,10 @@ forced move), `ctx.battle_turn`, `ctx.environment`, `ctx.move` (`id`, `name`, `t
 `category`, `priority`, `flags`), `ctx.field`, `ctx.user_side`, `ctx.foe_side`. A side
 table has `marks`, `effects`, `pokemon` and `fainted_last_turn`.
 
+`who.stats_raised_this_turn` and `who.stats_lowered_this_turn` record actual stat
+stage changes during the current turn, including self-inflicted changes. They reset
+before turn-start hooks; capped changes and resetting stages do not trigger them.
+
 ### What a script does
 
 `who` is a Pokémon table. Options are a table and can be left out.

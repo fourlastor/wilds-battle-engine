@@ -1805,6 +1805,25 @@ fn an_effect_chance_follows_the_rainbow() {
 // Guard rails
 
 #[test]
+fn stat_change_history_survives_reversal_and_resets_each_turn() {
+    let script = test_move(
+        "",
+        "
+        assert(not ctx.user.stats_raised_this_turn and not ctx.user.stats_lowered_this_turn)
+        ctx:change_stat(ctx.user, Stat.Accuracy, 1)
+        ctx:change_stat(ctx.user, Stat.Accuracy, -1)
+        assert(ctx.user:stage(Stat.Accuracy) == 0)
+        assert(ctx.user.stats_raised_this_turn and ctx.user.stats_lowered_this_turn)
+        ctx:reset_stats(ctx.user)
+        assert(ctx.user.stats_raised_this_turn and ctx.user.stats_lowered_this_turn)
+    ",
+    );
+    let mut game = Game::duel(&[&script], &["test"]);
+    game.turn(&["test", "wait"]);
+    game.turn(&["test", "wait"]);
+}
+
+#[test]
 fn reducing_pp_refreshes_lua_state_and_ignores_absent_moves() {
     let script = test_move(
         "",

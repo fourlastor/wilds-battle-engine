@@ -5415,10 +5415,8 @@
       "sheet_row": 557,
       "runtime_id": "burning-jealousy",
       "file": "moves/burning-jealousy.lua",
-      "status": "partial",
-      "limitations": [
-        "The API does not expose whether targets raised any stat earlier this turn, so conditional burning is pending."
-      ]
+      "status": "implemented",
+      "limitations": []
     },
     {
       "id": 808,
@@ -5427,10 +5425,8 @@
       "sheet_row": 558,
       "runtime_id": "lash-out",
       "file": "moves/lash-out.lua",
-      "status": "partial",
-      "limitations": [
-        "The API does not expose whether any stat was lowered earlier this turn, so the conditional power doubling is pending."
-      ]
+      "status": "implemented",
+      "limitations": []
     },
     {
       "id": 809,
