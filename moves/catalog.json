@@ -5484,6 +5484,17 @@
       "limitations": []
     },
     {
+      "id": 675,
+      "slug": "throat-chop",
+      "name": "Throat Chop",
+      "sheet_row": null,
+      "runtime_id": "throat-chop",
+      "file": "moves/throat-chop.lua",
+      "status": "implemented",
+      "limitations": [],
+      "parameter_source": "https://pokeapi.co/api/v2/move/675/"
+    },
+    {
       "id": 676,
       "slug": "pollen-puff",
       "name": "Pollen Puff",
@@ -6912,7 +6923,8 @@
       "mirror-coat",
       "metal-burst",
       "pain-split",
-      "toxic-thread"
+      "toxic-thread",
+      "throat-chop"
     ]
   }
 }

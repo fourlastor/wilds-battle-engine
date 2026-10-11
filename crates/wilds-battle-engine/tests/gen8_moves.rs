@@ -1969,3 +1969,31 @@ fn toxic_thread_still_lowers_speed_when_poison_is_immune() {
         );
     }
 }
+
+#[test]
+fn throat_chop_blocks_selected_sound_moves_and_expires_after_the_next_turn() {
+    use wilds_battle_engine::Status;
+    let mut user = mon("User", &["throat-chop", "splash"]);
+    user.speed = 200;
+    let mut b = game(user, vec![mon("Foe", &["sing", "splash"])], 0.5);
+    turn(&mut b);
+    assert_eq!(b.participants(Side::Allies)[0].status, None);
+    turn_with(&mut b, |p| {
+        if p.actor.side == Side::Foes {
+            assert!(
+                !p.choices
+                    .iter()
+                    .any(|c| matches!(c,Choice::UseMove{move_id,..}if move_id=="sing"))
+            );
+        }
+        p.choices
+            .iter()
+            .find(|c| matches!(c,Choice::UseMove{move_id,..}if move_id=="splash"))
+            .unwrap()
+            .id()
+    });
+    turn_with(&mut b, |p| {
+        p.choices.iter().find(|c|matches!(c,Choice::UseMove{move_id,..}if move_id==if p.actor.side==Side::Foes{"sing"}else{"splash"})).unwrap().id()
+    });
+    assert_eq!(b.participants(Side::Allies)[0].status, Some(Status::Asleep));
+}
