@@ -11,7 +11,7 @@ id,ability,status,verification
 10,volt-absorb,IMPLEMENTED,ability_rules::volt_absorb_catches_status_moves_and_respects_suppression_and_bypass
 11,water-absorb,IMPLEMENTED,ability_rules::water_absorb_catches_soak_without_changing_types
 12,oblivious,IMPLEMENTED,ability_rules::oblivious_prevents_captivate_unless_suppressed_or_bypassed
-13,cloud-nine,PARTIAL,Source inventory; existing tests only
+13,cloud-nine,IMPLEMENTED,ability_rules::cloud_nine_suppresses_weather_damage_modifiers_and_lua_weather_without_clearing_it
 14,compound-eyes,MISSING,No native battle behavior
 15,insomnia,IMPLEMENTED,Source inventory; existing tests only
 16,color-change,MISSING,No native battle behavior

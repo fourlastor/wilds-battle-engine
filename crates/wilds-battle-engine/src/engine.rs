@@ -1656,7 +1656,7 @@ impl Battle {
             .locked_move
             .as_ref()
             .is_some_and(|lock| lock.charging);
-        let mut first_charge = !second_turn && spec.effects.iter().any(|e| matches!(e, Effect::TwoTurn { skip_in_sun, .. } if !skip_in_sun || self.weather.as_ref().is_none_or(|w| w.kind != WeatherKind::Sun)));
+        let mut first_charge = !second_turn && spec.effects.iter().any(|e| matches!(e, Effect::TwoTurn { skip_in_sun, .. } if !skip_in_sun || self.effective_weather() != Some(WeatherKind::Sun)));
         if first_charge && !spec.has_flag("no_power_herb") && self.try_skip_charge(actor, events) {
             first_charge = false;
             second_turn = true;
@@ -2222,11 +2222,7 @@ impl Battle {
                 hidden,
             } => {
                 if !(second_turn
-                    || *skip_in_sun
-                        && self
-                            .weather
-                            .as_ref()
-                            .is_some_and(|w| w.kind == WeatherKind::Sun))
+                    || *skip_in_sun && self.effective_weather() == Some(WeatherKind::Sun))
                 {
                     self.get_mut(actor).locked_move = Some(LockedMove {
                         move_id: spec.id.clone(),
@@ -2576,7 +2572,7 @@ impl Battle {
         } else {
             self.stat_value(target, def_name)
         };
-        let weather = self.weather.as_ref().map(|weather| weather.kind);
+        let weather = self.effective_weather();
         if weather == Some(WeatherKind::Sandstorm)
             && def_name == CombatStat::SpDefense
             && defender.types.contains(&PokemonType::Rock)
@@ -2941,6 +2937,9 @@ impl Battle {
         }
         self.weather.as_mut().unwrap().turns_left -= 1;
         events.push(BattleEvent::Message(continues.into()));
+        if self.effective_weather().is_none() {
+            return;
+        }
         let (spared, name): (&[PokemonType], &str) = match weather.kind {
             WeatherKind::Sandstorm => (
                 &[PokemonType::Rock, PokemonType::Ground, PokemonType::Steel],

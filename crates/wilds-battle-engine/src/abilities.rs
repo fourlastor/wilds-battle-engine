@@ -27,6 +27,19 @@ fn cannot_suppress(ability: &str) -> bool {
 }
 
 impl Battle {
+    /// Weather keeps its timer while its battle effects are suppressed.
+    pub(crate) fn effective_weather(&self) -> Option<crate::model::WeatherKind> {
+        if self
+            .actors()
+            .into_iter()
+            .any(|who| self.has_ability(who, "cloudnine"))
+        {
+            None
+        } else {
+            self.weather.as_ref().map(|weather| weather.kind)
+        }
+    }
+
     pub(crate) fn ability_state(&self, who: ParticipantId) -> crate::model::AbilityState {
         let p = self.get(who);
         crate::model::AbilityState {

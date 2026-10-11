@@ -528,7 +528,11 @@ impl Battle {
             )?,
         )?;
         ctx.raw_set("targets", list(self.recipients(frame))?)?;
-        match &self.weather {
+        match self
+            .weather
+            .as_ref()
+            .filter(|_| self.effective_weather().is_some())
+        {
             Some(weather) => {
                 ctx.raw_set(
                     "weather",

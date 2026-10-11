@@ -496,3 +496,45 @@ fn scrappy_bypasses_ghost_immunity_for_normal_fighting_and_fixed_damage() {
         }
     }
 }
+
+#[test]
+fn cloud_nine_suppresses_weather_damage_modifiers_and_lua_weather_without_clearing_it() {
+    let run = |weather_move, attack, ability: &str, suppressed| {
+        let mut user = mon("User", &[weather_move, attack]);
+        let mut target = mon("Target", &["splash"]);
+        target.ability = Some(ability.into());
+        target.ability_suppressed = suppressed;
+        user.speed = 200;
+        let mut battle = game(user, target, 0.5);
+        turn(&mut battle, weather_move, "splash");
+        assert!(battle.weather().is_some());
+        let before = foe(&battle).hp;
+        turn(&mut battle, attack, "splash");
+        (
+            before - foe(&battle).hp,
+            ally(&battle).hp,
+            battle.weather().unwrap().turns_left,
+        )
+    };
+    for weather in ["sunny_day", "rain-dance"] {
+        assert_eq!(
+            run(weather, "ember", "cloud-nine", false).0,
+            ability_damage("ember", "", "", false)
+        );
+        assert_eq!(
+            run(weather, "weather-ball", "cloud-nine", false).0,
+            ability_damage("weather-ball", "", "", false)
+        );
+        assert_eq!(
+            run(weather, "ember", "cloud-nine", true).0,
+            run(weather, "ember", "", false).0
+        );
+    }
+    for weather in ["hail", "sandstorm"] {
+        let cloud = run(weather, "tackle", "cloud-nine", false);
+        assert_eq!(cloud.0, ability_damage("tackle", "", "", false));
+        assert_eq!(cloud.1, 1000);
+        assert!(cloud.2 < 5);
+        assert!(run(weather, "tackle", "cloud-nine", true).1 < 1000);
+    }
+}
