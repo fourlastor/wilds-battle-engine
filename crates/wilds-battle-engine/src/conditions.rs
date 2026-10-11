@@ -336,6 +336,16 @@ impl Battle {
         true
     }
 
+    pub(crate) fn effectiveness_factor(&self, id: ParticipantId, kind: PokemonType) -> f32 {
+        self.rules(id).fold(1.0, |factor, rule| match rule {
+            Rule::TypeEffectiveness {
+                move_type,
+                factor: by,
+            } if *move_type == kind => factor * by,
+            _ => factor,
+        })
+    }
+
     pub(crate) fn endures(&self, id: ParticipantId) -> bool {
         self.rules(id).any(|rule| matches!(rule, Rule::Endure))
     }

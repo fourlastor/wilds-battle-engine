@@ -1877,6 +1877,7 @@ impl Battle {
     }
     pub(crate) fn effectiveness(&self, target: ParticipantId, move_type: PokemonType) -> f32 {
         type_chart::multiplier(move_type, &self.defending_types(target, move_type))
+            * self.effectiveness_factor(target, move_type)
     }
     /// How well a hit does against a Pokémon's types, with the hit's own exceptions.
     pub(crate) fn matchup(&self, target: ParticipantId, attack: &Attack) -> f32 {
@@ -1895,7 +1896,8 @@ impl Battle {
                             |(_, factor)| *factor,
                         )
                 })
-                .product()
+                .product::<f32>()
+                * self.effectiveness_factor(target, move_type)
         };
         let first = against(attack.move_type, attack.effective);
         match attack.also_type {

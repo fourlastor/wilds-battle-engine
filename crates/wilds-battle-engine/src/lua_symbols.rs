@@ -60,6 +60,7 @@ pub(crate) enum RuleKind {
     WithoutType,
     NegateTypeImmunity,
     IgnoreEvasionBoost,
+    TypeEffectiveness,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -211,6 +212,7 @@ pub(crate) fn install(lua: &Lua) -> Result<(), BattleError> {
         ("WithoutType", RuleKind::WithoutType),
         ("NegateTypeImmunity", RuleKind::NegateTypeImmunity),
         ("IgnoreEvasionBoost", RuleKind::IgnoreEvasionBoost),
+        ("TypeEffectiveness", RuleKind::TypeEffectiveness),
     ] {
         add(lua, &rules, name, LuaSymbol::Rule(value))?;
     }

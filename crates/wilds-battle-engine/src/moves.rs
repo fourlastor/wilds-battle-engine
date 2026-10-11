@@ -833,6 +833,7 @@ fn rule_of(value: &Value) -> mlua::Result<Rule> {
         RuleKind::WithoutType => &["kind", "type"],
         RuleKind::NegateTypeImmunity => &["kind", "defending", "incoming"],
         RuleKind::IgnoreEvasionBoost => &["kind"],
+        RuleKind::TypeEffectiveness => &["kind", "type", "factor"],
         RuleKind::BlockForcedSwitch
         | RuleKind::BlockCritical
         | RuleKind::BlockFlinch
@@ -918,6 +919,10 @@ fn rule_of(value: &Value) -> mlua::Result<Rule> {
             incoming: options.list("incoming", type_of)?,
         },
         RuleKind::IgnoreEvasionBoost => Rule::IgnoreEvasionBoost,
+        RuleKind::TypeEffectiveness => Rule::TypeEffectiveness {
+            move_type: type_of(&required("type")?, "effectiveness type")?,
+            factor: factor("factor")?,
+        },
         RuleKind::Redirect => Rule::Redirect {
             to: pokemon_of(&required("to")?, "rule option to")?,
             move_type: options.pokemon_type("type")?,

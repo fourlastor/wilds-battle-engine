@@ -263,6 +263,11 @@ pub enum Rule {
         incoming: Vec<PokemonType>,
     },
     IgnoreEvasionBoost,
+    /// Changes incoming type effectiveness, including immunity/ability and berry checks.
+    TypeEffectiveness {
+        move_type: PokemonType,
+        factor: f32,
+    },
 }
 
 /// A named mark or timed effect on a Pokémon, a side or the field.

@@ -3089,3 +3089,55 @@ fn miracle_eye_cannot_stack_with_foresight_and_respects_protect_but_not_substitu
         );
     }
 }
+
+#[test]
+fn tar_shot_lowers_speed_and_changes_fire_effectiveness_for_wonder_guard() {
+    use wilds_battle_engine::Stat;
+    for (kind, damaged) in [(PokemonType::Normal, true), (PokemonType::Water, false)] {
+        let mut foe = mon("Foe", &["splash"]);
+        foe.types = vec![kind];
+        foe.ability = Some("wonder-guard".into());
+        let mut b = game(mon("User", &["tar-shot", "ember"]), vec![foe], 0.5);
+        turn_with(&mut b, |p| choose_move(p, "ember", "splash"));
+        assert_eq!(b.participants(Side::Foes)[0].hp, 1000);
+        turn_with(&mut b, |p| choose_move(p, "tar-shot", "splash"));
+        assert_eq!(b.participants(Side::Foes)[0].stage(Stat::Speed), -1);
+        turn_with(&mut b, |p| choose_move(p, "ember", "splash"));
+        assert_eq!(b.participants(Side::Foes)[0].hp < 1000, damaged);
+    }
+}
+
+#[test]
+fn tar_shot_does_not_stack_weakness_and_activates_a_resistance_berry() {
+    use wilds_battle_engine::Stat;
+    let user = mon("User", &["tar-shot", "ember"]);
+    let foe = mon("Foe", &["splash"]);
+    let normal = control_damage(40, "Fire", "Special", user.clone(), foe.clone());
+    let mut foe = foe;
+    foe.item = Some("occa-berry".into());
+    let mut b = game(user, vec![foe], 0.5);
+    for _ in 0..2 {
+        turn_with(&mut b, |p| choose_move(p, "tar-shot", "splash"));
+    }
+    assert_eq!(b.participants(Side::Foes)[0].stage(Stat::Speed), -2);
+    turn_with(&mut b, |p| choose_move(p, "ember", "splash"));
+    assert!(b.participants(Side::Foes)[0].item.is_none());
+    assert_eq!(1000 - b.participants(Side::Foes)[0].hp, normal);
+}
+
+#[test]
+fn tar_shot_cannot_apply_either_effect_through_protect_or_substitute() {
+    use wilds_battle_engine::Stat;
+    for (response, sub) in [("protect", 0), ("splash", 50)] {
+        let mut foe = mon("Foe", &[response]);
+        foe.substitute_hp = sub;
+        let mut b = game(mon("User", &["tar-shot"]), vec![foe], 0.5);
+        turn(&mut b);
+        assert_eq!(b.participants(Side::Foes)[0].stage(Stat::Speed), 0);
+        assert!(
+            b.participants(Side::Foes)[0]
+                .condition("tar_shot")
+                .is_none()
+        );
+    }
+}
