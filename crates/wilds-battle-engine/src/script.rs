@@ -287,7 +287,7 @@ impl Battle {
                     symbol(lua, "Category", &format!("{:?}", spec.category))?,
                 )?;
                 chosen.raw_set("damaging", spec.category != crate::moves::Category::Status)?;
-                chosen.raw_set("priority", self.move_priority(id, spec.priority))?;
+                chosen.raw_set("priority", self.effective_move_priority(id, spec))?;
                 table.raw_set("selected_move", chosen)?;
             }
             None => table.raw_set("selected_move", Value::Nil)?,
@@ -1143,13 +1143,14 @@ impl Battle {
         who: ParticipantId,
         status: Status,
         move_type: crate::model::PokemonType,
+        ignore_terrain: bool,
     ) -> bool {
         type_chart::status_immune(
             status,
             self.converted_type(actor, move_type),
             &self.types_of(who),
         ) || (who != actor && self.blocks_status(who, status))
-            || self.blocks_grounded_status(who, status)
+            || (!ignore_terrain && self.blocks_grounded_status(who, status))
             || (status == Status::Asleep
                 && (self.has_ability(who, "insomnia") || self.has_ability(who, "vitalspirit")))
             || self.has_ability(who, "comatose")
@@ -1170,7 +1171,7 @@ impl Battle {
         let new_status = status.battle_status();
         let current = self.get(who).status;
         let name = self.get(who).name.clone();
-        let immune = self.status_immune_to(actor, who, new_status, move_type);
+        let immune = self.status_immune_to(actor, who, new_status, move_type, false);
         if self.get(who).hp > 0 && (current.is_none() || replace) && !immune {
             let turns = match status {
                 AppliedStatus::RestSleep => 2,
@@ -1585,10 +1586,20 @@ impl Battle {
                 }
                 Value::Integer(i64::from(points))
             }
-            ScriptOperation::CanApplyStatus { who, status } => Value::Boolean(
+            ScriptOperation::CanApplyStatus {
+                who,
+                status,
+                ignore_terrain,
+            } => Value::Boolean(
                 self.get(who).hp > 0
                     && self.get(who).status.is_none()
-                    && !self.status_immune_to(actor, who, status.battle_status(), spec.move_type),
+                    && !self.status_immune_to(
+                        actor,
+                        who,
+                        status.battle_status(),
+                        spec.move_type,
+                        ignore_terrain,
+                    ),
             ),
             ScriptOperation::ApplyStatus {
                 who,

@@ -109,6 +109,8 @@ pub struct MoveSpec {
     pub target_user_unless_type: Option<PokemonType>,
     pub accuracy: Accuracy,
     pub priority: i8,
+    /// Adds one priority while grounded on this named terrain.
+    pub priority_terrain: Option<String>,
     pub fail_on_full_hp: bool,
     pub effects: Vec<Effect>,
     /// Free-form tags such as "contact" or "sound", for scripts that care.
@@ -198,6 +200,7 @@ pub(crate) enum ScriptOperation {
     CanApplyStatus {
         who: ParticipantId,
         status: AppliedStatus,
+        ignore_terrain: bool,
     },
     Damage {
         power: u16,
@@ -825,7 +828,7 @@ fn rule_of(value: &Value) -> mlua::Result<Rule> {
         RuleKind::StatusOnExpiry => &["kind", "status", "by"],
         RuleKind::ExplodeOnType => &["kind", "type", "fraction", "message"],
         RuleKind::DamageEachTurn => &["kind", "fraction", "except_types", "message"],
-        RuleKind::HealEachTurn => &["kind", "fraction", "message"],
+        RuleKind::HealEachTurn => &["kind", "fraction", "message", "grounded_only"],
         RuleKind::DrainEachTurn => &["kind", "fraction", "to", "message"],
         RuleKind::DamageTaken => &[
             "kind",
@@ -938,6 +941,7 @@ fn rule_of(value: &Value) -> mlua::Result<Rule> {
         RuleKind::HealEachTurn => Rule::HealEachTurn {
             fraction: fraction_of(&required("fraction")?, "rule option fraction")?,
             message: options.text("message")?,
+            grounded_only: options.flag("grounded_only")?,
         },
         RuleKind::DrainEachTurn => Rule::DrainEachTurn {
             fraction: fraction_of(&required("fraction")?, "rule option fraction")?,
@@ -1103,6 +1107,8 @@ fn parse_op(name: &str, args: &[Value]) -> mlua::Result<ScriptOperation> {
         "can_apply_status" => ScriptOperation::CanApplyStatus {
             who: who(0)?,
             status: status_of(arg(1), "can_apply_status")?,
+            ignore_terrain: Options::new(given(2), "can_apply_status", &["ignore_terrain"])?
+                .flag("ignore_terrain")?,
         },
         "swap_positions" => ScriptOperation::SwapPositions {
             a: who(0)?,
@@ -1773,6 +1779,7 @@ fn parse_move(t: &Table) -> Result<MoveSpec, BattleError> {
             .transpose()?,
         accuracy,
         priority: t.get::<Option<i8>>("priority")?.unwrap_or(0),
+        priority_terrain: t.get::<Option<String>>("priority_terrain")?,
         fail_on_full_hp: t.get::<Option<bool>>("fail_on_full_hp")?.unwrap_or(false),
         effects,
         flags,

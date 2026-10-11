@@ -206,6 +206,7 @@ pub enum Rule {
     HealEachTurn {
         fraction: f32,
         message: Option<String>,
+        grounded_only: bool,
     },
     /// Loses this share of max HP at the end of each turn, and `to` regains what was lost.
     DrainEachTurn {

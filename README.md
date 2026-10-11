@@ -1,9 +1,9 @@
 # Wilds battle engine
 
 `wilds-battle-engine` is the Rust battle simulation. Move definitions are loaded
-from Lua; `MoveCatalog::builtin()` embeds the 707 files under `moves/`,
+from Lua; `MoveCatalog::builtin()` embeds the 708 files under `moves/`,
 and `MoveCatalog::from_directory(path)` reads them from disk at runtime.
-Both catalogs also include the system move Struggle, for 708 moves in total.
+Both catalogs also include the system move Struggle, for 709 moves in total.
 The [move catalog](moves/README.md) includes 538 entries from the Saved moves sheet,
 plus support moves, additional local JSON moves and the original moves outside the sheet. Its manifest
 records the 34 excluded Z/Max Moves. Files use canonical slugs and source display
@@ -273,6 +273,7 @@ ctx:end_effect(ctx.target.team, "reflect")                  -- Brick Break
 |---|---|
 | `ExplodeOnType` | `type`, `fraction`, optional `message`; cancels moves of that type after PP is spent and deals rounded residual damage. Magic Guard prevents that damage. |
 | Screen damage rules | `DamageTaken` accepts `screen=true` to allow Infiltrator and `unless_side_effect` to avoid stacking with another named screen. |
+| Terrain recovery and priority | `HealEachTurn` accepts `grounded_only`. A move's `priority_terrain` adds one priority on that terrain while grounded; pending action order updates after terrain changes. |
 | `IncomingBasePower` | `moves` and/or `type`, `factor`, optional `grounded_only`; modifies incoming base power before the damage formula. |
 | `BlockGroundedStatus` | `statuses` (empty means all), `confusion`; protects grounded Pokémon, including from self-inflicted status. `BasePower` and `IncomingBasePower` accept `grounded_only` for terrain bonuses. |
 | `IncomingAlwaysHit` | Ordinary incoming moves pass accuracy checks; OHKO accuracy, Protect and hiding remain separate. |
@@ -475,4 +476,4 @@ reports whether it reached the owner. The C ABI and Move Lab state include
 `substitute_hp`, and `substitute` events carry the target, absorbed amount and
 remaining pool HP. Move Lab displays that pool separately from ordinary HP.
 
-`ctx:can_apply_status(who, status)` checks current status and immunities without mutation.
+`ctx:can_apply_status(who, status, {ignore_terrain=false})` checks current status and immunities without mutation. Delayed moves may check terrain separately from status application.

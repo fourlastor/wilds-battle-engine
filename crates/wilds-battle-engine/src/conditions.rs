@@ -409,6 +409,14 @@ impl Battle {
             .map_or(target, |(_, _, to)| to)
     }
 
+    pub(crate) fn effective_move_priority(&self, id: ParticipantId, spec: &MoveSpec) -> i8 {
+        let bonus = spec.priority_terrain.as_ref().is_some_and(|name| {
+            self.on_ground(id) && self.field_conditions.iter().any(|c| &c.name == name)
+        });
+        self.move_priority(id, spec.priority)
+            .saturating_add(i8::from(bonus))
+    }
+
     pub(crate) fn move_priority(&self, id: ParticipantId, base: i8) -> i8 {
         self.rules(id).fold(base, |priority, rule| match rule {
             Rule::MovePriority { amount } => priority.saturating_add(*amount),
@@ -687,7 +695,15 @@ impl Battle {
                         }
                         self.damage(id, share(fraction), events);
                     }
-                    Rule::HealEachTurn { fraction, message } => {
+                    Rule::HealEachTurn {
+                        fraction,
+                        message,
+                        grounded_only,
+                    } => {
+                        if grounded_only && (!self.on_ground(id) || self.get(id).hidden().is_some())
+                        {
+                            continue;
+                        }
                         if self.get(id).hp < max_hp {
                             self.heal(id, share(fraction), events);
                             if let Some(message) = message {

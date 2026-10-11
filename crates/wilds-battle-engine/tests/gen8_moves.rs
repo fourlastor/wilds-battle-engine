@@ -4805,3 +4805,82 @@ fn protective_terrain_does_not_stop_yawn_from_resolving_while_the_target_is_unde
         assert_eq!(b.participants(Side::Foes)[0].status, Some(Status::Asleep));
     }
 }
+
+#[test]
+fn grassy_terrain_restores_only_grounded_visible_pokemon_and_respects_levitation() {
+    let mut user = mon("User", &["grassy-terrain", "magnet-rise", "splash"]);
+    user.hp = 400;
+    user.speed = 200;
+    let mut foe = mon("Foe", &["splash", "gravity"]);
+    foe.hp = 400;
+    foe.types = vec![PokemonType::Flying];
+    let mut b = game(user, vec![foe], 0.5);
+    turn(&mut b);
+    assert_eq!(b.participants(Side::Allies)[0].hp, 462);
+    assert_eq!(b.participants(Side::Foes)[0].hp, 400);
+    turn_with(&mut b, |p| choose_move(p, "magnet-rise", "splash"));
+    assert_eq!(b.participants(Side::Allies)[0].hp, 462);
+    turn_with(&mut b, |p| choose_move(p, "splash", "gravity"));
+    assert_eq!(b.participants(Side::Allies)[0].hp, 524);
+    assert_eq!(b.participants(Side::Foes)[0].hp, 462);
+}
+
+#[test]
+fn grassy_terrain_boosts_grass_power_and_halves_earthquakes_base_power() {
+    let mut user = mon("User", &["grassy-terrain", "vine-whip", "splash"]);
+    user.types = vec![PokemonType::Grass];
+    user.speed = 200;
+    let foe = mon("Foe", &["splash", "earthquake"]);
+    let grass = control_damage(59, "Grass", "Physical", user.clone(), foe.clone());
+    let quake = control_damage(50, "Ground", "Physical", foe.clone(), user.clone());
+    let mut b = game(user, vec![foe], 0.5);
+    turn(&mut b);
+    let events = turn_with(&mut b, |p| choose_move(p, "vine-whip", "splash"));
+    assert!(events.iter().any(|e| matches!(e,BattleEvent::Damage{target,amount,..} if target.side==Side::Foes && *amount==grass)));
+    let events = turn_with(&mut b, |p| choose_move(p, "splash", "earthquake"));
+    assert!(events.iter().any(|e| matches!(e,BattleEvent::Damage{target,amount,..} if target.side==Side::Allies && *amount==quake)));
+}
+
+#[test]
+fn grassy_terrain_changes_pending_grassy_glide_priority_immediately() {
+    let mut setter = mon("Setter", &["grassy-terrain"]);
+    setter.speed = 300;
+    let mut glider = mon("Glider", &["grassy-glide"]);
+    glider.speed = 50;
+    let mut foe = mon("Foe", &["splash"]);
+    foe.speed = 200;
+    let mut b = Battle::with_rng(
+        Fixed(0.5),
+        [vec![setter, glider], vec![foe]],
+        MoveCatalog::builtin().unwrap(),
+    )
+    .unwrap();
+    let events = turn_with(&mut b, |p| {
+        p.choices.iter().find(|c| matches!(c,Choice::UseMove{target,..} if p.actor.index==0 || target.side==Side::Foes)).unwrap().id()
+    });
+    assert_eq!(used_names(&events), ["Setter", "Glider", "Foe"]);
+}
+
+#[test]
+fn misty_terrain_allows_yawns_drowsiness_while_electric_terrain_prevents_it() {
+    use wilds_battle_engine::Status;
+    for terrain in ["electric-terrain", "misty-terrain"] {
+        let mut user = mon("User", &[terrain, "defog"]);
+        user.speed = 200;
+        let mut b = game(user, vec![mon("Foe", &["yawn", "splash"])], 0.5);
+        turn(&mut b);
+        let misty = terrain == "misty-terrain";
+        assert_eq!(
+            b.participants(Side::Allies)[0]
+                .conditions
+                .iter()
+                .any(|c| c.name == "yawn"),
+            misty
+        );
+        turn_with(&mut b, |p| choose_move(p, "defog", "splash"));
+        assert_eq!(
+            b.participants(Side::Allies)[0].status,
+            if misty { Some(Status::Asleep) } else { None }
+        );
+    }
+}

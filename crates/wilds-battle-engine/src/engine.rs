@@ -682,12 +682,9 @@ impl Battle {
             .into_iter()
             .map(|(actor, choice)| {
                 let priority = match &choice {
-                    SelectedAction::Move(choice) => self.move_priority(
+                    SelectedAction::Move(choice) => self.effective_move_priority(
                         actor,
-                        self.catalog
-                            .get(&choice.move_id)
-                            .expect("validated choice")
-                            .priority,
+                        self.catalog.get(&choice.move_id).expect("validated choice"),
                     ),
                     SelectedAction::Recharge => 0,
                     SelectedAction::Switch(_) => 6,
@@ -748,12 +745,9 @@ impl Battle {
         // Preserve the speed and tie rolls; priority changes never reroll ties.
         for entry in &mut ordered {
             if let SelectedAction::Move(choice) = &entry.action {
-                entry.priority = self.move_priority(
+                entry.priority = self.effective_move_priority(
                     entry.actor,
-                    self.catalog
-                        .get(&choice.move_id)
-                        .expect("validated choice")
-                        .priority,
+                    self.catalog.get(&choice.move_id).expect("validated choice"),
                 );
             }
         }
@@ -840,6 +834,12 @@ impl Battle {
     fn refresh_pending_speed(&mut self) {
         let mut queue = std::mem::take(&mut self.turn_queue);
         for entry in &mut queue {
+            if let SelectedAction::Move(choice) = &entry.action {
+                entry.priority = self.effective_move_priority(
+                    entry.actor,
+                    self.catalog.get(&choice.move_id).expect("queued move"),
+                );
+            }
             if !entry.custap {
                 entry.speed = self.action_speed(entry.actor);
             }
@@ -1330,7 +1330,7 @@ impl Battle {
                     ..
                 }
             )
-        }) && self.status_immune_to(actor, actor, Status::Asleep, spec.move_type)
+        }) && self.status_immune_to(actor, actor, Status::Asleep, spec.move_type, false)
         {
             events.push(BattleEvent::Message(format!(
                 "{user_name} used {}!",

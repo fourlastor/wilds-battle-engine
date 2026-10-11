@@ -5503,6 +5503,17 @@
       "parameter_source": "https://pokeapi.co/api/v2/move/579/"
     },
     {
+      "id": 580,
+      "slug": "grassy-terrain",
+      "name": "Grassy Terrain",
+      "sheet_row": null,
+      "runtime_id": "grassy-terrain",
+      "file": "moves/grassy-terrain.lua",
+      "status": "implemented",
+      "limitations": [],
+      "parameter_source": "https://pokeapi.co/api/v2/move/580/"
+    },
+    {
       "id": 581,
       "slug": "misty-terrain",
       "name": "Misty Terrain",
@@ -7656,7 +7667,8 @@
       "magnet-rise",
       "telekinesis",
       "electric-terrain",
-      "misty-terrain"
+      "misty-terrain",
+      "grassy-terrain"
     ]
   }
 }
