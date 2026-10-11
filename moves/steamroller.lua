@@ -1,7 +1,7 @@
 -- Move 537: Steamroller. Identity and parameters: pokemon_data/assets/moves/537.json.
 -- Behavior checked against PokeAPI; see catalog.json for scope and limitations.
 
-local move = {flags = {"contact"},
+local move = {flags = {"contact", "flinch_secondary"},
     script = function(ctx)
       local small = ctx.target.marks.minimized ~= nil
       local hit = ctx:damage(small and 130 or 65, {never_miss = small})

@@ -2911,6 +2911,18 @@ impl Battle {
             return Ok(lost);
         }
         if self.break_form_shield(target, meta.category, events) {
+            self.ability_attacking_hit(
+                target,
+                &HitInfo {
+                    attacker: actor,
+                    move_id: meta.move_id.clone(),
+                    category: meta.category,
+                    move_type: meta.move_type,
+                    damage: 0,
+                    contact: meta.contact,
+                },
+                events,
+            );
             return Ok(0);
         }
         let deplete_pp = self

@@ -4006,3 +4006,53 @@ fn forewarn_reports_highest_nominal_power_including_scripted_and_special_moves()
         assert!(events.iter().any(|e| matches!(e, BattleEvent::Message(m) if m.contains("Forewarn") && m.contains(expected))), "{events:?}");
     }
 }
+
+#[test]
+fn stench_adds_ten_percent_flinch_with_immunities_and_no_duplicate_secondary() {
+    for (dice, ability, flinched) in [
+        (0.05, "", true),
+        (0.15, "", false),
+        (0.05, "shield-dust", false),
+        (0.05, "inner-focus", false),
+    ] {
+        let mut user = mon("User", &["tackle"]);
+        user.ability = Some("stench".into());
+        user.speed = 200;
+        let mut target = mon("Target", &["splash"]);
+        target.ability = Some(ability.into());
+        let mut battle = game(user, target, dice);
+        let events = turn(&mut battle, "tackle", "splash");
+        assert_eq!(
+            events
+                .iter()
+                .any(|e| matches!(e, BattleEvent::Message(m) if m == "Target flinched!")),
+            flinched
+        );
+    }
+    struct Count(std::rc::Rc<std::cell::Cell<usize>>);
+    impl BattleRng for Count {
+        fn next_u64(&mut self) -> u64 {
+            0
+        }
+        fn fraction(&mut self) -> f32 {
+            self.0.set(self.0.get() + 1);
+            0.5
+        }
+    }
+    for id in ["air-slash", "rock-slide"] {
+        let run = |ability: &str| {
+            let count = std::rc::Rc::new(std::cell::Cell::new(0));
+            let mut user = mon("User", &[id]);
+            user.ability = Some(ability.into());
+            let mut battle = Battle::with_rng(
+                Count(count.clone()),
+                [vec![user], vec![mon("Target", &["splash"])]],
+                MoveCatalog::builtin().unwrap(),
+            )
+            .unwrap();
+            turn(&mut battle, id, "splash");
+            count.get()
+        };
+        assert_eq!(run("stench"), run(""));
+    }
+}

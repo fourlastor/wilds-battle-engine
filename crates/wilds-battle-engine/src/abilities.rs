@@ -524,8 +524,27 @@ impl Battle {
         hit: &crate::model::HitInfo,
         events: &mut Vec<BattleEvent>,
     ) {
-        if hit.damage > 0
-            && hit.contact
+        if hit.attacker == target || hit.category == crate::moves::Category::Status {
+            return;
+        }
+        let has_flinch = self.catalog.get(&hit.move_id).is_some_and(|spec| {
+            if item_key(&hit.move_id) == "secretpower" {
+                return !self
+                    .field_conditions
+                    .iter()
+                    .any(|c| c.group.as_deref() == Some("terrain"))
+                    && matches!(self.environment.as_deref(), Some("cave" | "mountain"));
+            }
+            spec.has_flag("flinch_secondary")
+                || spec
+                    .effects
+                    .iter()
+                    .any(|e| matches!(e, crate::moves::Effect::Flinch(_)))
+        });
+        if self.has_ability(hit.attacker, "stench") && !has_flinch && self.rng.chance(0.1) {
+            self.flinch(target, true);
+        }
+        if hit.contact
             && self.has_ability(hit.attacker, "poisontouch")
             && !self.has_ability(target, "shielddust")
             && self.rng.chance(0.3)

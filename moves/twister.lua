@@ -17,6 +17,6 @@ move.pp = 20
 move.accuracy = 1
 move.priority = 0
 move.target = Target.AllOpponents
-move.flags = {"wind"}
+move.flags = {"wind", "flinch_secondary"}
 move.base_power = 40
 return move
