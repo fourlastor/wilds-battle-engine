@@ -6087,6 +6087,17 @@
       "limitations": []
     },
     {
+      "id": 661,
+      "slug": "baneful-bunker",
+      "name": "Baneful Bunker",
+      "sheet_row": null,
+      "runtime_id": "baneful-bunker",
+      "file": "moves/baneful-bunker.lua",
+      "status": "implemented",
+      "limitations": [],
+      "parameter_source": "https://pokeapi.co/api/v2/move/661/"
+    },
+    {
       "id": 662,
       "slug": "spirit-shackle",
       "name": "Spirit Shackle",
@@ -7860,7 +7871,8 @@
       "mat-block",
       "kings-shield",
       "obstruct",
-      "spiky-shield"
+      "spiky-shield",
+      "baneful-bunker"
     ]
   }
 }

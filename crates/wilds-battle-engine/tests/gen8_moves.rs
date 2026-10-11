@@ -5520,3 +5520,51 @@ fn wide_guard_takes_precedence_over_spiky_shields_contact_reaction() {
     assert!(b.participants(Side::Allies).iter().all(|p| p.hp == 1000));
     assert_eq!(b.participants(Side::Foes)[0].hp, 1000);
 }
+
+#[test]
+fn baneful_bunker_poisons_contact_attackers_through_substitute_but_respects_immunity() {
+    use wilds_battle_engine::Status;
+    for (attack, kind, ability, poisons) in [
+        ("pound", PokemonType::Normal, None, true),
+        ("water-gun", PokemonType::Normal, None, false),
+        ("pound", PokemonType::Steel, None, false),
+        ("pound", PokemonType::Normal, Some("long-reach"), false),
+    ] {
+        let mut foe = mon("Foe", &[attack]);
+        foe.types = vec![kind];
+        foe.ability = ability.map(str::to_owned);
+        foe.substitute_hp = 50;
+        let mut b = game(mon("User", &["baneful-bunker"]), vec![foe], 0.5);
+        turn(&mut b);
+        assert_eq!(b.participants(Side::Allies)[0].hp, 1000);
+        assert_eq!(
+            b.participants(Side::Foes)[0].status,
+            if poisons {
+                Some(Status::Poisoned)
+            } else {
+                None
+            }
+        );
+        assert_eq!(b.participants(Side::Foes)[0].substitute_hp, 50);
+    }
+}
+
+#[test]
+fn baneful_bunker_respects_misty_terrain_and_blocks_status_moves() {
+    use wilds_battle_engine::Stat;
+    let mut b = game(
+        mon("User", &["baneful-bunker"]),
+        vec![mon("Foe", &["misty-terrain", "pound", "growl"])],
+        0.1,
+    );
+    turn(&mut b);
+    turn_with(&mut b, |p| choose_move(p, "baneful-bunker", "pound"));
+    assert_eq!(b.participants(Side::Foes)[0].status, None);
+    let mut b = game(
+        mon("User", &["baneful-bunker"]),
+        vec![mon("Foe", &["growl"])],
+        0.5,
+    );
+    turn(&mut b);
+    assert_eq!(b.participants(Side::Allies)[0].stage(Stat::Attack), 0);
+}

@@ -450,6 +450,7 @@ impl Battle {
         let Some(Rule::Guard {
             contact_stat,
             contact_damage,
+            contact_status,
             ..
         }) = self
             .matching_guard(actor, target, spec, options.ignore_protect)
@@ -462,6 +463,17 @@ impl Battle {
         {
             if let Some((stat, stages)) = contact_stat {
                 self.change_stat_from(target, actor, stat, stages, events);
+            }
+            if let Some(status) = contact_status {
+                self.inflict_status(
+                    target,
+                    actor,
+                    status,
+                    false,
+                    PokemonType::None,
+                    false,
+                    events,
+                );
             }
             if contact_damage > 0.0 && !self.has_ability(actor, "magicguard") {
                 let amount =
