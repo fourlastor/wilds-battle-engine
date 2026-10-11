@@ -32,6 +32,7 @@ pub struct Battle {
     pub(crate) reaction_hit: Option<HitInfo>,
     pub(crate) ignored_ability: Option<ParticipantId>,
     pub(crate) ability_bypass: bool,
+    pub(crate) reflecting: bool,
     pub(crate) side_conditions: [Vec<Condition>; 2],
     pub(crate) field_conditions: Vec<Condition>,
     pub(crate) last_faint_turn: [Option<u64>; 2],
@@ -246,6 +247,7 @@ impl Battle {
             reaction_hit: None,
             ignored_ability: None,
             ability_bypass: false,
+            reflecting: false,
             side_conditions: [Vec::new(), Vec::new()],
             field_conditions: Vec::new(),
             last_faint_turn: [None, None],
@@ -1226,6 +1228,9 @@ impl Battle {
                 "{user_name} used {}!",
                 spec.name
             )));
+        }
+        if !first_charge && self.reflect_move(actor, target, &spec, events)? {
+            return Ok(true);
         }
         if !(first_charge || self.hit_check(actor, target, &spec, false)) {
             events.push(BattleEvent::Message(format!(
@@ -2304,5 +2309,68 @@ impl Battle {
             self.resolve_outcome(events);
         }
         Ok(())
+    }
+}
+
+impl Battle {
+    /// A reflected move is an immediate effect execution, not another selected action:
+    /// no additional PP, status-to-act checks, or recursive reflection.
+    pub(crate) fn reflect_move(
+        &mut self,
+        actor: ParticipantId,
+        reflector: ParticipantId,
+        spec: &MoveSpec,
+        events: &mut Vec<BattleEvent>,
+    ) -> Result<bool, BattleError> {
+        if self.reflecting
+            || actor == reflector
+            || spec.category != Category::Status
+            || !spec.has_flag("reflectable")
+            || !self.has_ability(reflector, "magicbounce")
+            || self.get(reflector).hidden().is_some()
+            || (self.get(reflector).protected && !spec.has_flag("hazard"))
+        {
+            return Ok(false);
+        }
+        events.push(BattleEvent::Message(format!(
+            "{} bounced back {}!",
+            self.get(reflector).name,
+            spec.name
+        )));
+        let ignored = self.ignored_ability.take();
+        let bypass = std::mem::replace(&mut self.ability_bypass, false);
+        self.reflecting = true;
+        let result = if spec.script.is_some() {
+            self.execute_script(reflector, actor, spec, events, ScriptHook::Main)
+                .map(|_| ())
+        } else {
+            (|| {
+                if !self.hit_check(reflector, actor, spec, false) {
+                    events.push(BattleEvent::Message(format!(
+                        "{}'s attack missed!",
+                        self.get(reflector).name
+                    )));
+                } else if !self.get(actor).protected && self.get(actor).hidden().is_none() {
+                    for effect in &spec.effects {
+                        self.apply_effect(
+                            reflector,
+                            actor,
+                            spec,
+                            effect,
+                            false,
+                            spec.effects.len() == 1,
+                            false,
+                            events,
+                        )?;
+                    }
+                }
+                Ok(())
+            })()
+        };
+        self.reflecting = false;
+        self.ignored_ability = ignored;
+        self.ability_bypass = bypass;
+        result?;
+        Ok(true)
     }
 }

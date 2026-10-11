@@ -395,3 +395,9 @@ types and active Levitate avoid grounded hazards unless forcibly grounded.
 Stealth Rock uses Rock effectiveness; Sticky Web uses stage abilities and external
 stat-drop protection. Hazard damage respects Magic Guard. No new held-item effects
 are included. A hazard knockout stops later hazards and the incoming ability.
+
+Magic Bounce reflects flagged status moves, including hazards aimed at the owner's
+side. Reflection spends only the original user's PP, cannot bounce recursively,
+and respects ability suppression and bypass. Spread status moves still affect
+unprotected teammates; reflected Parting Shot offers the reflector a pivot choice.
+Scripts should use `try_hit`/`reached` before targeted status effects, as with protection.

@@ -1262,7 +1262,12 @@ impl Battle {
             }
             ScriptOperation::TryHit { who, options } => {
                 let recipient = who.unwrap_or(target);
-                let hit = self.resolve_hit(frame, recipient, &options, events) == HitOutcome::Hit;
+                if self.ability_bypass {
+                    self.ignored_ability = Some(recipient);
+                }
+                let bounced = self.reflect_move(actor, recipient, spec, events)?;
+                let hit = !bounced
+                    && self.resolve_hit(frame, recipient, &options, events) == HitOutcome::Hit;
                 if !hit {
                     frame.failed = true;
                 }
@@ -1474,7 +1479,22 @@ impl Battle {
                 Value::Boolean(self.end_group(scope, &group))
             }
             ScriptOperation::AddHazard { side, hazard } => {
-                Value::Boolean(self.add_hazard(side, hazard, events))
+                let reflectors: Vec<_> = self
+                    .actors()
+                    .into_iter()
+                    .filter(|p| p.side == side && p.side != actor.side)
+                    .collect();
+                let mut bounced = false;
+                for reflector in reflectors {
+                    if self.ability_bypass {
+                        self.ignored_ability = Some(reflector);
+                    }
+                    if self.reflect_move(actor, reflector, spec, events)? {
+                        bounced = true;
+                        break;
+                    }
+                }
+                Value::Boolean(bounced || self.add_hazard(side, hazard, events))
             }
             ScriptOperation::Carry { who } => Value::Boolean(self.carry(actor, who)),
             ScriptOperation::ReleaseCarry => Value::Boolean(self.release_carry(actor, events)),

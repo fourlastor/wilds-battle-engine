@@ -1338,3 +1338,101 @@ fn rapid_spin_removes_real_entry_hazards() {
     b.advance().unwrap();
     assert!(b.side_conditions(Side::Foes).is_empty());
 }
+
+#[test]
+fn magic_bounce_reflects_scripted_and_plain_status_moves_once_without_spending_extra_pp() {
+    for attack in ["thunder-wave", "toxic", "charm"] {
+        for (suppressed, bypass) in [(false, false), (true, false), (false, true)] {
+            let mut user = mon("User", &[attack]);
+            user.ability = Some(
+                if bypass {
+                    "mold-breaker"
+                } else {
+                    "magic-bounce"
+                }
+                .into(),
+            );
+            user.speed = 200;
+            let mut target = mon("Target", &["splash"]);
+            target.ability = Some("magic-bounce".into());
+            target.ability_suppressed = suppressed;
+            let mut b = game(vec![user], vec![target], [vec![0], vec![0]]);
+            let pp = b.participants(Side::Allies)[0].move_pp[attack];
+            pick(&mut b, id(Side::Allies, 0), attack);
+            pick(&mut b, id(Side::Foes, 0), "splash");
+            let result = b.advance().unwrap();
+            let affected = if suppressed || bypass {
+                Side::Foes
+            } else {
+                Side::Allies
+            };
+            let untouched = affected.opposite();
+            if attack == "charm" {
+                assert_eq!(b.participants(affected)[0].stage(Stat::Attack), -2);
+                assert_eq!(b.participants(untouched)[0].stage(Stat::Attack), 0);
+            } else {
+                assert!(b.participants(affected)[0].status.is_some(), "{attack}");
+                assert_eq!(b.participants(untouched)[0].status, None);
+            }
+            assert_eq!(b.participants(Side::Allies)[0].move_pp[attack], pp - 1);
+            assert_eq!(
+                result
+                    .events
+                    .iter()
+                    .filter(|e| matches!(e,BattleEvent::Message(s) if s.contains("bounced back")))
+                    .count(),
+                if suppressed || bypass { 0 } else { 1 }
+            );
+        }
+    }
+}
+
+#[test]
+fn magic_bounce_reflects_hazards_from_either_active_slot_and_parting_shot_pivots_the_reflector() {
+    let mut reflector = mon("Reflector", &["splash"]);
+    reflector.ability = Some("magic-bounce".into());
+    let mut b = game(
+        vec![mon("Setter", &["spikes"])],
+        vec![mon("Other", &["splash"]), reflector.clone()],
+        [vec![0], vec![0, 1]],
+    );
+    pick(&mut b, id(Side::Allies, 0), "spikes");
+    pick(&mut b, id(Side::Foes, 0), "splash");
+    pick(&mut b, id(Side::Foes, 1), "splash");
+    b.advance().unwrap();
+    assert_eq!(b.side_conditions(Side::Allies)[0].name, "spikes");
+    assert!(b.side_conditions(Side::Foes).is_empty());
+    let mut b = game(
+        vec![mon("User", &["parting-shot"]), mon("Bench", &["splash"])],
+        vec![reflector, mon("Reserve", &["splash"])],
+        [vec![0], vec![0]],
+    );
+    pick(&mut b, id(Side::Allies, 0), "parting-shot");
+    pick(&mut b, id(Side::Foes, 0), "splash");
+    let result = b.advance().unwrap();
+    let AdvanceStatus::Awaiting(prompt) = result.status else {
+        panic!()
+    };
+    assert_eq!(prompt.reason, PromptReason::Pivot);
+    assert_eq!(prompt.actor, id(Side::Foes, 0));
+    assert_eq!(b.participants(Side::Allies)[0].stage(Stat::Attack), -1);
+    assert_eq!(b.participants(Side::Foes)[0].stage(Stat::Attack), 0);
+}
+
+#[test]
+fn reflected_spread_status_does_not_shield_the_reflectors_teammate() {
+    let mut reflector = mon("Reflector", &["splash"]);
+    reflector.ability = Some("magic-bounce".into());
+    let mut b = game(
+        vec![mon("User", &["growl"])],
+        vec![reflector, mon("Other", &["splash"])],
+        [vec![0], vec![0, 1]],
+    );
+    pick(&mut b, id(Side::Allies, 0), "growl");
+    pick(&mut b, id(Side::Foes, 0), "splash");
+    pick(&mut b, id(Side::Foes, 1), "splash");
+    b.advance().unwrap();
+    assert_eq!(b.participants(Side::Allies)[0].stage(Stat::Attack), -1);
+    assert_eq!(b.participants(Side::Foes)[0].stage(Stat::Attack), 0);
+    assert_eq!(b.participants(Side::Foes)[1].stage(Stat::Attack), -1);
+}
