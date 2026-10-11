@@ -37,7 +37,7 @@ impl Battle {
         if hit.damage == 0 || hit.attacker == target {
             return;
         }
-        if ability == "roughskin" && hit.contact {
+        if matches!(ability, "roughskin" | "ironbarbs") && hit.contact {
             self.indirect_damage(
                 hit.attacker,
                 (self.get(hit.attacker).max_hp / 8).max(1),

@@ -1854,3 +1854,8 @@ fn check_contact_damage(ability: &str) {
 fn rough_skin_reacts_to_contact_even_on_faint_but_not_substitutes() {
     check_contact_damage("rough-skin");
 }
+
+#[test]
+fn iron_barbs_reacts_to_contact_even_on_faint_but_not_substitutes() {
+    check_contact_damage("iron-barbs");
+}

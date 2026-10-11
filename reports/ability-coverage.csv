@@ -158,7 +158,7 @@ id,ability,status,verification
 157,sap-sipper,IMPLEMENTED,ability_rules::sap_sipper_blocks_grass_status_moves_without_secondary_effects
 158,prankster,IMPLEMENTED,ability_rules::prankster_prioritizes_status_and_dark_immunity_includes_called_attacks
 159,sand-force,IMPLEMENTED,ability_rules::sand_force_boosts_only_rock_ground_and_steel_in_sand
-160,iron-barbs,MISSING,No native battle behavior
+160,iron-barbs,IMPLEMENTED,ability_rules::iron_barbs_reacts_to_contact_even_on_faint_but_not_substitutes
 161,zen-mode,MISSING,No native battle behavior
 162,victory-star,IMPLEMENTED,ability_rules::victory_star_boosts_self_and_allies_and_stacks
 163,turboblaze,IMPLEMENTED,Source inventory; existing tests only
