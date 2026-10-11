@@ -1548,3 +1548,39 @@ fn belly_drum_pays_half_max_hp_and_raises_attack_from_any_stage() {
         assert_eq!(p.last_move_failed, expected_hp == hp);
     }
 }
+
+#[test]
+fn spit_up_scales_with_stockpile_and_consumes_charges_even_when_protected() {
+    use wilds_battle_engine::Stat;
+    for (charges, protect) in [(0, false), (1, false), (2, false), (3, false), (2, true)] {
+        let user = mon("User", &["stockpile", "spit-up"]);
+        let foe = mon("Foe", &["splash", "protect"]);
+        let expected = if charges == 0 || protect {
+            0
+        } else {
+            control_damage(
+                charges * 100,
+                "Normal",
+                "Special",
+                user.clone(),
+                foe.clone(),
+            )
+        };
+        let mut b = game(user, vec![foe], 0.5);
+        for _ in 0..charges {
+            turn(&mut b);
+        }
+        turn_with(&mut b, |p| {
+            p.choices.iter().find(|c|matches!(c,Choice::UseMove{move_id,..}if move_id==if p.actor.side==Side::Allies {"spit-up"}else if protect{"protect"}else{"splash"})).unwrap().id()
+        });
+        assert_eq!(1000 - b.participants(Side::Foes)[0].hp, expected);
+        let p = &b.participants(Side::Allies)[0];
+        assert_eq!(p.stage(Stat::Defense), 0);
+        assert_eq!(p.stage(Stat::SpDefense), 0);
+        assert!(
+            p.conditions
+                .iter()
+                .all(|c| !c.name.starts_with("stockpile"))
+        );
+    }
+}

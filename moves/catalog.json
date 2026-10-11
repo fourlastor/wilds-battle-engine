@@ -2243,6 +2243,17 @@
       "parameter_source": "https://pokeapi.co/api/v2/move/254/"
     },
     {
+      "id": 255,
+      "slug": "spit-up",
+      "name": "Spit Up",
+      "sheet_row": null,
+      "runtime_id": "spit-up",
+      "file": "moves/spit-up.lua",
+      "status": "implemented",
+      "limitations": [],
+      "parameter_source": "https://pokeapi.co/api/v2/move/255/"
+    },
+    {
       "id": 256,
       "slug": "swallow",
       "name": "Swallow",
@@ -6744,7 +6755,8 @@
       "psych-up",
       "mind-reader",
       "lock-on",
-      "belly-drum"
+      "belly-drum",
+      "spit-up"
     ]
   }
 }
