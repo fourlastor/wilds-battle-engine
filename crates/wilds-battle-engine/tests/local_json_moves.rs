@@ -639,3 +639,57 @@ fn aura_wheel_boosts_after_substitute_or_ko_but_not_protect_or_absorption() {
         );
     }
 }
+
+#[test]
+fn overdrive_hits_both_opponents_through_substitutes_and_spares_allies() {
+    let mut left = mon("Left", &["splash"]);
+    left.substitute_hp = 250;
+    let mut battle = Battle::with_rng(
+        Fixed(0.5),
+        [
+            vec![mon("User", &["overdrive"]), mon("Partner", &["splash"])],
+            vec![left, mon("Right", &["splash"])],
+        ],
+        MoveCatalog::builtin().unwrap(),
+    )
+    .unwrap();
+    turn(&mut battle);
+    assert!(
+        battle
+            .participants(Side::Allies)
+            .iter()
+            .all(|p| p.hp == 1000)
+    );
+    let foes = battle.participants(Side::Foes);
+    assert!(foes[0].hp < 1000);
+    assert_eq!(foes[0].hp, foes[1].hp);
+    assert_eq!(foes[0].substitute_hp, 250);
+}
+
+#[test]
+fn overdrive_respects_soundproof_ground_immunity_and_protect() {
+    for block in ["soundproof", "ground", "protect"] {
+        let mut blocked = mon(
+            "Blocked",
+            &[if block == "protect" {
+                "protect"
+            } else {
+                "splash"
+            }],
+        );
+        if block == "soundproof" {
+            blocked.ability = Some("soundproof".into());
+        }
+        if block == "ground" {
+            blocked.types = vec![PokemonType::Ground];
+        }
+        let mut battle = game(
+            mon("User", &["overdrive"]),
+            vec![blocked, mon("Other", &["splash"])],
+            0.5,
+        );
+        turn(&mut battle);
+        assert_eq!(battle.participants(Side::Foes)[0].hp, 1000, "{block}");
+        assert!(battle.participants(Side::Foes)[1].hp < 1000, "{block}");
+    }
+}

@@ -5306,6 +5306,16 @@
       "limitations": []
     },
     {
+      "id": 786,
+      "slug": "overdrive",
+      "name": "Overdrive",
+      "sheet_row": null,
+      "runtime_id": "overdrive",
+      "file": "moves/overdrive.lua",
+      "status": "implemented",
+      "limitations": []
+    },
+    {
       "id": 788,
       "slug": "grav-apple",
       "name": "Grav Apple",
@@ -5943,7 +5953,8 @@
       "decorate",
       "behemoth-blade",
       "behemoth-bash",
-      "aura-wheel"
+      "aura-wheel",
+      "overdrive"
     ]
   }
 }
