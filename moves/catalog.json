@@ -4603,6 +4603,17 @@
       "limitations": []
     },
     {
+      "id": 611,
+      "slug": "infestation",
+      "name": "Infestation",
+      "sheet_row": null,
+      "runtime_id": "infestation",
+      "file": "moves/infestation.lua",
+      "status": "implemented",
+      "limitations": [],
+      "parameter_source": "https://pokeapi.co/api/v2/move/611/"
+    },
+    {
       "id": 612,
       "slug": "power-up-punch",
       "name": "Power-Up Punch",
@@ -6096,7 +6107,8 @@
       "fire-spin",
       "clamp",
       "sand-tomb",
-      "magma-storm"
+      "magma-storm",
+      "infestation"
     ]
   }
 }

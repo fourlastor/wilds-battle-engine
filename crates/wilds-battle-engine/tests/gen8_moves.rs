@@ -284,3 +284,8 @@ fn sand_tomb_damages_and_binds_only_after_a_reaching_hit() {
 fn magma_storm_damages_and_binds_only_after_a_reaching_hit() {
     check_partial_trap("magma-storm", 100, "Fire", "Special");
 }
+
+#[test]
+fn infestation_damages_and_binds_only_after_a_reaching_hit() {
+    check_partial_trap("infestation", 20, "Bug", "Special");
+}
