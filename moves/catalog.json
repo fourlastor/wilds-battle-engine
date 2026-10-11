@@ -4140,6 +4140,17 @@
       "limitations": []
     },
     {
+      "id": 470,
+      "slug": "guard-split",
+      "name": "Guard Split",
+      "sheet_row": null,
+      "runtime_id": "guard-split",
+      "file": "moves/guard-split.lua",
+      "status": "implemented",
+      "limitations": [],
+      "parameter_source": "https://pokeapi.co/api/v2/move/470/"
+    },
+    {
       "id": 471,
       "slug": "power-split",
       "name": "Power Split",
@@ -7008,7 +7019,8 @@
       "corrosive-gas",
       "teatime",
       "recycle",
-      "power-split"
+      "power-split",
+      "guard-split"
     ]
   }
 }

@@ -2260,3 +2260,37 @@ fn power_split_raw_stats_are_restored_when_the_user_switches_out() {
     assert_eq!(b.participants(Side::Allies)[0].attack, 40);
     assert_eq!(b.participants(Side::Foes)[0].attack, 120);
 }
+
+#[test]
+fn guard_split_averages_raw_defenses_and_respects_protection() {
+    use wilds_battle_engine::Stat;
+    for (response, sub, lands) in [
+        ("splash", 0, true),
+        ("protect", 0, false),
+        ("splash", 50, false),
+    ] {
+        let mut user = mon("User", &["guard-split"]);
+        user.defense = 71;
+        user.sp_defense = 101;
+        user.change_stage(Stat::Defense, 4);
+        let mut foe = mon("Foe", &[response]);
+        foe.defense = 202;
+        foe.sp_defense = 300;
+        foe.substitute_hp = sub;
+        foe.change_stage(Stat::SpDefense, -3);
+        let mut b = game(user, vec![foe], 0.5);
+        turn(&mut b);
+        let mine = &b.participants(Side::Allies)[0];
+        let theirs = &b.participants(Side::Foes)[0];
+        assert_eq!(
+            (mine.defense, mine.sp_defense),
+            if lands { (136, 200) } else { (71, 101) }
+        );
+        assert_eq!(
+            (theirs.defense, theirs.sp_defense),
+            if lands { (136, 200) } else { (202, 300) }
+        );
+        assert_eq!(mine.stage(Stat::Defense), 4);
+        assert_eq!(theirs.stage(Stat::SpDefense), -3);
+    }
+}
