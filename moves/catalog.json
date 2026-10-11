@@ -349,6 +349,17 @@
       "limitations": []
     },
     {
+      "id": 35,
+      "slug": "wrap",
+      "name": "Wrap",
+      "sheet_row": null,
+      "runtime_id": "wrap",
+      "file": "moves/wrap.lua",
+      "status": "implemented",
+      "limitations": [],
+      "parameter_source": "https://pokeapi.co/api/v2/move/35/"
+    },
+    {
       "id": 36,
       "slug": "take-down",
       "name": "Take Down",
@@ -5988,7 +5999,8 @@
       "overdrive",
       "apple-acid",
       "life-dew",
-      "whirlwind"
+      "whirlwind",
+      "wrap"
     ]
   }
 }

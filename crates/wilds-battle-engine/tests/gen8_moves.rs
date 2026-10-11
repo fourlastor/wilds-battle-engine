@@ -88,3 +88,29 @@ fn whirlwind_phazes_through_protect_and_substitute_but_respects_anchoring() {
     turn(&mut b);
     assert!(b.participants(Side::Allies)[0].last_move_failed);
 }
+
+fn check_binding(move_id: &str, immune: PokemonType) {
+    for (kind, response, sub, binds) in [
+        (PokemonType::Normal, "splash", 0, true),
+        (immune, "splash", 0, false),
+        (PokemonType::Normal, "protect", 0, false),
+        (PokemonType::Normal, "splash", 500, false),
+    ] {
+        let mut foe = mon("Foe", &[response]);
+        foe.types = vec![kind];
+        foe.substitute_hp = sub;
+        let mut b = game(mon("User", &[move_id]), vec![foe], 0.5);
+        turn(&mut b);
+        let foe = &b.participants(Side::Foes)[0];
+        assert_eq!(foe.bound.is_some(), binds);
+        if binds {
+            assert!((2..=4).contains(&foe.bound.as_ref().unwrap().turns_left));
+            assert!(foe.hp < 875);
+        }
+    }
+}
+
+#[test]
+fn wrap_binds_for_four_to_five_turns_only_after_reaching_the_target() {
+    check_binding("wrap", PokemonType::Ghost);
+}
