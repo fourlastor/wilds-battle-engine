@@ -1147,6 +1147,17 @@
       "parameter_source": "https://pokeapi.co/api/v2/move/115/"
     },
     {
+      "id": 116,
+      "slug": "focus-energy",
+      "name": "Focus Energy",
+      "sheet_row": null,
+      "runtime_id": "focus-energy",
+      "file": "moves/focus-energy.lua",
+      "status": "implemented",
+      "limitations": [],
+      "parameter_source": "https://pokeapi.co/api/v2/move/116/"
+    },
+    {
       "id": 120,
       "slug": "self-destruct",
       "name": "Self-Destruct",
@@ -6660,7 +6671,8 @@
       "topsy-turvy",
       "refresh",
       "purify",
-      "psycho-shift"
+      "psycho-shift",
+      "focus-energy"
     ]
   }
 }

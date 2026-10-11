@@ -1,7 +1,7 @@
 use crate::model::{
     ActionSelection, AdvanceResult, AdvanceStatus, BattleError, BattleEvent, Bound, Choice,
     CombatStat, Condition, ContinuationTarget, HitInfo, LockedMove, ParticipantId, Pokemon,
-    PokemonType, Prompt, PromptReason, Scope, Side, Stat, Status, Weather, WeatherKind,
+    PokemonType, Prompt, PromptReason, Rule, Scope, Side, Stat, Status, Weather, WeatherKind,
 };
 use crate::moves::{Accuracy, Category, Effect, MoveCatalog, MoveSpec, ScriptHook, Target};
 use crate::rng::{BattleRng, SeededRng};
@@ -1954,9 +1954,15 @@ impl Battle {
         let source = self.get(attack.attack_from).clone();
         let move_type = attack.move_type;
         let typeless = attack.typeless;
-        let crit_stage = attacker
-            .crit_stage
-            .saturating_add(u8::from(attack.high_crit));
+        let crit_stage = self.rules(actor).fold(
+            attacker
+                .crit_stage
+                .saturating_add(u8::from(attack.high_crit)),
+            |stage, rule| match rule {
+                Rule::CriticalStage { stages } => stage.saturating_add(*stages),
+                _ => stage,
+            },
+        );
         let chance = match crit_stage {
             0 => 1.0 / 24.0,
             1 => 1.0 / 8.0,

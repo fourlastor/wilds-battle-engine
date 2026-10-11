@@ -1362,3 +1362,31 @@ fn psycho_shift_cures_user_only_after_successfully_transferring_status() {
         );
     }
 }
+
+#[test]
+fn focus_energy_adds_two_critical_stages_and_does_not_stack() {
+    for (attack, dice, ability, critical) in [
+        ("tackle", 0.25, None, true),
+        ("tackle", 0.75, None, false),
+        ("slash", 0.99, None, true),
+        ("tackle", 0.25, Some("battle-armor"), false),
+    ] {
+        let user = mon("User", &["focus-energy", attack]);
+        let mut foe = mon("Foe", &["splash"]);
+        foe.ability = ability.map(str::to_owned);
+        let mut b = game(user, vec![foe], dice);
+        turn(&mut b);
+        turn(&mut b);
+        assert!(b.participants(Side::Allies)[0].last_move_failed);
+        let events = turn_with(&mut b, |p| {
+            p.choices.iter().find(|c|matches!(c,Choice::UseMove{move_id,..}if move_id==if p.actor.side==Side::Allies {attack}else{"splash"})).unwrap().id()
+        });
+        assert_eq!(
+            events
+                .iter()
+                .any(|e| matches!(e,BattleEvent::Message(s)if s=="A critical hit!")),
+            critical,
+            "{attack} {dice} {ability:?}"
+        );
+    }
+}

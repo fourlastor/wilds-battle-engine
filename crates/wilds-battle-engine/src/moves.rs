@@ -795,6 +795,7 @@ fn rule_of(value: &Value) -> mlua::Result<Rule> {
         RuleKind::BlockStatus => &["kind", "statuses", "confusion"],
         RuleKind::BlockMoves => &["kind", "flags", "message"],
         RuleKind::MovePriority => &["kind", "amount"],
+        RuleKind::CriticalStage => &["kind", "stages"],
         RuleKind::Redirect => &["kind", "to", "type", "priority"],
         RuleKind::AccuracyMultiplier | RuleKind::EffectChance => &["kind", "factor"],
         RuleKind::MoveType => &["kind", "from", "to"],
@@ -896,6 +897,9 @@ fn rule_of(value: &Value) -> mlua::Result<Rule> {
         RuleKind::BlockFlinch => Rule::BlockFlinch,
         RuleKind::EffectChance => Rule::EffectChance {
             factor: factor("factor")?,
+        },
+        RuleKind::CriticalStage => Rule::CriticalStage {
+            stages: whole(&required("stages")?, "critical stages", 0.0, 3.0)? as u8,
         },
         RuleKind::MoveType => Rule::MoveType {
             from: type_of(&required("from")?, "rule option from")?,

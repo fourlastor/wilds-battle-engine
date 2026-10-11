@@ -221,6 +221,10 @@ pub enum Rule {
     EffectChance {
         factor: f32,
     },
+    /// Adds to the holder's critical-hit stage while this condition remains active.
+    CriticalStage {
+        stages: u8,
+    },
     /// Moves of one type are used as another.
     MoveType {
         from: PokemonType,
