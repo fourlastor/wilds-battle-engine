@@ -521,3 +521,29 @@ fn pika_papow_uses_host_supplied_happiness() {
         );
     }
 }
+
+#[test]
+fn veevee_volley_uses_host_supplied_happiness() {
+    for (happiness, power) in [
+        (0, 1),
+        (1, 1),
+        (2, 1),
+        (3, 1),
+        (5, 2),
+        (100, 40),
+        (254, 101),
+        (255, 102),
+    ] {
+        let mut user = mon("User", &["veevee-volley"]);
+        user.happiness = Some(happiness);
+        let foe = mon("Foe", &["splash"]);
+        let expected = control_damage(power, "Normal", "Physical", user.clone(), foe.clone());
+        let mut b = game(user, vec![foe], 0.5);
+        turn(&mut b);
+        assert_eq!(
+            1000 - b.participants(Side::Foes)[0].hp,
+            expected,
+            "happiness {happiness}"
+        );
+    }
+}

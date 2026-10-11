@@ -5333,6 +5333,17 @@
       "limitations": []
     },
     {
+      "id": 741,
+      "slug": "veevee-volley",
+      "name": "Veevee Volley",
+      "sheet_row": null,
+      "runtime_id": "veevee-volley",
+      "file": "moves/veevee-volley.lua",
+      "status": "implemented",
+      "limitations": [],
+      "parameter_source": "https://pokeapi.co/api/v2/move/741/"
+    },
+    {
       "id": 742,
       "slug": "double-iron-bash",
       "name": "Double Iron Bash",
@@ -6240,7 +6251,8 @@
       "reversal",
       "return",
       "frustration",
-      "pika-papow"
+      "pika-papow",
+      "veevee-volley"
     ]
   }
 }
