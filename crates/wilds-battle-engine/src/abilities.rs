@@ -963,6 +963,14 @@ impl Battle {
         )
     }
 
+    pub(crate) fn normal_ability_type(
+        &self,
+        actor: ParticipantId,
+    ) -> Option<crate::model::PokemonType> {
+        self.has_ability(actor, "refrigerate")
+            .then_some(crate::model::PokemonType::Ice)
+    }
+
     pub(crate) fn ability_base_power_factor(
         &self,
         actor: ParticipantId,
@@ -1072,7 +1080,14 @@ impl Battle {
         {
             return 1.5;
         }
-        if self.has_ability(actor, "normalize") && Self::normalizable_move(attack.move_id) {
+        if Self::normalizable_move(attack.move_id)
+            && (self.has_ability(actor, "normalize")
+                || (self.normal_ability_type(actor).is_some()
+                    && self
+                        .catalog
+                        .get(attack.move_id)
+                        .is_some_and(|spec| spec.move_type == crate::model::PokemonType::Normal)))
+        {
             1.2
         } else {
             1.0

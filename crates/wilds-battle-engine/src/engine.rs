@@ -104,9 +104,6 @@ impl HitMeta {
         self.critical = roll.critical;
         self
     }
-    fn plain(spec: &MoveSpec) -> Self {
-        Self::of(spec, spec.category, spec.move_type)
-    }
 }
 
 /// Everything the damage formula needs to know about one hit.
@@ -2097,7 +2094,12 @@ impl Battle {
                         actor,
                         target,
                         roll.amount,
-                        &HitMeta::plain(spec).with_roll(&roll),
+                        &HitMeta::of(
+                            spec,
+                            spec.category,
+                            self.converted_type(actor, spec.move_type),
+                        )
+                        .with_roll(&roll),
                         events,
                     )?;
                     events.extend(details);
@@ -2153,7 +2155,12 @@ impl Battle {
                             actor,
                             target,
                             roll.amount,
-                            &HitMeta::plain(spec).with_roll(&roll),
+                            &HitMeta::of(
+                                spec,
+                                spec.category,
+                                self.converted_type(actor, spec.move_type),
+                            )
+                            .with_roll(&roll),
                             events,
                         )?;
                         self.update_berries(events);
@@ -2329,7 +2336,12 @@ impl Battle {
                             actor,
                             target,
                             roll.amount,
-                            &HitMeta::plain(spec).with_roll(&roll),
+                            &HitMeta::of(
+                                spec,
+                                spec.category,
+                                self.converted_type(actor, spec.move_type),
+                            )
+                            .with_roll(&roll),
                             events,
                         )?;
                     }
@@ -2366,7 +2378,12 @@ impl Battle {
                         actor,
                         target,
                         roll.amount,
-                        &HitMeta::plain(spec).with_roll(&roll),
+                        &HitMeta::of(
+                            spec,
+                            spec.category,
+                            self.converted_type(actor, spec.move_type),
+                        )
+                        .with_roll(&roll),
                         events,
                     )?;
                 }
@@ -2396,7 +2413,17 @@ impl Battle {
             Effect::Splash => {
                 if self.rng.chance(0.01) {
                     let amount = fractional(self.get(target).max_hp, 16, 1);
-                    self.damage_from_move(actor, target, amount, &HitMeta::plain(spec), events)?;
+                    self.damage_from_move(
+                        actor,
+                        target,
+                        amount,
+                        &HitMeta::of(
+                            spec,
+                            spec.category,
+                            self.converted_type(actor, spec.move_type),
+                        ),
+                        events,
+                    )?;
                     events.push(BattleEvent::Message(
                         "Whoa! Its splash hit with force!".into(),
                     ));
@@ -2512,7 +2539,17 @@ impl Battle {
         if effectiveness == 0.0 {
             self.immune_message(target, events);
         } else {
-            self.damage_from_move(actor, target, amount, &HitMeta::plain(spec), events)?;
+            self.damage_from_move(
+                actor,
+                target,
+                amount,
+                &HitMeta::of(
+                    spec,
+                    spec.category,
+                    self.converted_type(actor, spec.move_type),
+                ),
+                events,
+            )?;
         }
         Ok(())
     }

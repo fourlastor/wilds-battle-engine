@@ -414,6 +414,10 @@ impl Battle {
             && Self::normalizable_move(self.current_move.as_deref().unwrap_or(""))
         {
             PokemonType::Normal
+        } else if move_type == PokemonType::Normal
+            && Self::normalizable_move(self.current_move.as_deref().unwrap_or(""))
+        {
+            self.normal_ability_type(id).unwrap_or(move_type)
         } else {
             move_type
         };

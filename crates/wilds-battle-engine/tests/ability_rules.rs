@@ -2492,3 +2492,51 @@ fn liquid_ooze_reverses_drain_seed_and_strength_sap_even_at_full_hp() {
     turn(&mut battle, "mega-drain", "splash");
     assert_eq!(ally(&battle).hp, 1000);
 }
+
+fn check_normal_conversion(ability: &str, kind: PokemonType) {
+    let run = |suppressed| {
+        let mut user = mon("User", &["tackle", "growl", "water-gun"]);
+        user.types = vec![PokemonType::None];
+        user.ability = Some(ability.into());
+        user.ability_suppressed = suppressed;
+        let mut battle = game(user, mon("Target", &["splash"]), 0.5);
+        turn(&mut battle, "tackle", "splash");
+        assert_eq!(
+            ally(&battle).last_move_type,
+            Some(if suppressed {
+                PokemonType::Normal
+            } else {
+                kind
+            })
+        );
+        assert_eq!(
+            foe(&battle).last_hit.as_ref().unwrap().move_type,
+            if suppressed {
+                PokemonType::Normal
+            } else {
+                kind
+            }
+        );
+        let damage = 1000 - foe(&battle).hp;
+        turn(&mut battle, "growl", "splash");
+        assert_eq!(
+            ally(&battle).last_move_type,
+            Some(if suppressed {
+                PokemonType::Normal
+            } else {
+                kind
+            })
+        );
+        turn(&mut battle, "water-gun", "splash");
+        assert_eq!(ally(&battle).last_move_type, Some(PokemonType::Water));
+        damage
+    };
+    let base = run(true);
+    let converted = run(false);
+    assert!((f32::from(converted) - f32::from(base) * 1.2).abs() <= 2.0);
+}
+
+#[test]
+fn refrigerate_converts_normal_moves_to_ice_and_boosts_power() {
+    check_normal_conversion("refrigerate", PokemonType::Ice);
+}
