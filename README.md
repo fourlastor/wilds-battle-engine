@@ -1,12 +1,14 @@
 # Wilds battle engine
 
 `wilds-battle-engine` is the Rust battle simulation. Move definitions are loaded
-from Lua; `MoveCatalog::builtin()` embeds the 580 files under `moves/`,
+from Lua; `MoveCatalog::builtin()` embeds the 548 files under `moves/`,
 and `MoveCatalog::from_directory(path)` reads them from disk at runtime.
-Both catalogs also include the system move Struggle, for 581 moves in total.
-The [move catalog](moves/README.md) covers all 572 entries in the Saved moves sheet,
-with canonical slug filenames and JSON display names. Unsupported mechanics are
-flagged in each affected file and in [catalog.json](moves/catalog.json).
+Both catalogs also include the system move Struggle, for 549 moves in total.
+The [move catalog](moves/README.md) includes 538 entries from the Saved moves sheet,
+plus Gravity, Stockpile and the original moves outside the sheet. Its manifest
+records the 34 excluded Z/Max Moves. Files use canonical slugs and source display
+names. Unsupported mechanics are flagged in each affected file and in
+[catalog.json](moves/catalog.json).
 The host supplies choices for both sides.
 The Rust API uses enums for sides, Pokémon types, stats, statuses, and weather.
 Host-facing prompts contain `Choice` enum values. The only variant today is

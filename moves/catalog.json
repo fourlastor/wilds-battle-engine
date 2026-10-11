@@ -5,7 +5,7 @@
     "https://pokeapi.co/api/v2/move/{id}/",
     "https://github.com/smogon/pokemon-showdown/blob/942cda71d14bf0618bd57991708a2e2734b6daba/data/moves.ts"
   ],
-  "parameter_policy": "JSON names and parameters; actual behavior for conflicting spreadsheet descriptions; original runtime IDs and behaviors retained for existing moves.",
+  "parameter_policy": "JSON names and parameters; actual behavior for conflicting spreadsheet descriptions; original runtime IDs and behaviors retained for existing moves. Gravity and Stockpile have no local source JSON and use PokeAPI parameters.",
   "global_limitations": [
     "The engine currently has no switching, benched party, held-item activation, ability execution, substitute, redirection or dynamic move-priority hooks.",
     "General battle interactions follow the current Rust engine; catalog coverage is not full official battle parity."
@@ -192,7 +192,7 @@
       "file": "moves/fly.lua",
       "status": "partial",
       "limitations": [
-        "Gravity is respected when present, but Gravity itself is outside this sheet catalog."
+        "Fails during Gravity on execution; preventing selection during Gravity requires a move-legality hook."
       ]
     },
     {
@@ -256,7 +256,7 @@
       "file": "moves/jump-kick.lua",
       "status": "partial",
       "limitations": [
-        "Gravity is respected when present, but Gravity itself is outside this sheet catalog."
+        "Fails during Gravity on execution; preventing selection during Gravity requires a move-legality hook."
       ]
     },
     {
@@ -1172,7 +1172,7 @@
       "file": "moves/high-jump-kick.lua",
       "status": "partial",
       "limitations": [
-        "Gravity is respected when present, but Gravity itself is outside this sheet catalog."
+        "Fails during Gravity on execution; preventing selection during Gravity requires a move-legality hook."
       ]
     },
     {
@@ -1898,16 +1898,25 @@
       "limitations": []
     },
     {
+      "id": 254,
+      "slug": "stockpile",
+      "name": "Stockpile",
+      "sheet_row": null,
+      "runtime_id": "stockpile",
+      "file": "moves/stockpile.lua",
+      "status": "implemented",
+      "limitations": [],
+      "parameter_source": "https://pokeapi.co/api/v2/move/254/"
+    },
+    {
       "id": 256,
       "slug": "swallow",
       "name": "Swallow",
       "sheet_row": 184,
       "runtime_id": "swallow",
       "file": "moves/swallow.lua",
-      "status": "partial",
-      "limitations": [
-        "Stockpile is outside the sheet catalog; requires compatible stockpile, stockpile_defense and stockpile_sp_defense marks from a host move."
-      ]
+      "status": "implemented",
+      "limitations": []
     },
     {
       "id": 257,
@@ -2480,7 +2489,7 @@
       "file": "moves/bounce.lua",
       "status": "partial",
       "limitations": [
-        "Gravity is respected when present, but Gravity itself is outside this sheet catalog."
+        "Fails during Gravity on execution; preventing selection during Gravity requires a move-legality hook."
       ]
     },
     {
@@ -2616,6 +2625,20 @@
       "file": "moves/roost.lua",
       "status": "implemented",
       "limitations": []
+    },
+    {
+      "id": 356,
+      "slug": "gravity",
+      "name": "Gravity",
+      "sheet_row": null,
+      "runtime_id": "gravity",
+      "file": "moves/gravity.lua",
+      "status": "partial",
+      "limitations": [
+        "The Lua API cannot apply Gravity's global accuracy multiplier.",
+        "Affected moves fail on execution; hiding them from legal choices requires a move-legality hook."
+      ],
+      "parameter_source": "https://pokeapi.co/api/v2/move/356/"
     },
     {
       "id": 358,
@@ -4142,7 +4165,7 @@
       "file": "moves/flying-press.lua",
       "status": "partial",
       "limitations": [
-        "Gravity is respected when present, but Gravity itself is outside this sheet catalog."
+        "Fails during Gravity on execution; preventing selection during Gravity requires a move-legality hook."
       ]
     },
     {
@@ -4568,18 +4591,6 @@
       "limitations": []
     },
     {
-      "id": 658,
-      "slug": "catastropika",
-      "name": "Catastropika",
-      "sheet_row": 444,
-      "runtime_id": "catastropika",
-      "file": "moves/catastropika.lua",
-      "status": "partial",
-      "limitations": [
-        "Z-Move activation, species/item eligibility, once-per-battle limits and partial Protect damage require the host."
-      ]
-    },
-    {
       "id": 659,
       "slug": "shore-up",
       "name": "Shore Up",
@@ -4840,103 +4851,6 @@
       "limitations": []
     },
     {
-      "id": 695,
-      "slug": "sinister-arrow-raid",
-      "name": "Sinister Arrow Raid",
-      "sheet_row": 470,
-      "runtime_id": "sinister-arrow-raid",
-      "file": "moves/sinister-arrow-raid.lua",
-      "status": "partial",
-      "limitations": [
-        "Z-Move activation, species/item eligibility, once-per-battle limits and partial Protect damage require the host."
-      ]
-    },
-    {
-      "id": 696,
-      "slug": "malicious-moonsault",
-      "name": "Malicious Moonsault",
-      "sheet_row": 471,
-      "runtime_id": "malicious-moonsault",
-      "file": "moves/malicious-moonsault.lua",
-      "status": "partial",
-      "limitations": [
-        "Z-Move activation, species/item eligibility, once-per-battle limits and partial Protect damage require the host."
-      ]
-    },
-    {
-      "id": 697,
-      "slug": "oceanic-operetta",
-      "name": "Oceanic Operetta",
-      "sheet_row": 472,
-      "runtime_id": "oceanic-operetta",
-      "file": "moves/oceanic-operetta.lua",
-      "status": "partial",
-      "limitations": [
-        "Z-Move activation, species/item eligibility, once-per-battle limits and partial Protect damage require the host."
-      ]
-    },
-    {
-      "id": 699,
-      "slug": "soul-stealing-7-star-strike",
-      "name": "Soul-Stealing 7-Star Strike",
-      "sheet_row": 473,
-      "runtime_id": "soul-stealing-7-star-strike",
-      "file": "moves/soul-stealing-7-star-strike.lua",
-      "status": "partial",
-      "limitations": [
-        "Z-Move activation, species/item eligibility, once-per-battle limits and partial Protect damage require the host."
-      ]
-    },
-    {
-      "id": 700,
-      "slug": "stoked-sparksurfer",
-      "name": "Stoked Sparksurfer",
-      "sheet_row": 474,
-      "runtime_id": "stoked-sparksurfer",
-      "file": "moves/stoked-sparksurfer.lua",
-      "status": "partial",
-      "limitations": [
-        "Z-Move activation, species/item eligibility, once-per-battle limits and partial Protect damage require the host."
-      ]
-    },
-    {
-      "id": 701,
-      "slug": "pulverizing-pancake",
-      "name": "Pulverizing Pancake",
-      "sheet_row": 475,
-      "runtime_id": "pulverizing-pancake",
-      "file": "moves/pulverizing-pancake.lua",
-      "status": "partial",
-      "limitations": [
-        "Z-Move activation, species/item eligibility, once-per-battle limits and partial Protect damage require the host."
-      ]
-    },
-    {
-      "id": 702,
-      "slug": "extreme-evoboost",
-      "name": "Extreme Evoboost",
-      "sheet_row": 476,
-      "runtime_id": "extreme-evoboost",
-      "file": "moves/extreme-evoboost.lua",
-      "status": "partial",
-      "limitations": [
-        "Z-Move activation, species/item eligibility, once-per-battle limits and partial Protect damage require the host."
-      ]
-    },
-    {
-      "id": 703,
-      "slug": "genesis-supernova",
-      "name": "Genesis Supernova",
-      "sheet_row": 477,
-      "runtime_id": "genesis-supernova",
-      "file": "moves/genesis-supernova.lua",
-      "status": "partial",
-      "limitations": [
-        "Terrain is recorded, but grounded-only damage/status/healing rules and Psychic Terrain priority blocking require engine support.",
-        "Z-Move activation, species/item eligibility, once-per-battle limits and partial Protect damage require the host."
-      ]
-    },
-    {
       "id": 704,
       "slug": "shell-trap",
       "name": "Shell Trap",
@@ -5083,19 +4997,6 @@
       "limitations": []
     },
     {
-      "id": 719,
-      "slug": "10-000-000-volt-thunderbolt",
-      "name": "10,000,000 Volt Thunderbolt",
-      "sheet_row": 492,
-      "runtime_id": "10-000-000-volt-thunderbolt",
-      "file": "moves/10-000-000-volt-thunderbolt.lua",
-      "status": "partial",
-      "limitations": [
-        "Z-Move activation, species/item eligibility, once-per-battle limits and partial Protect damage require the host.",
-        "The damage API supports one increased critical-hit stage, not this move's higher critical-hit ratio."
-      ]
-    },
-    {
       "id": 720,
       "slug": "mind-blown",
       "name": "Mind Blown",
@@ -5125,81 +5026,6 @@
       "status": "partial",
       "limitations": [
         "The engine does not execute abilities; explicit ability-bypass semantics require an ability engine."
-      ]
-    },
-    {
-      "id": 723,
-      "slug": "light-that-burns-the-sky",
-      "name": "Light That Burns the Sky",
-      "sheet_row": 496,
-      "runtime_id": "light-that-burns-the-sky",
-      "file": "moves/light-that-burns-the-sky.lua",
-      "status": "partial",
-      "limitations": [
-        "Z-Move activation, species/item eligibility, once-per-battle limits and partial Protect damage require the host.",
-        "The engine does not execute abilities; explicit ability-bypass semantics require an ability engine."
-      ]
-    },
-    {
-      "id": 724,
-      "slug": "searing-sunraze-smash",
-      "name": "Searing Sunraze Smash",
-      "sheet_row": 497,
-      "runtime_id": "searing-sunraze-smash",
-      "file": "moves/searing-sunraze-smash.lua",
-      "status": "partial",
-      "limitations": [
-        "Z-Move activation, species/item eligibility, once-per-battle limits and partial Protect damage require the host.",
-        "The engine does not execute abilities; explicit ability-bypass semantics require an ability engine."
-      ]
-    },
-    {
-      "id": 725,
-      "slug": "menacing-moonraze-maelstrom",
-      "name": "Menacing Moonraze Maelstrom",
-      "sheet_row": 498,
-      "runtime_id": "menacing-moonraze-maelstrom",
-      "file": "moves/menacing-moonraze-maelstrom.lua",
-      "status": "partial",
-      "limitations": [
-        "Z-Move activation, species/item eligibility, once-per-battle limits and partial Protect damage require the host.",
-        "The engine does not execute abilities; explicit ability-bypass semantics require an ability engine."
-      ]
-    },
-    {
-      "id": 726,
-      "slug": "lets-snuggle-forever",
-      "name": "Let’s Snuggle Forever",
-      "sheet_row": 499,
-      "runtime_id": "lets-snuggle-forever",
-      "file": "moves/lets-snuggle-forever.lua",
-      "status": "partial",
-      "limitations": [
-        "Z-Move activation, species/item eligibility, once-per-battle limits and partial Protect damage require the host."
-      ]
-    },
-    {
-      "id": 727,
-      "slug": "splintered-stormshards",
-      "name": "Splintered Stormshards",
-      "sheet_row": 500,
-      "runtime_id": "splintered-stormshards",
-      "file": "moves/splintered-stormshards.lua",
-      "status": "partial",
-      "limitations": [
-        "Z-Move activation, species/item eligibility, once-per-battle limits and partial Protect damage require the host."
-      ]
-    },
-    {
-      "id": 728,
-      "slug": "clangorous-soulblaze",
-      "name": "Clangorous Soulblaze",
-      "sheet_row": 501,
-      "runtime_id": "clangorous-soulblaze",
-      "file": "moves/clangorous-soulblaze.lua",
-      "status": "partial",
-      "limitations": [
-        "Z-Move activation, species/item eligibility, once-per-battle limits and partial Protect damage require the host."
       ]
     },
     {
@@ -5325,9 +5151,10 @@
       "sheet_row": 513,
       "runtime_id": "dynamax-cannon",
       "file": "moves/dynamax-cannon.lua",
-      "status": "partial",
-      "limitations": [
-        "Dynamax state is not exposed by the Lua API, so damage cannot double against a Dynamaxed target."
+      "status": "implemented",
+      "limitations": [],
+      "scope_notes": [
+        "Ordinary attack retained; its bonus against Dynamax targets is outside the requested scope."
       ]
     },
     {
@@ -5376,226 +5203,6 @@
       "status": "partial",
       "limitations": [
         "Trapping is recorded as a Trapped rule for the host; the engine has no switching or bench."
-      ]
-    },
-    {
-      "id": 757,
-      "slug": "max-flare",
-      "name": "Max Flare",
-      "sheet_row": 518,
-      "runtime_id": "max-flare",
-      "file": "moves/max-flare.lua",
-      "status": "partial",
-      "limitations": [
-        "Dynamax eligibility, power derived from the underlying move, and partial Protect damage are unsupported; this file uses the supplied JSON power."
-      ]
-    },
-    {
-      "id": 758,
-      "slug": "max-flutterby",
-      "name": "Max Flutterby",
-      "sheet_row": 519,
-      "runtime_id": "max-flutterby",
-      "file": "moves/max-flutterby.lua",
-      "status": "partial",
-      "limitations": [
-        "Dynamax eligibility, power derived from the underlying move, and partial Protect damage are unsupported; this file uses the supplied JSON power."
-      ]
-    },
-    {
-      "id": 759,
-      "slug": "max-lightning",
-      "name": "Max Lightning",
-      "sheet_row": 520,
-      "runtime_id": "max-lightning",
-      "file": "moves/max-lightning.lua",
-      "status": "partial",
-      "limitations": [
-        "Terrain is recorded, but grounded-only damage/status/healing rules and Psychic Terrain priority blocking require engine support.",
-        "Dynamax eligibility, power derived from the underlying move, and partial Protect damage are unsupported; this file uses the supplied JSON power."
-      ]
-    },
-    {
-      "id": 760,
-      "slug": "max-strike",
-      "name": "Max Strike",
-      "sheet_row": 521,
-      "runtime_id": "max-strike",
-      "file": "moves/max-strike.lua",
-      "status": "partial",
-      "limitations": [
-        "Dynamax eligibility, power derived from the underlying move, and partial Protect damage are unsupported; this file uses the supplied JSON power."
-      ]
-    },
-    {
-      "id": 761,
-      "slug": "max-knuckle",
-      "name": "Max Knuckle",
-      "sheet_row": 522,
-      "runtime_id": "max-knuckle",
-      "file": "moves/max-knuckle.lua",
-      "status": "partial",
-      "limitations": [
-        "Dynamax eligibility, power derived from the underlying move, and partial Protect damage are unsupported; this file uses the supplied JSON power."
-      ]
-    },
-    {
-      "id": 762,
-      "slug": "max-phantasm",
-      "name": "Max Phantasm",
-      "sheet_row": 523,
-      "runtime_id": "max-phantasm",
-      "file": "moves/max-phantasm.lua",
-      "status": "partial",
-      "limitations": [
-        "Dynamax eligibility, power derived from the underlying move, and partial Protect damage are unsupported; this file uses the supplied JSON power."
-      ]
-    },
-    {
-      "id": 763,
-      "slug": "max-hailstorm",
-      "name": "Max Hailstorm",
-      "sheet_row": 524,
-      "runtime_id": "max-hailstorm",
-      "file": "moves/max-hailstorm.lua",
-      "status": "partial",
-      "limitations": [
-        "Dynamax eligibility, power derived from the underlying move, and partial Protect damage are unsupported; this file uses the supplied JSON power."
-      ]
-    },
-    {
-      "id": 764,
-      "slug": "max-ooze",
-      "name": "Max Ooze",
-      "sheet_row": 525,
-      "runtime_id": "max-ooze",
-      "file": "moves/max-ooze.lua",
-      "status": "partial",
-      "limitations": [
-        "Dynamax eligibility, power derived from the underlying move, and partial Protect damage are unsupported; this file uses the supplied JSON power."
-      ]
-    },
-    {
-      "id": 765,
-      "slug": "max-geyser",
-      "name": "Max Geyser",
-      "sheet_row": 526,
-      "runtime_id": "max-geyser",
-      "file": "moves/max-geyser.lua",
-      "status": "partial",
-      "limitations": [
-        "Dynamax eligibility, power derived from the underlying move, and partial Protect damage are unsupported; this file uses the supplied JSON power."
-      ]
-    },
-    {
-      "id": 766,
-      "slug": "max-airstream",
-      "name": "Max Airstream",
-      "sheet_row": 527,
-      "runtime_id": "max-airstream",
-      "file": "moves/max-airstream.lua",
-      "status": "partial",
-      "limitations": [
-        "Dynamax eligibility, power derived from the underlying move, and partial Protect damage are unsupported; this file uses the supplied JSON power."
-      ]
-    },
-    {
-      "id": 767,
-      "slug": "max-starfall",
-      "name": "Max Starfall",
-      "sheet_row": 528,
-      "runtime_id": "max-starfall",
-      "file": "moves/max-starfall.lua",
-      "status": "partial",
-      "limitations": [
-        "Terrain is recorded, but grounded-only damage/status/healing rules and Psychic Terrain priority blocking require engine support.",
-        "Dynamax eligibility, power derived from the underlying move, and partial Protect damage are unsupported; this file uses the supplied JSON power."
-      ]
-    },
-    {
-      "id": 768,
-      "slug": "max-wyrmwind",
-      "name": "Max Wyrmwind",
-      "sheet_row": 529,
-      "runtime_id": "max-wyrmwind",
-      "file": "moves/max-wyrmwind.lua",
-      "status": "partial",
-      "limitations": [
-        "Dynamax eligibility, power derived from the underlying move, and partial Protect damage are unsupported; this file uses the supplied JSON power."
-      ]
-    },
-    {
-      "id": 769,
-      "slug": "max-mindstorm",
-      "name": "Max Mindstorm",
-      "sheet_row": 530,
-      "runtime_id": "max-mindstorm",
-      "file": "moves/max-mindstorm.lua",
-      "status": "partial",
-      "limitations": [
-        "Terrain is recorded, but grounded-only damage/status/healing rules and Psychic Terrain priority blocking require engine support.",
-        "Dynamax eligibility, power derived from the underlying move, and partial Protect damage are unsupported; this file uses the supplied JSON power."
-      ]
-    },
-    {
-      "id": 770,
-      "slug": "max-rockfall",
-      "name": "Max Rockfall",
-      "sheet_row": 531,
-      "runtime_id": "max-rockfall",
-      "file": "moves/max-rockfall.lua",
-      "status": "partial",
-      "limitations": [
-        "Dynamax eligibility, power derived from the underlying move, and partial Protect damage are unsupported; this file uses the supplied JSON power."
-      ]
-    },
-    {
-      "id": 771,
-      "slug": "max-quake",
-      "name": "Max Quake",
-      "sheet_row": 532,
-      "runtime_id": "max-quake",
-      "file": "moves/max-quake.lua",
-      "status": "partial",
-      "limitations": [
-        "Dynamax eligibility, power derived from the underlying move, and partial Protect damage are unsupported; this file uses the supplied JSON power."
-      ]
-    },
-    {
-      "id": 772,
-      "slug": "max-darkness",
-      "name": "Max Darkness",
-      "sheet_row": 533,
-      "runtime_id": "max-darkness",
-      "file": "moves/max-darkness.lua",
-      "status": "partial",
-      "limitations": [
-        "Dynamax eligibility, power derived from the underlying move, and partial Protect damage are unsupported; this file uses the supplied JSON power."
-      ]
-    },
-    {
-      "id": 773,
-      "slug": "max-overgrowth",
-      "name": "Max Overgrowth",
-      "sheet_row": 534,
-      "runtime_id": "max-overgrowth",
-      "file": "moves/max-overgrowth.lua",
-      "status": "partial",
-      "limitations": [
-        "Terrain is recorded, but grounded-only damage/status/healing rules and Psychic Terrain priority blocking require engine support.",
-        "Dynamax eligibility, power derived from the underlying move, and partial Protect damage are unsupported; this file uses the supplied JSON power."
-      ]
-    },
-    {
-      "id": 774,
-      "slug": "max-steelspike",
-      "name": "Max Steelspike",
-      "sheet_row": 535,
-      "runtime_id": "max-steelspike",
-      "file": "moves/max-steelspike.lua",
-      "status": "partial",
-      "limitations": [
-        "Dynamax eligibility, power derived from the underlying move, and partial Protect damage are unsupported; this file uses the supplied JSON power."
       ]
     },
     {
@@ -5992,5 +5599,289 @@
         "PP is read-only in Lua; reducing the last-used move by three PP requires a new engine operation."
       ]
     }
-  ]
+  ],
+  "excluded_moves": [
+    {
+      "id": 658,
+      "slug": "catastropika",
+      "name": "Catastropika",
+      "sheet_row": 444,
+      "mechanic": "z-move",
+      "reason": "Z-Moves and Dynamax are outside the requested scope."
+    },
+    {
+      "id": 695,
+      "slug": "sinister-arrow-raid",
+      "name": "Sinister Arrow Raid",
+      "sheet_row": 470,
+      "mechanic": "z-move",
+      "reason": "Z-Moves and Dynamax are outside the requested scope."
+    },
+    {
+      "id": 696,
+      "slug": "malicious-moonsault",
+      "name": "Malicious Moonsault",
+      "sheet_row": 471,
+      "mechanic": "z-move",
+      "reason": "Z-Moves and Dynamax are outside the requested scope."
+    },
+    {
+      "id": 697,
+      "slug": "oceanic-operetta",
+      "name": "Oceanic Operetta",
+      "sheet_row": 472,
+      "mechanic": "z-move",
+      "reason": "Z-Moves and Dynamax are outside the requested scope."
+    },
+    {
+      "id": 699,
+      "slug": "soul-stealing-7-star-strike",
+      "name": "Soul-Stealing 7-Star Strike",
+      "sheet_row": 473,
+      "mechanic": "z-move",
+      "reason": "Z-Moves and Dynamax are outside the requested scope."
+    },
+    {
+      "id": 700,
+      "slug": "stoked-sparksurfer",
+      "name": "Stoked Sparksurfer",
+      "sheet_row": 474,
+      "mechanic": "z-move",
+      "reason": "Z-Moves and Dynamax are outside the requested scope."
+    },
+    {
+      "id": 701,
+      "slug": "pulverizing-pancake",
+      "name": "Pulverizing Pancake",
+      "sheet_row": 475,
+      "mechanic": "z-move",
+      "reason": "Z-Moves and Dynamax are outside the requested scope."
+    },
+    {
+      "id": 702,
+      "slug": "extreme-evoboost",
+      "name": "Extreme Evoboost",
+      "sheet_row": 476,
+      "mechanic": "z-move",
+      "reason": "Z-Moves and Dynamax are outside the requested scope."
+    },
+    {
+      "id": 703,
+      "slug": "genesis-supernova",
+      "name": "Genesis Supernova",
+      "sheet_row": 477,
+      "mechanic": "z-move",
+      "reason": "Z-Moves and Dynamax are outside the requested scope."
+    },
+    {
+      "id": 719,
+      "slug": "10-000-000-volt-thunderbolt",
+      "name": "10,000,000 Volt Thunderbolt",
+      "sheet_row": 492,
+      "mechanic": "z-move",
+      "reason": "Z-Moves and Dynamax are outside the requested scope."
+    },
+    {
+      "id": 723,
+      "slug": "light-that-burns-the-sky",
+      "name": "Light That Burns the Sky",
+      "sheet_row": 496,
+      "mechanic": "z-move",
+      "reason": "Z-Moves and Dynamax are outside the requested scope."
+    },
+    {
+      "id": 724,
+      "slug": "searing-sunraze-smash",
+      "name": "Searing Sunraze Smash",
+      "sheet_row": 497,
+      "mechanic": "z-move",
+      "reason": "Z-Moves and Dynamax are outside the requested scope."
+    },
+    {
+      "id": 725,
+      "slug": "menacing-moonraze-maelstrom",
+      "name": "Menacing Moonraze Maelstrom",
+      "sheet_row": 498,
+      "mechanic": "z-move",
+      "reason": "Z-Moves and Dynamax are outside the requested scope."
+    },
+    {
+      "id": 726,
+      "slug": "lets-snuggle-forever",
+      "name": "Let’s Snuggle Forever",
+      "sheet_row": 499,
+      "mechanic": "z-move",
+      "reason": "Z-Moves and Dynamax are outside the requested scope."
+    },
+    {
+      "id": 727,
+      "slug": "splintered-stormshards",
+      "name": "Splintered Stormshards",
+      "sheet_row": 500,
+      "mechanic": "z-move",
+      "reason": "Z-Moves and Dynamax are outside the requested scope."
+    },
+    {
+      "id": 728,
+      "slug": "clangorous-soulblaze",
+      "name": "Clangorous Soulblaze",
+      "sheet_row": 501,
+      "mechanic": "z-move",
+      "reason": "Z-Moves and Dynamax are outside the requested scope."
+    },
+    {
+      "id": 757,
+      "slug": "max-flare",
+      "name": "Max Flare",
+      "sheet_row": 518,
+      "mechanic": "max-move",
+      "reason": "Z-Moves and Dynamax are outside the requested scope."
+    },
+    {
+      "id": 758,
+      "slug": "max-flutterby",
+      "name": "Max Flutterby",
+      "sheet_row": 519,
+      "mechanic": "max-move",
+      "reason": "Z-Moves and Dynamax are outside the requested scope."
+    },
+    {
+      "id": 759,
+      "slug": "max-lightning",
+      "name": "Max Lightning",
+      "sheet_row": 520,
+      "mechanic": "max-move",
+      "reason": "Z-Moves and Dynamax are outside the requested scope."
+    },
+    {
+      "id": 760,
+      "slug": "max-strike",
+      "name": "Max Strike",
+      "sheet_row": 521,
+      "mechanic": "max-move",
+      "reason": "Z-Moves and Dynamax are outside the requested scope."
+    },
+    {
+      "id": 761,
+      "slug": "max-knuckle",
+      "name": "Max Knuckle",
+      "sheet_row": 522,
+      "mechanic": "max-move",
+      "reason": "Z-Moves and Dynamax are outside the requested scope."
+    },
+    {
+      "id": 762,
+      "slug": "max-phantasm",
+      "name": "Max Phantasm",
+      "sheet_row": 523,
+      "mechanic": "max-move",
+      "reason": "Z-Moves and Dynamax are outside the requested scope."
+    },
+    {
+      "id": 763,
+      "slug": "max-hailstorm",
+      "name": "Max Hailstorm",
+      "sheet_row": 524,
+      "mechanic": "max-move",
+      "reason": "Z-Moves and Dynamax are outside the requested scope."
+    },
+    {
+      "id": 764,
+      "slug": "max-ooze",
+      "name": "Max Ooze",
+      "sheet_row": 525,
+      "mechanic": "max-move",
+      "reason": "Z-Moves and Dynamax are outside the requested scope."
+    },
+    {
+      "id": 765,
+      "slug": "max-geyser",
+      "name": "Max Geyser",
+      "sheet_row": 526,
+      "mechanic": "max-move",
+      "reason": "Z-Moves and Dynamax are outside the requested scope."
+    },
+    {
+      "id": 766,
+      "slug": "max-airstream",
+      "name": "Max Airstream",
+      "sheet_row": 527,
+      "mechanic": "max-move",
+      "reason": "Z-Moves and Dynamax are outside the requested scope."
+    },
+    {
+      "id": 767,
+      "slug": "max-starfall",
+      "name": "Max Starfall",
+      "sheet_row": 528,
+      "mechanic": "max-move",
+      "reason": "Z-Moves and Dynamax are outside the requested scope."
+    },
+    {
+      "id": 768,
+      "slug": "max-wyrmwind",
+      "name": "Max Wyrmwind",
+      "sheet_row": 529,
+      "mechanic": "max-move",
+      "reason": "Z-Moves and Dynamax are outside the requested scope."
+    },
+    {
+      "id": 769,
+      "slug": "max-mindstorm",
+      "name": "Max Mindstorm",
+      "sheet_row": 530,
+      "mechanic": "max-move",
+      "reason": "Z-Moves and Dynamax are outside the requested scope."
+    },
+    {
+      "id": 770,
+      "slug": "max-rockfall",
+      "name": "Max Rockfall",
+      "sheet_row": 531,
+      "mechanic": "max-move",
+      "reason": "Z-Moves and Dynamax are outside the requested scope."
+    },
+    {
+      "id": 771,
+      "slug": "max-quake",
+      "name": "Max Quake",
+      "sheet_row": 532,
+      "mechanic": "max-move",
+      "reason": "Z-Moves and Dynamax are outside the requested scope."
+    },
+    {
+      "id": 772,
+      "slug": "max-darkness",
+      "name": "Max Darkness",
+      "sheet_row": 533,
+      "mechanic": "max-move",
+      "reason": "Z-Moves and Dynamax are outside the requested scope."
+    },
+    {
+      "id": 773,
+      "slug": "max-overgrowth",
+      "name": "Max Overgrowth",
+      "sheet_row": 534,
+      "mechanic": "max-move",
+      "reason": "Z-Moves and Dynamax are outside the requested scope."
+    },
+    {
+      "id": 774,
+      "slug": "max-steelspike",
+      "name": "Max Steelspike",
+      "sheet_row": 535,
+      "mechanic": "max-move",
+      "reason": "Z-Moves and Dynamax are outside the requested scope."
+    }
+  ],
+  "scope": {
+    "excluded_mechanics": [
+      "Z-Moves",
+      "Dynamax"
+    ],
+    "additional_moves": [
+      "gravity",
+      "stockpile"
+    ]
+  }
 }

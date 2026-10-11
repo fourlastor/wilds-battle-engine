@@ -1,6 +1,6 @@
 -- Move 744: Dynamax Cannon. Identity and parameters: pokemon_data/assets/moves/744.json.
 -- Behavior checked against PokeAPI; see catalog.json for scope and limitations.
--- INCOMPLETE: Dynamax state is not exposed by the Lua API, so damage cannot double against a Dynamaxed target.
+-- Dynamax bonus is outside the active ruleset; ordinary damage is retained.
 
 local move = {script = function(ctx)
 ctx:damage(100)
@@ -14,5 +14,5 @@ move.pp = 5
 move.accuracy = 1
 move.priority = 0
 move.target = Target.Selected
-move.flags = {"incomplete"}
+move.flags = {}
 return move

@@ -1,6 +1,6 @@
 -- Move 340: Bounce. Identity and parameters: pokemon_data/assets/moves/340.json.
 -- Behavior checked against PokeAPI; see catalog.json for scope and limitations.
--- INCOMPLETE: Gravity is respected when present, but Gravity itself is outside this sheet catalog.
+-- INCOMPLETE: Fails during Gravity on execution; preventing selection during Gravity requires a move-legality hook.
 
 local function two_turns(place, message, strike)
   return function(ctx)

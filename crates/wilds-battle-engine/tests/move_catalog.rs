@@ -79,15 +79,158 @@ fn said(events: &[BattleEvent], text: &str) -> bool {
 }
 
 #[test]
-fn all_sheet_ids_have_unique_canonical_files_and_matching_display_names() {
+fn stockpile_caps_at_three_and_swallow_heals_each_tier() {
+    for layers in 1..=3 {
+        let mut ally = mon("Ally", &["stockpile", "swallow"]);
+        ally.hp = 100;
+        let mut game = Game::new(vec![ally], vec![mon("Foe", &["splash"])], 0.5);
+        assert!(said(&game.turn("swallow", "splash"), "failed"));
+        for _ in 0..layers {
+            game.turn("stockpile", "splash");
+        }
+        assert_eq!(game.ally().condition("stockpile").unwrap().value, layers);
+        assert_eq!(game.ally().stage(Stat::Defense), layers as i8);
+        assert_eq!(game.ally().stage(Stat::SpDefense), layers as i8);
+        if layers == 3 {
+            assert!(said(&game.turn("stockpile", "splash"), "failed"));
+            assert_eq!(game.ally().stage(Stat::Defense), 3);
+            assert_eq!(game.ally().condition("stockpile").unwrap().value, 3);
+        }
+        game.turn("swallow", "splash");
+        assert_eq!(game.ally().hp, [350, 600, 1000][layers as usize - 1]);
+        assert_eq!(game.ally().stage(Stat::Defense), 0);
+        assert_eq!(game.ally().stage(Stat::SpDefense), 0);
+        for mark in ["stockpile", "stockpile_defense", "stockpile_sp_defense"] {
+            assert!(game.ally().condition(mark).is_none());
+        }
+    }
+}
+
+#[test]
+fn stockpile_tracks_only_actual_boosts_and_swallow_consumes_at_full_hp() {
+    let mut ally = mon("Ally", &["stockpile", "swallow"]);
+    ally.change_stage(Stat::Defense, 5);
+    ally.change_stage(Stat::SpDefense, 6);
+    let mut game = Game::new(vec![ally], vec![mon("Foe", &["splash"])], 0.5);
+    for _ in 0..3 {
+        game.turn("stockpile", "splash");
+    }
+    assert_eq!(game.ally().condition("stockpile_defense").unwrap().value, 1);
+    assert_eq!(
+        game.ally().condition("stockpile_sp_defense").unwrap().value,
+        0
+    );
+    game.turn("swallow", "splash");
+    assert_eq!(game.ally().hp, 1000);
+    assert_eq!(game.ally().stage(Stat::Defense), 5);
+    assert_eq!(game.ally().stage(Stat::SpDefense), 6);
+    assert!(game.ally().condition("stockpile").is_none());
+}
+
+#[test]
+fn swallow_preserves_other_stat_changes() {
+    let mut ally = mon("Ally", &["stockpile", "swallow"]);
+    ally.speed = 200;
+    let mut game = Game::new(vec![ally], vec![mon("Foe", &["screech", "splash"])], 0.5);
+    game.turn("stockpile", "screech");
+    game.turn("stockpile", "splash");
+    game.turn("swallow", "splash");
+    assert_eq!(game.ally().stage(Stat::Defense), -2);
+    assert_eq!(game.ally().stage(Stat::SpDefense), 0);
+}
+
+#[test]
+fn gravity_grounds_flyers_and_expires_without_refreshing_on_failure() {
+    let mut bird = mon("Bird", &["fly", "splash"]);
+    bird.types = vec![PokemonType::Flying];
+    bird.speed = 200;
+    let mut game = Game::duel(&["gravity", "earthquake", "splash"], bird, 0.5);
+    let events = game.turn("gravity", "fly");
+    assert!(said(&events, "couldn't stay airborne"));
+    assert!(game.foe().hidden().is_none());
+    assert_eq!(game.0.field_conditions()[0].turns_left, Some(4));
+    assert!(said(&game.turn("gravity", "splash"), "failed"));
+    assert_eq!(game.0.field_conditions()[0].turns_left, Some(3));
+    game.turn("earthquake", "fly");
+    assert!(game.foe().hp < 1000);
+    assert!(game.foe().hidden().is_none());
+    game.turn("splash", "splash");
+    let events = game.turn("splash", "splash");
+    assert!(said(&events, "Gravity returned to normal"));
+    assert!(game.0.field_conditions().is_empty());
+    let hp = game.foe().hp;
+    game.turn("earthquake", "splash");
+    assert_eq!(game.foe().hp, hp);
+    game.turn("splash", "fly");
+    assert!(game.foe().hidden().is_some());
+}
+
+#[test]
+fn gravity_preserves_non_airborne_charge_moves() {
+    for move_id in ["dig", "dive", "phantom-force"] {
+        let mut foe = mon("Foe", &[move_id]);
+        foe.speed = 200;
+        let mut ally = mon("Ally", &["gravity", "splash"]);
+        ally.types = vec![PokemonType::Grass];
+        let mut game = Game::new(vec![ally], vec![foe], 0.5);
+        game.turn("gravity", move_id);
+        assert!(game.foe().hidden().is_some(), "{move_id} was interrupted");
+        game.turn("splash", move_id);
+        assert!(game.foe().hidden().is_none(), "{move_id} did not finish");
+        assert!(game.ally().hp < 1000, "{move_id} did not hit");
+    }
+}
+
+#[test]
+fn gravity_blocks_airborne_moves_without_crash_damage_and_boosts_grav_apple() {
+    for move_id in [
+        "fly",
+        "bounce",
+        "jump-kick",
+        "high-jump-kick",
+        "flying-press",
+    ] {
+        let mut game = Game::duel(&["gravity", move_id], mon("Foe", &["splash"]), 0.5);
+        game.turn("gravity", "splash");
+        assert!(said(&game.turn(move_id, "splash"), "failed"), "{move_id}");
+        assert_eq!((game.ally().hp, game.foe().hp), (1000, 1000), "{move_id}");
+        assert!(game.ally().hidden().is_none());
+    }
+    let damage = |opener| {
+        let mut game = Game::duel(
+            &["gravity", "grav-apple", "splash"],
+            mon("Foe", &["splash"]),
+            0.5,
+        );
+        game.turn(opener, "splash");
+        game.turn("grav-apple", "splash");
+        1000 - game.foe().hp
+    };
+    let normal = damage("splash");
+    let boosted = damage("gravity");
+    assert!(boosted >= normal * 14 / 10 && boosted <= normal * 16 / 10);
+}
+
+#[test]
+fn catalog_tracks_included_and_excluded_moves_with_canonical_names() {
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
     let manifest: serde_json::Value =
         serde_json::from_str(include_str!("../../../moves/catalog.json")).unwrap();
     let entries = manifest["moves"].as_array().unwrap();
-    assert_eq!(entries.len(), 572);
+    assert_eq!(entries.len(), 540);
+    let excluded = manifest["excluded_moves"].as_array().unwrap();
+    assert_eq!(excluded.len(), 34);
+    assert_eq!(
+        entries
+            .iter()
+            .filter(|entry| entry["sheet_row"].is_number())
+            .count()
+            + excluded.len(),
+        572
+    );
     let builtin = MoveCatalog::builtin().unwrap();
     let disk = MoveCatalog::from_directory(root.join("moves")).unwrap();
-    assert_eq!(builtin.len(), 581);
+    assert_eq!(builtin.len(), 549);
     assert_eq!(builtin.len(), disk.len());
     let mut ids = HashSet::new();
     let mut slugs = HashSet::new();
@@ -115,12 +258,28 @@ fn all_sheet_ids_have_unique_canonical_files_and_matching_display_names() {
             "{slug}"
         );
     }
+    for entry in excluded {
+        assert!(ids.insert(entry["id"].as_u64().unwrap()));
+        let slug = entry["slug"].as_str().unwrap();
+        assert!(slugs.insert(slug));
+        assert!(
+            builtin.get(slug).is_none(),
+            "excluded move {slug} still embedded"
+        );
+        assert!(
+            disk.get(slug).is_none(),
+            "excluded move {slug} still on disk"
+        );
+        assert!(!root.join(format!("moves/{slug}.lua")).exists());
+    }
+    // This ordinary attack does not require the user to Dynamax.
+    assert!(builtin.get("dynamax-cannon").is_some());
     let files: Vec<_> = std::fs::read_dir(root.join("moves"))
         .unwrap()
         .map(Result::unwrap)
         .filter(|entry| entry.path().extension().is_some_and(|ext| ext == "lua"))
         .collect();
-    assert_eq!(files.len(), 580);
+    assert_eq!(files.len(), 548);
     assert!(
         files
             .iter()

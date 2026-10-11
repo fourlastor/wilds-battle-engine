@@ -1,0 +1,33 @@
+-- Move 356: Gravity. No local source JSON; identity and parameters from PokeAPI.
+-- Behavior checked against the reference recorded in catalog.json.
+-- INCOMPLETE: The Lua API cannot apply Gravity's global accuracy multiplier.
+-- INCOMPLETE: Affected moves fail on execution; hiding them from legal choices requires a move-legality hook.
+
+return {
+  id = "gravity",
+  name = "Gravity",
+  type = Type.Psychic,
+  category = Category.Status,
+  pp = 5,
+  accuracy = Accuracy.Always,
+  priority = 0,
+  target = Target.Field,
+  flags = {"incomplete"},
+  script = function(ctx)
+    if not ctx:start_effect(ctx.field, "gravity", {
+      turns = 5,
+      rules = {{kind = Rule.Grounded}},
+      end_message = "Gravity returned to normal!",
+    }) then return ctx:fail() end
+
+    ctx:message("Gravity intensified!")
+    for _, pokemon in ipairs(ctx.everyone) do
+      -- Dig, Dive and disappearing moves must keep their hidden state and continuation.
+      if pokemon.hidden == Hidden.Air and ctx:unhide(pokemon) then
+        ctx:message(pokemon.name .. " couldn't stay airborne because of gravity!")
+      end
+      ctx:end_effect(pokemon, "magnet_rise")
+      ctx:end_effect(pokemon, "telekinesis")
+    end
+  end,
+}

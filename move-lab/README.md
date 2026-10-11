@@ -93,9 +93,9 @@ and repeats your choices, so only the edit changes the outcome.
 ## Checks
 
 - `npm run test:engine` loads the wasm engine in Node and plays a short battle.
-- `npm run test:blocks` rebuilds all block-editable built-in moves (currently 310) and plays 44,640 seeded
+- `npm run test:blocks` rebuilds all block-editable built-in moves (currently 298) and plays 42,912 seeded
   battles, comparing every event and the final state against the original Lua files, for both the
-  clean and the marked-up output. It explicitly reports the 270 Lua-only definitions
+  clean and the marked-up output. It explicitly reports the 250 Lua-only definitions
   without block recipes; the Rust catalog tests execute those files.
   `PARITY_BREAK=tackle npm run test:blocks` proves the check bites.
 - `npm run test:reference` checks that every block of the palette is on the "All blocks" page with
