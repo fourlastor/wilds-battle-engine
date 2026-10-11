@@ -5252,6 +5252,17 @@
       "limitations": []
     },
     {
+      "id": 732,
+      "slug": "pika-papow",
+      "name": "Pika Papow",
+      "sheet_row": null,
+      "runtime_id": "pika-papow",
+      "file": "moves/pika-papow.lua",
+      "status": "implemented",
+      "limitations": [],
+      "parameter_source": "https://pokeapi.co/api/v2/move/732/"
+    },
+    {
       "id": 733,
       "slug": "bouncy-bubble",
       "name": "Bouncy Bubble",
@@ -6228,7 +6239,8 @@
       "flail",
       "reversal",
       "return",
-      "frustration"
+      "frustration",
+      "pika-papow"
     ]
   }
 }
