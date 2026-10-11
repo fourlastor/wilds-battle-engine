@@ -1126,3 +1126,26 @@ fn neuroforce_only_modifies_the_relevant_type_matchups() {
         assert!((f32::from(run(false)) - f32::from(run(true)) * multiplier).abs() <= 1.0);
     }
 }
+
+#[test]
+fn super_luck_adds_a_critical_stage_but_respects_critical_immunity() {
+    for (suppressed, armor, critical) in [
+        (false, false, true),
+        (true, false, false),
+        (false, true, false),
+    ] {
+        let mut user = mon("User", &["tackle"]);
+        user.ability = Some("super-luck".into());
+        user.ability_suppressed = suppressed;
+        let mut target = mon("Target", &["splash"]);
+        target.ability = armor.then(|| "battle-armor".into());
+        let mut battle = game(user, target, 0.1);
+        let events = turn(&mut battle, "tackle", "splash");
+        assert_eq!(
+            events.iter().any(
+                |event| matches!(event, BattleEvent::Message(text) if text == "A critical hit!")
+            ),
+            critical
+        );
+    }
+}

@@ -2502,7 +2502,8 @@ impl Battle {
         let crit_stage = self.rules(actor).fold(
             attacker
                 .crit_stage
-                .saturating_add(u8::from(attack.high_crit)),
+                .saturating_add(u8::from(attack.high_crit))
+                .saturating_add(u8::from(self.has_ability(actor, "superluck"))),
             |stage, rule| match rule {
                 Rule::CriticalStage { stages } => stage.saturating_add(*stages),
                 _ => stage,
