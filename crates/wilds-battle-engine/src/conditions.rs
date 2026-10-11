@@ -326,7 +326,9 @@ impl Battle {
             .chain(
                 self.side_conditions[id.side.index()]
                     .iter()
-                    .filter(move |c| !(infiltrates && c.name == "safeguard")),
+                    .filter(move |c| {
+                        !(infiltrates && matches!(c.name.as_str(), "safeguard" | "mist"))
+                    }),
             )
             .chain(self.field_conditions.iter())
             .flat_map(|c| &c.rules)
@@ -379,14 +381,14 @@ impl Battle {
         })
     }
 
-    pub(crate) fn blocks_stat_drops(&self, id: ParticipantId) -> bool {
+    pub(crate) fn blocks_stat_drops_from(&self, actor: ParticipantId, id: ParticipantId) -> bool {
         (self.types_of(id).contains(&PokemonType::Grass)
             && self.team_status_ability(id, "flowerveil"))
             || ["clearbody", "whitesmoke", "fullmetalbody"]
                 .iter()
                 .any(|ability| self.has_ability(id, ability))
             || self
-                .rules(id)
+                .status_rules_from(actor, id)
                 .any(|rule| matches!(rule, Rule::BlockStatDrops))
     }
 

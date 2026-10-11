@@ -1816,7 +1816,7 @@ impl Battle {
         let delta = self.ability_stage_delta(recipient, delta);
         if actor != recipient
             && delta < 0
-            && (self.blocks_stat_drops(recipient)
+            && (self.blocks_stat_drops_from(actor, recipient)
                 || (stat == Stat::Attack && self.has_ability(recipient, "hypercutter")))
         {
             events.push(BattleEvent::Message(format!(

@@ -149,7 +149,7 @@ id,ability,status,verification
 148,analytic,MISSING,No native battle behavior
 149,illusion,MISSING,No native battle behavior
 150,imposter,MISSING,No native battle behavior
-151,infiltrator,PARTIAL,Source inventory; existing tests only
+151,infiltrator,IMPLEMENTED,ability_rules::infiltrator_bypasses_mist_but_not_ability_stat_protection
 152,mummy,MISSING,No native battle behavior
 153,moxie,MISSING,No native battle behavior
 154,justified,MISSING,No native battle behavior

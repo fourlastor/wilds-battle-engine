@@ -156,7 +156,7 @@ impl Battle {
                 -1
             };
             let immune = (self.ability_stage_delta(target, amount) < 0
-                && self.blocks_stat_drops(target))
+                && self.blocks_stat_drops_from(who, target))
                 || [
                     "hypercutter",
                     "innerfocus",

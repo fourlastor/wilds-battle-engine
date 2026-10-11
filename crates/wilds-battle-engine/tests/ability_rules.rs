@@ -413,3 +413,22 @@ fn flower_veil_protects_grass_teammate_stats_with_bypass_and_type_checks() {
         );
     }
 }
+
+#[test]
+fn infiltrator_bypasses_mist_but_not_ability_stat_protection() {
+    for (infiltrator, defender, expected) in
+        [(false, "", 0), (true, "", -1), (true, "clear-body", 0)]
+    {
+        let mut user = mon("User", &["growl"]);
+        user.ability = infiltrator.then(|| "infiltrator".into());
+        let mut target = mon("Target", &["mist"]);
+        target.speed = 200;
+        target.ability = (!defender.is_empty()).then(|| defender.into());
+        let mut battle = game(user, target, 0.5);
+        turn(&mut battle, "growl", "mist");
+        assert_eq!(
+            foe(&battle).stage(wilds_battle_engine::Stat::Attack),
+            expected
+        );
+    }
+}
