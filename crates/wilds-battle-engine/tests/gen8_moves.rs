@@ -371,3 +371,8 @@ fn check_screen(move_id: &str, condition: &str, reduced: &str, unchanged: &str) 
 fn light_screen_reduces_its_damage_category_without_refreshing() {
     check_screen("light-screen", "light_screen", "water-gun", "tackle");
 }
+
+#[test]
+fn reflect_reduces_its_damage_category_without_refreshing() {
+    check_screen("reflect", "reflect", "tackle", "water-gun");
+}
