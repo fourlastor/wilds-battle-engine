@@ -1044,3 +1044,131 @@ fn an_air_reaching_hit_can_damage_the_carrier_but_cannot_force_it_out() {
     assert!(b.participants(Side::Allies)[0].hp < 1000);
     assert!(b.participants(Side::Allies)[0].carrying.is_some());
 }
+
+#[test]
+fn entry_abilities_activate_for_initial_leads_and_each_reentry() {
+    let mut lead = mon("Lead", &["splash"]);
+    lead.ability = Some("intimidate".into());
+    let mut b = game(
+        vec![lead, mon("Bench", &["splash"])],
+        vec![mon("Foe", &["splash"])],
+        [vec![0], vec![0]],
+    );
+    let first = b.advance().unwrap();
+    assert_eq!(b.participants(Side::Foes)[0].stage(Stat::Attack), -1);
+    assert!(
+        first
+            .events
+            .iter()
+            .any(|e| matches!(e, BattleEvent::StatChange { .. }))
+    );
+    b.advance().unwrap();
+    assert_eq!(
+        b.participants(Side::Foes)[0].stage(Stat::Attack),
+        -1,
+        "pending prompts do not reactivate abilities"
+    );
+    switch(&mut b, id(Side::Allies, 0), 1);
+    pick(&mut b, id(Side::Foes, 0), "splash");
+    b.advance().unwrap();
+    switch(&mut b, id(Side::Allies, 1), 0);
+    pick(&mut b, id(Side::Foes, 0), "splash");
+    b.advance().unwrap();
+    assert_eq!(b.participants(Side::Foes)[0].stage(Stat::Attack), -2);
+}
+
+#[test]
+fn intimidate_respects_adjacency_bench_suppression_and_immunity() {
+    let mut lead = mon("Lead", &["splash"]);
+    lead.ability = Some("intimidate".into());
+    let mut immune = mon("Immune", &["splash"]);
+    immune.ability = Some("clear-body".into());
+    let mut b = game(
+        vec![lead.clone()],
+        vec![
+            mon("Far", &["splash"]),
+            mon("Near", &["splash"]),
+            immune,
+            mon("Bench", &["splash"]),
+        ],
+        [vec![0], vec![0, 1, 2]],
+    );
+    b.advance().unwrap();
+    assert_eq!(
+        b.participants(Side::Foes)
+            .iter()
+            .map(|p| p.stage(Stat::Attack))
+            .collect::<Vec<_>>(),
+        [0, -1, 0, 0]
+    );
+    lead.ability_suppressed = true;
+    let mut b = game(
+        vec![lead],
+        vec![mon("Foe", &["splash"])],
+        [vec![0], vec![0]],
+    );
+    b.advance().unwrap();
+    assert_eq!(b.participants(Side::Foes)[0].stage(Stat::Attack), 0);
+}
+
+#[test]
+fn withdrawal_abilities_run_before_suppression_resets_and_never_revive() {
+    for ability in ["regenerator", "natural-cure"] {
+        for (hp, suppressed) in [(300, false), (300, true), (0, false)] {
+            let mut lead = mon("Lead", &["splash"]);
+            lead.hp = hp;
+            lead.status = Some(Status::Asleep);
+            lead.status_turns = 5;
+            lead.ability = Some(ability.into());
+            lead.ability_suppressed = suppressed;
+            let mut b = game(
+                vec![lead, mon("Bench", &["splash"])],
+                vec![mon("Foe", &["splash"])],
+                [vec![0], vec![0]],
+            );
+            switch(&mut b, id(Side::Allies, 0), 1);
+            if hp > 0 {
+                pick(&mut b, id(Side::Foes, 0), "splash");
+            }
+            b.advance().unwrap();
+            let outgoing = &b.participants(Side::Allies)[0];
+            let active = hp > 0 && !suppressed;
+            assert_eq!(
+                outgoing.hp,
+                if active && ability == "regenerator" {
+                    633
+                } else {
+                    hp
+                }
+            );
+            assert_eq!(
+                outgoing.status,
+                if active && ability == "natural-cure" {
+                    None
+                } else {
+                    Some(Status::Asleep)
+                }
+            );
+        }
+    }
+}
+
+#[test]
+fn forced_switches_activate_withdrawal_and_entry_abilities() {
+    let mut outgoing = mon("Outgoing", &["splash"]);
+    outgoing.ability = Some("regenerator".into());
+    outgoing.hp = 500;
+    let mut incoming = mon("Incoming", &["splash"]);
+    incoming.ability = Some("intimidate".into());
+    let mut b = game(
+        vec![mon("User", &["dragon-tail"])],
+        vec![outgoing, incoming],
+        [vec![0], vec![0]],
+    );
+    pick(&mut b, id(Side::Allies, 0), "dragon-tail");
+    pick(&mut b, id(Side::Foes, 0), "splash");
+    b.advance().unwrap();
+    assert_eq!(b.active_indices(Side::Foes), &[1]);
+    assert!(b.participants(Side::Foes)[0].hp > 500);
+    assert_eq!(b.participants(Side::Allies)[0].stage(Stat::Attack), -1);
+}

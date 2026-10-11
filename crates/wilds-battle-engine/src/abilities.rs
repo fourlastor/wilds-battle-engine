@@ -27,6 +27,57 @@ fn cannot_suppress(ability: &str) -> bool {
 }
 
 impl Battle {
+    pub(crate) fn ability_on_exit(&mut self, who: ParticipantId, events: &mut Vec<BattleEvent>) {
+        // Run before volatile state and suppression are cleared, and only while alive.
+        if self.has_ability(who, "regenerator") {
+            self.heal(who, self.get(who).max_hp / 3, events);
+        }
+        if self.has_ability(who, "naturalcure") {
+            self.cure_status(who, None, events);
+        }
+    }
+
+    pub(crate) fn ability_on_entry(&mut self, who: ParticipantId, events: &mut Vec<BattleEvent>) {
+        if !self.has_ability(who, "intimidate") {
+            return;
+        }
+        events.push(BattleEvent::Message(format!(
+            "{}'s Intimidate activated!",
+            self.get(who).name
+        )));
+        for target in self.actors() {
+            if target.side == who.side || !self.adjacent(who, target) {
+                continue;
+            }
+            let immune = self.blocks_stat_drops(target)
+                || [
+                    "hypercutter",
+                    "innerfocus",
+                    "oblivious",
+                    "owntempo",
+                    "scrappy",
+                ]
+                .iter()
+                .any(|ability| self.has_ability(target, ability));
+            if immune {
+                events.push(BattleEvent::Message(format!(
+                    "{} resisted Intimidate!",
+                    self.get(target).name
+                )));
+                continue;
+            }
+            let amount = if self.has_ability(target, "guarddog") {
+                1
+            } else {
+                -1
+            };
+            self.change_stat(target, crate::model::Stat::Attack, amount, events);
+            if self.has_ability(target, "rattled") {
+                self.change_stat(target, crate::model::Stat::Speed, 1, events);
+            }
+        }
+    }
+
     pub(crate) fn has_ability(&self, who: ParticipantId, ability: &str) -> bool {
         self.ability_active(who)
             && self

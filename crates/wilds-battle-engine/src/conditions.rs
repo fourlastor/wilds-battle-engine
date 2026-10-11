@@ -202,8 +202,12 @@ impl Battle {
     }
 
     pub(crate) fn blocks_stat_drops(&self, id: ParticipantId) -> bool {
-        self.rules(id)
-            .any(|rule| matches!(rule, Rule::BlockStatDrops))
+        ["clearbody", "whitesmoke", "fullmetalbody"]
+            .iter()
+            .any(|ability| self.has_ability(id, ability))
+            || self
+                .rules(id)
+                .any(|rule| matches!(rule, Rule::BlockStatDrops))
     }
 
     /// A chance of an extra effect of one of `id`'s moves, after any multipliers.

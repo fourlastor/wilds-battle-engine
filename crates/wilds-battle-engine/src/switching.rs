@@ -78,6 +78,7 @@ impl Battle {
         if from.side != to.side || !self.bench(from.side).contains(&to) {
             return false;
         }
+        self.ability_on_exit(from, events);
         self.release_carry(from, events);
         self.release_links(from);
         // Draining effects attach their recovery to a field slot (for example Leech Seed).
@@ -145,6 +146,7 @@ impl Battle {
             self.get(from).name,
             self.get(to).name
         )));
+        self.ability_on_entry(to, events);
         true
     }
 }

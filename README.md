@@ -373,3 +373,10 @@ Sap Sipper. Huge Power and Pure Power also affect the computed Attack stat.
 The ability catalog is extensible and does not yet implement every canonical
 ability; move completion means the required mechanics are available, not full
 official battle parity. Shadow Shield and Prism Armor are not bypassable.
+
+Intimidate activates for initial active Pokémon and on subsequent entry, targeting
+adjacent opponents. Its immunity checks include stat-drop protection, Hyper Cutter,
+Inner Focus, Oblivious, Own Tempo and Scrappy; Guard Dog reverses its drop and Rattled
+raises Speed. Clear Body, White Smoke and Full Metal Body block external stat drops.
+Regenerator and Natural Cure activate on withdrawal (including forced switches),
+before suppression resets. Fainted Pokémon do not activate these effects.

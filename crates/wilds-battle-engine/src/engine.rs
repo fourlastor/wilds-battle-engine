@@ -461,6 +461,15 @@ impl Battle {
             });
         }
         let mut events = std::mem::take(&mut self.pending_events);
+        if !self.has_started() {
+            let mut entrants = self.actors();
+            entrants.sort_by_key(|&id| {
+                std::cmp::Reverse(self.stat_value(id, CombatStat::Speed) as i32)
+            });
+            for who in entrants {
+                self.ability_on_entry(who, &mut events);
+            }
+        }
         self.resolve_outcome(&mut events);
         if let Some(winner) = self.winner {
             return Ok(AdvanceResult {
