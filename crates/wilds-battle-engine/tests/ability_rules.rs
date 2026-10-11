@@ -4118,3 +4118,32 @@ fn sheer_force_preserves_primary_effects_but_blocks_rapid_spin_cleanup_and_arias
     turn(&mut battle, "sparkling-aria", "splash");
     assert_eq!(foe(&battle).status, Some(Status::Burned));
 }
+
+#[test]
+fn berserk_boosts_once_when_moves_cross_half_hp_and_precedes_single_hit_berry_healing() {
+    for (move_id, ability, hp, berry, expected) in [
+        ("tackle", "", 530, false, 1),
+        ("tackle", "", 500, false, 0),
+        ("tackle", "", 530, true, 1),
+        ("double_kick", "", 530, false, 1),
+        ("double_kick", "", 530, true, 0),
+        ("scald", "sheer-force", 530, false, 0),
+    ] {
+        let mut user = mon("User", &[move_id]);
+        user.ability = Some(ability.into());
+        let mut target = mon("Target", &["splash"]);
+        target.ability = Some("berserk".into());
+        target.hp = hp;
+        target.item = berry.then(|| "sitrus-berry".into());
+        let mut battle = game(user, target, 0.5);
+        turn(&mut battle, move_id, "splash");
+        assert_eq!(
+            foe(&battle).stage(wilds_battle_engine::Stat::SpAttack),
+            expected,
+            "{move_id} hp {hp} berry {berry}"
+        );
+        if berry {
+            assert!(foe(&battle).item.is_none());
+        }
+    }
+}

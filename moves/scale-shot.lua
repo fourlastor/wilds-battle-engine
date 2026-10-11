@@ -17,6 +17,6 @@ move.pp = 20
 move.accuracy = 0.9
 move.priority = 0
 move.target = Target.Selected
-move.flags = {}
+move.flags = {"multi_hit"}
 move.base_power = 25
 return move

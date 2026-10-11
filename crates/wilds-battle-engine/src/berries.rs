@@ -113,7 +113,7 @@ impl Battle {
             return false;
         }
         if !forced
-            && self.healing_blocked(who)
+            && (self.healing_blocked(who) || self.berserk_waits_for_secondary(who))
             && matches!(
                 berry(&item),
                 Some(Berry::Heal(_) | Berry::HealFraction(_) | Berry::Flavor(_) | Berry::Enigma)

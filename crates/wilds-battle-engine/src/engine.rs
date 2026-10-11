@@ -1190,8 +1190,8 @@ impl Battle {
         self.active_gem = None;
         self.expire_action_conditions(actor, Some(&choice.move_id));
         let result = self.perform_move(actor, choice, false, events);
-        self.finish_item_hits(events);
         self.finish_ability_hits(events);
+        self.finish_item_hits(events);
         self.finish_ability_knockouts(events);
         self.substitute_hits.clear();
         self.ignored_ability = None;
@@ -2993,10 +2993,6 @@ impl Battle {
         {
             self.change_stat(target, Stat::Speed, 1, events);
         }
-        self.item_hits.push((actor, target, meta.clone()));
-        if !meta.defer_items {
-            self.berry_hit(actor, target, meta, events);
-        }
         let hit = HitInfo {
             attacker: actor,
             move_id: meta.move_id.clone(),
@@ -3010,6 +3006,17 @@ impl Battle {
             let pokemon = self.get_mut(target);
             pokemon.damage_taken = pokemon.damage_taken.saturating_add(lost);
             pokemon.last_hit = Some(hit.clone());
+        }
+        let mut item_meta = meta.clone();
+        item_meta.defer_items |= self.berserk_waits_for_secondary(target)
+            && self
+                .get(target)
+                .item
+                .as_deref()
+                .is_some_and(|id| crate::items::item_key(id) == "enigmaberry");
+        self.item_hits.push((actor, target, item_meta.clone()));
+        if !item_meta.defer_items {
+            self.berry_hit(actor, target, &item_meta, events);
         }
         if lost > 0 && meta.critical && self.has_ability(target, "angerpoint") {
             self.change_stat(target, Stat::Attack, 12, events);

@@ -27,6 +27,21 @@ fn cannot_suppress(ability: &str) -> bool {
 }
 
 impl Battle {
+    pub(crate) fn berserk_waits_for_secondary(&self, who: ParticipantId) -> bool {
+        self.has_ability(who, "berserk")
+            && self.ability_hits.iter().any(|(target, hit)| {
+                *target == who
+                    && !self.sheer_force_applies(hit.attacker, &hit.move_id)
+                    && self.catalog.get(&hit.move_id).is_some_and(|spec| {
+                        !spec.has_flag("multi_hit")
+                            && !spec
+                                .effects
+                                .iter()
+                                .any(|e| matches!(e, crate::moves::Effect::MultiHit { .. }))
+                    })
+            })
+    }
+
     pub(crate) fn sheer_force_applies(&self, actor: ParticipantId, move_id: &str) -> bool {
         self.sheer_force_moves
             .contains(&(actor, move_id.to_owned()))
@@ -41,6 +56,20 @@ impl Battle {
             }
             if !seen.insert(target) {
                 continue;
+            }
+            let damage: u16 = hits
+                .iter()
+                .filter(|(who, h)| {
+                    *who == target && h.attacker == hit.attacker && h.move_id == hit.move_id
+                })
+                .fold(0u16, |sum, (_, h)| sum.saturating_add(h.damage));
+            if hit.attacker != target
+                && self.has_ability(target, "berserk")
+                && self.get(target).hp <= self.get(target).max_hp / 2
+                && u32::from(self.get(target).hp) + u32::from(damage)
+                    > u32::from(self.get(target).max_hp / 2)
+            {
+                self.change_stat(target, crate::model::Stat::SpAttack, 1, events);
             }
             if hit.contact
                 && hit.attacker != target

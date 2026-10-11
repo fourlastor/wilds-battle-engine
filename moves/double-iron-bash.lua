@@ -19,6 +19,6 @@ move.pp = 5
 move.accuracy = 1
 move.priority = 0
 move.target = Target.Selected
-move.flags = {"contact", "punch", "flinch_secondary", "sheer_force"}
+move.flags = {"contact", "punch", "flinch_secondary", "sheer_force", "multi_hit"}
 move.base_power = 60
 return move
