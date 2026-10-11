@@ -3618,3 +3618,25 @@ fn color_change_waits_until_all_hits_finish_and_substitutes_block_it() {
     assert_eq!(changed.1, [PokemonType::Fighting]);
     assert_eq!(run("color-change", 999).1, [PokemonType::Normal]);
 }
+
+#[test]
+fn pickpocket_steals_on_contact_after_the_move_with_existing_item_restrictions() {
+    for (move_id, attacker_ability, substitute, stolen) in [
+        ("tackle", "", 0, true),
+        ("water-gun", "", 0, false),
+        ("tackle", "long-reach", 0, false),
+        ("tackle", "sticky-hold", 0, false),
+        ("tackle", "", 999, false),
+    ] {
+        let mut user = mon("User", &[move_id]);
+        user.item = Some("power-herb".into());
+        user.ability = Some(attacker_ability.into());
+        let mut target = mon("Target", &["splash"]);
+        target.ability = Some("pickpocket".into());
+        target.substitute_hp = substitute;
+        let mut battle = game(user, target, 0.5);
+        turn(&mut battle, move_id, "splash");
+        assert_eq!(foe(&battle).item.is_some(), stolen);
+        assert_eq!(ally(&battle).item.is_none(), stolen);
+    }
+}

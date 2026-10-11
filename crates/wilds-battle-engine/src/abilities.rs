@@ -34,6 +34,19 @@ impl Battle {
             if !seen.insert(target) {
                 continue;
             }
+            if hit.contact
+                && hit.attacker != target
+                && self.has_ability(target, "pickpocket")
+                && self.pivot != Some(target)
+                && self.pivot != Some(hit.attacker)
+                && !self.forced_switches.iter().any(|(_, who)| *who == target)
+                && let Some(item) = self.steal_item(hit.attacker, target)
+            {
+                events.push(BattleEvent::Message(format!(
+                    "{} stole {item} with Pickpocket!",
+                    self.get(target).name
+                )));
+            }
             if hit.attacker != target
                 && hit.category != crate::moves::Category::Status
                 && hit.move_type != crate::model::PokemonType::None

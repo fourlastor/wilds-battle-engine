@@ -122,7 +122,7 @@ id,ability,status,verification
 121,multitype,MISSING,No native battle behavior
 122,flower-gift,MISSING,No native battle behavior
 123,bad-dreams,IMPLEMENTED,Source inventory; existing tests only
-124,pickpocket,MISSING,No native battle behavior
+124,pickpocket,IMPLEMENTED,ability_rules::pickpocket_steals_on_contact_after_the_move_with_existing_item_restrictions
 125,sheer-force,MISSING,No native battle behavior
 126,contrary,IMPLEMENTED,Source inventory; existing tests only
 127,unnerve,IMPLEMENTED,Source inventory; existing tests only
