@@ -4037,3 +4037,75 @@ fn perish_song_does_not_refresh_cancels_on_switch_and_resolves_faster_pokemon_fi
         );
     }
 }
+
+#[test]
+fn trick_room_reverses_speed_for_five_turns_preserves_priority_and_toggles_off() {
+    let mut user = mon("User", &["trick-room", "splash", "quick-attack"]);
+    user.speed = 200;
+    let mut b = game(user, vec![mon("Foe", &["celebrate"])], 0.5);
+    turn(&mut b);
+    assert_eq!(
+        used_names(&turn_with(&mut b, |p| choose_move(
+            p,
+            "splash",
+            "celebrate"
+        ))),
+        ["Foe", "User"]
+    );
+    assert_eq!(
+        used_names(&turn_with(&mut b, |p| choose_move(
+            p,
+            "quick-attack",
+            "celebrate"
+        ))),
+        ["User", "Foe"]
+    );
+    for _ in 0..2 {
+        turn_with(&mut b, |p| choose_move(p, "splash", "celebrate"));
+    }
+    assert_eq!(
+        used_names(&turn_with(&mut b, |p| choose_move(
+            p,
+            "splash",
+            "celebrate"
+        ))),
+        ["User", "Foe"]
+    );
+    turn(&mut b);
+    turn(&mut b);
+    assert_eq!(
+        used_names(&turn_with(&mut b, |p| choose_move(
+            p,
+            "splash",
+            "celebrate"
+        ))),
+        ["User", "Foe"]
+    );
+}
+
+#[test]
+fn trick_room_updates_remaining_equal_priority_actions_without_changing_damage_speed() {
+    let mut fast = mon("Fast", &["trick-room"]);
+    fast.speed = 300;
+    let mut mid = mon("Mid", &["trick-room"]);
+    mid.speed = 200;
+    let slow = mon("Slow", &["trick-room"]);
+    let mut b = Battle::with_rng(
+        Fixed(0.5),
+        [vec![fast, mid], vec![slow]],
+        MoveCatalog::builtin().unwrap(),
+    )
+    .unwrap();
+    let events = turn(&mut b);
+    let users: Vec<_> = events
+        .iter()
+        .filter_map(|e| {
+            if let BattleEvent::Message(m) = e {
+                m.split_once(" used ").map(|(who, _)| who)
+            } else {
+                None
+            }
+        })
+        .collect();
+    assert_eq!(users, ["Fast", "Slow", "Mid"]);
+}

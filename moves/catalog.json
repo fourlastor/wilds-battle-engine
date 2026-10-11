@@ -4038,6 +4038,17 @@
       "limitations": []
     },
     {
+      "id": 433,
+      "slug": "trick-room",
+      "name": "Trick Room",
+      "sheet_row": null,
+      "runtime_id": "trick-room",
+      "file": "moves/trick-room.lua",
+      "status": "implemented",
+      "limitations": [],
+      "parameter_source": "https://pokeapi.co/api/v2/move/433/"
+    },
+    {
       "id": 434,
       "slug": "draco-meteor",
       "name": "Draco Meteor",
@@ -7476,7 +7487,8 @@
       "happy-hour",
       "octolock",
       "yawn",
-      "perish-song"
+      "perish-song",
+      "trick-room"
     ]
   }
 }

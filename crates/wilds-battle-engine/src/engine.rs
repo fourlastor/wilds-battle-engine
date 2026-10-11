@@ -507,9 +507,7 @@ impl Battle {
         if !self.entry_abilities_started {
             self.entry_abilities_started = true;
             let mut entrants = self.actors();
-            entrants.sort_by_key(|&id| {
-                std::cmp::Reverse(self.stat_value(id, CombatStat::Speed) as i32)
-            });
+            entrants.sort_by_key(|&id| std::cmp::Reverse(self.action_speed(id)));
             for who in entrants {
                 self.ability_on_entry(who, &mut events);
             }
@@ -707,7 +705,7 @@ impl Battle {
                 let speed = if custap {
                     i32::MAX
                 } else {
-                    self.stat_value(actor, CombatStat::Speed) as i32
+                    self.action_speed(actor)
                 };
                 QueuedAction {
                     actor,
@@ -791,7 +789,7 @@ impl Battle {
         let mut queue = std::mem::take(&mut self.turn_queue);
         for entry in &mut queue {
             if !entry.custap {
-                entry.speed = self.stat_value(entry.actor, CombatStat::Speed) as i32;
+                entry.speed = self.action_speed(entry.actor);
             }
         }
         queue.make_contiguous().sort_by(|a, b| {

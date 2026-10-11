@@ -153,6 +153,8 @@ pub enum Scope {
 /// A rule on a side applies to every Pokémon of that side, one on the field to everyone.
 #[derive(Clone, Debug, PartialEq)]
 pub enum Rule {
+    /// Reverses Speed within each action priority bracket.
+    ReverseSpeed,
     /// A countdown which faints the holder on natural expiry, bypassing damage protection.
     FaintOnExpiry,
     /// Inflicts a status when a timed Pokemon condition expires naturally.

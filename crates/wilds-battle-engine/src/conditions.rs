@@ -107,6 +107,21 @@ impl Battle {
         })
     }
 
+    pub(crate) fn action_speed(&self, id: ParticipantId) -> i32 {
+        let speed = (self.stat_value(id, CombatStat::Speed) as i32).clamp(0, 10000);
+        let speed = if self
+            .field_conditions
+            .iter()
+            .flat_map(|c| &c.rules)
+            .any(|r| matches!(r, Rule::ReverseSpeed))
+        {
+            10000 - speed
+        } else {
+            speed
+        };
+        speed & 8191
+    }
+
     pub(crate) fn stat_factor(&self, id: ParticipantId, stat: CombatStat) -> f32 {
         self.rules(id).fold(
             self.ability_stat_factor(id, stat),
@@ -613,7 +628,7 @@ impl Battle {
             }
         }
         // Perish countdowns expire in Speed order, independent of the moves' priorities.
-        perish.sort_by_key(|&id| std::cmp::Reverse(self.stat_value(id, CombatStat::Speed) as i32));
+        perish.sort_by_key(|&id| std::cmp::Reverse(self.action_speed(id)));
         for id in perish {
             if self.winner.is_some() {
                 break;
