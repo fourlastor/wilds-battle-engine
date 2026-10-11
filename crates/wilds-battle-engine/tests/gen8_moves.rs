@@ -6549,3 +6549,44 @@ fn mirror_move_calls_through_a_substitute_but_the_copied_attack_hits_it() {
     assert!(b.participants(Side::Foes)[0].substitute_hp < 100);
     assert!(!b.participants(Side::Allies)[0].last_move_failed);
 }
+
+#[test]
+fn copycat_uses_battle_history_including_the_actual_called_move() {
+    for response in ["pound", "metronome"] {
+        let mut user = mon("User", &["copycat"]);
+        user.speed = 50;
+        let foe = mon("Foe", &[response]);
+        let expected = control_damage(40, "Normal", "Physical", user.clone(), foe.clone());
+        let mut b = game(user, vec![foe], 0.5);
+        turn(&mut b);
+        assert_eq!(
+            1000 - b.participants(Side::Foes)[0].hp,
+            expected,
+            "{response}"
+        );
+        assert_eq!(b.participants(Side::Allies)[0].move_pp["copycat"], 19);
+        assert_eq!(
+            b.participants(Side::Allies)[0].last_used.as_deref(),
+            Some("copycat")
+        );
+    }
+}
+#[test]
+fn copycat_rejects_no_history_and_forbidden_moves_then_can_use_prior_turn_history() {
+    let mut user = mon("User", &["copycat"]);
+    user.speed = 200;
+    let mut b = game(user, vec![mon("Foe", &["pound"])], 0.5);
+    turn(&mut b);
+    assert!(b.participants(Side::Allies)[0].last_move_failed);
+    assert_eq!(b.participants(Side::Foes)[0].hp, 1000);
+    turn(&mut b);
+    assert!(b.participants(Side::Foes)[0].hp < 1000);
+    let mut b = game(
+        mon("User", &["copycat"]),
+        vec![mon("Foe", &["protect"])],
+        0.5,
+    );
+    turn(&mut b);
+    assert!(b.participants(Side::Allies)[0].last_move_failed);
+    assert_eq!(b.participants(Side::Foes)[0].hp, 1000);
+}

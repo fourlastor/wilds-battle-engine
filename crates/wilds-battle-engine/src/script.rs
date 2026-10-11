@@ -475,6 +475,7 @@ impl Battle {
         run.field.raw_set("effects", effects)?;
         let actor = frame.actor;
         let ctx = &run.ctx;
+        ctx.raw_set("last_move", self.last_battle_move.as_deref())?;
         ctx.raw_set(
             "allies",
             list(

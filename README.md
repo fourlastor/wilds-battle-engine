@@ -1,9 +1,9 @@
 # Wilds battle engine
 
 `wilds-battle-engine` is the Rust battle simulation. Move definitions are loaded
-from Lua; `MoveCatalog::builtin()` embeds the 740 files under `moves/`,
+from Lua; `MoveCatalog::builtin()` embeds the 741 files under `moves/`,
 and `MoveCatalog::from_directory(path)` reads them from disk at runtime.
-Both catalogs also include the system move Struggle, for 741 moves in total.
+Both catalogs also include the system move Struggle, for 742 moves in total.
 The [move catalog](moves/README.md) includes 538 entries from the Saved moves sheet,
 plus support moves, additional local JSON moves and the original moves outside the sheet. Its manifest
 records the 34 excluded Z/Max Moves. Files use canonical slugs and source display
@@ -224,6 +224,7 @@ before turn-start hooks; capped changes and resetting stages do not trigger them
 | `who.last_move_type` | Actual type of the last attempted move, including Weather Ball and other dynamic damage types; cleared on withdrawal. |
 | `who.team.roster` | The complete read-only party, including fainted members; `team.pokemon` continues to contain living members. |
 | `ctx:call_move(id, target)` | Executes another catalog move immediately with its targeting, hit checks and effects, spending only the caller's PP. An omitted target is selected by the engine; nesting is bounded. |
+| `ctx.last_move` | The battle's last attempted move before the current action, including the actual move produced by a caller. Actions prevented by sleep, flinching, etc. leave it unchanged. |
 | `ctx:move_ids()` | Reads every ID in the loaded catalog, sorted for deterministic scripted selection. |
 | `ctx:move_info(id)` | Reads catalog identity, base type, category, priority, PP and flags; returns nil for an unknown ID. |
 | `ctx:reduce_pp(who, move_id, amount)` | Returns PP removed, clamped to what remains; an absent move loses zero. Refreshed `who.pp` reflects the change. |

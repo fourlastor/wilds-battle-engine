@@ -50,6 +50,8 @@ pub struct Battle {
     /// Whether the move being used right now failed, missed or had no effect.
     pub(crate) move_failed: bool,
     call_depth: u8,
+    pub(crate) last_battle_move: Option<String>,
+    current_move: Option<String>,
 }
 
 #[derive(Clone)]
@@ -261,6 +263,8 @@ impl Battle {
             hurry: Vec::new(),
             move_failed: false,
             call_depth: 0,
+            last_battle_move: None,
+            current_move: None,
         })
     }
     pub(crate) fn has_started(&self) -> bool {
@@ -1039,6 +1043,7 @@ impl Battle {
         events: &mut Vec<BattleEvent>,
     ) -> Result<(), BattleError> {
         self.move_failed = false;
+        self.current_move = None;
         self.substitute_hits.clear();
         self.active_gem = None;
         self.expire_action_conditions(actor, Some(&choice.move_id));
@@ -1048,6 +1053,9 @@ impl Battle {
         self.ignored_ability = None;
         self.ability_bypass = false;
         let used = result?;
+        if used && let Some(move_id) = self.current_move.take() {
+            self.last_battle_move = Some(move_id);
+        }
         if !used {
             self.expire_action_conditions(actor, None);
         }
@@ -1313,6 +1321,7 @@ impl Battle {
             pokemon.last_used = Some(spec.id.clone());
             pokemon.moves_used.insert(spec.id.clone());
         }
+        self.current_move = Some(spec.id.clone());
         self.get_mut(actor).last_move_type = Some(self.converted_type(actor, spec.move_type));
         if spec.effects.iter().any(|e| matches!(e, Effect::Protect))
             && !self.protection_check(actor)
