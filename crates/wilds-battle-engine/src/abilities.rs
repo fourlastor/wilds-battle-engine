@@ -642,6 +642,9 @@ impl Battle {
     ) -> f32 {
         use crate::model::PokemonType::*;
         let mut factor = 1.0;
+        if self.has_ability(actor, "tintedlens") && effectiveness > 0.0 && effectiveness < 1.0 {
+            factor *= 2.0;
+        }
         if self.get(target).hp == self.get(target).max_hp
             && (self.has_ability(target, "multiscale") || self.has_ability(target, "shadowshield"))
         {

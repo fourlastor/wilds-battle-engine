@@ -1084,3 +1084,24 @@ fn no_guard_hits_from_either_side_and_reaches_hidden_targets() {
     turn(&mut battle, "tackle", "protect");
     assert_eq!(foe(&battle).hp, 1000);
 }
+
+#[test]
+fn tintedlens_only_modifies_the_relevant_type_matchups() {
+    for (kind, multiplier) in [
+        (PokemonType::Rock, 2.0),
+        (PokemonType::Normal, 1.0),
+        (PokemonType::Ghost, 1.0),
+    ] {
+        let run = |suppressed| {
+            let mut user = mon("User", &["tackle"]);
+            user.ability = Some("tinted-lens".into());
+            user.ability_suppressed = suppressed;
+            let mut target = mon("Target", &["splash"]);
+            target.types = vec![kind];
+            let mut battle = game(user, target, 0.5);
+            turn(&mut battle, "tackle", "splash");
+            1000 - foe(&battle).hp
+        };
+        assert!((f32::from(run(false)) - f32::from(run(true)) * multiplier).abs() <= 1.0);
+    }
+}

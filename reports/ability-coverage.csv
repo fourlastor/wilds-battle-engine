@@ -108,7 +108,7 @@ id,ability,status,verification
 107,anticipation,MISSING,No native battle behavior
 108,forewarn,MISSING,No native battle behavior
 109,unaware,MISSING,No native battle behavior
-110,tinted-lens,MISSING,No native battle behavior
+110,tinted-lens,IMPLEMENTED,ability_rules::tintedlens_only_modifies_the_relevant_type_matchups
 111,filter,IMPLEMENTED,Source inventory; existing tests only
 112,slow-start,MISSING,No native battle behavior
 113,scrappy,IMPLEMENTED,ability_rules::scrappy_bypasses_ghost_immunity_for_normal_fighting_and_fixed_damage
