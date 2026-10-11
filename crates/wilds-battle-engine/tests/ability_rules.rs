@@ -3640,3 +3640,44 @@ fn pickpocket_steals_on_contact_after_the_move_with_existing_item_restrictions()
         assert_eq!(ally(&battle).item.is_none(), stolen);
     }
 }
+
+#[test]
+fn magician_steals_after_damage_but_not_with_fling_gems_or_substitutes() {
+    for (id, item, substitute, stolen) in [
+        ("water-gun", None, 0, true),
+        ("water-gun", Some("water-gem"), 0, false),
+        ("fling", Some("oran-berry"), 0, false),
+        ("natural-gift", Some("oran-berry"), 0, true),
+        ("water-gun", None, 999, false),
+    ] {
+        let mut user = mon("User", &[id]);
+        user.ability = Some("magician".into());
+        user.item = item.map(str::to_owned);
+        let mut target = mon("Target", &["splash"]);
+        target.item = Some("power-herb".into());
+        target.substitute_hp = substitute;
+        let mut battle = game(user, target, 0.5);
+        turn(&mut battle, id, "splash");
+        assert_eq!(
+            ally(&battle).item.as_deref() == Some("power-herb"),
+            stolen,
+            "{id}"
+        );
+    }
+    let mut user = mon("User", &["surf"]);
+    user.ability = Some("magician".into());
+    let mut slow = mon("Slow", &["splash"]);
+    slow.item = Some("power-herb".into());
+    slow.speed = 10;
+    let mut fast = mon("Fast", &["splash"]);
+    fast.item = Some("sitrus-berry".into());
+    fast.speed = 100;
+    let mut battle = Battle::with_rng(
+        Fixed(0.5),
+        [vec![user], vec![slow, fast]],
+        MoveCatalog::builtin().unwrap(),
+    )
+    .unwrap();
+    turn(&mut battle, "surf", "splash");
+    assert_eq!(ally(&battle).item.as_deref(), Some("sitrus-berry"));
+}

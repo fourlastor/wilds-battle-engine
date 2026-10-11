@@ -30,7 +30,7 @@ impl Battle {
     pub(crate) fn finish_ability_hits(&mut self, events: &mut Vec<BattleEvent>) {
         let hits = std::mem::take(&mut self.ability_hits);
         let mut seen = std::collections::BTreeSet::new();
-        for (target, hit) in hits.into_iter().rev() {
+        for (target, hit) in hits.iter().cloned().rev() {
             if !seen.insert(target) {
                 continue;
             }
@@ -59,6 +59,22 @@ impl Battle {
                     "{} changed to the {:?} type!",
                     self.get(target).name,
                     hit.move_type
+                )));
+            }
+        }
+        let mut hits = hits;
+        hits.sort_by_key(|(target, _)| std::cmp::Reverse(self.action_speed(*target)));
+        for (target, hit) in hits {
+            if target != hit.attacker
+                && hit.category != crate::moves::Category::Status
+                && item_key(&hit.move_id) != "fling"
+                && self.pivot != Some(hit.attacker)
+                && self.has_ability(hit.attacker, "magician")
+                && let Some(item) = self.steal_item(target, hit.attacker)
+            {
+                events.push(BattleEvent::Message(format!(
+                    "{} stole {item} with Magician!",
+                    self.get(hit.attacker).name
                 )));
             }
         }

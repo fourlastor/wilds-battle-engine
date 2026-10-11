@@ -168,7 +168,7 @@ id,ability,status,verification
 167,cheek-pouch,IMPLEMENTED,Source inventory; existing tests only
 168,protean,IMPLEMENTED,ability_rules::protean_changes_type_on_each_move_under_generation_eight_rules
 169,fur-coat,IMPLEMENTED,Source inventory; existing tests only
-170,magician,MISSING,No native battle behavior
+170,magician,IMPLEMENTED,ability_rules::magician_steals_after_damage_but_not_with_fling_gems_or_substitutes
 171,bulletproof,IMPLEMENTED,Source inventory; existing tests only
 172,competitive,IMPLEMENTED,ability_rules::competitive_responds_to_opposing_stat_drops_and_intimidate
 173,strong-jaw,IMPLEMENTED,ability_rules::strongjaw_boosts_matching_moves_only
