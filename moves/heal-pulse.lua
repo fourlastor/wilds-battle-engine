@@ -2,8 +2,9 @@
 -- Behavior checked against PokeAPI; see catalog.json for scope and limitations.
 
 local move = {script = function(ctx)
+if not ctx:reached() then return end
 if ctx.target.hp == ctx.target.max_hp then return ctx:fail() end
-if ctx:reached() then ctx:heal(ctx.target, {fraction = 1/2}) end
+ctx:heal(ctx.target, {fraction = 1/2})
 end}
 
 move.id = "heal-pulse"

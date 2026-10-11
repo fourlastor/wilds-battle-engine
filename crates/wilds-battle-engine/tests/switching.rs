@@ -1644,3 +1644,18 @@ fn intimidate_reversals_are_not_blocked_by_mist() {
         );
     }
 }
+
+#[test]
+fn magic_bounce_reflects_heal_pulse_before_testing_the_reflectors_full_hp() {
+    let mut user = mon("User", &["heal-pulse"]);
+    user.hp = 300;
+    let mut target = mon("Target", &["splash"]);
+    target.ability = Some("magic-bounce".into());
+    let mut b = game(vec![user], vec![target], [vec![0], vec![0]]);
+    pick(&mut b, id(Side::Allies, 0), "heal-pulse");
+    pick(&mut b, id(Side::Foes, 0), "splash");
+    b.advance().unwrap();
+    assert_eq!(b.participants(Side::Allies)[0].hp, 800);
+    assert_eq!(b.participants(Side::Foes)[0].hp, 1000);
+    assert_eq!(b.participants(Side::Allies)[0].move_pp["heal-pulse"], 9);
+}
