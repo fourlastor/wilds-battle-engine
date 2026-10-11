@@ -230,6 +230,8 @@ pub enum Rule {
     Grounded,
     /// Cannot voluntarily switch out.
     Trapped,
+    /// Resists forced replacement (for example rooting with Ingrain).
+    BlockForcedSwitch,
     /// Cannot voluntarily switch while this source remains alive on the field.
     TrappedBy {
         source: ParticipantId,

@@ -7,7 +7,7 @@
   ],
   "parameter_policy": "JSON names and parameters; actual behavior for conflicting spreadsheet descriptions; original runtime IDs and behaviors retained for existing moves. Gravity and Stockpile have no local source JSON and use PokeAPI parameters.",
   "global_limitations": [
-    "The engine supports benches, voluntary switching, selected item/ability effects, redirection and move-priority hooks. Move-triggered switching, carrying and substitute remain unsupported; the item and ability catalogs are not exhaustive.",
+    "The engine supports benches, voluntary switching, selected item/ability effects, redirection and move-priority hooks. Pivot choices, switch interception, carrying and substitute remain unsupported; the item and ability catalogs are not exhaustive.",
     "General battle interactions follow the current Rust engine; catalog coverage is not full official battle parity."
   ],
   "moves": [
@@ -3648,10 +3648,8 @@
       "sheet_row": 356,
       "runtime_id": "circle-throw",
       "file": "moves/circle-throw.lua",
-      "status": "partial",
-      "limitations": [
-        "Switching, bench selection and switch interception are not implemented; only the on-field damage/stat effect runs."
-      ]
+      "status": "implemented",
+      "limitations": []
     },
     {
       "id": 510,
@@ -3772,10 +3770,8 @@
       "sheet_row": 368,
       "runtime_id": "dragon-tail",
       "file": "moves/dragon-tail.lua",
-      "status": "partial",
-      "limitations": [
-        "Switching, bench selection and switch interception are not implemented; only the on-field damage/stat effect runs."
-      ]
+      "status": "implemented",
+      "limitations": []
     },
     {
       "id": 526,

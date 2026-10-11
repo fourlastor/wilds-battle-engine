@@ -12,6 +12,7 @@ pub struct Battle {
     pub(crate) sides: [Vec<Pokemon>; 2],
     pub(crate) active: [Vec<usize>; 2],
     pending_events: Vec<BattleEvent>,
+    pub(crate) forced_switches: Vec<(ParticipantId, ParticipantId)>,
     pub(crate) weather: Option<Weather>,
     pub(crate) rng: Box<dyn BattleRng>,
     pending: Option<Prompt>,
@@ -219,6 +220,7 @@ impl Battle {
             catalog,
             active,
             pending_events: Vec::new(),
+            forced_switches: Vec::new(),
             sides,
             weather: None,
             rng: Box::new(rng),
@@ -705,6 +707,7 @@ impl Battle {
             self.hit_reactions
                 .retain(|reaction| reaction.owner != actor);
             if !self.is_active(actor) {
+                self.completed_slots.push((actor.side, entry.position));
                 continue;
             }
             if !matches!(choice, SelectedAction::Switch(_)) {
@@ -807,6 +810,7 @@ impl Battle {
         self.ignored_ability = None;
         self.ability_bypass = false;
         let used = result?;
+        self.finish_forced_switches(events);
         let failed = self.move_failed;
         let pokemon = self.get_mut(actor);
         if used {

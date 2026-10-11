@@ -408,3 +408,115 @@ fn drain_recovery_follows_the_source_field_slot_after_switching() {
     assert_eq!(b.participants(Side::Allies)[0].hp, 500);
     assert_eq!(b.participants(Side::Allies)[1].hp, 625);
 }
+
+#[test]
+fn phazing_cancels_the_outgoing_action_and_gives_residuals_to_the_replacement() {
+    for attack in ["circle-throw", "dragon-tail"] {
+        let mut lead = mon("Lead", &[attack]);
+        lead.speed = 200;
+        let mut reserve = mon("Enemy reserve", &["splash"]);
+        reserve.status = Some(Status::Poisoned);
+        let mut b = game(
+            vec![lead],
+            vec![mon("Foe", &["dragon-tail"]), reserve],
+            [vec![0], vec![0]],
+        );
+        pick(&mut b, id(Side::Allies, 0), attack);
+        pick(&mut b, id(Side::Foes, 0), "dragon-tail");
+        let result = b.advance().unwrap();
+        assert_eq!(b.active_indices(Side::Foes), &[1]);
+        assert!(b.participants(Side::Foes)[0].hp < 1000);
+        assert_eq!(b.participants(Side::Foes)[1].hp, 875);
+        assert_eq!(b.participants(Side::Allies)[0].hp, 1000);
+        assert_eq!(b.participants(Side::Foes)[0].move_pp["dragon-tail"], 10);
+        assert!(
+            result
+                .events
+                .iter()
+                .any(|e| matches!(e,BattleEvent::Switched{to,..}if *to==id(Side::Foes,1)))
+        );
+    }
+}
+
+#[test]
+fn phazing_respects_suction_cups_and_anchoring_but_ignores_ordinary_traps() {
+    for (ability, anchored, mold, switched) in [
+        (None, false, false, true),
+        (Some("suction-cups"), false, false, false),
+        (Some("suction-cups"), false, true, true),
+        (None, true, false, false),
+    ] {
+        let mut lead = mon("Lead", &["dragon-tail"]);
+        if mold {
+            lead.ability = Some("mold-breaker".into());
+        }
+        let mut foe = mon("Foe", &["splash"]);
+        foe.ability = ability.map(str::to_owned);
+        foe.conditions.push(Condition {
+            name: "anchor".into(),
+            value: 1,
+            turns_left: None,
+            rules: vec![if anchored {
+                Rule::BlockForcedSwitch
+            } else {
+                Rule::Trapped
+            }],
+            group: None,
+            end_message: None,
+        });
+        let mut b = game(
+            vec![lead],
+            vec![foe, mon("Enemy reserve", &["splash"])],
+            [vec![0], vec![0]],
+        );
+        pick(&mut b, id(Side::Allies, 0), "dragon-tail");
+        pick(&mut b, id(Side::Foes, 0), "splash");
+        b.advance().unwrap();
+        assert_eq!(
+            b.active_indices(Side::Foes),
+            &[usize::from(switched)],
+            "{ability:?} {anchored} {mold}"
+        );
+        assert!(b.participants(Side::Foes)[0].hp < 1000);
+    }
+}
+
+#[test]
+fn phazing_needs_a_successful_hit_and_a_living_target_with_a_bench() {
+    for (protected, immune, bench, hp, changed) in [
+        (true, false, true, 1000, false),
+        (false, true, true, 1000, false),
+        (false, false, false, 1000, false),
+        (false, false, true, 1, false),
+        (false, false, true, 1000, true),
+    ] {
+        let mut foe = mon("Foe", &["protect", "splash"]);
+        foe.hp = hp;
+        if immune {
+            foe.types = vec![wilds_battle_engine::PokemonType::Fairy];
+        }
+        let mut foes = vec![foe];
+        if bench {
+            foes.push(mon("Reserve", &["splash"]));
+        }
+        let mut b = game(
+            vec![mon("Lead", &["dragon-tail"])],
+            foes,
+            [vec![0], vec![0]],
+        );
+        pick(&mut b, id(Side::Allies, 0), "dragon-tail");
+        pick(
+            &mut b,
+            id(Side::Foes, 0),
+            if protected { "protect" } else { "splash" },
+        );
+        let result = b.advance().unwrap();
+        assert_eq!(
+            result
+                .events
+                .iter()
+                .any(|e| matches!(e, BattleEvent::Switched { .. })),
+            changed
+        );
+    }
+}

@@ -319,6 +319,9 @@ pub(crate) enum ScriptOperation {
         scope: Scope,
         group: String,
     },
+    ForceSwitch {
+        who: ParticipantId,
+    },
     ChangeForm {
         who: ParticipantId,
         form: String,
@@ -783,7 +786,8 @@ fn rule_of(value: &Value) -> mlua::Result<Rule> {
         RuleKind::AlwaysHit => &["kind", "against"],
         RuleKind::Trapped => &["kind", "by"],
         RuleKind::WithoutType => &["kind", "type"],
-        RuleKind::BlockFlinch
+        RuleKind::BlockForcedSwitch
+        | RuleKind::BlockFlinch
         | RuleKind::BlockStatDrops
         | RuleKind::Grounded
         | RuleKind::Endure => &["kind"],
@@ -883,6 +887,7 @@ fn rule_of(value: &Value) -> mlua::Result<Rule> {
             to: type_of(&required("to")?, "rule option to")?,
         },
         RuleKind::Grounded => Rule::Grounded,
+        RuleKind::BlockForcedSwitch => Rule::BlockForcedSwitch,
         RuleKind::Trapped => match options.pokemon("by")? {
             Some(source) => Rule::TrappedBy { source },
             None => Rule::Trapped,
@@ -1095,6 +1100,7 @@ fn parse_op(name: &str, args: &[Value]) -> mlua::Result<ScriptOperation> {
             move_id: name_of(arg(1), "reduce_pp move")?,
             amount: whole(arg(2), "reduce_pp amount", 0.0, 255.0)? as u8,
         },
+        "force_switch" => ScriptOperation::ForceSwitch { who: who(0)? },
         "adjacent" => ScriptOperation::Adjacent {
             a: who(0)?,
             b: who(1)?,

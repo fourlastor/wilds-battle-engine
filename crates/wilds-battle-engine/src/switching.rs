@@ -179,3 +179,44 @@ impl Battle {
         }
     }
 }
+
+impl Battle {
+    pub(crate) fn request_forced_switch(
+        &mut self,
+        actor: ParticipantId,
+        who: ParticipantId,
+    ) -> bool {
+        if self.get(actor).hp == 0
+            || self.get(who).hp == 0
+            || !self.is_active(who)
+            || self.bench(who.side).is_empty()
+            || self.has_ability(who, "suctioncups")
+            || self.has_ability(who, "guarddog")
+            || self
+                .rules(who)
+                .any(|rule| matches!(rule, crate::model::Rule::BlockForcedSwitch))
+        {
+            return false;
+        }
+        if !self
+            .forced_switches
+            .iter()
+            .any(|(_, target)| *target == who)
+        {
+            self.forced_switches.push((actor, who));
+        }
+        true
+    }
+    pub(crate) fn finish_forced_switches(&mut self, events: &mut Vec<BattleEvent>) {
+        for (actor, who) in std::mem::take(&mut self.forced_switches) {
+            if self.get(actor).hp == 0 || self.get(who).hp == 0 || !self.is_active(who) {
+                continue;
+            }
+            let choices = self.bench(who.side);
+            if !choices.is_empty() {
+                let to = choices[self.rng.index(choices.len())];
+                self.switch_member(who, to, events);
+            }
+        }
+    }
+}

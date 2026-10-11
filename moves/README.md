@@ -31,14 +31,15 @@ Pokémon Showdown reference recorded in [catalog.json](catalog.json).
 For example, Snipe Shot has an increased critical-hit rate, Jaw Lock traps both
 participants, and No Retreat raises five stats and records its one-use trap.
 
-Of the 507 added definitions currently included, 499 implement their move-specific
-behavior through the available API and 8 are partial. Each partial file has an
+Of the 507 added definitions currently included, 501 implement their move-specific
+behavior through the available API and 6 are partial. Each partial file has an
 `INCOMPLETE` comment, an `incomplete` flag, and specific limitations in the manifest. Sky Drop fails explicitly because carrying another Pokémon cannot yet run through this API.
 Other partial moves execute the supported portion of their effects.
 
 Voluntary switches and faint replacements now use host-selected bench choices.
 Source-linked traps now prevent switches and end when their source leaves or faints.
-Remaining gaps are move-triggered switching and carrying
+Circle Throw and Dragon Tail now force a random eligible bench replacement.
+Remaining gaps are pivot choices, switch interception and carrying
 another Pokémon across turns.
 These definitions use the current engine's general damage, status and rounding rules;
 the coverage count does not imply full official battle parity.

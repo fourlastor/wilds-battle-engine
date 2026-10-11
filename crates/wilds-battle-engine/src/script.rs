@@ -1444,6 +1444,9 @@ impl Battle {
             ScriptOperation::EndGroup { scope, group } => {
                 Value::Boolean(self.end_group(scope, &group))
             }
+            ScriptOperation::ForceSwitch { who } => {
+                Value::Boolean(self.request_forced_switch(actor, who))
+            }
             ScriptOperation::ChangeForm { who, form } => {
                 Value::Boolean(self.change_form(who, &form, events))
             }
