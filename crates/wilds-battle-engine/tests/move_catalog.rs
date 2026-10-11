@@ -79,6 +79,41 @@ fn said(events: &[BattleEvent], text: &str) -> bool {
 }
 
 #[test]
+fn eerie_spell_reduces_last_move_pp_only_after_a_surviving_hit() {
+    let mut foe = mon("Foe", &["splash", "protect"]);
+    foe.speed = 200;
+    foe.move_pp.insert("splash".into(), 3);
+    let mut game = Game::duel(&["eerie-spell"], foe, 0.5);
+    let events = game.turn("eerie-spell", "splash");
+    assert!(said(&events, "lost 2 PP"));
+    assert_eq!(game.foe().move_pp["splash"], 0);
+    assert!(game.foe().hp < 1000);
+    let pp = game.foe().move_pp["protect"];
+    let hp = game.foe().hp;
+    game.turn("eerie-spell", "protect");
+    assert_eq!(game.foe().hp, hp);
+    assert_eq!(game.foe().move_pp["protect"], pp - 1);
+
+    let mut ally = mon("Ally", &["eerie-spell"]);
+    ally.speed = 200;
+    let mut game = Game::new(vec![ally], vec![mon("Foe", &["splash"])], 0.5);
+    let pp = game.foe().move_pp["splash"];
+    game.turn("eerie-spell", "splash");
+    assert_eq!(game.foe().move_pp["splash"], pp - 1); // no prior move
+    game.turn("eerie-spell", "splash");
+    assert_eq!(game.foe().move_pp["splash"], pp - 5);
+
+    let mut foe = mon("Foe", &["splash"]);
+    foe.speed = 200;
+    foe.hp = 1;
+    let mut game = Game::duel(&["eerie-spell"], foe, 0.5);
+    let pp = game.foe().move_pp["splash"];
+    game.turn("eerie-spell", "splash");
+    assert_eq!(game.foe().hp, 0);
+    assert_eq!(game.foe().move_pp["splash"], pp - 1);
+}
+
+#[test]
 fn stockpile_caps_at_three_and_swallow_heals_each_tier() {
     for layers in 1..=3 {
         let mut ally = mon("Ally", &["stockpile", "swallow"]);

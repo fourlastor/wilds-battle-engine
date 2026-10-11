@@ -150,6 +150,7 @@ return function(api, fields, roster)
   function ctx:unhide(who) return op("unhide", who) end
   function ctx:set_types(who, types) return op("set_types", who, types) end
   function ctx:set_weight(who, kilograms) return op("set_weight", who, kilograms) end
+  function ctx:reduce_pp(who, move_id, amount) return op("reduce_pp", who, move_id, amount) end
   function ctx:take_item(who) return op("take_item", who) end
   function ctx:give_item(who, item) return op("give_item", who, item) end
   function ctx:suppress_ability(who) return op("suppress_ability", who) end

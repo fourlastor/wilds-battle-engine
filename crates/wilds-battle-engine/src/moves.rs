@@ -321,6 +321,11 @@ pub(crate) enum ScriptOperation {
         who: ParticipantId,
         weight: f32,
     },
+    ReducePp {
+        who: ParticipantId,
+        move_id: String,
+        amount: u8,
+    },
     TakeItem {
         who: ParticipantId,
     },
@@ -1001,6 +1006,11 @@ fn parse_op(name: &str, args: &[Value]) -> mlua::Result<ScriptOperation> {
                 weight: weight as f32,
             }
         }
+        "reduce_pp" => ScriptOperation::ReducePp {
+            who: who(0)?,
+            move_id: name_of(arg(1), "reduce_pp move")?,
+            amount: whole(arg(2), "reduce_pp amount", 0.0, 255.0)? as u8,
+        },
         "take_item" => ScriptOperation::TakeItem { who: who(0)? },
         "give_item" => ScriptOperation::GiveItem {
             who: who(0)?,

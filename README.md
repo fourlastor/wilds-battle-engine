@@ -200,6 +200,7 @@ table has `marks`, `effects`, `pokemon` and `fainted_last_turn`.
 | `ctx:hide(Hidden.X)`, `ctx:unhide(who)` | The user hides until it next acts. `unhide` also calls off what the Pokémon was doing. |
 | `ctx:set_weather(Weather.X, turns)`, `ctx:clear_weather()` | `Sun`, `Sandstorm`, `Rain`, `Hail`. |
 | `ctx:set_types(who, {Type.X})`, `ctx:set_weight(who, kg)`, `ctx:take_item(who)`, `ctx:give_item(who, item)`, `ctx:suppress_ability(who)` | |
+| `ctx:reduce_pp(who, move_id, amount)` | Returns PP removed, clamped to what remains; an absent move loses zero. Refreshed `who.pp` reflects the change. |
 | `ctx:chance(probability)`, `ctx:effect_chance(probability)`, `ctx:random_int(min, max)` | `effect_chance` is for a move's extra effects: an `EffectChance` rule can multiply it. |
 | `ctx:reached(who)` | Whether this use of the move got through to a Pokémon (the target if left out): the result of the hit already made on it, or else `try_hit` now. Use it to hold an effect back until the move connects. |
 | `ctx:steal_boosts(from, to)`, `ctx:steal_item(from, to)`, `ctx:lose_type(who, Type.X)` | Shorthands built from the calls above. |

@@ -5581,10 +5581,8 @@
       "sheet_row": 573,
       "runtime_id": "eerie-spell",
       "file": "moves/eerie-spell.lua",
-      "status": "partial",
-      "limitations": [
-        "PP is read-only in Lua; reducing the last-used move by three PP requires a new engine operation."
-      ]
+      "status": "implemented",
+      "limitations": []
     }
   ],
   "excluded_moves": [

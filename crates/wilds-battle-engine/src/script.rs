@@ -1367,6 +1367,21 @@ impl Battle {
                 self.get_mut(who).weight = weight;
                 Value::Nil
             }
+            ScriptOperation::ReducePp {
+                who,
+                move_id,
+                amount,
+            } => {
+                let lost = match self.get_mut(who).move_pp.get_mut(&move_id) {
+                    Some(left) => {
+                        let lost = amount.min(*left);
+                        *left -= lost;
+                        lost
+                    }
+                    None => 0,
+                };
+                Value::Integer(i64::from(lost))
+            }
             ScriptOperation::TakeItem { who } => match self.get_mut(who).item.take() {
                 Some(item) => Value::String(self.catalog.lua().create_string(&item)?),
                 None => Value::Nil,
@@ -1445,6 +1460,7 @@ fn reaction_may(operation: &ScriptOperation, hook: ScriptHook) -> bool {
         | Op::Chance(_)
         | Op::EffectChance(_)
         | Op::RandomInt { .. }
+        | Op::ReducePp { .. }
         | Op::TakeItem { .. }
         | Op::GiveItem { .. }
         | Op::AddPayout(_) => true,

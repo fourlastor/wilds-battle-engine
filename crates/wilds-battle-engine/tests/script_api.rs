@@ -1805,6 +1805,25 @@ fn an_effect_chance_follows_the_rainbow() {
 // Guard rails
 
 #[test]
+fn reducing_pp_refreshes_lua_state_and_ignores_absent_moves() {
+    let script = test_move(
+        "",
+        "
+        assert(ctx:reduce_pp(ctx.user, 'test', 3) == 3)
+        assert(ctx.user.pp.test == 36)
+        assert(ctx:reduce_pp(ctx.target, 'absent', 3) == 0)
+        assert(ctx.target.pp.absent == nil)
+        assert(ctx:reduce_pp(ctx.target, 'wait', 255) <= 40)
+        assert(ctx.target.pp.wait == 0)
+        assert(ctx:reduce_pp(ctx.target, 'wait', 3) == 0)
+    ",
+    );
+    let mut game = Game::duel(&[&script], &["test"]);
+    game.turn(&["test", "wait"]);
+    assert_eq!(game.foe(0).move_pp["wait"], 0);
+}
+
+#[test]
 fn mistakes_in_a_script_are_reported() {
     let failing = |body: &str| -> String {
         let script = test_move("", body);
@@ -1834,6 +1853,7 @@ fn mistakes_in_a_script_are_reported() {
     assert!(failing("ctx:apply_status(ctx.field, ctx.Status.Burned)").contains("needs a Pokémon"));
     assert!(failing("ctx:damage(40, {tipe=ctx.Type.Fire})").contains("unknown damage option tipe"));
     assert!(failing("ctx:heal(ctx.user, {fraction=2})").contains("must be between 0 and 1"));
+    assert!(failing("ctx:reduce_pp(ctx.target, 'wait', -1)").contains("reduce_pp amount"));
     assert!(
         failing(
             "ctx:start_effect(ctx.field, 'x', {rules={{kind=ctx.Rule.StatMultiplier, factor=2}}})"
