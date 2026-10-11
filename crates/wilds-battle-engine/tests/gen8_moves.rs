@@ -873,3 +873,25 @@ fn tri_attack_chooses_one_of_three_statuses_and_respects_chance_and_substitute()
         assert_eq!(b.participants(Side::Foes)[0].status, None);
     }
 }
+
+#[test]
+fn endeavor_matches_users_hp_only_when_target_has_more_and_can_be_hit() {
+    for (hp, kind, sub, expected) in [
+        (300, PokemonType::Normal, 0, 300),
+        (1000, PokemonType::Normal, 0, 1000),
+        (300, PokemonType::Ghost, 0, 1000),
+        (300, PokemonType::Normal, 800, 1000),
+    ] {
+        let mut user = mon("User", &["endeavor"]);
+        user.hp = hp;
+        let mut foe = mon("Foe", &["splash"]);
+        foe.types = vec![kind];
+        foe.substitute_hp = sub;
+        let mut b = game(user, vec![foe], 0.5);
+        turn(&mut b);
+        assert_eq!(b.participants(Side::Foes)[0].hp, expected);
+        if sub > 0 {
+            assert_eq!(b.participants(Side::Foes)[0].substitute_hp, 100);
+        }
+    }
+}
