@@ -2766,3 +2766,8 @@ fn check_terrain_entry(ability: &str, move_id: &str, terrain: &str) {
 fn electric_surge_starts_five_turn_electric_terrain() {
     check_terrain_entry("electric-surge", "electric-terrain", "electric_terrain");
 }
+
+#[test]
+fn psychic_surge_starts_five_turn_psychic_terrain() {
+    check_terrain_entry("psychic-surge", "psychic-terrain", "psychic_terrain");
+}

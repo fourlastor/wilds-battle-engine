@@ -44,6 +44,20 @@ impl Battle {
                     },
                 ],
             )
+        } else if self.has_ability(who, "psychicsurge") {
+            (
+                "psychic_terrain",
+                vec![
+                    Rule::BasePower {
+                        move_type: Some(PokemonType::Psychic),
+                        factor: 5325.0 / 4096.0,
+                        grounded_only: true,
+                    },
+                    Rule::BlockPriority {
+                        grounded_only: true,
+                    },
+                ],
+            )
         } else {
             return;
         };

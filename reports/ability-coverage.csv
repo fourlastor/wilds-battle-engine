@@ -225,7 +225,7 @@ id,ability,status,verification
 224,beast-boost,MISSING,No native battle behavior
 225,rks-system,MISSING,No native battle behavior
 226,electric-surge,IMPLEMENTED,ability_rules::electric_surge_starts_five_turn_electric_terrain
-227,psychic-surge,MISSING,No native battle behavior
+227,psychic-surge,IMPLEMENTED,ability_rules::psychic_surge_starts_five_turn_psychic_terrain
 228,misty-surge,MISSING,No native battle behavior
 229,grassy-surge,MISSING,No native battle behavior
 230,full-metal-body,IMPLEMENTED,Source inventory; existing tests only
