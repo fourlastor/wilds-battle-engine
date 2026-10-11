@@ -53,7 +53,7 @@ id,ability,status,verification
 52,hyper-cutter,IMPLEMENTED,ability_rules::hyper_cutter_blocks_external_attack_drops_only
 53,pickup,MISSING,No native battle behavior
 54,truant,MISSING,No native battle behavior
-55,hustle,MISSING,No native battle behavior
+55,hustle,IMPLEMENTED,ability_rules::hustle_boosts_attack_and_reduces_only_physical_accuracy
 56,cute-charm,MISSING,No native battle behavior
 57,plus,IMPLEMENTED,ability_rules::plus_needs_an_active_plus_or_minus_teammate
 58,minus,IMPLEMENTED,ability_rules::minus_needs_an_active_plus_or_minus_teammate

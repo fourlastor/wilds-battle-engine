@@ -355,6 +355,9 @@ impl Battle {
         stat: crate::model::CombatStat,
     ) -> f32 {
         use crate::model::CombatStat::*;
+        if stat == Attack && self.has_ability(who, "hustle") {
+            return 1.5;
+        }
         if matches!(stat, Attack | SpAttack)
             && self.has_ability(who, "defeatist")
             && self.get(who).hp <= self.get(who).max_hp / 2
@@ -382,6 +385,19 @@ impl Battle {
                 || (stat == Speed && self.has_ability(who, "quickfeet")))
         {
             1.5
+        } else {
+            1.0
+        }
+    }
+
+    pub(crate) fn ability_accuracy_factor(
+        &self,
+        actor: ParticipantId,
+        _target: ParticipantId,
+        category: crate::moves::Category,
+    ) -> f32 {
+        if category == crate::moves::Category::Physical && self.has_ability(actor, "hustle") {
+            0.8
         } else {
             1.0
         }

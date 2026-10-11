@@ -812,7 +812,13 @@ impl Battle {
             self.end_condition(Scope::Pokemon(actor), "micle_berry");
             true
         } else if let Some(value) = options.accuracy {
-            self.hit_check_chance(actor, recipient, value, options.ignore_evasion)
+            self.hit_check_chance(
+                actor,
+                recipient,
+                value,
+                options.ignore_evasion,
+                frame.spec.category,
+            )
         } else {
             self.hit_check(actor, recipient, frame.spec, options.ignore_evasion)
         };

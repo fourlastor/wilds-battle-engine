@@ -908,3 +908,21 @@ fn defeatist_halves_both_attacking_stats_at_half_hp() {
         assert_eq!(run(attack, 500, true), run(attack, 501, false));
     }
 }
+
+#[test]
+fn hustle_boosts_attack_and_reduces_only_physical_accuracy() {
+    assert!(
+        ability_damage("tackle", "hustle", "", false) > ability_damage("tackle", "", "", false)
+    );
+    assert_eq!(
+        ability_damage("water-gun", "hustle", "", false),
+        ability_damage("water-gun", "", "", false)
+    );
+    for (attack, hits) in [("tackle", false), ("water-gun", true), ("aerial-ace", true)] {
+        let mut user = mon("User", &[attack]);
+        user.ability = Some("hustle".into());
+        let mut battle = game(user, mon("Target", &["splash"]), 0.85);
+        turn(&mut battle, attack, "splash");
+        assert_eq!(foe(&battle).hp < 1000, hits);
+    }
+}

@@ -1889,7 +1889,7 @@ impl Battle {
                     self.end_condition(Scope::Pokemon(actor), "micle_berry");
                     true
                 } else {
-                    self.hit_check_chance(actor, target, value, ignore_evasion)
+                    self.hit_check_chance(actor, target, value, ignore_evasion, spec.category)
                 }
             }
         }
@@ -1917,6 +1917,7 @@ impl Battle {
         target: ParticipantId,
         value: f32,
         ignore_evasion: bool,
+        category: Category,
     ) -> bool {
         if self
             .rules(target)
@@ -1946,7 +1947,8 @@ impl Battle {
             * self.get(actor).accuracy_factor()
             * evasion
             * self.accuracy_rule_factor(actor)
-            * tangled;
+            * tangled
+            * self.ability_accuracy_factor(actor, target, category);
         self.end_condition(Scope::Pokemon(actor), "micle_berry");
         self.rng.chance(probability)
     }
