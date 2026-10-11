@@ -370,3 +370,46 @@ fn hyper_cutter_blocks_external_attack_drops_only() {
         assert_eq!(foe(&battle).stage(wilds_battle_engine::Stat::Defense), -2);
     }
 }
+
+#[test]
+fn flower_veil_protects_grass_teammate_stats_with_bypass_and_type_checks() {
+    for (grass, breaker, suppressed) in [
+        (true, false, false),
+        (false, false, false),
+        (true, true, false),
+        (true, false, true),
+    ] {
+        let mut user = mon("User", &["growl", "tail-whip"]);
+        user.ability = breaker.then(|| "mold-breaker".into());
+        let mut target = mon("Target", &["splash"]);
+        target.types = vec![if grass {
+            PokemonType::Grass
+        } else {
+            PokemonType::Normal
+        }];
+        let mut veil = mon("Veil", &["splash"]);
+        veil.ability = Some("flower-veil".into());
+        veil.ability_suppressed = suppressed;
+        let mut battle = Battle::with_rng(
+            Fixed(0.5),
+            [vec![user], vec![target, veil]],
+            MoveCatalog::builtin().unwrap(),
+        )
+        .unwrap();
+        turn(&mut battle, "growl", "splash");
+        turn(&mut battle, "tail-whip", "splash");
+        let expected = if grass && !breaker && !suppressed {
+            0
+        } else {
+            -1
+        };
+        assert_eq!(
+            foe(&battle).stage(wilds_battle_engine::Stat::Attack),
+            expected
+        );
+        assert_eq!(
+            foe(&battle).stage(wilds_battle_engine::Stat::Defense),
+            expected
+        );
+    }
+}

@@ -380,9 +380,11 @@ impl Battle {
     }
 
     pub(crate) fn blocks_stat_drops(&self, id: ParticipantId) -> bool {
-        ["clearbody", "whitesmoke", "fullmetalbody"]
-            .iter()
-            .any(|ability| self.has_ability(id, ability))
+        (self.types_of(id).contains(&PokemonType::Grass)
+            && self.team_status_ability(id, "flowerveil"))
+            || ["clearbody", "whitesmoke", "fullmetalbody"]
+                .iter()
+                .any(|ability| self.has_ability(id, ability))
             || self
                 .rules(id)
                 .any(|rule| matches!(rule, Rule::BlockStatDrops))

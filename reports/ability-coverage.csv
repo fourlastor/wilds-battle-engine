@@ -164,7 +164,7 @@ id,ability,status,verification
 163,turboblaze,IMPLEMENTED,Source inventory; existing tests only
 164,teravolt,IMPLEMENTED,Source inventory; existing tests only
 165,aroma-veil,IMPLEMENTED,Source inventory; existing tests only
-166,flower-veil,PARTIAL,Source inventory; existing tests only
+166,flower-veil,IMPLEMENTED,ability_rules::flower_veil_protects_grass_teammate_stats_with_bypass_and_type_checks
 167,cheek-pouch,IMPLEMENTED,Source inventory; existing tests only
 168,protean,MISSING,No native battle behavior
 169,fur-coat,IMPLEMENTED,Source inventory; existing tests only
