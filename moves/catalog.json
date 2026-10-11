@@ -2603,6 +2603,17 @@
       "parameter_source": "https://pokeapi.co/api/v2/move/271/"
     },
     {
+      "id": 272,
+      "slug": "role-play",
+      "name": "Role Play",
+      "sheet_row": null,
+      "runtime_id": "role-play",
+      "file": "moves/role-play.lua",
+      "status": "implemented",
+      "limitations": [],
+      "parameter_source": "https://pokeapi.co/api/v2/move/272/"
+    },
+    {
       "id": 275,
       "slug": "ingrain",
       "name": "Ingrain",
@@ -7716,7 +7727,8 @@
       "psychic-terrain",
       "camouflage",
       "conversion",
-      "conversion-2"
+      "conversion-2",
+      "role-play"
     ]
   }
 }

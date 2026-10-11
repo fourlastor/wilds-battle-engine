@@ -191,6 +191,10 @@ pub(crate) enum HpAmount {
 #[derive(Clone, Debug, PartialEq)]
 pub(crate) enum ScriptOperation {
     MoveInfo(String),
+    CopyAbility {
+        who: ParticipantId,
+        from: ParticipantId,
+    },
     SwapSideEffects {
         names: Vec<String>,
     },
@@ -1358,6 +1362,10 @@ fn parse_op(name: &str, args: &[Value]) -> mlua::Result<ScriptOperation> {
         "give_item" => ScriptOperation::GiveItem {
             who: who(0)?,
             item: name_of(arg(1), "item")?,
+        },
+        "copy_ability" => ScriptOperation::CopyAbility {
+            who: who(0)?,
+            from: who(1)?,
         },
         "suppress_ability" => ScriptOperation::SuppressAbility { who: who(0)? },
         "set_payout_multiplier" => {

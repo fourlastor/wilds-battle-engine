@@ -5044,3 +5044,73 @@ fn conversion_two_fails_without_a_previous_move_and_excludes_existing_types() {
     turn(&mut b);
     assert_eq!(b.participants(Side::Allies)[0].types, [PokemonType::Ghost]);
 }
+
+#[test]
+fn role_play_copies_ability_and_rules_then_restores_them_on_withdrawal() {
+    use wilds_battle_engine::{Rule, Stat};
+    let mut user = mon("User", &["role-play"]);
+    user.hp = 400;
+    user.ability = Some("regenerator".into());
+    user.ability_rules = vec![Rule::BlockCritical];
+    let mut foe = mon("Foe", &["protect", "splash"]);
+    foe.ability = Some("intimidate".into());
+    foe.ability_rules = vec![Rule::IgnoreEvasionBoost];
+    foe.ability_bypassable = Some(false);
+    foe.substitute_hp = 50;
+    let mut b = Battle::with_rng(
+        Fixed(0.5),
+        [vec![user, mon("Bench", &["splash"])], vec![foe]],
+        MoveCatalog::builtin().unwrap(),
+    )
+    .unwrap();
+    b.set_active([vec![0], vec![0]]).unwrap();
+    turn(&mut b);
+    let user = &b.participants(Side::Allies)[0];
+    assert_eq!(user.ability.as_deref(), Some("intimidate"));
+    assert_eq!(user.hp, 400); // Changing away from Regenerator does not count as switching out.
+    assert_eq!(user.ability_rules, [Rule::IgnoreEvasionBoost]);
+    assert_eq!(user.ability_bypassable, Some(false));
+    assert_eq!(b.participants(Side::Foes)[0].stage(Stat::Attack), 0); // Substitute blocks Intimidate.
+    turn_with(&mut b, |p| {
+        if p.actor.side == Side::Allies {
+            p.choices
+                .iter()
+                .find(|c| matches!(c, Choice::Switch { .. }))
+                .unwrap()
+                .id()
+        } else {
+            choose_move(p, "splash", "splash")
+        }
+    });
+    let user = &b.participants(Side::Allies)[0];
+    assert_eq!(user.ability.as_deref(), Some("regenerator"));
+    assert_eq!(user.ability_rules, [Rule::BlockCritical]);
+    assert_eq!(user.ability_bypassable, None);
+    assert_eq!(user.hp, 400);
+}
+
+#[test]
+fn role_play_starts_intimidate_and_rejects_uncopyable_or_identical_abilities() {
+    use wilds_battle_engine::Stat;
+    for (own, other, copied) in [
+        ("pressure", "intimidate", true),
+        ("pressure", "wonder-guard", false),
+        ("multitype", "intimidate", false),
+        ("intimidate", "intimidate", false),
+    ] {
+        let mut user = mon("User", &["role-play"]);
+        user.ability = Some(own.into());
+        let mut foe = mon("Foe", &["splash"]);
+        foe.ability = Some(other.into());
+        let mut b = game(user, vec![foe], 0.5);
+        turn(&mut b);
+        assert_eq!(
+            b.participants(Side::Allies)[0].ability.as_deref(),
+            Some(if copied { other } else { own })
+        );
+        assert_eq!(b.participants(Side::Allies)[0].last_move_failed, !copied);
+        if copied {
+            assert_eq!(b.participants(Side::Foes)[0].stage(Stat::Attack), -1);
+        }
+    }
+}

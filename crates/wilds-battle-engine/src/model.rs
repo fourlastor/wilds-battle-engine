@@ -467,6 +467,13 @@ pub struct PokemonForm {
 }
 
 #[derive(Clone, Debug)]
+pub(crate) struct AbilityState {
+    pub id: Option<String>,
+    pub rules: Vec<Rule>,
+    pub bypassable: Option<bool>,
+}
+
+#[derive(Clone, Debug)]
 pub struct Pokemon {
     pub species_id: u32,
     pub form: Option<String>,
@@ -525,6 +532,7 @@ pub struct Pokemon {
     pub recyclable_item: Option<String>,
     /// Ability id. Supported mechanics query its active/suppressed state.
     pub ability: Option<String>,
+    pub(crate) original_ability: Option<AbilityState>,
     pub ability_suppressed: bool,
     /// Optional host-defined rules belonging to the ability, gated by suppression and bypass.
     pub ability_rules: Vec<Rule>,
@@ -612,6 +620,7 @@ impl Pokemon {
             last_consumed_item: None,
             recyclable_item: None,
             ability: None,
+            original_ability: None,
             ability_suppressed: false,
             ability_rules: Vec::new(),
             ability_bypassable: None,

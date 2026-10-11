@@ -27,6 +27,51 @@ fn cannot_suppress(ability: &str) -> bool {
 }
 
 impl Battle {
+    pub(crate) fn ability_state(&self, who: ParticipantId) -> crate::model::AbilityState {
+        let p = self.get(who);
+        crate::model::AbilityState {
+            id: p.ability.clone(),
+            rules: p.ability_rules.clone(),
+            bypassable: p.ability_bypassable,
+        }
+    }
+
+    pub(crate) fn replace_ability(
+        &mut self,
+        who: ParticipantId,
+        state: crate::model::AbilityState,
+        events: &mut Vec<BattleEvent>,
+    ) -> bool {
+        if self.get(who).hp == 0
+            || !self.is_active(who)
+            || self
+                .get(who)
+                .ability
+                .as_deref()
+                .is_some_and(|id| cannot_suppress(&item_key(id)))
+            || state
+                .id
+                .as_deref()
+                .is_none_or(|id| id.is_empty() || cannot_suppress(&item_key(id)))
+        {
+            return false;
+        }
+        let original = self.ability_state(who);
+        let pokemon = self.get_mut(who);
+        pokemon.original_ability.get_or_insert(original);
+        pokemon.ability = state.id;
+        pokemon.ability_rules = state.rules;
+        pokemon.ability_bypassable = state.bypassable;
+        pokemon.conditions.retain(|c| c.name != "flash_fire");
+        events.push(BattleEvent::Message(format!(
+            "{} acquired {}!",
+            pokemon.name,
+            pokemon.ability.as_deref().unwrap_or_default()
+        )));
+        self.ability_on_entry(who, events);
+        true
+    }
+
     pub(crate) fn ability_stage_delta(&self, who: ParticipantId, delta: i8) -> i8 {
         if self.has_ability(who, "contrary") {
             delta.saturating_neg()
@@ -364,5 +409,120 @@ impl Battle {
             factor *= 1.5;
         }
         factor
+    }
+}
+
+pub(crate) fn ability_flag(ability: &str, flag: &str) -> bool {
+    match flag {
+        "cantsuppress" => cannot_suppress(ability),
+        "failroleplay" => matches!(
+            ability,
+            "asoneglastrier"
+                | "asonespectrier"
+                | "battlebond"
+                | "comatose"
+                | "commander"
+                | "disguise"
+                | "embodyaspectcornerstone"
+                | "embodyaspecthearthflame"
+                | "embodyaspectteal"
+                | "embodyaspectwellspring"
+                | "flowergift"
+                | "forecast"
+                | "hungerswitch"
+                | "iceface"
+                | "illusion"
+                | "imposter"
+                | "multitype"
+                | "neutralizinggas"
+                | "poisonpuppeteer"
+                | "powerconstruct"
+                | "powerofalchemy"
+                | "protosynthesis"
+                | "quarkdrive"
+                | "receiver"
+                | "rkssystem"
+                | "schooling"
+                | "shieldsdown"
+                | "stancechange"
+                | "teraformzero"
+                | "terashell"
+                | "terashift"
+                | "trace"
+                | "wonderguard"
+                | "zenmode"
+                | "zerotohero"
+        ),
+        "failskillswap" => matches!(
+            ability,
+            "asoneglastrier"
+                | "asonespectrier"
+                | "battlebond"
+                | "comatose"
+                | "commander"
+                | "disguise"
+                | "embodyaspectcornerstone"
+                | "embodyaspecthearthflame"
+                | "embodyaspectteal"
+                | "embodyaspectwellspring"
+                | "hungerswitch"
+                | "iceface"
+                | "illusion"
+                | "multitype"
+                | "neutralizinggas"
+                | "poisonpuppeteer"
+                | "powerconstruct"
+                | "protosynthesis"
+                | "quarkdrive"
+                | "rkssystem"
+                | "schooling"
+                | "shieldsdown"
+                | "stancechange"
+                | "teraformzero"
+                | "terashell"
+                | "terashift"
+                | "wonderguard"
+                | "zenmode"
+                | "zerotohero"
+        ),
+        "noentrain" => matches!(
+            ability,
+            "asoneglastrier"
+                | "asonespectrier"
+                | "battlebond"
+                | "comatose"
+                | "commander"
+                | "disguise"
+                | "embodyaspectcornerstone"
+                | "embodyaspecthearthflame"
+                | "embodyaspectteal"
+                | "embodyaspectwellspring"
+                | "flowergift"
+                | "forecast"
+                | "hungerswitch"
+                | "iceface"
+                | "illusion"
+                | "imposter"
+                | "multitype"
+                | "neutralizinggas"
+                | "poisonpuppeteer"
+                | "powerconstruct"
+                | "powerofalchemy"
+                | "protosynthesis"
+                | "quarkdrive"
+                | "receiver"
+                | "rkssystem"
+                | "schooling"
+                | "shieldsdown"
+                | "stancechange"
+                | "teraformzero"
+                | "terashell"
+                | "terashift"
+                | "trace"
+                | "wonderguard"
+                | "zenmode"
+                | "zerotohero"
+        ),
+        _ => false,
     }
 }

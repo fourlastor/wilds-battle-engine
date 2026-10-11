@@ -123,6 +123,11 @@ impl Battle {
         outgoing.semi_invulnerable = false;
         outgoing.recharging = false;
         outgoing.ability_suppressed = false;
+        if let Some(original) = outgoing.original_ability.take() {
+            outgoing.ability = original.id;
+            outgoing.ability_rules = original.rules;
+            outgoing.ability_bypassable = original.bypassable;
+        }
         outgoing.last_hit = None;
         outgoing.damage_taken = 0;
         outgoing.hurt_this_turn = false;

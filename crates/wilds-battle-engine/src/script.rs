@@ -203,6 +203,18 @@ impl Battle {
                 pokemon.ability.as_deref()
             },
         )?;
+        let ability_id = pokemon.ability.as_deref().map(crate::items::item_key);
+        table.raw_set("ability_id", ability_id.as_deref())?;
+        let flags = lua.create_table()?;
+        for flag in ["cantsuppress", "failroleplay", "failskillswap", "noentrain"] {
+            flags.raw_set(
+                flag,
+                ability_id
+                    .as_deref()
+                    .is_some_and(|id| crate::abilities::ability_flag(id, flag)),
+            )?;
+        }
+        table.raw_set("ability_flags", flags)?;
         table.raw_set("happiness", pokemon.happiness)?;
         match pokemon.ivs {
             Some(ivs) => {
@@ -1275,7 +1287,8 @@ impl Battle {
         // Keep protection through the secondary effects of the hit that broke the
         // substitute. Indirect HP loss and field/side effects do not hit the doll.
         let blocked = match &operation {
-            ScriptOperation::ApplyStatus { who, .. }
+            ScriptOperation::CopyAbility { who, .. }
+            | ScriptOperation::ApplyStatus { who, .. }
             | ScriptOperation::Confuse { who, .. }
             | ScriptOperation::Flinch { who, .. }
             | ScriptOperation::Bind { who, .. }
@@ -1929,6 +1942,10 @@ impl Battle {
                     self.get_mut(who).item = Some(item);
                 }
                 Value::Boolean(free)
+            }
+            ScriptOperation::CopyAbility { who, from } => {
+                let state = self.ability_state(from);
+                Value::Boolean(self.replace_ability(who, state, events))
             }
             ScriptOperation::SuppressAbility { who } => {
                 Value::Boolean(self.suppress_ability(who, events))

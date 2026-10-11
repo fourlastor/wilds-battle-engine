@@ -1,9 +1,9 @@
 # Wilds battle engine
 
 `wilds-battle-engine` is the Rust battle simulation. Move definitions are loaded
-from Lua; `MoveCatalog::builtin()` embeds the 712 files under `moves/`,
+from Lua; `MoveCatalog::builtin()` embeds the 713 files under `moves/`,
 and `MoveCatalog::from_directory(path)` reads them from disk at runtime.
-Both catalogs also include the system move Struggle, for 713 moves in total.
+Both catalogs also include the system move Struggle, for 714 moves in total.
 The [move catalog](moves/README.md) includes 538 entries from the Saved moves sheet,
 plus support moves, additional local JSON moves and the original moves outside the sheet. Its manifest
 records the 34 excluded Z/Max Moves. Files use canonical slugs and source display
@@ -399,6 +399,11 @@ Ability-owned rules are separate from ordinary conditions: Rust hosts can set
 these definitions. `ability_bypassable` overrides the standard bypass metadata
 for a host-defined ability. Rules stop when the ability is suppressed; a move
 flagged `ignore_ability` bypasses eligible target abilities only for that move.
+Lua `who.ability_id` reads the stored, normalized ability even when suppressed;
+`who.ability_flags` exposes copy/replacement restrictions. `ctx:copy_ability(to, from)`
+transfers the ability together with its host-defined rules and bypass metadata.
+Temporary changes restore the original state on withdrawal and activate entry effects
+without running switch-out recovery.
 Mold Breaker, Teravolt and Turboblaze use the same gate. End-of-turn rules become
 active again after temporary bypass ends.
 
