@@ -2681,3 +2681,42 @@ fn steely_spirit_boosts_steel_for_holder_and_allies_and_stacks() {
         team_boost_damage("steely-spirit", "tackle", 0, false)
     );
 }
+
+fn aura_damage(
+    move_id: &str,
+    attacker_ability: &str,
+    defender_ability: &str,
+    partner_ability: &str,
+) -> u16 {
+    let mut user = mon("User", &[move_id]);
+    user.ability = Some(attacker_ability.into());
+    let mut target = mon("Target", &["splash"]);
+    target.ability = Some(defender_ability.into());
+    let mut partner = mon("Partner", &["splash"]);
+    partner.ability = Some(partner_ability.into());
+    let mut battle = Battle::with_rng(
+        Fixed(0.5),
+        [vec![user], vec![target, partner]],
+        MoveCatalog::builtin().unwrap(),
+    )
+    .unwrap();
+    turn(&mut battle, move_id, "splash");
+    1000 - foe(&battle).hp
+}
+
+fn check_aura(ability: &str, move_id: &str) {
+    let base = aura_damage(move_id, "", "", "");
+    let boosted = aura_damage(move_id, "", ability, "");
+    assert!((f32::from(boosted) - f32::from(base) * (4.0 / 3.0)).abs() <= 3.0);
+    assert_eq!(aura_damage(move_id, ability, "", ""), boosted);
+    assert_eq!(aura_damage(move_id, ability, ability, ability), boosted);
+    assert_eq!(
+        aura_damage("tackle", "", ability, ""),
+        aura_damage("tackle", "", "", "")
+    );
+}
+
+#[test]
+fn dark_aura_boosts_both_sides_without_stacking() {
+    check_aura("dark-aura", "dark-pulse");
+}

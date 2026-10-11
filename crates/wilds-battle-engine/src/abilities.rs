@@ -989,6 +989,14 @@ impl Battle {
         attack: &crate::engine::Attack,
     ) -> f32 {
         let mut factor = 1.0;
+        if attack.move_type == crate::model::PokemonType::Dark
+            && self
+                .actors()
+                .into_iter()
+                .any(|who| self.has_ability(who, "darkaura"))
+        {
+            factor *= 5448.0 / 4096.0;
+        }
         for ally in self.actors() {
             if ally.side != actor.side {
                 continue;
