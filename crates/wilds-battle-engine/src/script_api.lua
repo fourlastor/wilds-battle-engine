@@ -164,6 +164,7 @@ return function(api, fields, roster)
   function ctx:force_switch(who) return op("force_switch", who) end
   function ctx:change_form(who, form) return op("change_form", who, form) end
   function ctx:restore_form(who) return op("restore_form", who) end
+  function ctx:add_type(who, kind) return op("add_type", who, kind) end
   function ctx:set_types(who, types) return op("set_types", who, types) end
   function ctx:set_weight(who, kilograms) return op("set_weight", who, kilograms) end
   function ctx:reduce_pp(who, move_id, amount) return op("reduce_pp", who, move_id, amount) end

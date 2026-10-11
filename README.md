@@ -1,9 +1,9 @@
 # Wilds battle engine
 
 `wilds-battle-engine` is the Rust battle simulation. Move definitions are loaded
-from Lua; `MoveCatalog::builtin()` embeds the 659 files under `moves/`,
+from Lua; `MoveCatalog::builtin()` embeds the 660 files under `moves/`,
 and `MoveCatalog::from_directory(path)` reads them from disk at runtime.
-Both catalogs also include the system move Struggle, for 660 moves in total.
+Both catalogs also include the system move Struggle, for 661 moves in total.
 The [move catalog](moves/README.md) includes 538 entries from the Saved moves sheet,
 plus support moves, additional local JSON moves and the original moves outside the sheet. Its manifest
 records the 34 excluded Z/Max Moves. Files use canonical slugs and source display
@@ -388,6 +388,10 @@ before suppression resets. Fainted Pokémon do not activate these effects.
 
 Contrary reverses stage changes and Simple doubles them before stage caps and
 external stat-drop protection. Suppression and eligible ability bypass apply.
+Lua `who.types` includes the current added type, while `who.base_types` and
+`who.added_type` expose the two parts. `ctx:add_type(who, type)` replaces an existing
+added type; `ctx:set_types(who, types)`, form changes and switching clear it.
+
 Lua `who.raw_stats[Stat.Attack]` (and the other combat stats) reads the host-computed
 stat before stages and modifiers. `ctx:set_raw_stat(who, stat, value)` changes it
 until withdrawal, when the original host data is restored.

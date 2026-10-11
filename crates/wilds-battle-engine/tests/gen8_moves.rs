@@ -2442,3 +2442,53 @@ fn magic_powder_cannot_change_a_grass_targets_type() {
     );
     assert!(b.participants(Side::Allies)[0].last_move_failed);
 }
+
+#[test]
+fn trick_or_treat_adds_ghost_without_erasing_base_types_and_blocks_normal_damage() {
+    let mut foe = mon("Foe", &["splash"]);
+    foe.types = vec![PokemonType::Fire, PokemonType::Flying];
+    foe.species_id = 493;
+    let mut b = game(
+        mon("User", &["trick-or-treat", "tackle", "soak"]),
+        vec![foe],
+        0.5,
+    );
+    turn_with(&mut b, |p| choose_move(p, "trick-or-treat", "splash"));
+    let foe = &b.participants(Side::Foes)[0];
+    assert_eq!(foe.types, vec![PokemonType::Fire, PokemonType::Flying]);
+    assert_eq!(foe.added_type, Some(PokemonType::Ghost));
+    turn_with(&mut b, |p| choose_move(p, "tackle", "splash"));
+    assert_eq!(b.participants(Side::Foes)[0].hp, 1000);
+    turn_with(&mut b, |p| choose_move(p, "trick-or-treat", "splash"));
+    assert!(b.participants(Side::Allies)[0].last_move_failed);
+}
+
+#[test]
+fn trick_or_treat_respects_protect_and_substitute_and_soak_clears_added_type() {
+    for (response, sub, lands) in [
+        ("splash", 0, true),
+        ("protect", 0, false),
+        ("splash", 50, false),
+    ] {
+        let mut foe = mon("Foe", &[response]);
+        foe.substitute_hp = sub;
+        let mut b = game(mon("User", &["trick-or-treat", "soak"]), vec![foe], 0.5);
+        turn(&mut b);
+        assert_eq!(
+            b.participants(Side::Foes)[0].added_type,
+            if lands {
+                Some(PokemonType::Ghost)
+            } else {
+                None
+            }
+        );
+        if lands {
+            turn_with(&mut b, |p| choose_move(p, "soak", "splash"));
+            assert_eq!(
+                b.participants(Side::Foes)[0].types,
+                vec![PokemonType::Water]
+            );
+            assert_eq!(b.participants(Side::Foes)[0].added_type, None);
+        }
+    }
+}

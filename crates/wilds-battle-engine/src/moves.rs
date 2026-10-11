@@ -354,6 +354,10 @@ pub(crate) enum ScriptOperation {
     RestoreForm {
         who: ParticipantId,
     },
+    AddType {
+        who: ParticipantId,
+        kind: PokemonType,
+    },
     SetTypes {
         who: ParticipantId,
         types: Vec<PokemonType>,
@@ -1130,6 +1134,10 @@ fn parse_op(name: &str, args: &[Value]) -> mlua::Result<ScriptOperation> {
             form: name_of(arg(1), "form")?,
         },
         "restore_form" => ScriptOperation::RestoreForm { who: who(0)? },
+        "add_type" => ScriptOperation::AddType {
+            who: who(0)?,
+            kind: type_of(arg(1), "add_type")?,
+        },
         "set_types" => {
             let Value::Table(list) = arg(1) else {
                 return Err(bad("set_types requires a list of Type values"));

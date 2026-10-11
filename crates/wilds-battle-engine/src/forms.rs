@@ -21,6 +21,7 @@ impl PokemonForm {
         pokemon.sp_defense = self.sp_defense;
         pokemon.speed = self.speed;
         pokemon.types.clone_from(&self.types);
+        pokemon.added_type = None;
         pokemon.weight = self.weight;
     }
 }

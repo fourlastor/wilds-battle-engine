@@ -392,6 +392,8 @@ pub struct Pokemon {
     pub sp_defense: u16,
     pub speed: u16,
     pub types: Vec<PokemonType>,
+    /// Additional type from Trick-or-Treat or Forest's Curse; a new added type replaces it.
+    pub added_type: Option<PokemonType>,
     pub moves: Vec<String>,
     pub move_pp: BTreeMap<String, u8>,
     pub status: Option<Status>,
@@ -481,6 +483,7 @@ impl Pokemon {
             sp_defense: 100,
             speed: 100,
             types: vec![PokemonType::Normal],
+            added_type: None,
             moves,
             move_pp: BTreeMap::new(),
             status: None,

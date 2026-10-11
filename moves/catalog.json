@@ -5002,6 +5002,17 @@
       "limitations": []
     },
     {
+      "id": 567,
+      "slug": "trick-or-treat",
+      "name": "Trick-or-Treat",
+      "sheet_row": null,
+      "runtime_id": "trick-or-treat",
+      "file": "moves/trick-or-treat.lua",
+      "status": "implemented",
+      "limitations": [],
+      "parameter_source": "https://pokeapi.co/api/v2/move/567/"
+    },
+    {
       "id": 568,
       "slug": "noble-roar",
       "name": "Noble Roar",
@@ -7080,7 +7091,8 @@
       "strength-sap",
       "power-trick",
       "soak",
-      "magic-powder"
+      "magic-powder",
+      "trick-or-treat"
     ]
   }
 }

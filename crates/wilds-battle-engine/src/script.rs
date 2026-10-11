@@ -138,6 +138,18 @@ impl Battle {
             types.raw_push(symbol(lua, "Type", &format!("{kind:?}"))?)?;
         }
         table.raw_set("types", types)?;
+        let base_types = lua.create_table()?;
+        for kind in &pokemon.types {
+            base_types.raw_push(symbol(lua, "Type", &format!("{kind:?}"))?)?;
+        }
+        table.raw_set("base_types", base_types)?;
+        table.raw_set(
+            "added_type",
+            match pokemon.added_type {
+                Some(kind) => symbol(lua, "Type", &format!("{kind:?}"))?,
+                None => Value::Nil,
+            },
+        )?;
         let stages = lua.create_table()?;
         for stat in [
             Stat::Attack,
@@ -1224,6 +1236,7 @@ impl Battle {
             | ScriptOperation::ReducePp { who, .. }
             | ScriptOperation::Heal { who, .. } => Some((*who, Value::Integer(0))),
             ScriptOperation::ResetStats { who }
+            | ScriptOperation::AddType { who, .. }
             | ScriptOperation::SetTypes { who, .. }
             | ScriptOperation::SetWeight { who, .. }
             | ScriptOperation::Unhide { who }
@@ -1735,8 +1748,13 @@ impl Battle {
                 Value::Boolean(self.change_form(who, &form, events))
             }
             ScriptOperation::RestoreForm { who } => Value::Boolean(self.restore_form(who, events)),
+            ScriptOperation::AddType { who, kind } => {
+                self.get_mut(who).added_type = Some(kind);
+                Value::Nil
+            }
             ScriptOperation::SetTypes { who, types } => {
                 self.get_mut(who).types = types;
+                self.get_mut(who).added_type = None;
                 Value::Nil
             }
             ScriptOperation::SetWeight { who, weight } => {
