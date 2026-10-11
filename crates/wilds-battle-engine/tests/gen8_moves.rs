@@ -5114,3 +5114,47 @@ fn role_play_starts_intimidate_and_rejects_uncopyable_or_identical_abilities() {
         }
     }
 }
+
+#[test]
+fn worry_seed_wakes_the_target_and_prevents_it_from_using_rest() {
+    use wilds_battle_engine::Status;
+    let mut user = mon("User", &["worry-seed", "splash"]);
+    user.speed = 200;
+    let mut foe = mon("Foe", &["splash", "rest"]);
+    foe.hp = 500;
+    foe.status = Some(Status::Asleep);
+    foe.status_turns = 4;
+    foe.ability = Some("pressure".into());
+    let mut b = game(user, vec![foe], 0.5);
+    turn(&mut b);
+    assert_eq!(
+        b.participants(Side::Foes)[0].ability.as_deref(),
+        Some("insomnia")
+    );
+    assert_eq!(b.participants(Side::Foes)[0].status, None);
+    turn_with(&mut b, |p| choose_move(p, "splash", "rest"));
+    assert_eq!(b.participants(Side::Foes)[0].hp, 500);
+    assert!(b.participants(Side::Foes)[0].last_move_failed);
+}
+
+#[test]
+fn worry_seed_respects_protection_substitute_and_ability_exceptions() {
+    for (ability, response, sub) in [
+        ("truant", "splash", 0),
+        ("multitype", "splash", 0),
+        ("insomnia", "splash", 0),
+        ("pressure", "protect", 0),
+        ("pressure", "splash", 50),
+    ] {
+        let mut foe = mon("Foe", &[response]);
+        foe.ability = Some(ability.into());
+        foe.substitute_hp = sub;
+        let mut b = game(mon("User", &["worry-seed"]), vec![foe], 0.5);
+        turn(&mut b);
+        assert_eq!(
+            b.participants(Side::Foes)[0].ability.as_deref(),
+            Some(ability)
+        );
+        assert!(b.participants(Side::Allies)[0].last_move_failed);
+    }
+}

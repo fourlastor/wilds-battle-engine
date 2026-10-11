@@ -93,6 +93,9 @@ impl Battle {
     }
 
     pub(crate) fn ability_on_entry(&mut self, who: ParticipantId, events: &mut Vec<BattleEvent>) {
+        if self.has_ability(who, "insomnia") || self.has_ability(who, "vitalspirit") {
+            self.cure_status(who, Some(crate::model::Status::Asleep), events);
+        }
         if !self.has_ability(who, "intimidate") {
             return;
         }

@@ -181,6 +181,7 @@ return function(api, fields, roster)
   function ctx:consume_item(who) return op("consume_item", who) end
   function ctx:take_item(who) return op("take_item", who) end
   function ctx:give_item(who, item) return op("give_item", who, item) end
+  function ctx:set_ability(who, ability) return op("set_ability", who, ability) end
   function ctx:copy_ability(who, from) return op("copy_ability", who, from) end
   function ctx:suppress_ability(who) return op("suppress_ability", who) end
 

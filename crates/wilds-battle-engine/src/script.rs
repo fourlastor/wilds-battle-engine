@@ -1287,7 +1287,8 @@ impl Battle {
         // Keep protection through the secondary effects of the hit that broke the
         // substitute. Indirect HP loss and field/side effects do not hit the doll.
         let blocked = match &operation {
-            ScriptOperation::CopyAbility { who, .. }
+            ScriptOperation::SetAbility { who, .. }
+            | ScriptOperation::CopyAbility { who, .. }
             | ScriptOperation::ApplyStatus { who, .. }
             | ScriptOperation::Confuse { who, .. }
             | ScriptOperation::Flinch { who, .. }
@@ -1942,6 +1943,14 @@ impl Battle {
                     self.get_mut(who).item = Some(item);
                 }
                 Value::Boolean(free)
+            }
+            ScriptOperation::SetAbility { who, ability } => {
+                let state = crate::model::AbilityState {
+                    id: Some(ability),
+                    rules: Vec::new(),
+                    bypassable: None,
+                };
+                Value::Boolean(self.replace_ability(who, state, events))
             }
             ScriptOperation::CopyAbility { who, from } => {
                 let state = self.ability_state(from);

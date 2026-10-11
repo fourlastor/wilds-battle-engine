@@ -3678,6 +3678,17 @@
       "limitations": []
     },
     {
+      "id": 388,
+      "slug": "worry-seed",
+      "name": "Worry Seed",
+      "sheet_row": null,
+      "runtime_id": "worry-seed",
+      "file": "moves/worry-seed.lua",
+      "status": "implemented",
+      "limitations": [],
+      "parameter_source": "https://pokeapi.co/api/v2/move/388/"
+    },
+    {
       "id": 389,
       "slug": "sucker-punch",
       "name": "Sucker Punch",
@@ -7728,7 +7739,8 @@
       "camouflage",
       "conversion",
       "conversion-2",
-      "role-play"
+      "role-play",
+      "worry-seed"
     ]
   }
 }
