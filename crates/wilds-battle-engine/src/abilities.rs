@@ -138,7 +138,7 @@ impl Battle {
             {
                 self.change_stat(actor, crate::model::Stat::Attack, 1, events);
             }
-            if self.has_ability(actor, "asonespectrier") {
+            if self.has_ability(actor, "asonespectrier") || self.has_ability(actor, "grimneigh") {
                 self.change_stat(actor, crate::model::Stat::SpAttack, 1, events);
             }
         }

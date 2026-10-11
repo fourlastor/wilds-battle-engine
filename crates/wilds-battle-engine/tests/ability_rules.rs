@@ -733,3 +733,8 @@ fn as_one_spectrier_gains_sp_attack_after_all_spread_hits_resolve() {
 fn chillingneigh_rewards_move_knockouts() {
     check_knockout_boost("chilling-neigh", wilds_battle_engine::Stat::Attack);
 }
+
+#[test]
+fn grimneigh_rewards_move_knockouts() {
+    check_knockout_boost("grim-neigh", wilds_battle_engine::Stat::SpAttack);
+}

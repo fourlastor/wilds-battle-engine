@@ -263,6 +263,6 @@ id,ability,status,verification
 262,transistor,MISSING,No native battle behavior
 263,dragons-maw,MISSING,No native battle behavior
 264,chilling-neigh,IMPLEMENTED,ability_rules::chillingneigh_rewards_move_knockouts
-265,grim-neigh,MISSING,No native battle behavior
+265,grim-neigh,IMPLEMENTED,ability_rules::grimneigh_rewards_move_knockouts
 266,as-one-glastrier,IMPLEMENTED,ability_rules::as_one_glastrier_gains_attack_for_each_move_knockout
 267,as-one-spectrier,IMPLEMENTED,ability_rules::as_one_spectrier_gains_sp_attack_after_all_spread_hits_resolve
