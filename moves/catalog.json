@@ -5435,6 +5435,17 @@
       "limitations": []
     },
     {
+      "id": 561,
+      "slug": "mat-block",
+      "name": "Mat Block",
+      "sheet_row": null,
+      "runtime_id": "mat-block",
+      "file": "moves/mat-block.lua",
+      "status": "implemented",
+      "limitations": [],
+      "parameter_source": "https://pokeapi.co/api/v2/move/561/"
+    },
+    {
       "id": 562,
       "slug": "belch",
       "name": "Belch",
@@ -7812,7 +7823,8 @@
       "skill-swap",
       "wide-guard",
       "quick-guard",
-      "crafty-shield"
+      "crafty-shield",
+      "mat-block"
     ]
   }
 }

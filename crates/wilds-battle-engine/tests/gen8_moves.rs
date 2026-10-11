@@ -5381,3 +5381,28 @@ fn crafty_shield_blocks_status_including_protect_bypassing_moves_but_allows_dama
     assert_eq!(b.participants(Side::Allies)[0].hp, hp);
     assert!(!b.participants(Side::Allies)[0].last_move_failed);
 }
+
+#[test]
+fn mat_block_protects_teammates_from_damage_only_on_the_first_turn() {
+    use wilds_battle_engine::Stat;
+    for attack in ["pound", "growl"] {
+        let mut user = mon("User", &["mat-block"]);
+        user.speed = 200;
+        let ally = mon("Ally", &["splash"]);
+        let mut b = Battle::with_rng(
+            Fixed(0.5),
+            [vec![user, ally], vec![mon("Foe", &[attack])]],
+            MoveCatalog::builtin().unwrap(),
+        )
+        .unwrap();
+        turn(&mut b);
+        assert_eq!(b.participants(Side::Allies)[0].hp, 1000);
+        assert_eq!(
+            b.participants(Side::Allies)[0].stage(Stat::Attack),
+            if attack == "growl" { -1 } else { 0 }
+        );
+        turn(&mut b);
+        assert!(b.participants(Side::Allies)[0].last_move_failed);
+        assert_eq!(b.participants(Side::Allies)[0].hp < 1000, attack == "pound");
+    }
+}
