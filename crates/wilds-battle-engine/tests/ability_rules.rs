@@ -1577,3 +1577,39 @@ fn curious_medicine_resets_only_active_teammates() {
     assert_eq!(battle.participants(Side::Allies)[2].stage(Stat::Attack), 3);
     assert_eq!(foe(&battle).stage(Stat::Defense), -2);
 }
+
+#[test]
+fn screen_cleaner_removes_both_sides_screens_but_preserves_mist() {
+    let lead = mon("Lead", &["hail", "aurora-veil", "reflect"]);
+    let mut reserve = mon("Reserve", &["splash"]);
+    reserve.ability = Some("screen-cleaner".into());
+    let target = mon("Target", &["splash", "light-screen", "mist"]);
+    let mut battle = Battle::with_rng(
+        Fixed(0.5),
+        [vec![lead, reserve], vec![target]],
+        MoveCatalog::builtin().unwrap(),
+    )
+    .unwrap();
+    battle.set_active([vec![0], vec![0]]).unwrap();
+    turn(&mut battle, "hail", "splash");
+    turn(&mut battle, "aurora-veil", "light-screen");
+    turn(&mut battle, "reflect", "mist");
+    assert_eq!(battle.side_conditions(Side::Allies).len(), 2);
+    turn(&mut battle, "switch:1", "splash");
+    for side in [Side::Allies, Side::Foes] {
+        assert!(
+            !battle.side_conditions(side).iter().any(|c| [
+                "reflect",
+                "light_screen",
+                "aurora_veil"
+            ]
+            .contains(&c.name.as_str()))
+        );
+    }
+    assert!(
+        battle
+            .side_conditions(Side::Foes)
+            .iter()
+            .any(|c| c.name == "mist")
+    );
+}

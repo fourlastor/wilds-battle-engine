@@ -210,6 +210,19 @@ impl Battle {
     }
 
     pub(crate) fn ability_on_entry(&mut self, who: ParticipantId, events: &mut Vec<BattleEvent>) {
+        if self.has_ability(who, "screencleaner") {
+            let mut cleared = false;
+            for side in [crate::model::Side::Allies, crate::model::Side::Foes] {
+                for screen in ["reflect", "light_screen", "aurora_veil"] {
+                    cleared |= self.end_condition(crate::model::Scope::Side(side), screen);
+                }
+            }
+            if cleared {
+                events.push(BattleEvent::Message(
+                    "Screen Cleaner removed the screens!".into(),
+                ));
+            }
+        }
         if self.has_ability(who, "curiousmedicine") {
             for ally in self.actors() {
                 if ally != who && ally.side == who.side && !self.get(ally).stages.is_empty() {

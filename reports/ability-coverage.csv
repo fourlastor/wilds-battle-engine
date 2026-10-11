@@ -249,7 +249,7 @@ id,ability,status,verification
 248,ice-face,MISSING,No native battle behavior
 249,power-spot,MISSING,No native battle behavior
 250,mimicry,MISSING,No native battle behavior
-251,screen-cleaner,MISSING,No native battle behavior
+251,screen-cleaner,IMPLEMENTED,ability_rules::screen_cleaner_removes_both_sides_screens_but_preserves_mist
 252,steely-spirit,MISSING,No native battle behavior
 253,perish-body,MISSING,No native battle behavior
 254,wandering-spirit,MISSING,No native battle behavior
