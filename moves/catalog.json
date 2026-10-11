@@ -5800,6 +5800,17 @@
       "limitations": []
     },
     {
+      "id": 596,
+      "slug": "spiky-shield",
+      "name": "Spiky Shield",
+      "sheet_row": null,
+      "runtime_id": "spiky-shield",
+      "file": "moves/spiky-shield.lua",
+      "status": "implemented",
+      "limitations": [],
+      "parameter_source": "https://pokeapi.co/api/v2/move/596/"
+    },
+    {
       "id": 597,
       "slug": "aromatic-mist",
       "name": "Aromatic Mist",
@@ -7848,7 +7859,8 @@
       "crafty-shield",
       "mat-block",
       "kings-shield",
-      "obstruct"
+      "obstruct",
+      "spiky-shield"
     ]
   }
 }

@@ -161,6 +161,7 @@ pub enum Rule {
         status_only: bool,
         unbypassable: bool,
         contact_stat: Option<(Stat, i8)>,
+        contact_damage: f32,
     },
     /// Blocks opposing moves with positive priority, optionally only for grounded holders.
     BlockPriority {

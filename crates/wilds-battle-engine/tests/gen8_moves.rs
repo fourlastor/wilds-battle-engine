@@ -5481,3 +5481,42 @@ fn obstruct_blocks_damage_lowers_contact_defense_and_allows_status_moves() {
     turn(&mut b);
     assert!(b.participants(Side::Allies)[0].last_move_failed);
 }
+
+#[test]
+fn spiky_shield_hurts_contact_attackers_once_and_blocks_status_moves() {
+    use wilds_battle_engine::Stat;
+    for (attack, ability, damage) in [
+        ("pound", None, 125),
+        ("double_kick", None, 125),
+        ("water-gun", None, 0),
+        ("pound", Some("magic-guard"), 0),
+        ("pound", Some("long-reach"), 0),
+        ("growl", None, 0),
+    ] {
+        let mut foe = mon("Foe", &[attack]);
+        foe.ability = ability.map(str::to_owned);
+        foe.substitute_hp = 50;
+        let mut b = game(mon("User", &["spiky-shield"]), vec![foe], 0.5);
+        turn(&mut b);
+        assert_eq!(b.participants(Side::Allies)[0].hp, 1000);
+        assert_eq!(b.participants(Side::Allies)[0].stage(Stat::Attack), 0);
+        assert_eq!(b.participants(Side::Foes)[0].hp, 1000 - damage);
+        assert_eq!(b.participants(Side::Foes)[0].substitute_hp, 50);
+    }
+}
+
+#[test]
+fn wide_guard_takes_precedence_over_spiky_shields_contact_reaction() {
+    let user = mon("Spiky", &["spiky-shield"]);
+    let ally = mon("Wide", &["wide-guard"]);
+    let foe = mon("Foe", &["breaking-swipe"]);
+    let mut b = Battle::with_rng(
+        Fixed(0.5),
+        [vec![user, ally], vec![foe]],
+        MoveCatalog::builtin().unwrap(),
+    )
+    .unwrap();
+    turn(&mut b);
+    assert!(b.participants(Side::Allies).iter().all(|p| p.hp == 1000));
+    assert_eq!(b.participants(Side::Foes)[0].hp, 1000);
+}

@@ -447,7 +447,11 @@ impl Battle {
         options: &crate::moves::HitOptions,
         events: &mut Vec<BattleEvent>,
     ) -> bool {
-        let Some(Rule::Guard { contact_stat, .. }) = self
+        let Some(Rule::Guard {
+            contact_stat,
+            contact_damage,
+            ..
+        }) = self
             .matching_guard(actor, target, spec, options.ignore_protect)
             .cloned()
         else {
@@ -455,9 +459,15 @@ impl Battle {
         };
         if options.contact.unwrap_or(spec.has_flag("contact"))
             && !self.has_ability(actor, "longreach")
-            && let Some((stat, stages)) = contact_stat
         {
-            self.change_stat_from(target, actor, stat, stages, events);
+            if let Some((stat, stages)) = contact_stat {
+                self.change_stat_from(target, actor, stat, stages, events);
+            }
+            if contact_damage > 0.0 && !self.has_ability(actor, "magicguard") {
+                let amount =
+                    ((f32::from(self.get(actor).max_hp) * contact_damage).floor() as u16).max(1);
+                self.damage(actor, amount, events);
+            }
         }
         true
     }

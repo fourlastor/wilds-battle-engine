@@ -852,6 +852,7 @@ fn rule_of(value: &Value) -> mlua::Result<Rule> {
             "unbypassable",
             "contact_stat",
             "contact_stages",
+            "contact_damage",
         ],
         RuleKind::StatEachTurn => &["kind", "stat", "stages", "by"],
         RuleKind::StatusOnExpiry => &["kind", "status", "by"],
@@ -1002,6 +1003,7 @@ fn rule_of(value: &Value) -> mlua::Result<Rule> {
             damaging_only: options.flag("damaging_only")?,
             status_only: options.flag("status_only")?,
             unbypassable: options.flag("unbypassable")?,
+            contact_damage: options.fraction("contact_damage")?.unwrap_or(0.0),
             contact_stat: options
                 .get("contact_stat")?
                 .map(|value| -> mlua::Result<_> {
