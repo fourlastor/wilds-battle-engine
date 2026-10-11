@@ -2101,3 +2101,34 @@ fn corrosive_gas_removes_adjacent_items_but_respects_protect_and_sticky_hold() {
     assert!(b.participants(Side::Foes)[0].item.is_some());
     assert!(b.participants(Side::Allies)[0].last_move_failed);
 }
+
+#[test]
+fn teatime_forces_existing_berries_to_be_eaten_through_protect_and_substitute() {
+    let mut user = mon("User", &["teatime"]);
+    user.hp = 900;
+    user.item = Some("oran-berry".into());
+    let mut foe = mon("Foe", &["protect"]);
+    foe.hp = 900;
+    foe.item = Some("sitrus-berry".into());
+    foe.substitute_hp = 50;
+    let mut other = mon("Other", &["splash"]);
+    other.item = Some("power-herb".into());
+    let mut b = game(user, vec![foe, other], 0.5);
+    turn(&mut b);
+    assert_eq!(b.participants(Side::Allies)[0].hp, 910);
+    assert!(b.participants(Side::Allies)[0].item.is_none());
+    assert_eq!(b.participants(Side::Foes)[0].hp, 1000);
+    assert!(b.participants(Side::Foes)[0].item.is_none());
+    assert!(b.participants(Side::Foes)[1].item.is_some());
+}
+
+#[test]
+fn teatime_without_berries_is_not_a_stomping_tantrum_failure() {
+    let mut b = game(
+        mon("User", &["teatime"]),
+        vec![mon("Foe", &["splash"])],
+        0.5,
+    );
+    turn(&mut b);
+    assert!(!b.participants(Side::Allies)[0].last_move_failed);
+}

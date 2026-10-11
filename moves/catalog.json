@@ -6055,6 +6055,17 @@
       "limitations": []
     },
     {
+      "id": 752,
+      "slug": "teatime",
+      "name": "Teatime",
+      "sheet_row": null,
+      "runtime_id": "teatime",
+      "file": "moves/teatime.lua",
+      "status": "implemented",
+      "limitations": [],
+      "parameter_source": "https://pokeapi.co/api/v2/move/752/"
+    },
+    {
       "id": 754,
       "slug": "bolt-beak",
       "name": "Bolt Beak",
@@ -6972,7 +6983,8 @@
       "flower-shield",
       "memento",
       "sappy-seed",
-      "corrosive-gas"
+      "corrosive-gas",
+      "teatime"
     ]
   }
 }
