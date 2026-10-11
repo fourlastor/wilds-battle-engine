@@ -2192,6 +2192,17 @@
       "limitations": []
     },
     {
+      "id": 243,
+      "slug": "mirror-coat",
+      "name": "Mirror Coat",
+      "sheet_row": null,
+      "runtime_id": "mirror-coat",
+      "file": "moves/mirror-coat.lua",
+      "status": "implemented",
+      "limitations": [],
+      "parameter_source": "https://pokeapi.co/api/v2/move/243/"
+    },
+    {
       "id": 244,
       "slug": "psych-up",
       "name": "Psych Up",
@@ -6864,7 +6875,8 @@
       "aromatherapy",
       "jungle-healing",
       "celebrate",
-      "counter"
+      "counter",
+      "mirror-coat"
     ]
   }
 }

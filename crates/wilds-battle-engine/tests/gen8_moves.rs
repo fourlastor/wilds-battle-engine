@@ -1851,3 +1851,27 @@ fn counter_applies_redirection_after_resolving_the_attacker() {
         2 * (1000 - b.participants(Side::Allies)[0].hp)
     );
 }
+
+#[test]
+fn mirror_coat_returns_special_damage_only_and_respects_dark_immunity() {
+    for (attack, dark, returns) in [
+        ("water-gun", false, true),
+        ("tackle", false, false),
+        ("water-gun", true, false),
+    ] {
+        let mut foe = mon("Foe", &[attack]);
+        if dark {
+            foe.types = vec![PokemonType::Dark];
+        }
+        let mut b = game(mon("User", &["mirror-coat"]), vec![foe], 0.5);
+        turn(&mut b);
+        assert_eq!(
+            1000 - b.participants(Side::Foes)[0].hp,
+            if returns {
+                2 * (1000 - b.participants(Side::Allies)[0].hp)
+            } else {
+                0
+            }
+        );
+    }
+}
