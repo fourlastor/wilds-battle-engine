@@ -719,3 +719,23 @@ fn wring_out_uses_targets_current_hp_with_fixed_point_rounding() {
         assert_eq!(1000 - b.participants(Side::Foes)[0].hp, expected, "HP {hp}");
     }
 }
+
+#[test]
+fn crush_grip_uses_targets_current_hp_with_fixed_point_rounding() {
+    for (hp, power) in [
+        (1000, 120),
+        (999, 119),
+        (500, 60),
+        (250, 30),
+        (9, 1),
+        (1, 1),
+    ] {
+        let user = mon("User", &["crush-grip"]);
+        let mut foe = mon("Foe", &["splash"]);
+        foe.hp = hp;
+        let expected = control_damage(power, "Normal", "Physical", user.clone(), foe.clone());
+        let mut b = game(user, vec![foe], 0.5);
+        turn(&mut b);
+        assert_eq!(1000 - b.participants(Side::Foes)[0].hp, expected, "HP {hp}");
+    }
+}

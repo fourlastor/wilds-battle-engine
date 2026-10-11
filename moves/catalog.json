@@ -3628,6 +3628,17 @@
       "limitations": []
     },
     {
+      "id": 462,
+      "slug": "crush-grip",
+      "name": "Crush Grip",
+      "sheet_row": null,
+      "runtime_id": "crush-grip",
+      "file": "moves/crush-grip.lua",
+      "status": "implemented",
+      "limitations": [],
+      "parameter_source": "https://pokeapi.co/api/v2/move/462/"
+    },
+    {
       "id": 463,
       "slug": "magma-storm",
       "name": "Magma Storm",
@@ -6324,7 +6335,8 @@
       "heat-crash",
       "gyro-ball",
       "electro-ball",
-      "wring-out"
+      "wring-out",
+      "crush-grip"
     ]
   }
 }
