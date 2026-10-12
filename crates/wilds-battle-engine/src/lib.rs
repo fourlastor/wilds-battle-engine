@@ -4,6 +4,7 @@ mod baton_pass;
 mod berries;
 mod carrying;
 mod conditions;
+mod damage;
 mod engine;
 mod escape;
 mod forms;

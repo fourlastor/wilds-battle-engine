@@ -192,12 +192,15 @@ impl Battle {
 
     pub(crate) fn stat_factor(&self, id: ParticipantId, stat: CombatStat) -> f32 {
         self.rules(id).fold(
-            self.ability_stat_factor(id, stat) * self.team_ability_stat_factor(id, stat),
+            crate::damage::chain(
+                self.ability_stat_factor(id, stat),
+                self.team_ability_stat_factor(id, stat),
+            ),
             |factor, rule| match rule {
                 Rule::StatMultiplier {
                     stat: own,
                     factor: by,
-                } if *own == stat => factor * by,
+                } if *own == stat => crate::damage::chain(factor, *by),
                 _ => factor,
             },
         )
@@ -282,12 +285,14 @@ impl Battle {
             {
                 // Fainting does not change the battle format.
                 let multi = self.active.iter().any(|side| side.len() > 1);
-                factor
-                    * if multi {
+                crate::damage::chain(
+                    factor,
+                    if multi {
                         multi_battle_factor.unwrap_or(*by)
                     } else {
                         *by
-                    }
+                    },
+                )
             }
             _ => factor,
         })
@@ -307,7 +312,7 @@ impl Battle {
             } if only_category.is_none_or(|own| own == category)
                 && only_type.is_none_or(|own| own == move_type) =>
             {
-                factor * by
+                crate::damage::chain(factor, *by)
             }
             _ => factor,
         })
@@ -827,6 +832,8 @@ impl Battle {
         self.rules(id).fold(
             if kind == PokemonType::Fire && self.has_ability(id, "dryskin") {
                 1.25
+            } else if kind == PokemonType::Fire && self.has_ability(id, "heatproof") {
+                0.5
             } else {
                 1.0
             },
@@ -841,7 +848,7 @@ impl Battle {
                     && (!grounded_only
                         || (self.on_ground(id) && self.get(id).hidden().is_none())) =>
                 {
-                    factor * by
+                    crate::damage::chain(factor, *by)
                 }
                 _ => factor,
             },
@@ -857,7 +864,7 @@ impl Battle {
             } if move_type.is_none_or(|own| own == kind)
                 && (!grounded_only || self.on_ground(id)) =>
             {
-                factor * by
+                crate::damage::chain(factor, *by)
             }
             _ => factor,
         })

@@ -3056,66 +3056,105 @@ impl Battle {
         let def_name = attack.defense_stat.unwrap_or(def_name);
         let ignore_attack_stages =
             self.has_ability(target, "unaware") && attack.attack_from == actor;
-        let mut attack_value = if attack.attack_stat.is_some() {
-            // An offensive-stat override changes the base stat and stages, not
-            // the user's category-based modifiers (Body Press still uses ModifyAtk).
-            let value = if ignore_attack_stages || (crit && source.stage(atk_name.into()) < 0) {
-                self.battle_raw_stat(attack.attack_from, atk_name)
-            } else {
-                self.battle_staged_stat(attack.attack_from, atk_name)
-            };
-            (value * self.stat_factor(actor, category_attack_stat)).trunc()
-        } else if ignore_attack_stages || (crit && source.stage(atk_name.into()) < 0) {
+        let attack_base = if ignore_attack_stages || (crit && source.stage(atk_name.into()) < 0) {
             self.battle_raw_stat(attack.attack_from, atk_name)
-                * self.stat_factor(attack.attack_from, atk_name)
         } else {
-            self.stat_value(attack.attack_from, atk_name)
+            self.battle_staged_stat(attack.attack_from, atk_name)
+        } as u32;
+        // Offensive stat overrides select raw stats/stages; the move user's
+        // category still selects ability modifiers (including Foul Play/Body Press).
+        let hustle =
+            category_attack_stat == CombatStat::Attack && self.has_ability(actor, "hustle");
+        let stat_factor = self.stat_factor(actor, category_attack_stat);
+        let attack_base = if hustle {
+            crate::damage::modify(attack_base, 1.5)
+        } else {
+            attack_base
         };
-        if self.has_ability(actor, "stakeout")
-            && self.turn > 0
-            && defender.entered_turn == self.turn
+        let attack_value = crate::damage::modify(
+            attack_base,
+            crate::damage::chain_all([
+                if hustle {
+                    stat_factor / 1.5
+                } else {
+                    stat_factor
+                },
+                self.move_attack_factor(actor, target, attack),
+            ]),
+        );
+        let defense_base = if attack.ignore_stages
+            || self.has_ability(actor, "unaware")
+            || (crit && defender.stage(def_name.into()) > 0)
         {
-            attack_value *= 2.0;
-        }
-        let mut defense = if attack.ignore_stages || self.has_ability(actor, "unaware") {
-            (self.battle_raw_stat(target, def_name) * self.stat_factor(target, def_name)).trunc()
-        } else if crit && defender.stage(def_name.into()) > 0 {
-            self.battle_raw_stat(target, def_name) * self.stat_factor(target, def_name)
+            self.battle_raw_stat(target, def_name)
         } else {
-            self.stat_value(target, def_name)
-        };
+            self.battle_staged_stat(target, def_name)
+        } as u32;
         let weather = self.effective_weather();
-        if weather == Some(WeatherKind::Sandstorm)
+        let sand = weather == Some(WeatherKind::Sandstorm)
             && def_name == CombatStat::SpDefense
-            && defender.types.contains(&PokemonType::Rock)
-        {
-            defense *= 1.5;
-        }
-        defense = defense.max(1.0);
+            && self.types_of(target).contains(&PokemonType::Rock);
+        let defense = crate::damage::modify(
+            defense_base,
+            crate::damage::chain(
+                self.stat_factor(target, def_name),
+                if sand { 1.5 } else { 1.0 },
+            ),
+        );
         let gem = if typeless || attack.no_gem || actor == target {
             1.0
         } else {
             self.gem_factor(actor, move_type, events)
         };
-        // Base-power conditions round halves down, before the existing damage modifiers.
-        let base_power = (f32::from(attack.power)
-            * self.base_power_factor(actor, move_type)
-            * self.ability_base_power_factor(actor, target, attack)
-            * self.team_ability_power_factor(actor, attack)
-            * self.incoming_base_power_factor(target, attack.move_id, move_type)
-            - 0.5)
-            .ceil()
-            .max(1.0);
-        let adjusted_power = gem
-            * base_power
-            * self.status_power_factor(actor, attack.category)
-            * 2f32.powi(attack.consecutive_boost as i32)
-            * self.active_power_multiplier;
-        let mut damage =
-            (2.0 * f32::from(attacker.level) * 0.2 + 2.0) * adjusted_power * attack_value
-                / defense
-                / 50.0
-                + 2.0;
+        let power = u32::from(attack.power).saturating_mul(
+            1u32.checked_shl(u32::from(attack.consecutive_boost))
+                .unwrap_or(u32::MAX),
+        );
+        let power = crate::damage::modify(
+            power,
+            crate::damage::chain_all([
+                self.base_power_factor(actor, move_type),
+                self.ability_base_power_factor(actor, target, attack),
+                self.team_ability_power_factor(actor, attack),
+                self.incoming_base_power_factor(target, attack.move_id, move_type),
+                gem,
+                self.status_power_factor(actor, attack.category),
+                self.active_power_multiplier,
+            ]),
+        )
+        .max(1);
+        let mut damage = crate::damage::base(attacker.level, power, attack_value, defense);
+        if self
+            .parental_hit(actor, attack.move_id)
+            .is_some_and(|p| p.hit == 2)
+        {
+            damage = crate::damage::modify(damage, 0.25);
+        }
+        if !typeless {
+            let weather_factor = match (weather, move_type) {
+                (Some(WeatherKind::Sun), PokemonType::Fire)
+                | (Some(WeatherKind::Rain), PokemonType::Water) => 1.5,
+                (Some(WeatherKind::Sun), PokemonType::Water)
+                | (Some(WeatherKind::Rain), PokemonType::Fire) => 0.5,
+                _ => 1.0,
+            };
+            damage = crate::damage::modify(damage, weather_factor);
+        }
+        if crit {
+            damage = damage * 3 / 2;
+        }
+        damage = crate::damage::randomize(damage, self.rng.damage_roll());
+        if !typeless && (attack.force_stab || self.types_of(actor).contains(&move_type)) {
+            damage = crate::damage::modify(
+                damage,
+                if self.has_ability(actor, "adaptability") {
+                    2.0
+                } else {
+                    1.5
+                },
+            );
+        }
+        damage = (f64::from(damage) * f64::from(effectiveness)).floor() as u32;
         if attacker.status == Some(Status::Burned)
             && attack.category == Category::Physical
             && !self.has_ability(actor, "guts")
@@ -3124,53 +3163,26 @@ impl Battle {
                 .get(attack.move_id)
                 .is_some_and(|m| m.has_flag("ignore_burn"))
         {
-            damage /= 2.0;
+            damage = crate::damage::modify(damage, 0.5);
         }
-        if !typeless {
-            let (boosted, weakened) = match weather {
-                Some(WeatherKind::Sun) => (Some(PokemonType::Fire), Some(PokemonType::Water)),
-                Some(WeatherKind::Rain) => (Some(PokemonType::Water), Some(PokemonType::Fire)),
-                _ => (None, None),
-            };
-            if boosted == Some(move_type) {
-                damage *= 1.5;
-            }
-            if weakened == Some(move_type) {
-                damage *= 0.5;
-            }
-        }
-        if self
-            .parental_hit(actor, attack.move_id)
-            .is_some_and(|p| p.hit == 2)
-        {
-            damage *= 0.25;
-        }
-        damage *= self.ability_damage_factor(actor, target, attack, effectiveness);
-        damage *= effectiveness;
-        if !typeless && (attack.force_stab || self.types_of(actor).contains(&move_type)) {
-            damage *= if self.has_ability(actor, "adaptability") {
-                2.0
-            } else {
+        let final_factor = crate::damage::chain_all([
+            self.damage_taken_factor(actor, target, attack.category, move_type, crit),
+            self.damage_dealt_factor(actor, attack.category, move_type),
+            self.ability_damage_factor(actor, target, attack, effectiveness),
+            if crit && self.has_ability(actor, "sniper") {
                 1.5
-            };
-        }
-        if crit {
-            damage *= if self.has_ability(actor, "sniper") {
-                2.25
             } else {
-                1.5
+                1.0
+            },
+        ]);
+        let berry =
+            if !typeless && !self.substitute_intercepts(actor, target, attack.bypass_substitute) {
+                self.resistance_berry_factor(target, move_type, effectiveness, events)
+            } else {
+                1.0
             };
-        }
-        let dealt = self.damage_dealt_factor(actor, attack.category, move_type);
-        let taken = self.damage_taken_factor(actor, target, attack.category, move_type, crit);
-        if dealt != 1.0 || taken != 1.0 {
-            damage *= dealt * taken;
-        }
-        if !typeless && !self.substitute_intercepts(actor, target, attack.bypass_substitute) {
-            damage *= self.resistance_berry_factor(target, move_type, effectiveness, events);
-        }
-        damage *= self.rng.damage_roll();
-        let amount = (damage.round() as u16).max(1);
+        damage = crate::damage::modify(damage, crate::damage::chain(final_factor, berry));
+        let amount = damage.max(1) as u16;
         if effectiveness < 1.0 {
             events.push(BattleEvent::Message("It's not very effective...".into()));
         } else if effectiveness > 1.0 {

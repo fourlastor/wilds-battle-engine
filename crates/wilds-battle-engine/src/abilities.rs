@@ -1768,7 +1768,7 @@ impl Battle {
                 .into_iter()
                 .any(|who| self.has_ability(who, "darkaura"))
         {
-            factor *= aura_factor;
+            factor = crate::damage::chain(factor, aura_factor);
         }
         if attack.move_type == crate::model::PokemonType::Fairy
             && self
@@ -1776,25 +1776,25 @@ impl Battle {
                 .into_iter()
                 .any(|who| self.has_ability(who, "fairyaura"))
         {
-            factor *= aura_factor;
+            factor = crate::damage::chain(factor, aura_factor);
         }
         for ally in self.actors() {
             if ally.side != actor.side {
                 continue;
             }
             if ally != actor && self.has_ability(ally, "powerspot") {
-                factor *= 1.3;
+                factor = crate::damage::chain(factor, 1.3);
             }
             if self.has_ability(ally, "steelyspirit")
                 && attack.move_type == crate::model::PokemonType::Steel
             {
-                factor *= 1.5;
+                factor = crate::damage::chain(factor, 1.5);
             }
             if ally != actor
                 && self.has_ability(ally, "battery")
                 && attack.category == crate::moves::Category::Special
             {
-                factor *= 1.3;
+                factor = crate::damage::chain(factor, 1.3);
             }
         }
         factor
@@ -1806,6 +1806,9 @@ impl Battle {
         target: ParticipantId,
         attack: &crate::engine::Attack,
     ) -> f32 {
+        if attack.sound && self.has_ability(actor, "punkrock") {
+            return 5325.0 / 4096.0;
+        }
         if self.sheer_force_applies(actor, attack.move_id) {
             return 5325.0 / 4096.0;
         }
@@ -1856,16 +1859,6 @@ impl Battle {
         {
             return 1.5;
         }
-        if self.has_ability(actor, "transistor")
-            && (attack.move_type == crate::model::PokemonType::Electric)
-        {
-            return 1.5;
-        }
-        if self.has_ability(actor, "dragonsmaw")
-            && (attack.move_type == crate::model::PokemonType::Dragon)
-        {
-            return 1.5;
-        }
         if self.has_ability(actor, "ironfist")
             && (self
                 .catalog
@@ -1886,30 +1879,6 @@ impl Battle {
             return 1.3;
         }
         if self.has_ability(actor, "technician") && (attack.power <= 60) {
-            return 1.5;
-        }
-        if self.has_ability(actor, "overgrow")
-            && (attack.move_type == crate::model::PokemonType::Grass
-                && u32::from(self.get(actor).hp) * 3 <= u32::from(self.get(actor).max_hp))
-        {
-            return 1.5;
-        }
-        if self.has_ability(actor, "blaze")
-            && (attack.move_type == crate::model::PokemonType::Fire
-                && u32::from(self.get(actor).hp) * 3 <= u32::from(self.get(actor).max_hp))
-        {
-            return 1.5;
-        }
-        if self.has_ability(actor, "torrent")
-            && (attack.move_type == crate::model::PokemonType::Water
-                && u32::from(self.get(actor).hp) * 3 <= u32::from(self.get(actor).max_hp))
-        {
-            return 1.5;
-        }
-        if self.has_ability(actor, "swarm")
-            && (attack.move_type == crate::model::PokemonType::Bug
-                && u32::from(self.get(actor).hp) * 3 <= u32::from(self.get(actor).max_hp))
-        {
             return 1.5;
         }
         if self.has_ability(actor, "megalauncher")
@@ -1934,6 +1903,60 @@ impl Battle {
         }
     }
 
+    /// Attack modifiers which depend on the current move or its defender.
+    pub(crate) fn move_attack_factor(
+        &self,
+        actor: ParticipantId,
+        target: ParticipantId,
+        attack: &crate::engine::Attack,
+    ) -> f32 {
+        use crate::model::PokemonType::*;
+        let kind = attack.move_type;
+        let mut factors = Vec::new();
+        if self.has_ability(actor, "stakeout")
+            && self.turn > 0
+            && self.get(target).entered_turn == self.turn
+        {
+            factors.push(2.0);
+        }
+        if kind == Water && self.has_ability(actor, "waterbubble") {
+            factors.push(2.0);
+        }
+        if (kind == Electric && self.has_ability(actor, "transistor"))
+            || (kind == Dragon && self.has_ability(actor, "dragonsmaw"))
+        {
+            factors.push(1.5);
+        }
+        if u32::from(self.get(actor).hp) * 3 <= u32::from(self.get(actor).max_hp)
+            && [
+                (Grass, "overgrow"),
+                (Fire, "blaze"),
+                (Water, "torrent"),
+                (Bug, "swarm"),
+            ]
+            .iter()
+            .any(|(t, ability)| *t == kind && self.has_ability(actor, ability))
+        {
+            factors.push(1.5);
+        }
+        if kind == Fire
+            && self.has_ability(actor, "flashfire")
+            && self
+                .get(actor)
+                .conditions
+                .iter()
+                .any(|c| c.name == "flash_fire")
+        {
+            factors.push(1.5);
+        }
+        if (matches!(kind, Fire | Ice) && self.has_ability(target, "thickfat"))
+            || (kind == Fire && self.has_ability(target, "waterbubble"))
+        {
+            factors.push(0.5);
+        }
+        crate::damage::chain_all(factors)
+    }
+
     pub(crate) fn ability_damage_factor(
         &self,
         actor: ParticipantId,
@@ -1941,7 +1964,7 @@ impl Battle {
         attack: &crate::engine::Attack,
         effectiveness: f32,
     ) -> f32 {
-        use crate::model::PokemonType::*;
+        use crate::model::PokemonType::Fire;
         let mut factor = 1.0;
         if !self.ability_bypass {
             for ally in self.actors() {
@@ -1949,68 +1972,43 @@ impl Battle {
                     && ally.side == target.side
                     && self.has_ability(ally, "friendguard")
                 {
-                    factor *= 0.75;
+                    factor = crate::damage::chain(factor, 0.75);
                 }
             }
         }
         if self.has_ability(actor, "neuroforce") && effectiveness > 1.0 {
-            factor *= 1.25;
+            factor = crate::damage::chain(factor, 1.25);
         }
         if self.has_ability(actor, "tintedlens") && effectiveness > 0.0 && effectiveness < 1.0 {
-            factor *= 2.0;
+            factor = crate::damage::chain(factor, 2.0);
         }
         if self.get(target).hp == self.get(target).max_hp
             && (self.has_ability(target, "multiscale") || self.has_ability(target, "shadowshield"))
         {
-            factor *= 0.5;
+            factor = crate::damage::chain(factor, 0.5);
         }
         if effectiveness > 1.0
             && (self.has_ability(target, "filter")
                 || self.has_ability(target, "solidrock")
                 || self.has_ability(target, "prismarmor"))
         {
-            factor *= 0.75;
+            factor = crate::damage::chain(factor, 0.75);
         }
         if attack.category == crate::moves::Category::Special
             && self.has_ability(target, "icescales")
         {
-            factor *= 0.5;
+            factor = crate::damage::chain(factor, 0.5);
         }
         if self.has_ability(target, "fluffy") {
             if attack.contact && !self.has_ability(actor, "longreach") {
-                factor *= 0.5;
+                factor = crate::damage::chain(factor, 0.5);
             }
             if attack.move_type == Fire {
-                factor *= 2.0;
+                factor = crate::damage::chain(factor, 2.0);
             }
         }
-        if matches!(attack.move_type, Fire | Ice) && self.has_ability(target, "thickfat") {
-            factor *= 0.5;
-        }
-        if attack.move_type == Fire && self.has_ability(target, "heatproof") {
-            factor *= 0.5;
-        }
-        if attack.move_type == Fire && self.has_ability(target, "waterbubble") {
-            factor *= 0.5;
-        }
-        if attack.move_type == Water && self.has_ability(actor, "waterbubble") {
-            factor *= 2.0;
-        }
-        if attack.sound && self.has_ability(actor, "punkrock") {
-            factor *= 1.3;
-        }
         if attack.sound && self.has_ability(target, "punkrock") {
-            factor *= 0.5;
-        }
-        if attack.move_type == Fire
-            && self.has_ability(actor, "flashfire")
-            && self
-                .get(actor)
-                .conditions
-                .iter()
-                .any(|condition| condition.name == "flash_fire")
-        {
-            factor *= 1.5;
+            factor = crate::damage::chain(factor, 0.5);
         }
         factor
     }

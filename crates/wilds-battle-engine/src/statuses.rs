@@ -160,7 +160,7 @@ impl Battle {
         let defense = self.battle_staged_stat(who, CombatStat::Defense).max(1.0) as u64;
         // Confusion uses stages but no burn, Guts, STAB, type or critical modifiers.
         let base = ((2 * u64::from(p.level) / 5 + 2) * 40 * attack / defense / 50 + 2) as u16;
-        (f32::from(base) * self.rng.damage_roll()).floor().max(1.0) as u16
+        crate::damage::randomize(u32::from(base), self.rng.damage_roll()).max(1) as u16
     }
 
     pub(crate) fn bad_dreams_residual(&mut self, events: &mut Vec<BattleEvent>) {

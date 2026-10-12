@@ -2,7 +2,7 @@
 /// replay draws to compare a battle with another engine. `fraction` returns a
 /// value in `[0, 1)`, `range` includes both endpoints, and `index(count)`
 /// returns a value below a nonzero `count`, and `damage_roll` returns a
-/// multiplier in `[0.85, 1]`.
+/// one of the 16 multipliers `0.85, 0.86, ..., 1.00`.
 pub trait BattleRng {
     fn next_u64(&mut self) -> u64;
     fn fraction(&mut self) -> f32;
@@ -20,7 +20,7 @@ pub trait BattleRng {
     }
 
     fn damage_roll(&mut self) -> f32 {
-        0.85 + self.fraction() * 0.15
+        f32::from(85 + (self.fraction() * 16.0).floor().clamp(0.0, 15.0) as u8) / 100.0
     }
 }
 

@@ -138,6 +138,15 @@ win or draw. JSON uses choice kinds `escape` and `continue`, event kind
 `{"kind":"escaped","side":"allies"}`. Hosts must handle this status in addition
 to `end`; repeated `advance()` calls return it without repeating events.
 
+Damage uses the Gen 8 integer calculation: floored base damage, 4096-based
+modifier chains, half-down modifier application, and the 16 damage rolls from
+85% through 100%. Weather, critical hits, random damage, STAB, effectiveness,
+burn and final modifiers are applied in that order. Parental Bond scales its
+second hit before weather. Attack-, power- and final-damage ability effects use
+their respective stages, including the Gen 8 Heatproof override. Fixed damage
+continues to bypass this formula. Exact regression vectors cover rounding and
+modifier interactions; these rules supersede the original C# damage arithmetic.
+
 The original compatibility port covers metadata and battle mechanics for 29 C# moves,
 including turn order, accuracy, damage, status, weather, charging, repeated hits,
 consecutive moves, and outcome resolution. The Rust RNG is seeded, so a Rust
@@ -157,8 +166,9 @@ the complete call sequence and the editable setup format.
 
 `Battle::with_rng(rng, sides, catalog)` accepts a `BattleRng` implementation
 for controlled draws. `Battle::new(seed, sides, catalog)` retains the default
-`SeededRng`. The `damage_roll` hook accepts Godot's actual damage multiplier
-without converting it through Rust's default random-float calculation. Run
+`SeededRng`. The `damage_roll` replay hook supplies a multiplier, normalized to an integer
+percentage from 85 through 100. The C# parity runner can report intentional
+differences after the Gen 8 type-chart and damage corrections. Run
 `python3 parity/run.py` to compare messages, damage, status, and final HP
 against the built PokeWilds C# assembly. This requires the sibling
 `pokewilds-next` checkout with a current Debug assembly, Godot, and the .NET
