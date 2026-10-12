@@ -147,6 +147,22 @@ their respective stages, including the Gen 8 Heatproof override. Fixed damage
 continues to bypass this formula. Exact regression vectors cover rounding and
 modifier interactions; these rules supersede the original C# damage arithmetic.
 
+In doubles, ordinary selected moves can target either opponent or the adjacent
+ally, excluding the user and bench. Prompts list opponents first. Attacks follow
+the chosen field slot through switches and Ally Switch; a fainted foe redirects
+to another eligible foe, while a fainted ally makes the attack fail and spend PP.
+
+Scripted spread moves apply the Gen 8 **0.75 damage modifier before weather**
+when more than one living active recipient exists at the start of the move.
+Protected, immune, hidden and missed targets still count. That count stays fixed
+across Lua per-target loops and knockouts during the move. A single remaining
+recipient takes full damage. `AllOthers` includes adjacent allies and foes;
+`AllOpponents` includes adjacent foes only. Fixed damage, delayed single-target
+attacks and Dragon Darts do not receive the spread penalty. Called moves have
+their own recipient count. These rules follow the targeting and spread-damage
+stages in [Pokémon Showdown's battle actions](https://github.com/smogon/pokemon-showdown/blob/942cda71d14bf0618bd57991708a2e2734b6daba/sim/battle-actions.ts)
+and [target selection](https://github.com/smogon/pokemon-showdown/blob/942cda71d14bf0618bd57991708a2e2734b6daba/sim/battle.ts).
+
 The original compatibility port covers metadata and battle mechanics for 29 C# moves,
 including turn order, accuracy, damage, status, weather, charging, repeated hits,
 consecutive moves, and outcome resolution. The Rust RNG is seeded, so a Rust
@@ -195,7 +211,7 @@ switching, source-linked traps and linked carrying.
 
 | Field | Meaning |
 |---|---|
-| `target` | `Target.Selected` (a chosen foe, the default), `User`, `Ally`, `UserOrAlly`, `AnyOther` (a chosen foe or ally), `RandomOpponent`, `AllOpponents`, `AllAllies`, `UserAndAllies`, `AllOthers`, `All`, `Field`. A plain `effects` list acts on one Pokémon; the kinds that reach several need a script. |
+| `target` | `Target.Selected` (a chosen adjacent foe or ally, the default), `User`, `Ally`, `UserOrAlly`, `AnyOther` (a chosen foe or ally without adjacency restrictions), `RandomOpponent`, `AllOpponents`, `AllAllies`, `UserAndAllies`, `AllOthers`, `All`, `Field`. A plain `effects` list acts on one Pokémon; the kinds that reach several need a script. |
 | `flags` | A list of words such as `{"contact", "sound"}`. The engine only passes them on (`ctx.move.flags.contact`, `ctx.hit.contact`). |
 | `hits_hidden` | Hidden places the move still reaches, such as `{Hidden.Air}`. |
 | `usable_while_asleep`, `usable_while_frozen` | The second also thaws the user. |

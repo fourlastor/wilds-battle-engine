@@ -920,10 +920,16 @@ fn redirection_checks_type_scope_liveness_and_priority() {
         ],
     });
     let mut game = Game::new(
-        vec![mon("Ally", &["water-gun"])],
+        vec![
+            mon("Ally", &["water-gun"]),
+            mon("Left", &["splash"]),
+            mon("Right", &["splash"]),
+        ],
         vec![target, mon("Low", &["splash"]), mon("High", &["splash"])],
         0.5,
     );
+    // A middle user can select Target and reach both redirectors.
+    game.0.set_active([vec![1, 0, 2], vec![0, 1, 2]]).unwrap();
     assert!(said(
         &game.turn("water-gun", "splash"),
         "High drew in the move"
@@ -973,10 +979,16 @@ fn flame_burst_only_splashes_neighbors_and_fainting_does_not_collapse_positions(
             middle.hp = 0;
         }
         let mut game = Game::new(
-            vec![mon("Ally", &["flame-burst"])],
+            vec![
+                mon("Ally", &["flame-burst"]),
+                mon("Left", &["splash"]),
+                mon("Right", &["splash"]),
+            ],
             vec![mon("Target", &["splash"]), middle, mon("Far", &["splash"])],
             0.5,
         );
+        // Keep the selected edge target within the user's attack range.
+        game.0.set_active([vec![1, 0, 2], vec![0, 1, 2]]).unwrap();
         game.turn("flame-burst", "splash");
         let foes = game.0.participants(Side::Foes);
         assert!(foes[0].hp < 1000);

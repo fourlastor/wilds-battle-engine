@@ -18,6 +18,7 @@ pub enum Category {
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Target {
+    /// One adjacent Pokémon of either side, other than the user.
     Selected,
     User,
     Field,

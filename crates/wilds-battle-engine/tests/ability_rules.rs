@@ -2640,6 +2640,10 @@ fn team_boost_damage(ability: &str, move_id: &str, partners: usize, on_user: boo
         MoveCatalog::builtin().unwrap(),
     )
     .unwrap();
+    if partners == 2 {
+        // The user must be in the middle to reach the foe across a three-slot field.
+        battle.set_active([vec![1, 0, 2], vec![0]]).unwrap();
+    }
     turn(&mut battle, move_id, "splash");
     1000 - foe(&battle).hp
 }

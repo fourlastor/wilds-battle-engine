@@ -123,6 +123,8 @@ impl HitMeta {
 /// Everything the damage formula needs to know about one hit.
 pub(crate) struct Attack<'a> {
     pub(crate) move_id: &'a str,
+    /// More than one recipient at the start of this move, before hit checks.
+    pub(crate) spread: bool,
     pub(crate) power: u16,
     pub(crate) high_crit: bool,
     pub(crate) always_crit: bool,
@@ -416,6 +418,37 @@ impl Battle {
         }
     }
 
+    /// Living recipients before protection, accuracy, and immunity checks.
+    pub(crate) fn move_recipients(
+        &self,
+        actor: ParticipantId,
+        target: ParticipantId,
+        spec: &MoveSpec,
+    ) -> Vec<ParticipantId> {
+        let kind = self.move_target_kind(actor, spec);
+        if !matches!(
+            kind,
+            Target::AllOthers
+                | Target::AllOpponents
+                | Target::AllAllies
+                | Target::UserAndAllies
+                | Target::All
+        ) {
+            return vec![target];
+        }
+        self.actors()
+            .into_iter()
+            .filter(|&id| match kind {
+                Target::AllOthers => self.adjacent(actor, id),
+                Target::AllOpponents => id.side != actor.side && self.adjacent(actor, id),
+                Target::AllAllies => id.side == actor.side && id != actor,
+                Target::UserAndAllies => id.side == actor.side,
+                Target::All => true,
+                _ => unreachable!(),
+            })
+            .collect()
+    }
+
     fn legal_choices(&self, actor: ParticipantId) -> Vec<Choice> {
         let pokemon = self.get(actor);
         if self.automatic_action(actor).is_some() {
@@ -468,11 +501,16 @@ impl Battle {
                         .find(|id| id.side != actor.side)
                         .into_iter()
                         .collect(),
-                    Target::Selected => self
-                        .actors()
-                        .into_iter()
-                        .filter(|id| id.side != actor.side)
-                        .collect(),
+                    Target::Selected => {
+                        let mut targets: Vec<_> = self
+                            .actors()
+                            .into_iter()
+                            .filter(|&id| self.adjacent(actor, id))
+                            .collect();
+                        // Preserve opponent-first choice order for existing host policies.
+                        targets.sort_by_key(|id| id.side == actor.side);
+                        targets
+                    }
                     Target::Ally => {
                         let targets: Vec<_> = allies(false)
                             .into_iter()
@@ -485,7 +523,10 @@ impl Battle {
                             targets
                         }
                     }
-                    Target::UserOrAlly => allies(true),
+                    Target::UserOrAlly => allies(true)
+                        .into_iter()
+                        .filter(|&id| id == actor || self.adjacent(actor, id))
+                        .collect(),
                     Target::AnyOther => self
                         .actors()
                         .into_iter()
@@ -1471,12 +1512,18 @@ impl Battle {
             actor
         } else if kind == Target::UserOrAlly {
             target
-                .filter(|id| id.side == actor.side && self.is_active(*id) && self.get(*id).hp > 0)
+                .filter(|id| {
+                    id.side == actor.side
+                        && self.is_active(*id)
+                        && self.get(*id).hp > 0
+                        && (*id == actor || self.adjacent(actor, *id))
+                })
                 .unwrap_or(actor)
         } else if let Some(target) = target.filter(|id| {
             self.is_active(*id)
                 && self.get(*id).hp > 0
                 && *id != actor
+                && (kind != Target::Selected || self.adjacent(actor, *id))
                 && (kind != Target::Ally || (id.side == actor.side && self.adjacent(actor, *id)))
         }) {
             target
@@ -1489,7 +1536,8 @@ impl Battle {
                         id.side == actor.side && *id != actor && self.adjacent(actor, *id)
                     } else {
                         id.side != actor.side
-                            && (!spec.has_flag("adjacent_target") || self.adjacent(actor, *id))
+                            && (!(kind == Target::Selected || spec.has_flag("adjacent_target"))
+                                || self.adjacent(actor, *id))
                     }
                 })
                 .collect();
@@ -1757,25 +1805,37 @@ impl Battle {
             target = foes[self.rng.index(foes.len())];
         }
         if self.get(target).hp == 0
+            && target.side != actor.side
             && matches!(
                 target_kind,
                 Target::Selected | Target::Ally | Target::AnyOther
             )
         {
-            // The chosen Pokémon is gone: another one on its side takes its place, never the user.
-            let Some(replacement) = self
+            // A fainted foe redirects to a random eligible foe. A fainted ally does not.
+            let replacements: Vec<_> = self
                 .actors()
                 .into_iter()
-                .find(|id| id.side == target.side && *id != actor)
-            else {
-                return Ok(false);
-            };
-            target = replacement;
+                .filter(|&id| {
+                    id.side != actor.side
+                        && (target_kind != Target::Selected || self.adjacent(actor, id))
+                })
+                .collect();
+            if !replacements.is_empty() {
+                target = replacements[self.rng.index(replacements.len())];
+            }
         }
         if self.get(target).hp == 0 && target_kind == Target::UserOrAlly {
             target = actor;
         }
-        let redirected = if self.get(actor).carrying == Some(target)
+        // Ally Switch can move the user into its own chosen target slot.
+        let invalid_self_target = target == actor
+            && matches!(target_kind, Target::Selected | Target::AnyOther)
+            && !spec.has_flag("smart_target")
+            && !spec.has_flag("future_move")
+            && !forced_script
+            && self.get(actor).locked_move.is_none();
+        let redirected = if self.get(target).hp == 0
+            || self.get(actor).carrying == Some(target)
             || (self.switching_target == Some(target) && spec.has_flag("intercepts_switch"))
         {
             target
@@ -1846,6 +1906,23 @@ impl Battle {
             self.get_mut(actor)
                 .ability_move_lock
                 .get_or_insert(spec.id.clone());
+        }
+        if invalid_self_target
+            || (self.get(target).hp == 0
+                && matches!(
+                    target_kind,
+                    Target::Selected | Target::Ally | Target::AnyOther
+                ))
+        {
+            events.push(BattleEvent::Message(format!(
+                "{user_name} used {}!",
+                spec.name
+            )));
+            events.push(BattleEvent::Message("But there is no target!".into()));
+            self.move_failed = true;
+            self.clear_consecutive(actor);
+            self.interrupt_script(actor, target, &spec, events)?;
+            return Ok(true);
         }
         if !self.dancing
             && !spec.auto_only
@@ -2943,6 +3020,8 @@ impl Battle {
     ) -> Option<Roll> {
         let attack = Attack {
             move_id: &spec.id,
+            // Plain effect lists act on one target; scripted moves expand recipient lists.
+            spread: false,
             hits_airborne: spec.has_flag("hits_airborne"),
             power,
             high_crit,
@@ -3124,7 +3203,9 @@ impl Battle {
         )
         .max(1);
         let mut damage = crate::damage::base(attacker.level, power, attack_value, defense);
-        if self
+        if attack.spread {
+            damage = crate::damage::modify(damage, 0.75);
+        } else if self
             .parental_hit(actor, attack.move_id)
             .is_some_and(|p| p.hit == 2)
         {

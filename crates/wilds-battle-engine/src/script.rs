@@ -7,7 +7,7 @@ use crate::model::{
 };
 use crate::moves::{
     Accuracy, Category, DamageOptions, HitOptions, HpAmount, MoveSpec, ScopeRef, ScriptHook,
-    ScriptOperation, Target,
+    ScriptOperation,
 };
 use crate::type_chart;
 use mlua::thread::ThreadStatus;
@@ -22,6 +22,8 @@ struct Frame<'a> {
     target: ParticipantId,
     spec: &'a MoveSpec,
     hook: ScriptHook,
+    /// Frozen for all hits, including per-target Lua loops and targets that later faint.
+    spread: bool,
     any_hit: bool,
     /// A hit was tried and did not land, or the script said the move failed.
     failed: bool,
@@ -408,31 +410,7 @@ impl Battle {
 
     /// Everyone `frame`'s move is aimed at when a script does not name one Pokémon.
     fn recipients(&self, frame: &Frame) -> Vec<ParticipantId> {
-        let actor = frame.actor;
-        match self.move_target_kind(actor, frame.spec) {
-            Target::AllOthers => self
-                .actors()
-                .into_iter()
-                .filter(|id| *id != actor)
-                .collect(),
-            Target::AllOpponents => self
-                .actors()
-                .into_iter()
-                .filter(|id| id.side != actor.side)
-                .collect(),
-            Target::AllAllies => self
-                .actors()
-                .into_iter()
-                .filter(|id| id.side == actor.side && *id != actor)
-                .collect(),
-            Target::UserAndAllies => self
-                .actors()
-                .into_iter()
-                .filter(|id| id.side == actor.side)
-                .collect(),
-            Target::All => self.actors(),
-            _ => vec![frame.target],
-        }
+        self.move_recipients(frame.actor, frame.target, frame.spec)
     }
 
     /// Rewrites everything a script can read, so that it shows the battle as it is now.
@@ -672,6 +650,9 @@ impl Battle {
             target,
             spec,
             hook,
+            spread: hook == ScriptHook::Main
+                && !spec.has_flag("smart_target")
+                && self.move_recipients(actor, target, spec).len() > 1,
             any_hit: false,
             failed: false,
             checked: Vec::new(),
@@ -877,6 +858,7 @@ impl Battle {
     fn attack<'a>(&self, frame: &Frame<'a>, power: u16, options: &'a DamageOptions) -> Attack<'a> {
         Attack {
             move_id: &frame.spec.id,
+            spread: frame.spread,
             hits_airborne: frame.spec.has_flag("hits_airborne"),
             power,
             high_crit: options.high_crit,
@@ -927,6 +909,7 @@ impl Battle {
             target,
             spec,
             hook: ScriptHook::Main,
+            spread: false,
             any_hit: false,
             failed: false,
             checked: Vec::new(),

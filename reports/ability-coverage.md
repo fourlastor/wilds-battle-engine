@@ -53,8 +53,9 @@ implemented through names or placeholders:
 - Lua moves can use `hit_index`, `hit_count`, `last_hit` and `move_state` for
   Parental Bond timing. Custom scripts with one-time setup or cleanup need the
   same distinction; catalog scripts with those operations were updated.
-- All **911 workspace tests** pass, including **207 ability regression tests**,
-  **17 escape regression tests** and FFI serialization coverage. `cargo clippy --workspace --all-targets -- -D warnings`
+- All **935 workspace tests** pass, including **207 ability regression tests**,
+  **17 escape regression tests**, **8 damage regression tests**, **13 targeting/spread regression tests**,
+  the complete type-chart matrix and FFI serialization coverage. `cargo clippy --workspace --all-targets -- -D warnings`
   also passes. Inventory IDs/slugs exactly match the 267 local PokeAPI entries,
   and all test names cited by the CSV resolve to actual tests.
 

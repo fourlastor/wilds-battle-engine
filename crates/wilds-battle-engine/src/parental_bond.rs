@@ -1,7 +1,7 @@
 //! A prepared two-hit attack survives ability changes caused by its first hit.
 use crate::engine::Battle;
 use crate::model::{BattleError, BattleEvent, ParticipantId, Status};
-use crate::moves::{Category, Effect, MoveSpec, Target};
+use crate::moves::{Category, Effect, MoveSpec};
 
 pub(crate) struct ParentalHit {
     pub actor: ParticipantId,
@@ -46,16 +46,7 @@ impl Battle {
         {
             return Ok(false);
         }
-        let targets = match self.move_target_kind(actor, spec) {
-            Target::AllOthers => self.actors().into_iter().filter(|id| *id != actor).count(),
-            Target::AllOpponents => self
-                .actors()
-                .into_iter()
-                .filter(|id| id.side != actor.side)
-                .count(),
-            Target::All => self.actors().len(),
-            _ => 1,
-        };
+        let targets = self.move_recipients(actor, target, spec).len();
         if targets != 1 {
             return Ok(false);
         }
