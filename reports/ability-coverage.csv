@@ -48,7 +48,7 @@ id,ability,status,verification
 47,thick-fat,IMPLEMENTED,ability_rules::thickfat_halves_fire_and_ice_damage_and_is_bypassable
 48,early-bird,IMPLEMENTED,Source inventory; existing tests only
 49,flame-body,IMPLEMENTED,ability_rules::flame_body_has_thirty_percent_contact_burn_with_type_immunity
-50,run-away,MISSING,Requires an escape/flee action; host-versus-engine scope decision pending
+50,run-away,IMPLEMENTED,escape_rules::run_away_guarantees_escape_without_attacks_pp_or_residuals
 51,keen-eye,IMPLEMENTED,ability_rules::keen_eye_blocks_accuracy_drops_and_ignores_positive_evasion
 52,hyper-cutter,IMPLEMENTED,ability_rules::hyper_cutter_blocks_external_attack_drops_only
 53,pickup,IMPLEMENTED,ability_rules::pickup_reclaims_a_neighbors_item_used_this_turn_only_once

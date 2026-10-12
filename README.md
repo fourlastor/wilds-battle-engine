@@ -13,8 +13,10 @@ Files use canonical slugs and source display names.
 remaining general engine limitations.
 The host supplies choices for both sides.
 The Rust API uses enums for sides, Pokémon types, stats, statuses, and weather.
-Host-facing prompts contain `Choice::UseMove { id, move_id, target }` or
-`Choice::Switch { id, to }`. `PromptReason` distinguishes action selection, faint replacement and move-triggered pivot choices; the host selects an offered choice in either case.
+Host-facing prompts contain `Choice::UseMove { id, move_id, target }` and
+`Choice::Switch { id, to }`, plus `Escape` and `Continue` for opted-in wild
+encounters. `PromptReason` distinguishes action selection, faint replacement and
+move-triggered pivot choices; the host selects an offered choice in each case.
 Rust exposes typed Lua constants for Pokémon types, stats, statuses, weather,
 categories, targets, effects, and special accuracy modes. Move IDs and display
 text remain strings. `MoveCatalog::from_lua` installs these constants before
@@ -97,11 +99,41 @@ loop {
                 prompt_id: prompt.id, choice_id: choice.id(),
             })?;
         }
-        AdvanceStatus::End { .. } => break,
+        AdvanceStatus::End { .. } | AdvanceStatus::Escaped { .. } => break,
     }
 }
 # Ok::<(), wilds_battle_engine::BattleError>(())
 ```
+
+For wild encounters, call `battle.set_wild_battle(true)?` before the first
+`advance()`, or include `"wild_battle": true` in the JSON setup. The default is
+false, so trainer battles and scripted encounters do not offer escape. This enables
+`Choice::Escape { id }` for living active allies. It is a party command: selecting
+it replaces other allied actions that turn, while the host still supplies opposing
+actions. A failed attempt consumes the party's turn; a successful attempt stops
+queued actions and residual effects. Bench members and replacement/pivot prompts
+never offer escape. Recharging and scripted continuations offer a
+`Choice::Continue { id }` alternative when escape is possible.
+
+Active Run Away guarantees escape through move and ability traps; suppression
+removes that guarantee. Ghost types also escape automatically. Neither changes
+whether Run Away users can switch, and Shed Shell only affects switching. Ordinary
+escape checks raw Speed against the opposing active slot (or another living foe),
+ignoring stages and battle modifiers. Equal or greater Speed guarantees escape.
+For slower users, the current compatibility formula is
+`(floor(128 * speed / foe_speed) + 30 * previous_attempts) mod 256`, compared
+strictly against a uniform integer from 0 to 255. The counter starts at zero and
+survives moves and switches. This formula follows
+[the Emerald implementation](https://github.com/pret/pokeemerald/blob/master/src/battle_util.c);
+**exact Sword/Shield ordinary escape odds have not been verified**. Run Away's
+unconditional wild escape is also described in the local PokeAPI ability data.
+
+`BattleEvent::EscapeAttempt { actor, success }` reports the attempt, and
+`AdvanceStatus::Escaped { side }` is a persistent terminal outcome distinct from a
+win or draw. JSON uses choice kinds `escape` and `continue`, event kind
+`escape_attempt` with `actor` and `success`, and terminal status
+`{"kind":"escaped","side":"allies"}`. Hosts must handle this status in addition
+to `end`; repeated `advance()` calls return it without repeating events.
 
 The original compatibility port covers metadata and battle mechanics for 29 C# moves,
 including turn order, accuracy, damage, status, weather, charging, repeated hits,
@@ -364,8 +396,8 @@ Lua `pokemon.team.pokemon` includes the living party, while `ctx.allies`, `foes`
 `pokemon.position` distinguish the bench (`false`/`nil`) from a field slot.
 
 `Trapped` prevents voluntary switches. Ghost types and holders of an active
-Shed Shell can escape. `pokemon.linked_trap` reports source-linked trapping
-independently of that escape permission. Binding also ends when its source leaves
+Shed Shell can switch out. `pokemon.linked_trap` reports source-linked trapping
+independently of that switch permission. Binding also ends when its source leaves
 or faints. Move-triggered switches use separate mechanics. Items and abilities are data that moves can
 read, take, give and suppress. Power Herb now
 activates when a move charges: `Effect.TwoTurn`, or a scripted move flagged `charge`

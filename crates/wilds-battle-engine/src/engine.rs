@@ -30,6 +30,9 @@ pub struct Battle {
     entry_abilities_started: bool,
     next_prompt_id: u64,
     pub(crate) winner: Option<Option<Side>>,
+    pub(crate) wild_battle: bool,
+    pub(crate) escaped_by: Option<Side>,
+    pub(crate) escape_attempts: u8,
     pub(crate) turn: u64,
     pub(crate) active_power_multiplier: f32,
     pub(crate) active_gem: Option<(ParticipantId, PokemonType)>,
@@ -152,6 +155,7 @@ pub(crate) struct Roll {
 #[derive(Clone)]
 enum SelectedAction {
     Move(MoveAction),
+    Escape,
     Recharge,
     Switch(ParticipantId),
 }
@@ -268,6 +272,9 @@ impl Battle {
             entry_abilities_started: false,
             next_prompt_id: 1,
             winner: None,
+            wild_battle: false,
+            escaped_by: None,
+            escape_attempts: 0,
             turn: 0,
             active_power_multiplier: 1.0,
             active_gem: None,
@@ -411,6 +418,9 @@ impl Battle {
 
     fn legal_choices(&self, actor: ParticipantId) -> Vec<Choice> {
         let pokemon = self.get(actor);
+        if self.automatic_action(actor).is_some() {
+            return vec![Choice::Continue { id: 0 }, Choice::Escape { id: 1 }];
+        }
         let move_ids: Vec<&str> = match &pokemon.locked_move {
             Some(lock) => vec![lock.move_id.as_str()],
             None => pokemon.moves.iter().map(String::as_str).collect(),
@@ -525,9 +535,29 @@ impl Battle {
                 });
             }
         }
+        if self.can_escape(actor) {
+            if result.is_empty()
+                && let Some(target) = self.actors().into_iter().find(|id| id.side != actor.side)
+            {
+                result.push(Choice::UseMove {
+                    id: 0,
+                    move_id: "struggle".into(),
+                    target,
+                });
+            }
+            result.push(Choice::Escape {
+                id: result.len() as u32,
+            });
+        }
         result
     }
     pub fn advance(&mut self) -> Result<AdvanceResult, BattleError> {
+        if let Some(side) = self.escaped_by {
+            return Ok(AdvanceResult {
+                events: Vec::new(),
+                status: AdvanceStatus::Escaped { side },
+            });
+        }
         if let Some(winner) = self.winner {
             return Ok(AdvanceResult {
                 events: Vec::new(),
@@ -591,24 +621,17 @@ impl Battle {
         let actors = self.actors();
         let selected: Vec<_> = self.selections.iter().map(|(actor, _)| *actor).collect();
         for actor in actors {
-            if selected.contains(&actor) {
+            if selected.contains(&actor)
+                || self.selections.iter().any(|(who, action)| {
+                    who.side == actor.side && matches!(action, SelectedAction::Escape)
+                })
+            {
                 continue;
             }
-            if self.get(actor).recharging {
-                self.selections.push((actor, SelectedAction::Recharge));
-                continue;
-            }
-            if let Some(continuation) = self.get(actor).script_continuation.clone() {
-                // A RandomOpponent continuation is re-aimed when the move executes.
-                self.selections.push((
-                    actor,
-                    SelectedAction::Move(MoveAction {
-                        forced: true,
-                        move_id: continuation.move_id,
-                        target: continuation.target,
-                        target_position: self.target_position(continuation.target),
-                    }),
-                ));
+            if !self.can_escape(actor)
+                && let Some(action) = self.automatic_action(actor)
+            {
+                self.selections.push((actor, action));
                 continue;
             }
             let choices = self.legal_choices(actor);
@@ -634,6 +657,7 @@ impl Battle {
                 .locked_move
                 .as_ref()
                 .is_some_and(|lock| lock.charging)
+                && !self.can_escape(actor)
             {
                 self.selections
                     .push((actor, self.selected_action(actor, &choices[0])));
@@ -677,6 +701,10 @@ impl Battle {
         let action = self.selected_action(actor, choice);
         self.pending = None;
         if reason == PromptReason::Action {
+            if matches!(action, SelectedAction::Escape) {
+                // Running is a party command, so it replaces this side's other actions.
+                self.selections.retain(|(who, _)| who.side != actor.side);
+            }
             self.selections.push((actor, action));
         } else if let SelectedAction::Switch(to) = action {
             let mut events = Vec::new();
@@ -708,6 +736,10 @@ impl Battle {
     }
     fn selected_action(&self, actor: ParticipantId, choice: &Choice) -> SelectedAction {
         match choice {
+            Choice::Escape { .. } => SelectedAction::Escape,
+            Choice::Continue { .. } => self
+                .automatic_action(actor)
+                .expect("validated continuation"),
             Choice::UseMove {
                 move_id, target, ..
             } => SelectedAction::Move(MoveAction {
@@ -721,6 +753,23 @@ impl Battle {
                 target_position: self.target_position(*target),
             }),
             Choice::Switch { to, .. } => SelectedAction::Switch(*to),
+        }
+    }
+    fn automatic_action(&self, actor: ParticipantId) -> Option<SelectedAction> {
+        if self.get(actor).recharging {
+            Some(SelectedAction::Recharge)
+        } else {
+            self.get(actor)
+                .script_continuation
+                .as_ref()
+                .map(|continuation| {
+                    SelectedAction::Move(MoveAction {
+                        forced: true,
+                        move_id: continuation.move_id.clone(),
+                        target: continuation.target,
+                        target_position: self.target_position(continuation.target),
+                    })
+                })
         }
     }
     fn resolve_turn(&mut self) -> Result<Vec<BattleEvent>, BattleError> {
@@ -746,6 +795,7 @@ impl Battle {
                     ),
                     SelectedAction::Recharge => 0,
                     SelectedAction::Switch(_) => 6,
+                    SelectedAction::Escape => i8::MAX,
                 };
                 let custap = matches!(choice, SelectedAction::Move(_))
                     && self.custap_priority(actor, events);
@@ -755,7 +805,7 @@ impl Battle {
                 let speed = self.action_speed(actor);
                 let fractional_priority = if custap || quick_draw {
                     1
-                } else if !matches!(choice, SelectedAction::Switch(_))
+                } else if matches!(choice, SelectedAction::Move(_) | SelectedAction::Recharge)
                     && self.has_ability(actor, "stall")
                 {
                     -1
@@ -790,7 +840,9 @@ impl Battle {
             .iter()
             .filter_map(|entry| match &entry.action {
                 SelectedAction::Move(choice) => Some((entry.actor, choice.move_id.clone())),
-                SelectedAction::Recharge | SelectedAction::Switch(_) => None,
+                SelectedAction::Recharge | SelectedAction::Switch(_) | SelectedAction::Escape => {
+                    None
+                }
             })
             .collect();
         self.hurry.clear();
@@ -912,8 +964,10 @@ impl Battle {
             }
             entry.fractional_priority = if entry.custap || entry.quick_draw {
                 1
-            } else if !matches!(entry.action, SelectedAction::Switch(_))
-                && self.has_ability(entry.actor, "stall")
+            } else if matches!(
+                entry.action,
+                SelectedAction::Move(_) | SelectedAction::Recharge
+            ) && self.has_ability(entry.actor, "stall")
             {
                 -1
             } else {
@@ -1006,11 +1060,42 @@ impl Battle {
                 self.complete_slot(actor.side, entry.position);
                 continue;
             }
-            if !matches!(choice, SelectedAction::Switch(_)) && self.get(actor).carried_by.is_none()
+            if matches!(choice, SelectedAction::Move(_) | SelectedAction::Recharge)
+                && self.get(actor).carried_by.is_none()
             {
                 self.check_sleep(actor, events);
             }
             match &choice {
+                SelectedAction::Escape => {
+                    if self.try_escape(actor, events) {
+                        self.turn_queue.clear();
+                        self.pending_actors.clear();
+                        self.completed_slots.clear();
+                        self.resolving_turn = false;
+                        return Ok(());
+                    }
+                    // A failed party escape uses all allied actions, including recharge turns.
+                    for who in self
+                        .actors()
+                        .into_iter()
+                        .filter(|who| who.side == actor.side)
+                    {
+                        if let Some(continuation) = self.get(who).script_continuation.clone() {
+                            let spec = self
+                                .catalog
+                                .get(&continuation.move_id)
+                                .expect("continuation")
+                                .clone();
+                            self.interrupt_script(who, continuation.target, &spec, events)?;
+                        }
+                        self.get_mut(who).recharging = false;
+                        self.get_mut(who).locked_move = None;
+                        self.get_mut(who).semi_invulnerable = false;
+                        self.get_mut(who).acted = true;
+                        self.end_condition(Scope::Pokemon(who), "truant");
+                        self.complete_slot(who.side, self.position(who).expect("active runner"));
+                    }
+                }
                 SelectedAction::Switch(to) => {
                     if self.get(actor).hp > 0 && !self.trapped(actor) {
                         self.intercept_switch(actor, events)?;

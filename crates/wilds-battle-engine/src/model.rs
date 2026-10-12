@@ -855,6 +855,10 @@ pub enum BattleEvent {
     },
     Weather(Option<Weather>),
     Fainted(ParticipantId),
+    EscapeAttempt {
+        actor: ParticipantId,
+        success: bool,
+    },
     End {
         winner: Option<Side>,
     },
@@ -862,6 +866,14 @@ pub enum BattleEvent {
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Choice {
+    /// Attempt to leave a wild battle with the entire allied party.
+    Escape {
+        id: u32,
+    },
+    /// Resume an otherwise automatic recharge or scripted continuation.
+    Continue {
+        id: u32,
+    },
     Switch {
         id: u32,
         to: ParticipantId,
@@ -876,7 +888,10 @@ pub enum Choice {
 impl Choice {
     pub const fn id(&self) -> u32 {
         match self {
-            Self::UseMove { id, .. } | Self::Switch { id, .. } => *id,
+            Self::UseMove { id, .. }
+            | Self::Switch { id, .. }
+            | Self::Escape { id }
+            | Self::Continue { id } => *id,
         }
     }
 }
@@ -900,6 +915,7 @@ pub struct Prompt {
 pub enum AdvanceStatus {
     Awaiting(Prompt),
     End { winner: Option<Side> },
+    Escaped { side: Side },
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]

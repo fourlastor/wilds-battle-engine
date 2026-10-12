@@ -5,6 +5,7 @@ mod berries;
 mod carrying;
 mod conditions;
 mod engine;
+mod escape;
 mod forms;
 mod hazards;
 mod illusion;

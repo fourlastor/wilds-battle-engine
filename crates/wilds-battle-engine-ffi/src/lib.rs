@@ -19,6 +19,8 @@ struct Setup {
     /// Where the battle takes place ("cave", "grass", ...), for moves that depend on it.
     environment: Option<String>,
     active: Option<ActiveSetup>,
+    #[serde(default)]
+    wild_battle: bool,
 }
 #[derive(Deserialize)]
 struct ActiveSetup {
@@ -277,6 +279,9 @@ pub unsafe extern "C" fn wbe_create(
             .collect::<Result<Vec<_>, _>>()?;
         let mut battle =
             Battle::new(setup.seed, [allies, foes], catalog).map_err(|error| error.to_string())?;
+        battle
+            .set_wild_battle(setup.wild_battle)
+            .map_err(|error| error.to_string())?;
         if let Some(active) = setup.active {
             battle
                 .set_active([active.allies, active.foes])
@@ -302,6 +307,9 @@ pub unsafe extern "C" fn wbe_advance(ptr: *mut Battle) -> *mut c_char {
         let battle = unsafe { ptr.as_mut() }.ok_or("null battle")?;
         let result = battle.advance().map_err(|error| error.to_string())?;
         let status = match result.status {
+            AdvanceStatus::Escaped { side: escaped } => {
+                json!({"kind":"escaped", "side":side(escaped)})
+            }
             AdvanceStatus::End { winner } => json!({"kind":"end", "winner":winner.map(side)}),
             AdvanceStatus::Awaiting(prompt) => json!({"kind":"awaiting", "prompt_id":prompt.id,
                 "actor":participant(prompt.actor), "reason": match prompt.reason { PromptReason::Action => "action", PromptReason::Replacement => "replacement", PromptReason::Pivot => "pivot" },
@@ -369,6 +377,8 @@ pub(crate) fn participant(id: ParticipantId) -> Value {
 }
 fn choice(value: &Choice) -> Value {
     match value {
+        Choice::Escape { id } => json!({"id":id, "kind":"escape"}),
+        Choice::Continue { id } => json!({"id":id, "kind":"continue"}),
         Choice::Switch { id, to } => json!({"id":id, "kind":"switch", "to":participant(*to)}),
         Choice::UseMove {
             id,
@@ -410,6 +420,9 @@ fn snapshot(value: &Pokemon) -> Value {
 }
 fn event(value: &BattleEvent) -> Value {
     match value {
+        BattleEvent::EscapeAttempt { actor, success } => {
+            json!({"kind":"escape_attempt", "actor":participant(*actor), "success":success})
+        }
         BattleEvent::HpSet { target, hp } => {
             json!({"kind":"hp_set", "target":participant(*target), "hp":hp})
         }
@@ -456,6 +469,82 @@ fn event(value: &BattleEvent) -> Value {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn c_api_offers_opt_in_escape_and_returns_a_persistent_escape_outcome() {
+        for wild in [false, true] {
+            let mut setup = json!({
+                "allies":[{"name":"Runner","moves":["tackle"],"speed":1,"ability":"run-away"}],
+                "foes":[{"name":"Foe","moves":["tackle"],"speed":500}]
+            });
+            if wild {
+                setup["wild_battle"] = json!(true);
+            }
+            let setup = CString::new(setup.to_string()).unwrap();
+            let directory =
+                CString::new(concat!(env!("CARGO_MANIFEST_DIR"), "/../../moves")).unwrap();
+            let battle = unsafe { wbe_create(setup.as_ptr(), directory.as_ptr()) };
+            assert!(!battle.is_null());
+            let read = || {
+                let ptr = unsafe { wbe_advance(battle) };
+                assert!(!ptr.is_null());
+                let value: Value =
+                    serde_json::from_str(unsafe { CStr::from_ptr(ptr) }.to_str().unwrap()).unwrap();
+                unsafe {
+                    wbe_free_string(ptr);
+                }
+                value
+            };
+            let value = read();
+            let choices = value["status"]["choices"].as_array().unwrap();
+            let escape = choices.iter().find(|c| c["kind"] == "escape");
+            assert_eq!(escape.is_some(), wild);
+            if let Some(escape) = escape {
+                assert!(unsafe {
+                    wbe_respond(
+                        battle,
+                        value["status"]["prompt_id"].as_u64().unwrap(),
+                        escape["id"].as_u64().unwrap() as u32,
+                    )
+                });
+                let foe = read();
+                assert_eq!(foe["status"]["actor"]["side"], "foes");
+                assert!(unsafe {
+                    wbe_respond(battle, foe["status"]["prompt_id"].as_u64().unwrap(), 0)
+                });
+                let result = read();
+                assert_eq!(result["status"], json!({"kind":"escaped","side":"allies"}));
+                assert_eq!(result["allies"][0]["hp"], 100);
+                assert!(
+                    result["events"]
+                        .as_array()
+                        .unwrap()
+                        .iter()
+                        .any(|e| e["kind"] == "escape_attempt" && e["success"] == true)
+                );
+                let again = read();
+                assert_eq!(again["status"], result["status"]);
+                assert_eq!(again["events"], json!([]));
+            }
+            unsafe {
+                wbe_destroy(battle);
+            }
+        }
+        assert_eq!(
+            choice(&Choice::Continue { id: 0 }),
+            json!({"id":0,"kind":"continue"})
+        );
+        assert_eq!(
+            event(&BattleEvent::EscapeAttempt {
+                actor: ParticipantId {
+                    side: Side::Allies,
+                    index: 0
+                },
+                success: false
+            })["success"],
+            false
+        );
+    }
 
     #[test]
     fn illusion_snapshot_and_events_keep_real_and_apparent_identity_separate() {

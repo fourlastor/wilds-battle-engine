@@ -14,14 +14,14 @@ Rules reference: [Pokemon Showdown abilities at 942cda71](https://github.com/smo
 
 | Status | Count |
 | --- | ---: |
-| IMPLEMENTED | 263 |
+| IMPLEMENTED | 264 |
 | PARTIAL | 0 |
-| MISSING | 4 |
+| MISSING | 3 |
 | Total | 267 |
 
 The initial audit found 67 implemented, 25 partial and 175 missing abilities.
 This implementation pass completed the 25 partial entries and added native battle
-behavior for 171 missing entries. Each ability change was tested and committed
+behavior for 172 missing entries. Each ability change was tested and committed
 before moving on. The CSV contains an individual verification reference per entry.
 
 The remaining entries are retained in the denominator rather than counted as
@@ -30,7 +30,6 @@ implemented through names or placeholders:
 | Ability | Remaining requirement |
 | --- | --- |
 | Illuminate | Gen8 overworld encounter-rate behavior; it has no Gen8 battle effect. |
-| Run Away | An escape/flee action. A decision on engine versus host ownership is pending. |
 | Honey Gather | Post-battle Honey generation, outside battle resolution and the no-new-items scope. |
 | Ball Fetch | Tracking failed capture attempts and recovering a Poké Ball; no capture system exists here. |
 
@@ -43,13 +42,19 @@ implemented through names or placeholders:
   silently invent stats.
 - Illusion supplies separate appearance data and reveal events. Hosts must render
   that appearance and filter full battle state for opponents as appropriate.
+- Run Away requires the host to enable wild encounters with
+  `Battle::set_wild_battle(true)` or JSON `wild_battle: true` and handle the
+  distinct `Escaped` / `escaped` terminal outcome. Its guarantee works through
+  traps and is disabled by ability suppression. Ordinary escape currently uses
+  the classic main-series speed formula; exact Sword/Shield ordinary escape odds
+  remain unverified (see README).
 - Item-dependent abilities operate on the existing held-item and berry system.
   This pass did not add item content, Z-Moves, Dynamax, Arceus rules or Gen9 rules.
 - Lua moves can use `hit_index`, `hit_count`, `last_hit` and `move_state` for
   Parental Bond timing. Custom scripts with one-time setup or cleanup need the
   same distinction; catalog scripts with those operations were updated.
-- All **893 workspace tests** pass, including **207 ability regression tests** and
-  FFI serialization coverage. `cargo clippy --workspace --all-targets -- -D warnings`
+- All **911 workspace tests** pass, including **207 ability regression tests**,
+  **17 escape regression tests** and FFI serialization coverage. `cargo clippy --workspace --all-targets -- -D warnings`
   also passes. Inventory IDs/slugs exactly match the 267 local PokeAPI entries,
   and all test names cited by the CSV resolve to actual tests.
 
