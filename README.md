@@ -9,6 +9,9 @@ plus support moves, additional local JSON moves and the original moves outside t
 records the 34 excluded Z/Max Moves from the sheet. The move cutoff is Sword/Shield
 and its expansions; Legends: Arceus moves and rules are excluded.
 Files use canonical slugs and source display names.
+Type effectiveness follows the Gen 8 chart, including Ice being super effective
+against Grass and Grass resisting itself. A checked-in PokeAPI fixture verifies
+all 324 single-type matchups; dual types multiply and immunities take precedence.
 [catalog.json](moves/catalog.json) records per-move coverage and the
 remaining general engine limitations.
 The host supplies choices for both sides.

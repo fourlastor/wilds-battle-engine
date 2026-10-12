@@ -1,8 +1,8 @@
 use crate::model::{PokemonType, Status};
 use PokemonType::*;
 
-// Mirrors data/PType.cs. Resistance takes precedence over weakness there,
-// including Grass versus Ice, which appears in both lists.
+// Generation 8 type effectiveness; a defending type has disjoint weakness,
+// resistance and immunity lists. Multiple defending types multiply together.
 pub fn multiplier(attack: PokemonType, defenders: &[PokemonType]) -> f32 {
     defenders.iter().fold(1.0, |value, defender| {
         let (weak, resist, immune): (&[PokemonType], &[PokemonType], &[PokemonType]) =
@@ -38,7 +38,7 @@ pub fn multiplier(attack: PokemonType, defenders: &[PokemonType]) -> f32 {
                 Water => (&[Grass, Electric], &[Fire, Water, Ice, Steel], &[]),
                 Grass => (
                     &[Fire, Ice, Poison, Flying, Bug],
-                    &[Water, Ice, Electric, Ground],
+                    &[Water, Grass, Electric, Ground],
                     &[],
                 ),
                 Electric => (&[Ground], &[Electric, Flying, Steel], &[]),
@@ -76,7 +76,40 @@ mod tests {
     use super::*;
 
     #[test]
-    fn csharp_resistance_precedes_weakness() {
-        assert_eq!(multiplier(Ice, &[Grass]), 0.5);
+    fn all_gen8_matchups_match_the_reference_chart() {
+        // Independent fixture extracted from PokeAPI data/v2/csv/type_efficacy.csv.
+        let types = [
+            Normal, Fighting, Flying, Poison, Ground, Rock, Bug, Ghost, Steel, Fire, Water, Grass,
+            Electric, Psychic, Ice, Dragon, Dark, Fairy,
+        ];
+        let rows: Vec<_> = include_str!("../tests/fixtures/gen8-type-chart.csv")
+            .lines()
+            .collect();
+        assert_eq!(rows.len(), 19);
+        for (attack, row) in types.into_iter().zip(&rows[1..]) {
+            let fields: Vec<_> = row.split(',').collect();
+            assert_eq!(fields.len(), 19);
+            assert_eq!(fields[0], format!("{attack:?}").to_lowercase());
+            for (defender, expected) in types.into_iter().zip(&fields[1..]) {
+                let expected = expected.parse::<f32>().unwrap() / 100.0;
+                assert_eq!(
+                    multiplier(attack, &[defender]),
+                    expected,
+                    "{attack:?} -> {defender:?}"
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn dual_types_multiply_and_immunities_win_in_either_order() {
+        assert_eq!(multiplier(Ice, &[Grass, Dragon]), 4.0);
+        assert_eq!(multiplier(Grass, &[Grass, Dragon]), 0.25);
+        assert_eq!(multiplier(Ice, &[Grass, Fire]), 1.0);
+        for pair in [[Water, Ground], [Ground, Water]] {
+            assert_eq!(multiplier(Electric, &pair), 0.0);
+        }
+        assert_eq!(multiplier(None, &[Grass]), 1.0);
+        assert_eq!(multiplier(Ice, &[None]), 1.0);
     }
 }
