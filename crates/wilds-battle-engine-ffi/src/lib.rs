@@ -24,9 +24,19 @@ struct Setup {
     wild_battle: bool,
     #[serde(default)]
     rules: SetupRules,
+    /// Items each side may use: {"allies": ["potion"], "foes": []}.
+    #[serde(default)]
+    bags: SetupBags,
     /// Free-form values about the surroundings (time of day, indoors...), read by scripts.
     #[serde(default)]
     context: std::collections::BTreeMap<String, Value>,
+}
+#[derive(Deserialize, Default)]
+struct SetupBags {
+    #[serde(default)]
+    allies: Vec<String>,
+    #[serde(default)]
+    foes: Vec<String>,
 }
 #[derive(Deserialize, Default)]
 struct SetupRules {
@@ -106,6 +116,8 @@ struct SetupPokemon {
     #[serde(default)]
     uncatchable: bool,
     catch_rate: Option<u8>,
+    /// An appearance shown until a script reveals the Pokémon.
+    disguise: Option<SetupAppearance>,
     /// Starting stat stages, keyed by "Attack", "Defense", "SpAttack", "SpDefense", "Speed",
     /// "Accuracy" or "Evasion".
     #[serde(default)]
@@ -118,6 +130,17 @@ struct SetupPokemon {
     /// Maximum PP per move when not the move's base PP (PP Ups).
     #[serde(default)]
     pp_max: std::collections::BTreeMap<String, u8>,
+}
+
+#[derive(Deserialize)]
+struct SetupAppearance {
+    name: String,
+    #[serde(default)]
+    species_id: u32,
+    #[serde(default)]
+    species: String,
+    form: Option<String>,
+    gender: Option<String>,
 }
 
 #[derive(Deserialize)]
@@ -196,18 +219,25 @@ fn pokemon(config: SetupPokemon) -> Result<Pokemon, String> {
     value.status = config.status.as_deref().map(parse_status).transpose()?;
     value.status_turns = config.status_turns;
     value.species = config.species;
-    value.gender = match config.gender.as_deref() {
-        None | Some("Genderless") => Gender::Genderless,
-        Some("Male") => Gender::Male,
-        Some("Female") => Gender::Female,
-        Some(other) => return Err(format!("unknown gender {other}")),
-    };
+    value.gender = parse_gender(config.gender.as_deref())?;
     value.weight = config.weight;
     value.item = config.item.filter(|item| !item.is_empty());
     value.ability = config.ability.filter(|ability| !ability.is_empty());
     value.ivs = config.ivs;
     value.happiness = config.happiness;
     value.uncatchable = config.uncatchable;
+    value.disguise = config
+        .disguise
+        .map(|look| {
+            Ok::<_, String>(wilds_battle_engine::PokemonAppearance {
+                name: look.name,
+                species_id: look.species_id,
+                species: look.species,
+                form: look.form,
+                gender: parse_gender(look.gender.as_deref())?,
+            })
+        })
+        .transpose()?;
     value.catch_rate = config.catch_rate;
     for (stat, stages) in config.stages {
         value.stages.insert(parse_stat(&stat)?, stages.clamp(-6, 6));
@@ -240,6 +270,14 @@ fn parse_type(name: &str) -> Result<PokemonType, String> {
         "Dark" => Dark,
         "Fairy" => Fairy,
         _ => return Err(format!("unknown Pokémon type {name}")),
+    })
+}
+fn parse_gender(name: Option<&str>) -> Result<Gender, String> {
+    Ok(match name {
+        None | Some("Genderless") => Gender::Genderless,
+        Some("Male") => Gender::Male,
+        Some("Female") => Gender::Female,
+        Some(other) => return Err(format!("unknown gender {other}")),
     })
 }
 fn parse_stat(name: &str) -> Result<wilds_battle_engine::Stat, String> {
@@ -376,20 +414,29 @@ pub unsafe extern "C" fn wbe_move_found(
     });
 }
 
+/// A host callback as a catalog source.
+fn host_source(
+    source: Option<MoveSourceCallback>,
+    user_data: *mut c_void,
+) -> impl Fn(&str) -> Option<MoveFile> + 'static {
+    move |id| {
+        let source = source?;
+        let id = CString::new(id).ok()?;
+        let mut request = WbeMoveRequest { file: None };
+        // SAFETY: the host keeps the callback and its data valid while the catalog lives.
+        let found = unsafe { source(user_data, id.as_ptr(), &mut request) };
+        if found { request.file } else { None }
+    }
+}
+
 /// A catalog over the built-in moves: the host callback first when given, else `moves_dir`.
 unsafe fn catalog(
     moves_dir: *const c_char,
     source: Option<MoveSourceCallback>,
     user_data: *mut c_void,
 ) -> Result<MoveCatalog, String> {
-    let catalog = if let Some(source) = source {
-        MoveCatalog::with_source(move |id| {
-            let id = CString::new(id).ok()?;
-            let mut request = WbeMoveRequest { file: None };
-            // SAFETY: the host keeps the callback and its data valid while the catalog lives.
-            let found = unsafe { source(user_data, id.as_ptr(), &mut request) };
-            if found { request.file } else { None }
-        })
+    let catalog = if source.is_some() {
+        MoveCatalog::with_source(host_source(source, user_data))
     } else if moves_dir.is_null() {
         MoveCatalog::builtin()
     } else {
@@ -426,6 +473,12 @@ unsafe fn create(setup_json: *const c_char, catalog: MoveCatalog) -> Result<*mut
         let value = context_value(&key, value)?;
         battle.set_context(key, value);
     }
+    battle
+        .set_bag(Side::Allies, setup.bags.allies)
+        .map_err(|error| error.to_string())?;
+    battle
+        .set_bag(Side::Foes, setup.bags.foes)
+        .map_err(|error| error.to_string())?;
     let rules = setup.rules;
     battle.set_no_escape(rules.no_escape);
     if let Some(weather) = rules.weather {
@@ -467,6 +520,76 @@ pub unsafe extern "C" fn wbe_catalog_create(
     guarded(|| {
         let catalog = unsafe { catalog(std::ptr::null(), source, user_data)? };
         Ok(Box::into_raw(Box::new(catalog)))
+    })
+}
+
+#[unsafe(no_mangle)]
+/// # Safety
+/// As `wbe_catalog_create`; `item_source` (which may be null) supplies item scripts the same way
+/// `move_source` supplies moves, both over the built-in ones.
+pub unsafe extern "C" fn wbe_catalog_create_with_items(
+    move_source: Option<MoveSourceCallback>,
+    item_source: Option<MoveSourceCallback>,
+    user_data: *mut c_void,
+) -> *mut MoveCatalog {
+    guarded(|| {
+        let catalog = MoveCatalog::with_sources(
+            host_source(move_source, user_data),
+            host_source(item_source, user_data),
+        )
+        .map_err(|error| error.to_string())?;
+        Ok(Box::into_raw(Box::new(catalog)))
+    })
+}
+
+#[unsafe(no_mangle)]
+/// # Safety
+/// `catalog` must be a live catalog; `item_id` a valid, null-terminated UTF-8 string.
+pub unsafe extern "C" fn wbe_catalog_item(
+    catalog: *const MoveCatalog,
+    item_id: *const c_char,
+) -> *mut c_char {
+    guarded(|| {
+        let catalog = unsafe { catalog.as_ref() }.ok_or("null catalog")?;
+        let item = catalog
+            .load_item(unsafe { input(item_id, "item id")? })
+            .map_err(|error| error.to_string())?;
+        Ok(output(item.map_or(Value::Null, |item| {
+            json!({"id":item.id, "name":item.name,
+                "targets":match item.targets {
+                wilds_battle_engine::ItemTargets::User => "user",
+                wilds_battle_engine::ItemTargets::Party => "party",
+                wilds_battle_engine::ItemTargets::PartyMove => "party_move",
+                wilds_battle_engine::ItemTargets::Fainted => "fainted",
+                wilds_battle_engine::ItemTargets::Foe => "foe",
+                wilds_battle_engine::ItemTargets::None => "none",
+            }})
+        })))
+    })
+}
+
+#[unsafe(no_mangle)]
+/// # Safety
+/// `battle` must be a live battle; `side` is "allies" or "foes" and `items_json` a JSON array
+/// of item IDs, both null-terminated UTF-8 strings.
+pub unsafe extern "C" fn wbe_set_bag(
+    battle: *mut Battle,
+    side: *const c_char,
+    items_json: *const c_char,
+) -> bool {
+    guarded(|| {
+        let battle = unsafe { battle.as_mut() }.ok_or("null battle")?;
+        let side = match unsafe { input(side, "side")? } {
+            "allies" => Side::Allies,
+            "foes" => Side::Foes,
+            other => return Err(format!("unknown side {other}")),
+        };
+        let items: Vec<String> = serde_json::from_str(unsafe { input(items_json, "items")? })
+            .map_err(|error| error.to_string())?;
+        battle
+            .set_bag(side, items)
+            .map_err(|error| error.to_string())?;
+        Ok(true)
     })
 }
 
@@ -601,6 +724,13 @@ fn choice(value: &Choice) -> Value {
         Choice::Escape { id } => json!({"id":id, "kind":"escape"}),
         Choice::Continue { id } => json!({"id":id, "kind":"continue"}),
         Choice::Undo { id } => json!({"id":id, "kind":"undo"}),
+        Choice::UseItem {
+            id,
+            item,
+            target,
+            move_id,
+        } => json!({"id":id, "kind":"use_item", "item":item, "target":participant(*target),
+            "move_id":move_id}),
         Choice::Switch { id, to } => json!({"id":id, "kind":"switch", "to":participant(*to)}),
         Choice::UseMove {
             id,
@@ -644,7 +774,7 @@ fn snapshots(battle: &Battle, side: Side) -> Vec<Value> {
         .collect()
 }
 fn snapshot(value: &Pokemon) -> Value {
-    json!({"name":value.name, "display_name":value.display_name(), "illusion":value.illusion.as_ref().map(appearance), "species_id":value.species_id, "base_attack":value.base_attack, "transformed": value.transformed(), "form":value.form,
+    json!({"name":value.name, "display_name":value.display_name(), "illusion":value.illusion.as_ref().map(appearance), "disguise":value.disguise.as_ref().map(appearance), "species_id":value.species_id, "base_attack":value.base_attack, "transformed": value.transformed(), "form":value.form,
         "attack":value.attack, "defense":value.defense, "sp_attack":value.sp_attack,
         "sp_defense":value.sp_defense, "speed":value.speed, "weight":value.weight,
         "hp":value.hp, "max_hp":value.max_hp,
@@ -694,6 +824,13 @@ fn event(value: &BattleEvent) -> Value {
         BattleEvent::Miss { actor, target } => {
             json!({"kind":"miss", "actor":participant(*actor), "target":participant(*target)})
         }
+        BattleEvent::ItemUsed {
+            actor,
+            item,
+            target,
+            consumed,
+        } => json!({"kind":"item_used", "actor":participant(*actor), "item":item,
+            "target":participant(*target), "consumed":consumed}),
         BattleEvent::Charging { actor, move_id } => {
             json!({"kind":"charging", "actor":participant(*actor), "move":move_id})
         }
@@ -820,6 +957,53 @@ mod tests {
         assert_eq!(state["allies"][0]["pp_max"]["tackle"], 56);
         assert_eq!(state["allies"][0]["stages"]["Attack"], 1);
         assert_eq!(state["allies"][0]["faced"], json!([0]));
+        unsafe { wbe_destroy(battle) };
+    }
+
+    #[test]
+    fn c_api_offers_bag_items_and_reports_their_use() {
+        let setup = CString::new(
+            r#"{"allies":[{"name":"Ally","moves":["splash"],"max_hp":100,"hp":40}],
+                "foes":[{"name":"Foe","moves":["splash"],"disguise":{"name":"Decoy"}}],
+                "bags":{"allies":["potion"]}}"#,
+        )
+        .unwrap();
+        let battle = unsafe { wbe_create(setup.as_ptr(), std::ptr::null()) };
+        assert!(!battle.is_null(), "{}", take_error());
+        let state = take(unsafe { wbe_advance(battle) });
+        assert_eq!(state["foes"][0]["display_name"], "Decoy");
+        let potion = state["status"]["choices"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|c| c["kind"] == "use_item")
+            .cloned()
+            .unwrap();
+        assert_eq!(potion["item"], "potion");
+        assert_eq!(potion["move_id"], Value::Null);
+        assert!(unsafe {
+            wbe_respond(
+                battle,
+                state["status"]["prompt_id"].as_u64().unwrap(),
+                potion["id"].as_u64().unwrap() as u32,
+            )
+        });
+        let state = take(unsafe { wbe_advance(battle) });
+        assert!(unsafe { wbe_respond(battle, state["status"]["prompt_id"].as_u64().unwrap(), 0) });
+        let state = take(unsafe { wbe_advance(battle) });
+        assert!(
+            state["events"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .any(|e| e["kind"] == "item_used"
+                    && e["item"] == "potion"
+                    && e["consumed"] == true)
+        );
+        assert_eq!(state["allies"][0]["hp"], 60);
+        let side = CString::new("allies").unwrap();
+        let items = CString::new(r#"["revive"]"#).unwrap();
+        assert!(unsafe { wbe_set_bag(battle, side.as_ptr(), items.as_ptr()) });
         unsafe { wbe_destroy(battle) };
     }
 

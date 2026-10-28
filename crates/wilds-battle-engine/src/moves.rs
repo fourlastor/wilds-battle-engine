@@ -323,6 +323,28 @@ pub(crate) enum ScriptOperation {
         who: ParticipantId,
         amount: HpAmount,
     },
+    /// Brings a fainted Pokémon back with a fraction of its maximum HP.
+    Revive {
+        who: ParticipantId,
+        fraction: f32,
+    },
+    /// PP for one move, or all moves when `move_id` is nil; full when `amount` is nil.
+    RestorePp {
+        who: ParticipantId,
+        move_id: Option<String>,
+        amount: Option<u8>,
+    },
+    CureConfusion {
+        who: ParticipantId,
+    },
+    /// Ends the battle as an escape for the user's side, past trapping but not `no_escape`.
+    Escape,
+    /// Ends a disguise and makes the Pokémon catchable.
+    Reveal {
+        who: ParticipantId,
+    },
+    /// The item being used is not used up.
+    KeepItem,
     ApplyStatus {
         who: ParticipantId,
         status: AppliedStatus,
@@ -1333,6 +1355,26 @@ fn parse_op(name: &str, args: &[Value]) -> mlua::Result<ScriptOperation> {
             who: who(0)?,
             amount: hp_amount(arg(1), "heal")?,
         },
+        "revive" => ScriptOperation::Revive {
+            who: who(0)?,
+            fraction: Options::new(given(1), "revive", &["fraction"])?
+                .fraction("fraction")?
+                .unwrap_or(0.5),
+        },
+        "restore_pp" => ScriptOperation::RestorePp {
+            who: who(0)?,
+            move_id: given(1)
+                .map(|value| name_of(value, "restore_pp move"))
+                .transpose()?,
+            amount: given(2)
+                .map(|value| whole(value, "restore_pp amount", 0.0, 255.0))
+                .transpose()?
+                .map(|amount| amount as u8),
+        },
+        "cure_confusion" => ScriptOperation::CureConfusion { who: who(0)? },
+        "escape" => ScriptOperation::Escape,
+        "reveal" => ScriptOperation::Reveal { who: who(0)? },
+        "keep_item" => ScriptOperation::KeepItem,
         "apply_status" => {
             let options = Options::new(
                 given(2),
@@ -1652,20 +1694,31 @@ struct MoveStore {
     builtin: bool,
     /// The IDs `ids()` lists: built-in moves and those of a directory or Lua table.
     known: Vec<String>,
-    /// Append-only: entries are boxed and never removed or replaced, see `MoveStore::insert`.
-    loaded: RefCell<HashMap<String, Box<Result<MoveSpec, String>>>>,
+    loaded: Loaded<MoveSpec>,
+    item_source: Box<MoveSource>,
+    items: Loaded<ItemSpec>,
 }
 
-impl MoveStore {
-    fn cached(&self, id: &str) -> Option<&Result<MoveSpec, String>> {
-        let loaded = self.loaded.borrow();
-        let entry: *const Result<MoveSpec, String> = &**loaded.get(id)?;
+/// Scripts by ID, loaded on first use. Append-only: entries are boxed and never removed or
+/// replaced, so references to them stay valid while the store lives.
+struct Loaded<T>(RefCell<HashMap<String, Box<Result<T, String>>>>);
+
+impl<T> Loaded<T> {
+    fn new() -> Self {
+        Self(RefCell::new(HashMap::new()))
+    }
+    fn len(&self) -> usize {
+        self.0.borrow().len()
+    }
+    fn cached(&self, id: &str) -> Option<&Result<T, String>> {
+        let loaded = self.0.borrow();
+        let entry: *const Result<T, String> = &**loaded.get(id)?;
         // SAFETY: the box is never dropped, replaced or moved out while the store lives.
         Some(unsafe { &*entry })
     }
-    fn insert(&self, id: &str, value: Result<MoveSpec, String>) -> &Result<MoveSpec, String> {
-        let mut loaded = self.loaded.borrow_mut();
-        let entry: *const Result<MoveSpec, String> = &**loaded
+    fn insert(&self, id: &str, value: Result<T, String>) -> &Result<T, String> {
+        let mut loaded = self.0.borrow_mut();
+        let entry: *const Result<T, String> = &**loaded
             .entry(id.to_owned())
             .or_insert_with(|| Box::new(value));
         // SAFETY: as in `cached`.
@@ -1673,11 +1726,50 @@ impl MoveStore {
     }
 }
 
+impl MoveStore {
+    fn cached(&self, id: &str) -> Option<&Result<MoveSpec, String>> {
+        self.loaded.cached(id)
+    }
+    fn insert(&self, id: &str, value: Result<MoveSpec, String>) -> &Result<MoveSpec, String> {
+        self.loaded.insert(id, value)
+    }
+}
+
+/// Who an item can be used on.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum ItemTargets {
+    /// The Pokémon whose turn it is.
+    User,
+    /// A living member of the user's party, on the field or not.
+    Party,
+    /// A fainted member of the user's party.
+    Fainted,
+    /// One move of a living member of the user's party (Ether); scripts read it as
+    /// `ctx.item_move`, and `usable` gets it as a third argument.
+    PartyMove,
+    /// An opposing Pokémon on the field.
+    Foe,
+    /// No one in particular, like an escape item.
+    None,
+}
+
+/// An item usable in battle: a script run like a move's with `ctx.target` the chosen target,
+/// and optionally `usable(target, ctx)`, which says whether using it would have any effect.
+#[derive(Clone, Debug)]
+pub struct ItemSpec {
+    pub id: String,
+    pub name: String,
+    pub targets: ItemTargets,
+    pub(crate) usable: Option<Function>,
+    pub(crate) script: MoveSpec,
+}
+
 impl std::fmt::Debug for MoveCatalog {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("MoveCatalog")
             .field("known", &self.store.known.len())
-            .field("loaded", &self.store.loaded.borrow().len())
+            .field("loaded", &self.store.loaded.len())
+            .field("items", &self.store.items.len())
             .field("builtin", &self.store.builtin)
             .finish()
     }
@@ -1688,12 +1780,20 @@ mod builtin_moves {
     include!(concat!(env!("OUT_DIR"), "/builtin_moves.rs"));
 }
 
+mod builtin_items {
+    // (id, source) pairs sorted by ID, generated by build.rs from the `items` directory.
+    include!(concat!(env!("OUT_DIR"), "/builtin_items.rs"));
+}
+
 fn builtin_file(id: &str) -> Option<MoveFile> {
-    let moves = builtin_moves::MOVES;
-    let index = moves.binary_search_by(|(key, _)| (*key).cmp(id)).ok()?;
+    embedded(builtin_moves::SCRIPTS, "moves", id)
+}
+
+fn embedded(scripts: &[(&str, &str)], directory: &str, id: &str) -> Option<MoveFile> {
+    let index = scripts.binary_search_by(|(key, _)| (*key).cmp(id)).ok()?;
     Some(MoveFile {
-        origin: format!("moves/{id}.lua"),
-        text: moves[index].1.to_owned(),
+        origin: format!("{directory}/{id}.lua"),
+        text: scripts[index].1.to_owned(),
     })
 }
 
@@ -1763,11 +1863,22 @@ impl MoveCatalog {
     pub fn with_source(
         source: impl Fn(&str) -> Option<MoveFile> + 'static,
     ) -> Result<Self, BattleError> {
-        let known = builtin_moves::MOVES
+        Self::with_sources(source, |_| None)
+    }
+    /// Moves and items from host sources, each falling back to the built-in ones.
+    pub fn with_sources(
+        moves: impl Fn(&str) -> Option<MoveFile> + 'static,
+        items: impl Fn(&str) -> Option<MoveFile> + 'static,
+    ) -> Result<Self, BattleError> {
+        let known = builtin_moves::SCRIPTS
             .iter()
             .map(|(id, _)| (*id).to_owned())
             .collect();
-        Self::new(Box::new(source), true, known)
+        let mut catalog = Self::new(Box::new(moves), true, known)?;
+        Rc::get_mut(&mut catalog.store)
+            .expect("a new catalog is not shared")
+            .item_source = Box::new(items);
+        Ok(catalog)
     }
     /// The `<id>.lua` files in `path`, over the built-in moves. Every file is loaded now, so
     /// errors are reported up front.
@@ -1795,7 +1906,7 @@ impl MoveCatalog {
             }
         }
         let directory = path.clone();
-        let mut known: Vec<String> = builtin_moves::MOVES
+        let mut known: Vec<String> = builtin_moves::SCRIPTS
             .iter()
             .map(|(id, _)| (*id).to_owned())
             .chain(ids.iter().cloned())
@@ -1873,7 +1984,9 @@ impl MoveCatalog {
             source,
             builtin,
             known,
-            loaded: RefCell::new(HashMap::new()),
+            loaded: Loaded::new(),
+            item_source: Box::new(|_| None),
+            items: Loaded::new(),
         };
         let id = system.id.clone();
         store.insert(&id, Ok(system));
@@ -1965,6 +2078,116 @@ impl MoveCatalog {
             ));
         }
         Ok(spec)
+    }
+    /// The item with this ID from the host's item source or the built-in items, loading it on
+    /// first use; `Ok(None)` when neither has it.
+    pub fn load_item(&self, id: &str) -> Result<Option<&ItemSpec>, BattleError> {
+        let entry = match self.store.items.cached(id) {
+            Some(entry) => entry,
+            None => {
+                if !is_move_id(id) {
+                    return Ok(None);
+                }
+                let Some(file) = (self.store.item_source)(id)
+                    .or_else(|| embedded(builtin_items::SCRIPTS, "items", id))
+                else {
+                    return Ok(None);
+                };
+                let item = self.parse_item(id, &file);
+                self.store.items.insert(id, item)
+            }
+        };
+        entry
+            .as_ref()
+            .map(Some)
+            .map_err(|error| BattleError::InvalidSetup(error.clone()))
+    }
+    /// The item with this ID, if it exists and loads.
+    pub fn item(&self, id: &str) -> Option<&ItemSpec> {
+        self.load_item(id).ok().flatten()
+    }
+    /// The built-in items' IDs, sorted.
+    pub fn builtin_item_ids() -> impl Iterator<Item = &'static str> {
+        builtin_items::SCRIPTS.iter().map(|(id, _)| *id)
+    }
+    fn parse_item(&self, id: &str, file: &MoveFile) -> Result<ItemSpec, String> {
+        let failed = |error: &dyn std::fmt::Display| format!("{}: {error}", file.origin);
+        let table: Table =
+            eval_limited(&self.lua, self.lua.load(&file.text).set_name(&file.origin))
+                .map_err(|error| failed(&error))?;
+        let targets = match table
+            .get::<Option<String>>("targets")
+            .map_err(|e| failed(&e))?
+        {
+            None => ItemTargets::Party,
+            Some(name) => match name.as_str() {
+                "user" => ItemTargets::User,
+                "party" => ItemTargets::Party,
+                "fainted" => ItemTargets::Fainted,
+                "party_move" => ItemTargets::PartyMove,
+                "foe" => ItemTargets::Foe,
+                "none" => ItemTargets::None,
+                other => {
+                    return Err(failed(&format!(
+                        "targets must be user, party, party_move, fainted, foe or none, not {other:?}"
+                    )));
+                }
+            },
+        };
+        let usable: Option<Function> = table.get("usable").map_err(|e| failed(&e))?;
+        // An item runs as a move with no type, category or accuracy of its own.
+        let symbols = self.lua.globals();
+        let defaults = [
+            (
+                "type",
+                symbols
+                    .get::<Table>("Type")
+                    .and_then(|t| t.get::<Value>("None")),
+            ),
+            (
+                "category",
+                symbols
+                    .get::<Table>("Category")
+                    .and_then(|t| t.get::<Value>("Status")),
+            ),
+            (
+                "accuracy",
+                symbols
+                    .get::<Table>("Accuracy")
+                    .and_then(|t| t.get::<Value>("Always")),
+            ),
+            (
+                "target",
+                symbols
+                    .get::<Table>("Target")
+                    .and_then(|t| t.get::<Value>("User")),
+            ),
+        ];
+        for (key, value) in defaults {
+            table
+                .raw_set(key, value.map_err(|e| failed(&e))?)
+                .map_err(|e| failed(&e))?;
+        }
+        table.raw_set("pp", 1).map_err(|e| failed(&e))?;
+        table.raw_remove("targets").map_err(|e| failed(&e))?;
+        table.raw_remove("usable").map_err(|e| failed(&e))?;
+        let script = parse_move(&table).map_err(|error| failed(&error))?;
+        if script.id != id {
+            return Err(failed(&format!(
+                "declares item id {:?}, expected {id:?}",
+                script.id
+            )));
+        }
+        if script.script.is_none() {
+            return Err(failed(&"an item needs a script"));
+        }
+        Ok(ItemSpec {
+            id: script.id.clone(),
+            name: script.name.clone(),
+            targets,
+            usable,
+            script,
+        })
     }
     /// The move with this ID, if it exists and loads.
     pub fn get(&self, id: &str) -> Option<&MoveSpec> {

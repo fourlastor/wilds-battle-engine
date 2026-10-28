@@ -1,24 +1,25 @@
 use std::{env, fs, path::PathBuf};
 
-fn main() {
-    let moves_dir = PathBuf::from(env::var("CARGO_MANIFEST_DIR").unwrap()).join("../../moves");
-    println!("cargo:rerun-if-changed={}", moves_dir.display());
-    let mut files: Vec<_> = fs::read_dir(&moves_dir)
-        .expect("moves directory")
-        .map(|entry| entry.expect("move entry").path())
+/// Embeds every `<id>.lua` file of `directory` as `(id, source)` pairs sorted by ID, which the
+/// catalog looks up by binary search.
+fn embed(directory: &str, output: &str) {
+    let dir = PathBuf::from(env::var("CARGO_MANIFEST_DIR").unwrap()).join(directory);
+    println!("cargo:rerun-if-changed={}", dir.display());
+    let mut files: Vec<_> = fs::read_dir(&dir)
+        .unwrap_or_else(|error| panic!("{}: {error}", dir.display()))
+        .map(|entry| entry.expect("script entry").path())
         .filter(|path| path.extension().is_some_and(|extension| extension == "lua"))
         .collect();
     files.sort_by(|a, b| a.file_stem().cmp(&b.file_stem()));
-    // Each file is one move named after its ID; the catalog looks them up by binary search.
-    let mut source = String::from("pub(super) static MOVES: &[(&str, &str)] = &[\n");
+    let mut source = String::from("pub(super) static SCRIPTS: &[(&str, &str)] = &[\n");
     for path in files {
         println!("cargo:rerun-if-changed={}", path.display());
         let id = path
             .file_stem()
             .unwrap()
             .to_str()
-            .expect("UTF-8 move file name");
-        let path = fs::canonicalize(&path).expect("move file");
+            .expect("UTF-8 script file name");
+        let path = fs::canonicalize(&path).expect("script file");
         source.push_str(&format!(
             "    ({id:?}, include_str!({:?})),\n",
             path.display().to_string()
@@ -26,8 +27,13 @@ fn main() {
     }
     source.push_str("];\n");
     fs::write(
-        PathBuf::from(env::var("OUT_DIR").unwrap()).join("builtin_moves.rs"),
+        PathBuf::from(env::var("OUT_DIR").unwrap()).join(output),
         source,
     )
     .expect("generated built-in catalog");
+}
+
+fn main() {
+    embed("../../moves", "builtin_moves.rs");
+    embed("../../items", "builtin_items.rs");
 }

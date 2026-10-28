@@ -83,6 +83,14 @@ return function(api, fields, roster)
     return coroutine.yield(api.message(key, ...))
   end
 
+  -- Items and battle effects.
+  function ctx:revive(who, options) return op("revive", who, options) end
+  function ctx:restore_pp(who, move, amount) return op("restore_pp", who, move, amount) end
+  function ctx:cure_confusion(who) return op("cure_confusion", who) end
+  function ctx:escape() return op("escape") end
+  function ctx:reveal(who) return op("reveal", who) end
+  function ctx:keep_item() return op("keep_item") end
+
   function ctx:announce()
     return coroutine.yield(api.announce())
   end

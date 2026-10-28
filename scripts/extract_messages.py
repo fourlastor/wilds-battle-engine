@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Writes locale/battle.pot: every battle message key in the engine and its move scripts.
+"""Writes locale/battle.pot: every battle message key in the engine, its moves and items.
 
 Keys are English templates whose {0}, {1}... placeholders are the message arguments
 (see "Battle messages" in the README). Run with --check to fail when the file is stale.
@@ -47,6 +47,7 @@ def collect() -> dict[str, set[str]]:
         (path, LUA_PATTERNS, lambda text: text)
         for path in sorted((ROOT / "crates" / "wilds-battle-engine" / "src").glob("*.lua"))
         + sorted((ROOT / "moves").glob("*.lua"))
+        + sorted((ROOT / "items").glob("*.lua"))
     ]
     for path, patterns, prepare in sources:
         text = prepare(path.read_text(encoding="utf-8"))

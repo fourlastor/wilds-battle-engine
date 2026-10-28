@@ -582,6 +582,9 @@ pub struct Pokemon {
     pub confused_turns: Option<u8>,
     /// Capture attempts fail and the ball is not used up.
     pub uncatchable: bool,
+    /// An appearance the host gives, shown until a script reveals it (`ctx:reveal`). Unlike
+    /// the Illusion ability's, damage and suppression do not end it.
+    pub disguise: Option<PokemonAppearance>,
     /// Species catch rate (3 to 255); a Pokémon without one cannot be caught.
     pub catch_rate: Option<u8>,
     pub bound: Option<Bound>,
@@ -689,6 +692,7 @@ impl Pokemon {
             stages: BTreeMap::new(),
             pp_max: BTreeMap::new(),
             confused_turns: None,
+            disguise: None,
             uncatchable: false,
             catch_rate: None,
             bound: None,
@@ -1066,6 +1070,14 @@ pub enum BattleEvent {
         actor: ParticipantId,
         target: ParticipantId,
     },
+    /// An item from the bag is used on `target`, before its effects. `consumed` is false when
+    /// the item was not used up (a ball the target refused), so the host keeps it.
+    ItemUsed {
+        actor: ParticipantId,
+        item: String,
+        target: ParticipantId,
+        consumed: bool,
+    },
     /// The first turn of a two-turn move.
     Charging {
         actor: ParticipantId,
@@ -1153,6 +1165,14 @@ pub enum Choice {
         move_id: String,
         target: ParticipantId,
     },
+    /// Use an item from the side's bag on `target`.
+    UseItem {
+        id: u32,
+        item: String,
+        target: ParticipantId,
+        /// The move it is used on, for items like Ether.
+        move_id: Option<String>,
+    },
     /// Take back the last choice made for this side this turn, and be asked for it again.
     /// Offered in action prompts once a choice for the same side was answered this turn;
     /// always listed last.
@@ -1168,6 +1188,7 @@ impl Choice {
             | Self::Switch { id, .. }
             | Self::Escape { id }
             | Self::Continue { id }
+            | Self::UseItem { id, .. }
             | Self::Undo { id } => *id,
         }
     }

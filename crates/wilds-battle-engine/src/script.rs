@@ -374,6 +374,11 @@ impl Battle {
             pp.raw_set(own.as_str(), *left)?;
         }
         table.raw_set("pp", pp)?;
+        let max_pp = lua.create_table()?;
+        for own in &pokemon.moves {
+            max_pp.raw_set(own.as_str(), self.max_pp(id, own))?;
+        }
+        table.raw_set("max_pp", max_pp)?;
         table.raw_set("last_consumed_item", pokemon.last_consumed_item.as_deref())?;
         let consumed = lua.create_table()?;
         for item in &pokemon.consumed_items {
@@ -597,6 +602,9 @@ impl Battle {
         fields.raw_set("battle_turn", self.turn)?;
         fields.raw_set("environment", self.environment.as_deref())?;
         fields.raw_set("context", self.context_table(lua)?)?;
+        fields.raw_set("wild_battle", self.wild_battle)?;
+        fields.raw_set("no_escape", self.no_escape)?;
+        fields.raw_set("item_move", self.item_move.as_deref())?;
         let about = lua.create_table()?;
         about.raw_set("id", spec.id.as_str())?;
         about.raw_set("name", spec.name.as_str())?;
@@ -2283,6 +2291,82 @@ impl Battle {
                 Value::Boolean(self.eat_berry(who, forced, events))
             }
             ScriptOperation::RecycleItem { who } => Value::Boolean(self.recycle_item(who)),
+            ScriptOperation::Revive { who, fraction } => {
+                let pokemon = self.get(who);
+                if pokemon.hp > 0 {
+                    Value::Boolean(false)
+                } else {
+                    let max_hp = pokemon.max_hp;
+                    let hp = ((f32::from(max_hp) * fraction).floor() as u16).clamp(1, max_hp);
+                    let pokemon = self.get_mut(who);
+                    pokemon.hp = hp;
+                    pokemon.status = None;
+                    pokemon.status_turns = 0;
+                    events.push(BattleEvent::Heal {
+                        target: who,
+                        amount: hp,
+                        hp,
+                    });
+                    Value::Boolean(true)
+                }
+            }
+            ScriptOperation::RestorePp {
+                who,
+                move_id,
+                amount,
+            } => {
+                let moves: Vec<String> = match move_id {
+                    Some(id) => vec![id],
+                    None => self.get(who).moves.clone(),
+                };
+                let mut restored = 0i64;
+                for id in moves {
+                    let Some(max) = self.max_pp(who, &id) else {
+                        continue;
+                    };
+                    let Some(pp) = self.get_mut(who).move_pp.get_mut(&id) else {
+                        continue;
+                    };
+                    let next = amount.map_or(max, |amount| pp.saturating_add(amount).min(max));
+                    restored += i64::from(next.saturating_sub(*pp));
+                    *pp = next.max(*pp);
+                }
+                Value::Integer(restored)
+            }
+            ScriptOperation::CureConfusion { who } => {
+                Value::Boolean(self.get_mut(who).confused_turns.take().is_some())
+            }
+            ScriptOperation::Escape => {
+                if self.no_escape {
+                    Value::Boolean(false)
+                } else {
+                    self.escaped_by = Some(actor.side);
+                    events.push(BattleEvent::EscapeAttempt {
+                        actor,
+                        success: true,
+                    });
+                    Value::Boolean(true)
+                }
+            }
+            ScriptOperation::Reveal { who } => {
+                let disguised = self.get(who).appearance().is_some();
+                let catchable = !self.get(who).uncatchable;
+                let pokemon = self.get_mut(who);
+                pokemon.uncatchable = false;
+                pokemon.illusion = None;
+                pokemon.disguise = None;
+                if disguised {
+                    events.push(BattleEvent::AppearanceChanged {
+                        target: who,
+                        illusion: None,
+                    });
+                }
+                Value::Boolean(disguised || !catchable)
+            }
+            ScriptOperation::KeepItem => {
+                self.item_kept = true;
+                Value::Nil
+            }
             ScriptOperation::ConsumeItem { who, eaten } => match self.spend_item(who, eaten) {
                 Some(item) => Value::String(self.catalog.lua().create_string(&item)?),
                 None => Value::Nil,
@@ -2350,6 +2434,76 @@ impl Battle {
     }
 
     /// Sets the weather as `Effect::Weather` does. Returns false if it was already that.
+    /// Who `actor` can use `item` on now: its kind of target, narrowed by its `usable(target, ctx)`.
+    /// A `usable` that fails to run counts as not usable.
+    pub(crate) fn usable_item_targets(
+        &self,
+        actor: ParticipantId,
+        item: &crate::moves::ItemSpec,
+    ) -> Vec<(ParticipantId, Option<String>)> {
+        use crate::moves::ItemTargets;
+        let party = |alive: bool| {
+            (0..self.sides[actor.side.index()].len())
+                .map(|index| ParticipantId {
+                    side: actor.side,
+                    index,
+                })
+                .filter(|&id| (self.get(id).hp > 0) == alive)
+                .collect::<Vec<_>>()
+        };
+        let candidates: Vec<(ParticipantId, Option<String>)> = match item.targets {
+            ItemTargets::User | ItemTargets::None => vec![(actor, None)],
+            ItemTargets::Party => party(true).into_iter().map(|id| (id, None)).collect(),
+            ItemTargets::Fainted => party(false).into_iter().map(|id| (id, None)).collect(),
+            ItemTargets::PartyMove => party(true)
+                .into_iter()
+                .flat_map(|id| {
+                    self.get(id)
+                        .moves
+                        .iter()
+                        .map(move |move_id| (id, Some(move_id.clone())))
+                })
+                .collect(),
+            ItemTargets::Foe => self
+                .actors()
+                .into_iter()
+                .filter(|id| id.side != actor.side)
+                .map(|id| (id, None))
+                .collect(),
+        };
+        let Some(usable) = &item.usable else {
+            return candidates;
+        };
+        let frame = Frame {
+            actor,
+            target: actor,
+            spec: &item.script,
+            hook: ScriptHook::Main,
+            spread: false,
+            any_hit: false,
+            failed: false,
+            checked: Vec::new(),
+        };
+        let Ok(run) = self.start_run(&frame) else {
+            return Vec::new();
+        };
+        if self.refresh(&run, &frame).is_err() {
+            return Vec::new();
+        }
+        candidates
+            .into_iter()
+            .filter(|(target, move_id)| {
+                usable
+                    .call::<bool>((
+                        Self::pokemon_table(&run, *target).cloned(),
+                        run.ctx.clone(),
+                        move_id.as_deref(),
+                    ))
+                    .unwrap_or(false)
+            })
+            .collect()
+    }
+
     /// `ctx.context`: what the host said about the battle's surroundings.
     pub(crate) fn context_table(&self, lua: &Lua) -> mlua::Result<Table> {
         let table = lua.create_table()?;

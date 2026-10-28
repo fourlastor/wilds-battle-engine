@@ -27,7 +27,13 @@ void wbe_free_string(char *value);
 /* Moves from `source` (may be null) over the built-in moves. Null on error. `source` and
  * `user_data` must stay valid until the catalog and all its battles are destroyed. */
 WbeCatalog *wbe_catalog_create(wbe_move_source source, void *user_data);
+/* As wbe_catalog_create, with item scripts from `item_source` (may be null) over the built-in
+ * items, called the same way. */
+WbeCatalog *wbe_catalog_create_with_items(wbe_move_source move_source,
+                                          wbe_move_source item_source, void *user_data);
 void wbe_catalog_destroy(WbeCatalog *catalog);
+/* {"id","name","targets"} for an item, JSON null when no source has it, or null on error. */
+char *wbe_catalog_item(const WbeCatalog *catalog, const char *item_id);
 /* {"id","name","pp"} for a move, JSON null when no source has it, or null on a load error. */
 char *wbe_catalog_move(const WbeCatalog *catalog, const char *move_id);
 
@@ -48,6 +54,8 @@ void wbe_destroy(WbeBattle *battle);
  * answer back and asks for it again; automated players should not pick it. */
 char *wbe_advance(WbeBattle *battle);
 bool wbe_respond(WbeBattle *battle, uint64_t prompt_id, uint32_t choice_id);
+/* The items `side` ("allies" or "foes") may use, as a JSON array of item IDs; false on error. */
+bool wbe_set_bag(WbeBattle *battle, const char *side, const char *items_json);
 /* Loads every file of moves_dir (or nothing, when null) and lists it with the built-in moves. */
 char *wbe_catalog(const char *moves_dir);
 

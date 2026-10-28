@@ -42,7 +42,7 @@ msgstr ""
 msgid "Beat Up requires species base Attack data."
 msgstr ""
 
-#: crates/wilds-battle-engine/src/engine.rs crates/wilds-battle-engine/src/script.rs moves/purify.lua moves/teatime.lua
+#: crates/wilds-battle-engine/src/engine.rs crates/wilds-battle-engine/src/script.rs items/dire-hit.lua items/guard-spec.lua moves/purify.lua moves/teatime.lua
 msgid "But it failed!"
 msgstr ""
 
@@ -76,6 +76,10 @@ msgstr ""
 
 #: moves/happy-hour.lua
 msgid "Everyone is caught up in the happy atmosphere!"
+msgstr ""
+
+#: items/fluffy-tail.lua items/poke-doll.lua items/poke-toy.lua
+msgid "Got away safely!"
 msgstr ""
 
 #: crates/wilds-battle-engine/src/model.rs
@@ -270,6 +274,10 @@ msgstr ""
 msgid "{0} became fully charged due to its Power Herb!"
 msgstr ""
 
+#: items/big-malasada.lua items/casteliacone.lua items/full-heal.lua items/full-restore.lua items/heal-powder.lua items/lava-cookie.lua items/lumiose-galette.lua items/old-gateau.lua items/pewter-crunchies.lua items/rage-candy-bar.lua items/shalour-sable.lua
+msgid "{0} became healthy."
+msgstr ""
+
 #: crates/wilds-battle-engine/src/engine.rs
 msgid "{0} bounced back {1}!"
 msgstr ""
@@ -428,6 +436,10 @@ msgstr ""
 
 #: moves/meteor-beam.lua
 msgid "{0} is gathering space power!"
+msgstr ""
+
+#: items/dire-hit.lua
+msgid "{0} is getting pumped!"
 msgstr ""
 
 #: crates/wilds-battle-engine/src/engine.rs
@@ -598,7 +610,7 @@ msgstr ""
 msgid "{0} switched places with {1}!"
 msgstr ""
 
-#: crates/wilds-battle-engine/src/statuses.rs
+#: crates/wilds-battle-engine/src/statuses.rs items/ice-heal.lua
 msgid "{0} thawed out!"
 msgstr ""
 
@@ -626,7 +638,7 @@ msgstr ""
 msgid "{0} used its {1}!"
 msgstr ""
 
-#: crates/wilds-battle-engine/src/engine.rs crates/wilds-battle-engine/src/script.rs
+#: crates/wilds-battle-engine/src/engine.rs
 msgid "{0} used {1}!"
 msgstr ""
 
@@ -670,6 +682,14 @@ msgstr ""
 msgid "{0} was burned!"
 msgstr ""
 
+#: items/antidote.lua
+msgid "{0} was cured of its poisoning."
+msgstr ""
+
+#: items/paralyze-heal.lua
+msgid "{0} was cured of paralysis."
+msgstr ""
+
 #: crates/wilds-battle-engine/src/parental_bond.rs crates/wilds-battle-engine/src/script.rs
 msgid "{0} was damaged by the recoil!"
 msgstr ""
@@ -710,6 +730,10 @@ msgstr ""
 msgid "{0} was replaced by {1}!"
 msgstr ""
 
+#: items/max-revive.lua items/revival-herb.lua items/revive.lua
+msgid "{0} was revived!"
+msgstr ""
+
 #: crates/wilds-battle-engine/src/engine.rs crates/wilds-battle-engine/src/script.rs
 msgid "{0} was squeezed by {1}!"
 msgstr ""
@@ -718,7 +742,7 @@ msgstr ""
 msgid "{0} whipped up a whirlwind!"
 msgstr ""
 
-#: crates/wilds-battle-engine/src/engine.rs moves/uproar.lua
+#: crates/wilds-battle-engine/src/engine.rs items/awakening.lua moves/uproar.lua
 msgid "{0} woke up!"
 msgstr ""
 
@@ -730,8 +754,16 @@ msgstr ""
 msgid "{0}'s Frisk revealed {1}'s {2}!"
 msgstr ""
 
+#: items/berry-juice.lua items/energy-powder.lua items/energy-root.lua items/fresh-water.lua items/full-restore.lua items/hyper-potion.lua items/lemonade.lua items/max-potion.lua items/moomoo-milk.lua items/potion.lua items/soda-pop.lua items/super-potion.lua
+msgid "{0}'s HP was restored."
+msgstr ""
+
 #: crates/wilds-battle-engine/src/abilities.rs
 msgid "{0}'s Intimidate activated!"
+msgstr ""
+
+#: items/elixir.lua items/ether.lua items/leppa-berry.lua items/max-elixir.lua items/max-ether.lua
+msgid "{0}'s PP was restored."
 msgstr ""
 
 #: crates/wilds-battle-engine/src/engine.rs
@@ -752,6 +784,10 @@ msgstr ""
 
 #: crates/wilds-battle-engine/src/engine.rs crates/wilds-battle-engine/src/script.rs
 msgid "{0}'s attack missed!"
+msgstr ""
+
+#: items/burn-heal.lua
+msgid "{0}'s burn was healed."
 msgstr ""
 
 #: crates/wilds-battle-engine/src/illusion.rs
@@ -792,6 +828,10 @@ msgstr ""
 
 #: crates/wilds-battle-engine/src/engine.rs
 msgid "{0}'s substitute took the hit!"
+msgstr ""
+
+#: items/guard-spec.lua
+msgid "{0}'s team became shrouded in mist!"
 msgstr ""
 
 #: crates/wilds-battle-engine/src/engine.rs

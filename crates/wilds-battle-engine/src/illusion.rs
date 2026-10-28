@@ -5,7 +5,11 @@ use crate::model::{BattleEvent, ParticipantId, Pokemon, PokemonAppearance};
 
 impl Pokemon {
     pub fn display_name(&self) -> &str {
-        self.illusion.as_ref().map_or(&self.name, |p| &p.name)
+        self.appearance().map_or(&self.name, |p| &p.name)
+    }
+    /// What the Pokémon looks like when not itself: an Illusion, else a host disguise.
+    pub fn appearance(&self) -> Option<&PokemonAppearance> {
+        self.illusion.as_ref().or(self.disguise.as_ref())
     }
 }
 

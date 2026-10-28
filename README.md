@@ -212,6 +212,47 @@ compare every internal C# event.
 Run `cargo test --workspace --offline` and
 `cargo clippy --workspace --all-targets --offline -- -D warnings`.
 
+## Items
+
+Items used from the bag are a turn action. The host tells the battle what each side
+carries with `Battle::set_bag(side, item_ids)`, at any time (a prompt already waiting is
+rebuilt), and keeps the counts itself. Action prompts then offer
+`Choice::UseItem { id, item, target, move_id }` for every target the item can help, and
+the action resolves before moves, like switching. `BattleEvent::ItemUsed { actor, item,
+target, consumed }` comes before the item's effects; `consumed` is false when the item
+was not used up, so the host keeps it.
+
+Items are Lua scripts like moves: `items/` holds the built-in ones (healing and status
+items, Revives, Ethers and Elixirs, X items, Dire Hit, Guard Spec., escape items and the
+basic berries), embedded in the library, and `MoveCatalog::with_sources(moves, items)`
+lets a host add or replace items the way it does moves. An item file returns:
+
+```lua
+return {
+  id = "potion", name = "Potion",
+  targets = "party",  -- user, party, party_move, fainted, foe or none
+  usable = function(target, ctx, move) return target.hp < target.max_hp end,
+  script = function(ctx) ctx:heal(ctx.target, 20) end,
+}
+```
+
+`script` runs with the item's user as `ctx.user` and its target as `ctx.target`
+(benched or fainted party members included); `party_move` items (Ether) are offered once
+per move and read it as `ctx.item_move`. The optional `usable` leaves out targets the
+item would not help. Besides the move API, item scripts have `ctx:revive(who, {fraction})`,
+`ctx:restore_pp(who, move, amount)` (all moves when `move` is nil, full when `amount` is
+nil), `ctx:cure_confusion(who)`, `ctx:escape()` (ends the battle as an escape for the
+user's side even while trapped, unless escape is forbidden), `ctx:reveal(who)` (ends a
+disguise and makes the Pokémon catchable) and `ctx:keep_item()`. Berries from the bag use
+`ctx:receive_berry(ctx.target, id)`, the held-berry effect. Scripts also read
+`ctx.wild_battle` and `ctx.no_escape`, and Pokémon tables carry `max_pp` beside `pp`.
+
+A Pokémon's `disguise` is an appearance the host gives, shown in its place (name, gender)
+until a script reveals it; unlike Illusion, damage does not end it. In JSON: setup
+`"bags": {"allies": ["potion"]}` and a per-Pokémon `"disguise": {"name": ...}`; choice
+kind `use_item` (`item`, `target`, `move_id`); event kind `item_used`; and the C functions
+`wbe_set_bag`, `wbe_catalog_create_with_items` and `wbe_catalog_item`.
+
 ## Animation events
 
 Besides messages, events mark the moments a host animates. `MoveUsed { actor, move_id,

@@ -33,7 +33,10 @@ pub use model::{
     PokemonForm, PokemonType, Prompt, PromptReason, Rule, Scope, ScriptContinuation, Side, Stat,
     Status, TerrainKind, Weather, WeatherKind,
 };
-pub use moves::{Accuracy, Category, Effect, MoveCatalog, MoveFile, MoveSource, MoveSpec, Target};
+pub use moves::{
+    Accuracy, Category, Effect, ItemSpec, ItemTargets, MoveCatalog, MoveFile, MoveSource, MoveSpec,
+    Target,
+};
 pub use rng::{BattleRng, SeededRng};
 
 #[cfg(test)]

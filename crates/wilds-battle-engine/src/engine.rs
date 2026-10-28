@@ -66,6 +66,12 @@ pub struct Battle {
     pub(crate) payout_multiplier: [u8; 2],
     pub(crate) environment: Option<String>,
     pub(crate) context: BTreeMap<String, ContextValue>,
+    /// Items each side may use, as the host's bag offers them.
+    bags: [Vec<String>; 2],
+    /// The item script being run asked to keep its item.
+    pub(crate) item_kept: bool,
+    /// The move the item being used was aimed at, `ctx.item_move`.
+    pub(crate) item_move: Option<String>,
     /// Hits on each target in the move being used, for `BattleEvent::Hit`.
     pub(crate) move_hits: BTreeMap<ParticipantId, u8>,
     /// Opponents each participant has been on the field together with (party indices).
@@ -179,6 +185,11 @@ enum SelectedAction {
     Escape,
     Recharge,
     Switch(ParticipantId),
+    Item {
+        item: String,
+        target: ParticipantId,
+        move_id: Option<String>,
+    },
 }
 
 #[derive(Clone)]
@@ -324,6 +335,9 @@ impl Battle {
             payout_multiplier: [1, 1],
             environment: None,
             context: BTreeMap::new(),
+            bags: [Vec::new(), Vec::new()],
+            item_kept: false,
+            item_move: None,
             move_hits: BTreeMap::new(),
             shown_hidden: BTreeMap::new(),
             faced: BTreeMap::new(),
@@ -375,6 +389,67 @@ impl Battle {
         self.payout_multiplier[side.index()]
     }
     /// Where the battle takes place, for moves that depend on it (Secret Power).
+    /// The items `side` may use, as the host's bag offers them; it can change at any time and
+    /// applies from the next prompt. The engine does not count them: an `ItemUsed` event with
+    /// `consumed` tells the host to take one out.
+    pub fn set_bag(&mut self, side: Side, items: Vec<String>) -> Result<(), BattleError> {
+        for item in &items {
+            if self.catalog.load_item(item)?.is_none() {
+                return Err(BattleError::InvalidSetup(format!("unknown item {item}")));
+            }
+        }
+        self.bags[side.index()] = items;
+        // A prompt already waiting for this side offers the new bag.
+        if let Some(prompt) = self.pending.clone()
+            && prompt.actor.side == side
+            && prompt.reason == PromptReason::Action
+        {
+            let mut choices = self.legal_choices(prompt.actor);
+            if self.answered.iter().any(|who| who.side == side) {
+                choices.push(Choice::Undo {
+                    id: choices.len() as u32,
+                });
+            }
+            self.make_prompt(prompt.actor, choices, PromptReason::Action);
+        }
+        Ok(())
+    }
+    pub fn bag(&self, side: Side) -> &[String] {
+        &self.bags[side.index()]
+    }
+    /// Uses an item: reports it, then runs its script with `target` as `ctx.target`.
+    fn use_item(
+        &mut self,
+        actor: ParticipantId,
+        item: &str,
+        target: ParticipantId,
+        move_id: Option<String>,
+        events: &mut Vec<BattleEvent>,
+    ) -> Result<(), BattleError> {
+        let spec = self
+            .catalog
+            .item(item)
+            .cloned()
+            .ok_or_else(|| BattleError::InvalidSetup(format!("unknown item {item}")))?;
+        let at = events.len();
+        events.push(BattleEvent::ItemUsed {
+            actor,
+            item: spec.id.clone(),
+            target,
+            consumed: true,
+        });
+        self.item_kept = false;
+        self.item_move = move_id;
+        let result = self.execute_script(actor, target, &spec.script, events, ScriptHook::Main);
+        self.item_move = None;
+        result?;
+        if std::mem::take(&mut self.item_kept)
+            && let BattleEvent::ItemUsed { consumed, .. } = &mut events[at]
+        {
+            *consumed = false;
+        }
+        Ok(())
+    }
     /// Values describing the battle's surroundings, which scripts read from `ctx.context`.
     pub fn set_context(&mut self, key: impl Into<String>, value: ContextValue) {
         self.context.insert(key.into(), value);
@@ -514,8 +589,7 @@ impl Battle {
             id,
             name: pokemon.display_name().to_owned(),
             gender: pokemon
-                .illusion
-                .as_ref()
+                .appearance()
                 .map_or(pokemon.gender, |appearance| appearance.gender),
         }
     }
@@ -764,6 +838,21 @@ impl Battle {
                 });
             }
         }
+        if pokemon.locked_move.is_none() {
+            for item in self.bags[actor.side.index()].clone() {
+                let Some(spec) = self.catalog.item(&item).cloned() else {
+                    continue;
+                };
+                for (target, move_id) in self.usable_item_targets(actor, &spec) {
+                    result.push(Choice::UseItem {
+                        id: result.len() as u32,
+                        item: item.clone(),
+                        target,
+                        move_id,
+                    });
+                }
+            }
+        }
         if self.can_escape(actor) {
             if result.is_empty()
                 && let Some(target) = self.actors().into_iter().find(|id| id.side != actor.side)
@@ -1004,6 +1093,16 @@ impl Battle {
                 target_position: self.target_position(*target),
             }),
             Choice::Switch { to, .. } => SelectedAction::Switch(*to),
+            Choice::UseItem {
+                item,
+                target,
+                move_id,
+                ..
+            } => SelectedAction::Item {
+                item: item.clone(),
+                target: *target,
+                move_id: move_id.clone(),
+            },
             Choice::Undo { .. } => unreachable!("undo is not an action"),
         }
     }
@@ -1049,7 +1148,7 @@ impl Battle {
                         self.catalog.get(&choice.move_id).expect("validated choice"),
                     ),
                     SelectedAction::Recharge => 0,
-                    SelectedAction::Switch(_) => 6,
+                    SelectedAction::Switch(_) | SelectedAction::Item { .. } => 6,
                     SelectedAction::Escape => i8::MAX,
                 };
                 let custap = matches!(choice, SelectedAction::Move(_))
@@ -1095,9 +1194,10 @@ impl Battle {
             .iter()
             .filter_map(|entry| match &entry.action {
                 SelectedAction::Move(choice) => Some((entry.actor, choice.move_id.clone())),
-                SelectedAction::Recharge | SelectedAction::Switch(_) | SelectedAction::Escape => {
-                    None
-                }
+                SelectedAction::Recharge
+                | SelectedAction::Switch(_)
+                | SelectedAction::Escape
+                | SelectedAction::Item { .. } => None,
             })
             .collect();
         self.hurry.clear();
@@ -1320,6 +1420,20 @@ impl Battle {
                 self.check_sleep(actor, events);
             }
             match &choice {
+                SelectedAction::Item {
+                    item,
+                    target,
+                    move_id,
+                } => {
+                    self.use_item(actor, item, *target, move_id.clone(), events)?;
+                    if self.escaped_by.is_some() {
+                        self.turn_queue.clear();
+                        self.pending_actors.clear();
+                        self.completed_slots.clear();
+                        self.resolving_turn = false;
+                        return Ok(());
+                    }
+                }
                 SelectedAction::Escape => {
                     if self.try_escape(actor, events) {
                         self.turn_queue.clear();

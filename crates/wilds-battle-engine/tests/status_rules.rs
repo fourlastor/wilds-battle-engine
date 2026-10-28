@@ -54,7 +54,10 @@ fn turn(battle: &mut Battle, ally: &str, foe: &str) -> Vec<BattleEvent> {
             .find(|c| match c {
                 Choice::UseMove { move_id, .. } => move_id == wanted,
                 Choice::Switch { to, .. } => wanted == format!("switch:{}", to.index),
-                Choice::Escape { .. } | Choice::Continue { .. } | Choice::Undo { .. } => false,
+                Choice::Escape { .. }
+                | Choice::Continue { .. }
+                | Choice::Undo { .. }
+                | Choice::UseItem { .. } => false,
             })
             .unwrap();
         battle
