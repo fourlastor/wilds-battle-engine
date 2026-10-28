@@ -33,7 +33,7 @@ pub use model::{
     Prompt, PromptReason, Rule, Scope, ScriptContinuation, Side, Stat, Status, Weather,
     WeatherKind,
 };
-pub use moves::{Accuracy, Category, Effect, MoveCatalog, MoveSpec, Target};
+pub use moves::{Accuracy, Category, Effect, MoveCatalog, MoveFile, MoveSource, MoveSpec, Target};
 pub use rng::{BattleRng, SeededRng};
 
 #[cfg(test)]

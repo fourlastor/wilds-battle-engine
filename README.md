@@ -1,9 +1,13 @@
 # Wilds battle engine
 
-`wilds-battle-engine` is the Rust battle simulation. Move definitions are loaded
-from Lua; `MoveCatalog::builtin()` embeds the 753 files under `moves/`,
-and `MoveCatalog::from_directory(path)` reads them from disk at runtime.
-Both catalogs also include the system move Struggle, for 754 moves in total.
+`wilds-battle-engine` is the Rust battle simulation. Move definitions are Lua files
+named after their move ID. The library embeds the 753 files under `moves/`, plus the
+system move Struggle, for 754 moves in total. Moves are loaded on first use:
+`MoveCatalog::builtin()` uses only the embedded moves, while
+`MoveCatalog::with_source(|id| ...)` asks a host function for each ID first and falls back
+to them, so a host can add or replace moves from any number of folders without the
+engine knowing. `MoveCatalog::from_directory(path)` is such a source over one folder.
+A file must declare the ID it is named after; IDs are lowercase slugs.
 The [move catalog](moves/README.md) includes 538 entries from the Saved moves sheet,
 plus support moves, additional local JSON moves and the original moves outside the sheet. Its manifest
 records the 34 excluded Z/Max Moves from the sheet. The move cutoff is Sword/Shield
@@ -178,8 +182,11 @@ including different damage rolls, a miss, a critical hit, status, poison damage,
 healing, fainting, and battle outcome.
 Broader C# event parity remains to be verified.
 `wilds-battle-engine-ffi` builds as a C ABI dynamic library. Its declarations
-are in `include/wilds_battle_engine.h`. `wbe_create` accepts UTF-8 JSON setup
-and a move directory; `wbe_advance` returns events, the next prompt or winner,
+are in `include/wilds_battle_engine.h`. `wbe_catalog_create` takes a host callback
+that supplies move sources by ID (see `wbe_move_source`); `wbe_catalog_move` looks a
+move up and `wbe_create_with_catalog` starts a battle from UTF-8 JSON setup.
+`wbe_create` does the same with an optional move directory instead of a callback.
+`wbe_advance` returns events, the next prompt or winner,
 and participant state as JSON. `wbe_respond` supplies a choice, while
 `wbe_catalog` validates and lists disk move files. Each returned string must
 be released with `wbe_free_string`. The PokeWilds playtest host demonstrates

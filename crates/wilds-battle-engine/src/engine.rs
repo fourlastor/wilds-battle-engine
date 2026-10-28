@@ -238,7 +238,7 @@ impl Battle {
                 )));
             }
             for id in &pokemon.moves {
-                let Some(spec) = catalog.get(id) else {
+                let Some(spec) = catalog.load(id)? else {
                     return Err(BattleError::InvalidSetup(format!("unknown move {id}")));
                 };
                 if spec.auto_only {

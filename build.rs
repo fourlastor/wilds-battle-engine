@@ -8,19 +8,25 @@ fn main() {
         .map(|entry| entry.expect("move entry").path())
         .filter(|path| path.extension().is_some_and(|extension| extension == "lua"))
         .collect();
-    files.sort();
-    let mut source = String::from("return {\n");
+    files.sort_by(|a, b| a.file_stem().cmp(&b.file_stem()));
+    // Each file is one move named after its ID; the catalog looks them up by binary search.
+    let mut source = String::from("pub(super) static MOVES: &[(&str, &str)] = &[\n");
     for path in files {
         println!("cargo:rerun-if-changed={}", path.display());
-        let text = fs::read_to_string(&path).expect("move file");
-        // Each file returns one move; wrap it to keep its local helper functions local.
-        source.push_str("(function()\n");
-        source.push_str(&text);
-        source.push_str("\nend)(),\n");
+        let id = path
+            .file_stem()
+            .unwrap()
+            .to_str()
+            .expect("UTF-8 move file name");
+        let path = fs::canonicalize(&path).expect("move file");
+        source.push_str(&format!(
+            "    ({id:?}, include_str!({:?})),\n",
+            path.display().to_string()
+        ));
     }
-    source.push_str("}\n");
+    source.push_str("];\n");
     fs::write(
-        PathBuf::from(env::var("OUT_DIR").unwrap()).join("builtin_moves.lua"),
+        PathBuf::from(env::var("OUT_DIR").unwrap()).join("builtin_moves.rs"),
         source,
     )
     .expect("generated built-in catalog");

@@ -1,11 +1,12 @@
 use serde::Deserialize;
 use serde_json::{Value, json};
-use std::ffi::{CStr, CString, c_char};
+use std::ffi::{CStr, CString, c_char, c_void};
 use std::panic::{AssertUnwindSafe, catch_unwind};
 use std::sync::Mutex;
 use wilds_battle_engine::{
     ActionSelection, AdvanceStatus, Battle, BattleEvent, Choice, CombatStat, Condition, Gender,
-    MoveCatalog, ParticipantId, Pokemon, PokemonForm, PokemonType, PromptReason, Side, Status,
+    MoveCatalog, MoveFile, ParticipantId, Pokemon, PokemonForm, PokemonType, PromptReason, Side,
+    Status,
 };
 
 static LAST_ERROR: Mutex<String> = Mutex::new(String::new());
@@ -255,42 +256,155 @@ pub unsafe extern "C" fn wbe_free_string(ptr: *mut c_char) {
         drop(unsafe { CString::from_raw(ptr) });
     }
 }
+/// Asks the host for the Lua source of a move; see `wbe_move_source` in the C header.
+pub type MoveSourceCallback = unsafe extern "C" fn(
+    user_data: *mut c_void,
+    move_id: *const c_char,
+    request: *mut WbeMoveRequest,
+) -> bool;
+
+/// Collects the source a host callback supplies with `wbe_move_found`.
+pub struct WbeMoveRequest {
+    file: Option<MoveFile>,
+}
+
 #[unsafe(no_mangle)]
 /// # Safety
-/// Both pointers must refer to valid, null-terminated UTF-8 strings.
+/// `request` must be the pointer passed to the running callback; `origin` and `text` must be
+/// null-terminated UTF-8 strings. Both are copied.
+pub unsafe extern "C" fn wbe_move_found(
+    request: *mut WbeMoveRequest,
+    origin: *const c_char,
+    text: *const c_char,
+) {
+    let (Some(request), Ok(text)) = (unsafe { request.as_mut() }, unsafe { input(text, "text") })
+    else {
+        return;
+    };
+    request.file = Some(MoveFile {
+        origin: unsafe { input(origin, "origin") }
+            .unwrap_or("host move source")
+            .to_owned(),
+        text: text.to_owned(),
+    });
+}
+
+/// A catalog over the built-in moves: the host callback first when given, else `moves_dir`.
+unsafe fn catalog(
+    moves_dir: *const c_char,
+    source: Option<MoveSourceCallback>,
+    user_data: *mut c_void,
+) -> Result<MoveCatalog, String> {
+    let catalog = if let Some(source) = source {
+        MoveCatalog::with_source(move |id| {
+            let id = CString::new(id).ok()?;
+            let mut request = WbeMoveRequest { file: None };
+            // SAFETY: the host keeps the callback and its data valid while the catalog lives.
+            let found = unsafe { source(user_data, id.as_ptr(), &mut request) };
+            if found { request.file } else { None }
+        })
+    } else if moves_dir.is_null() {
+        MoveCatalog::builtin()
+    } else {
+        MoveCatalog::from_directory(unsafe { input(moves_dir, "moves directory")? })
+    };
+    catalog.map_err(|error| error.to_string())
+}
+
+unsafe fn create(setup_json: *const c_char, catalog: MoveCatalog) -> Result<*mut Battle, String> {
+    let setup: Setup = serde_json::from_str(unsafe { input(setup_json, "setup")? })
+        .map_err(|error| error.to_string())?;
+    let allies = setup
+        .allies
+        .into_iter()
+        .map(pokemon)
+        .collect::<Result<Vec<_>, _>>()?;
+    let foes = setup
+        .foes
+        .into_iter()
+        .map(pokemon)
+        .collect::<Result<Vec<_>, _>>()?;
+    let mut battle =
+        Battle::new(setup.seed, [allies, foes], catalog).map_err(|error| error.to_string())?;
+    battle
+        .set_wild_battle(setup.wild_battle)
+        .map_err(|error| error.to_string())?;
+    if let Some(active) = setup.active {
+        battle
+            .set_active([active.allies, active.foes])
+            .map_err(|error| error.to_string())?;
+    }
+    battle.set_environment(setup.environment.filter(|place| !place.is_empty()));
+    Ok(Box::into_raw(Box::new(battle)))
+}
+
+#[unsafe(no_mangle)]
+/// # Safety
+/// `setup_json` must be a valid, null-terminated UTF-8 string; `moves_dir` too, or null.
 pub unsafe extern "C" fn wbe_create(
     setup_json: *const c_char,
     moves_dir: *const c_char,
 ) -> *mut Battle {
+    guarded(|| unsafe { create(setup_json, catalog(moves_dir, None, std::ptr::null_mut())?) })
+}
+
+#[unsafe(no_mangle)]
+/// # Safety
+/// `source` and `user_data` must stay valid until the catalog and every battle created from it
+/// are destroyed. Catalogs and their battles must be used from one thread.
+pub unsafe extern "C" fn wbe_catalog_create(
+    source: Option<MoveSourceCallback>,
+    user_data: *mut c_void,
+) -> *mut MoveCatalog {
     guarded(|| {
-        let setup: Setup = serde_json::from_str(unsafe { input(setup_json, "setup")? })
-            .map_err(|error| error.to_string())?;
-        let catalog = MoveCatalog::from_directory(unsafe { input(moves_dir, "moves directory")? })
-            .map_err(|error| error.to_string())?;
-        let allies = setup
-            .allies
-            .into_iter()
-            .map(pokemon)
-            .collect::<Result<Vec<_>, _>>()?;
-        let foes = setup
-            .foes
-            .into_iter()
-            .map(pokemon)
-            .collect::<Result<Vec<_>, _>>()?;
-        let mut battle =
-            Battle::new(setup.seed, [allies, foes], catalog).map_err(|error| error.to_string())?;
-        battle
-            .set_wild_battle(setup.wild_battle)
-            .map_err(|error| error.to_string())?;
-        if let Some(active) = setup.active {
-            battle
-                .set_active([active.allies, active.foes])
-                .map_err(|error| error.to_string())?;
-        }
-        battle.set_environment(setup.environment.filter(|place| !place.is_empty()));
-        Ok(Box::into_raw(Box::new(battle)))
+        let catalog = unsafe { catalog(std::ptr::null(), source, user_data)? };
+        Ok(Box::into_raw(Box::new(catalog)))
     })
 }
+
+#[unsafe(no_mangle)]
+/// # Safety
+/// `catalog` must be a live catalog returned by `wbe_catalog_create`, or null, and destroyed once.
+pub unsafe extern "C" fn wbe_catalog_destroy(catalog: *mut MoveCatalog) {
+    if !catalog.is_null() {
+        drop(unsafe { Box::from_raw(catalog) });
+    }
+}
+
+#[unsafe(no_mangle)]
+/// # Safety
+/// `catalog` must be a live catalog; `move_id` a valid, null-terminated UTF-8 string.
+pub unsafe extern "C" fn wbe_catalog_move(
+    catalog: *const MoveCatalog,
+    move_id: *const c_char,
+) -> *mut c_char {
+    guarded(|| {
+        let catalog = unsafe { catalog.as_ref() }.ok_or("null catalog")?;
+        let spec = catalog
+            .load(unsafe { input(move_id, "move id")? })
+            .map_err(|error| error.to_string())?;
+        Ok(output(spec.map_or(Value::Null, move_info)))
+    })
+}
+
+#[unsafe(no_mangle)]
+/// # Safety
+/// `setup_json` must be a valid, null-terminated UTF-8 string and `catalog` a live catalog. The
+/// battle shares the moves the catalog loaded; the catalog can be destroyed before it.
+pub unsafe extern "C" fn wbe_create_with_catalog(
+    setup_json: *const c_char,
+    catalog: *const MoveCatalog,
+) -> *mut Battle {
+    guarded(|| {
+        let catalog = unsafe { catalog.as_ref() }.ok_or("null catalog")?.clone();
+        unsafe { create(setup_json, catalog) }
+    })
+}
+
+fn move_info(spec: &wilds_battle_engine::MoveSpec) -> Value {
+    json!({"id":spec.id, "name":spec.name, "pp":spec.pp})
+}
+
 #[unsafe(no_mangle)]
 /// # Safety
 /// `ptr` must be a live battle returned by `wbe_create`, or null, and destroyed once.
@@ -347,19 +461,17 @@ pub unsafe extern "C" fn wbe_respond(ptr: *mut Battle, prompt_id: u64, choice_id
 }
 #[unsafe(no_mangle)]
 /// # Safety
-/// `moves_dir` must refer to a valid, null-terminated UTF-8 string.
+/// `moves_dir` must refer to a valid, null-terminated UTF-8 string, or be null.
 pub unsafe extern "C" fn wbe_catalog(moves_dir: *const c_char) -> *mut c_char {
     guarded(|| {
-        let catalog = MoveCatalog::from_directory(unsafe { input(moves_dir, "moves directory")? })
-            .map_err(|error| error.to_string())?;
+        let catalog = unsafe { catalog(moves_dir, None, std::ptr::null_mut())? };
         let mut moves = catalog
             .ids()
-            .filter_map(|id| catalog.get(id))
-            .map(|spec| {
-                json!({
-                    "id":spec.id, "name":spec.name, "pp":spec.pp,
-                })
-            })
+            .map(|id| catalog.load(id).map(|spec| spec.map(move_info)))
+            .collect::<Result<Vec<_>, _>>()
+            .map_err(|error| error.to_string())?
+            .into_iter()
+            .flatten()
             .collect::<Vec<_>>();
         moves.sort_by(|a, b| a["id"].as_str().cmp(&b["id"].as_str()));
         Ok(output(json!({"moves":moves})))
@@ -470,6 +582,76 @@ fn event(value: &BattleEvent) -> Value {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    unsafe extern "C" fn modded_tackle(
+        user_data: *mut c_void,
+        move_id: *const c_char,
+        request: *mut WbeMoveRequest,
+    ) -> bool {
+        let asked = unsafe { &mut *(user_data as *mut Vec<String>) };
+        let id = unsafe { CStr::from_ptr(move_id) }.to_str().unwrap();
+        asked.push(id.to_owned());
+        if id != "tackle" {
+            return false;
+        }
+        let origin = CString::new("mods/test/moves/tackle.lua").unwrap();
+        let text = CString::new(
+            r#"return {id="tackle", name="Modded Tackle", type=Type.Normal,
+                category=Category.Physical, pp=7, effects={{kind=Effect.Damage, power=40}}}"#,
+        )
+        .unwrap();
+        unsafe { wbe_move_found(request, origin.as_ptr(), text.as_ptr()) };
+        true
+    }
+
+    fn take(ptr: *mut c_char) -> Value {
+        assert!(!ptr.is_null(), "{}", take_error());
+        let value = serde_json::from_str(unsafe { CStr::from_ptr(ptr) }.to_str().unwrap()).unwrap();
+        unsafe { wbe_free_string(ptr) };
+        value
+    }
+
+    fn take_error() -> String {
+        let ptr = wbe_last_error();
+        let text = unsafe { CStr::from_ptr(ptr) }.to_str().unwrap().to_owned();
+        unsafe { wbe_free_string(ptr) };
+        text
+    }
+
+    #[test]
+    fn c_api_catalog_asks_the_host_source_before_builtin_moves() {
+        let mut asked: Vec<String> = Vec::new();
+        let catalog = unsafe {
+            wbe_catalog_create(
+                Some(modded_tackle),
+                &mut asked as *mut Vec<String> as *mut c_void,
+            )
+        };
+        assert!(!catalog.is_null());
+        let lookup = |id: &str| {
+            let id = CString::new(id).unwrap();
+            take(unsafe { wbe_catalog_move(catalog, id.as_ptr()) })
+        };
+        assert_eq!(lookup("tackle")["name"], "Modded Tackle");
+        assert_eq!(lookup("growl")["name"], "Growl");
+        assert_eq!(lookup("not-a-move"), Value::Null);
+
+        let setup = CString::new(
+            r#"{"allies":[{"name":"Ally","moves":["tackle"]}],"foes":[{"name":"Foe","moves":["growl"]}]}"#,
+        )
+        .unwrap();
+        let battle = unsafe { wbe_create_with_catalog(setup.as_ptr(), catalog) };
+        unsafe { wbe_catalog_destroy(catalog) };
+        assert!(!battle.is_null(), "{}", take_error());
+        let state = take(unsafe { wbe_advance(battle) });
+        assert_eq!(state["allies"][0]["move_pp"]["tackle"], 7);
+        unsafe { wbe_destroy(battle) };
+        assert_eq!(
+            asked,
+            ["tackle", "growl", "not-a-move"],
+            "each move is asked for once"
+        );
+    }
 
     #[test]
     fn c_api_offers_opt_in_escape_and_returns_a_persistent_escape_outcome() {
