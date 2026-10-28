@@ -3,7 +3,10 @@ use crate::model::{
     AppliedStatus, BattleError, CombatStat, Condition, ContinuationTarget, HiddenKind,
     ParticipantId, PokemonType, Rule, Scope, Stat, WeatherKind,
 };
-use mlua::{Function, HookTriggers, Lua, Table, Thread, UserData, Value, Variadic, VmState};
+use mlua::{
+    FromLua, Function, HookTriggers, Lua, LuaOptions, StdLib, Table, Thread, UserData, Value,
+    Variadic, VmState,
+};
 use std::cell::RefCell;
 use std::collections::{BTreeMap, HashMap};
 use std::path::Path;
@@ -1650,6 +1653,48 @@ fn builtin_file(id: &str) -> Option<MoveFile> {
     })
 }
 
+/// Instructions a move file may run while it is loaded.
+const LOAD_INSTRUCTIONS: u32 = 1_000_000;
+/// Memory for every move, script and coroutine of one catalog.
+const LUA_MEMORY: usize = 256 * 1024 * 1024;
+
+/// A Lua state for move and rule files, which can come from mods: no file, OS, module or debug
+/// access and no loading of further code, so a script can only reach the battle API.
+fn sandboxed_lua() -> Result<Lua, BattleError> {
+    let lua = Lua::new_with(
+        StdLib::COROUTINE | StdLib::TABLE | StdLib::STRING | StdLib::UTF8 | StdLib::MATH,
+        LuaOptions::default(),
+    )?;
+    let globals = lua.globals();
+    for name in ["dofile", "loadfile", "load", "collectgarbage"] {
+        globals.raw_set(name, Value::Nil)?;
+    }
+    lua.set_memory_limit(LUA_MEMORY)?;
+    lua_symbols::install(&lua)?;
+    Ok(lua)
+}
+
+/// Evaluates a chunk with an instruction budget, so a file that never finishes loading fails
+/// instead of hanging the host.
+fn eval_limited<T: FromLua>(lua: &Lua, chunk: mlua::chunk::Chunk) -> mlua::Result<T> {
+    let instructions = Arc::new(AtomicU32::new(0));
+    lua.set_hook(
+        HookTriggers::new().every_nth_instruction(1000),
+        move |_, _| {
+            if instructions.fetch_add(1000, Ordering::Relaxed) >= LOAD_INSTRUCTIONS {
+                Err(mlua::Error::external(format!(
+                    "loading exceeded {LOAD_INSTRUCTIONS} instructions"
+                )))
+            } else {
+                Ok(VmState::Continue)
+            }
+        },
+    )?;
+    let result = chunk.eval();
+    lua.remove_hook();
+    result
+}
+
 /// Move IDs are lowercase slugs, which also keeps them safe to use as file names.
 fn is_move_id(id: &str) -> bool {
     !id.is_empty()
@@ -1727,9 +1772,8 @@ impl MoveCatalog {
     }
     /// Parses declarative ability rules with the same typed symbols and validation as move effects.
     pub fn rules_from_lua(source: &str) -> Result<Vec<Rule>, BattleError> {
-        let lua = Lua::new();
-        lua_symbols::install(&lua)?;
-        let table: Table = lua.load(source).eval()?;
+        let lua = sandboxed_lua()?;
+        let table: Table = eval_limited(&lua, lua.load(source))?;
         table
             .sequence_values::<Value>()
             .map(|value| Ok(rule_of(&value?)?))
@@ -1738,7 +1782,7 @@ impl MoveCatalog {
     /// Exactly the moves in a Lua table of move definitions, plus the system moves.
     pub fn from_lua(source: &str) -> Result<Self, BattleError> {
         let catalog = Self::new(Box::new(|_| None), false, Vec::new())?;
-        let table: Table = catalog.lua.load(source).eval()?;
+        let table: Table = eval_limited(&catalog.lua, catalog.lua.load(source))?;
         let mut known = Vec::new();
         for value in table.sequence_values::<Table>() {
             let spec = parse_move(&value?)?;
@@ -1769,8 +1813,7 @@ impl MoveCatalog {
         builtin: bool,
         mut known: Vec<String>,
     ) -> Result<Self, BattleError> {
-        let lua = Lua::new();
-        lua_symbols::install(&lua)?;
+        let lua = sandboxed_lua()?;
         let system: Table = lua.load(include_str!("system_moves.lua")).eval()?;
         let system = parse_move(&system)?;
         known.push(system.id.clone());
@@ -1815,12 +1858,9 @@ impl MoveCatalog {
             .map_err(|error| BattleError::InvalidSetup(error.clone()))
     }
     fn parse_file(&self, id: &str, file: &MoveFile) -> Result<MoveSpec, String> {
-        let entry: Table = self
-            .lua
-            .load(&file.text)
-            .set_name(&file.origin)
-            .eval()
-            .map_err(|error| format!("{}: {error}", file.origin))?;
+        let entry: Table =
+            eval_limited(&self.lua, self.lua.load(&file.text).set_name(&file.origin))
+                .map_err(|error| format!("{}: {error}", file.origin))?;
         let spec = parse_move(&entry).map_err(|error| format!("{}: {error}", file.origin))?;
         if spec.id != id {
             return Err(format!(

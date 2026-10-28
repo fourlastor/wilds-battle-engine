@@ -8,6 +8,11 @@ system move Struggle, for 754 moves in total. Moves are loaded on first use:
 to them, so a host can add or replace moves from any number of folders without the
 engine knowing. `MoveCatalog::from_directory(path)` is such a source over one folder.
 A file must declare the ID it is named after; IDs are lowercase slugs.
+Since move files can come from mods, their Lua state is sandboxed: only the `string`,
+`table`, `math`, `utf8` and `coroutine` libraries are available (no `os`, `io`,
+`require`, `load` or `debug`), loading a file may run at most 1,000,000 instructions, and
+each catalog's Lua memory is capped at 256 MiB. Ability rules from setup JSON use the
+same sandbox.
 The [move catalog](moves/README.md) includes 538 entries from the Saved moves sheet,
 plus support moves, additional local JSON moves and the original moves outside the sheet. Its manifest
 records the 34 excluded Z/Max Moves from the sheet. The move cutoff is Sword/Shield

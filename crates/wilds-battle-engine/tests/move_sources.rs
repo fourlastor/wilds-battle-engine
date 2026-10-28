@@ -101,3 +101,40 @@ fn ids_that_are_not_slugs_never_reach_the_source() {
         assert!(catalog.load(id).unwrap().is_none(), "{id}");
     }
 }
+
+fn load_error(text: impl Into<String>) -> String {
+    let text = text.into();
+    let catalog =
+        MoveCatalog::with_source(move |id| (id == "modded").then(|| file(&text)).flatten())
+            .unwrap();
+    catalog.load("modded").unwrap_err().to_string()
+}
+
+#[test]
+fn move_files_cannot_reach_the_system() {
+    for global in [
+        "os",
+        "io",
+        "require",
+        "package",
+        "debug",
+        "dofile",
+        "loadfile",
+        "load",
+        "collectgarbage",
+    ] {
+        let error = load_error(format!(
+            "assert({global} == nil, 'available'); error('sandboxed')"
+        ));
+        assert!(error.contains("sandboxed"), "{global}: {error}");
+    }
+    let rules = MoveCatalog::rules_from_lua("return {os.exit(1)}").unwrap_err();
+    assert!(rules.to_string().contains("os"), "{rules}");
+}
+
+#[test]
+fn a_move_file_that_never_finishes_loading_fails() {
+    let error = load_error("while true do end");
+    assert!(error.contains("loading exceeded"), "{error}");
+    assert!(error.contains("mods/test"), "{error}");
+}
