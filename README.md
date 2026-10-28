@@ -10,7 +10,8 @@ engine knowing. `MoveCatalog::from_directory(path)` is such a source over one fo
 A file must declare the ID it is named after; IDs are lowercase slugs.
 Since move files can come from mods, their Lua state is sandboxed: only the `string`,
 `table`, `math`, `utf8` and `coroutine` libraries are available (no `os`, `io`,
-`require`, `load` or `debug`), loading a file may run at most 1,000,000 instructions, and
+`require`, `load` or `debug`, and no `math.random`: scripts draw from the battle's seeded
+RNG with `ctx:random_int`, so battles replay exactly), loading a file may run at most 1,000,000 instructions, and
 each catalog's Lua memory is capped at 256 MiB. Ability rules from setup JSON use the
 same sandbox.
 The [move catalog](moves/README.md) includes 538 entries from the Saved moves sheet,

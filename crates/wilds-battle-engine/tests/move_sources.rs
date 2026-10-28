@@ -122,6 +122,8 @@ fn move_files_cannot_reach_the_system() {
         "loadfile",
         "load",
         "collectgarbage",
+        "math.random",
+        "math.randomseed",
     ] {
         let error = load_error(format!(
             "assert({global} == nil, 'available'); error('sandboxed')"

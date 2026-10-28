@@ -1689,7 +1689,8 @@ const LOAD_INSTRUCTIONS: u32 = 1_000_000;
 const LUA_MEMORY: usize = 256 * 1024 * 1024;
 
 /// A Lua state for move and rule files, which can come from mods: no file, OS, module or debug
-/// access and no loading of further code, so a script can only reach the battle API.
+/// access, no loading of further code and no randomness of its own, so a script can only reach
+/// the battle API.
 fn sandboxed_lua() -> Result<Lua, BattleError> {
     let lua = Lua::new_with(
         StdLib::COROUTINE | StdLib::TABLE | StdLib::STRING | StdLib::UTF8 | StdLib::MATH,
@@ -1699,6 +1700,11 @@ fn sandboxed_lua() -> Result<Lua, BattleError> {
     for name in ["dofile", "loadfile", "load", "collectgarbage"] {
         globals.raw_set(name, Value::Nil)?;
     }
+    // Every random draw goes through the battle's RNG (`ctx:random_int`), so seeded battles
+    // replay exactly; Lua's own generator would differ between runs and machines.
+    let math: Table = globals.get("math")?;
+    math.raw_set("random", Value::Nil)?;
+    math.raw_set("randomseed", Value::Nil)?;
     lua.set_memory_limit(LUA_MEMORY)?;
     lua_symbols::install(&lua)?;
     Ok(lua)
