@@ -587,6 +587,11 @@ pub struct Pokemon {
     pub disguise: Option<PokemonAppearance>,
     /// Species catch rate (3 to 255); a Pokémon without one cannot be caught.
     pub catch_rate: Option<u8>,
+    /// Species base Speed, for scripts such as the Fast Ball's.
+    pub base_speed: Option<u16>,
+    /// Facts the host records about this Pokémon for scripts (`who.flags.name`), such as a
+    /// species already registered; scripts can set and clear them too.
+    pub flags: BTreeSet<String>,
     pub bound: Option<Bound>,
     pub protected: bool,
     /// Separate HP pool; zero means no substitute. Cleared on withdrawal or fainting.
@@ -692,6 +697,8 @@ impl Pokemon {
             stages: BTreeMap::new(),
             pp_max: BTreeMap::new(),
             confused_turns: None,
+            base_speed: None,
+            flags: BTreeSet::new(),
             disguise: None,
             uncatchable: false,
             catch_rate: None,
@@ -1078,6 +1085,22 @@ pub enum BattleEvent {
         target: ParticipantId,
         consumed: bool,
     },
+    /// A ball thrown at `target`: `shakes` is how many breakout checks it held (up to 4, or 1
+    /// for a critical capture), and `caught` whether it held them all.
+    Capture {
+        actor: ParticipantId,
+        target: ParticipantId,
+        ball: String,
+        shakes: u8,
+        critical: bool,
+        caught: bool,
+    },
+    /// `target` cannot be caught; the ball is not used up.
+    CaptureRefused {
+        actor: ParticipantId,
+        target: ParticipantId,
+        ball: String,
+    },
     /// The first turn of a two-turn move.
     Charging {
         actor: ParticipantId,
@@ -1212,8 +1235,16 @@ pub struct Prompt {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum AdvanceStatus {
     Awaiting(Prompt),
-    End { winner: Option<Side> },
-    Escaped { side: Side },
+    End {
+        winner: Option<Side>,
+    },
+    Escaped {
+        side: Side,
+    },
+    /// A wild Pokémon was caught; the battle is over.
+    Captured {
+        target: ParticipantId,
+    },
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]

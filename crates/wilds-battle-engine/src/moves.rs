@@ -345,6 +345,10 @@ pub(crate) enum ScriptOperation {
     },
     /// The item being used is not used up.
     KeepItem,
+    AttemptCapture {
+        who: ParticipantId,
+        throw: crate::capture::Throw,
+    },
     ApplyStatus {
         who: ParticipantId,
         status: AppliedStatus,
@@ -1375,6 +1379,25 @@ fn parse_op(name: &str, args: &[Value]) -> mlua::Result<ScriptOperation> {
         "escape" => ScriptOperation::Escape,
         "reveal" => ScriptOperation::Reveal { who: who(0)? },
         "keep_item" => ScriptOperation::KeepItem,
+        "attempt_capture" => {
+            let options = Options::new(
+                given(2),
+                "attempt_capture",
+                &["guaranteed", "catch_rate_bonus"],
+            )?;
+            ScriptOperation::AttemptCapture {
+                who: who(0)?,
+                throw: crate::capture::Throw {
+                    modifier: given(1).map_or(Ok(1.0), |value| {
+                        number_of(value, "attempt_capture modifier")
+                    })? as f32,
+                    guaranteed: options.flag("guaranteed")?,
+                    catch_rate_bonus: options
+                        .whole("catch_rate_bonus", -255.0, 255.0)?
+                        .unwrap_or(0.0) as i32,
+                },
+            }
+        }
         "apply_status" => {
             let options = Options::new(
                 given(2),

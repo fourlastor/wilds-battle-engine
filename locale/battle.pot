@@ -34,8 +34,16 @@ msgstr ""
 msgid "A swamp enveloped the opposing team!"
 msgstr ""
 
+#: crates/wilds-battle-engine/src/capture.rs
+msgid "Aargh! Almost had it!"
+msgstr ""
+
 #: crates/wilds-battle-engine/src/model.rs
 msgid "An electric current is running across the battlefield!"
+msgstr ""
+
+#: crates/wilds-battle-engine/src/capture.rs
+msgid "Aww! It appeared to be caught!"
 msgstr ""
 
 #: moves/beat-up.lua
@@ -78,8 +86,16 @@ msgstr ""
 msgid "Everyone is caught up in the happy atmosphere!"
 msgstr ""
 
+#: crates/wilds-battle-engine/src/capture.rs
+msgid "Gah! It was so close, too!"
+msgstr ""
+
 #: items/fluffy-tail.lua items/poke-doll.lua items/poke-toy.lua
 msgid "Got away safely!"
+msgstr ""
+
+#: crates/wilds-battle-engine/src/capture.rs
+msgid "Gotcha! {0} was caught!"
 msgstr ""
 
 #: crates/wilds-battle-engine/src/model.rs
@@ -140,6 +156,10 @@ msgstr ""
 
 #: crates/wilds-battle-engine/src/model.rs
 msgid "Mysterious strong winds are protecting Flying-type Pokémon!"
+msgstr ""
+
+#: crates/wilds-battle-engine/src/capture.rs
+msgid "Oh no! The Pokémon broke free!"
 msgstr ""
 
 #: crates/wilds-battle-engine/src/ability_forms.rs
@@ -290,6 +310,10 @@ msgstr ""
 msgid "{0} burrowed its way under the ground!"
 msgstr ""
 
+#: crates/wilds-battle-engine/src/capture.rs
+msgid "{0} can't be caught!"
+msgstr ""
+
 #: moves/heal-block.lua
 msgid "{0} cannot use healing moves!"
 msgstr ""
@@ -372,6 +396,10 @@ msgstr ""
 
 #: crates/wilds-battle-engine/src/engine.rs
 msgid "{0} flinched!"
+msgstr ""
+
+#: crates/wilds-battle-engine/src/capture.rs
+msgid "{0} found a {1}!"
 msgstr ""
 
 #: crates/wilds-battle-engine/src/abilities.rs

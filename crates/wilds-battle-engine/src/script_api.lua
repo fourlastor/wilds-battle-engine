@@ -90,6 +90,7 @@ return function(api, fields, roster)
   function ctx:escape() return op("escape") end
   function ctx:reveal(who) return op("reveal", who) end
   function ctx:keep_item() return op("keep_item") end
+  function ctx:attempt_capture(who, modifier, options) return op("attempt_capture", who, modifier, options) end
 
   function ctx:announce()
     return coroutine.yield(api.announce())

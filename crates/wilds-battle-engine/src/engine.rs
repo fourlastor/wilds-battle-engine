@@ -40,6 +40,11 @@ pub struct Battle {
     pub(crate) winner: Option<Option<Side>>,
     pub(crate) wild_battle: bool,
     pub(crate) escaped_by: Option<Side>,
+    /// The Pokémon a ball caught, which ends the battle.
+    pub(crate) captured: Option<ParticipantId>,
+    /// The first ball that failed this battle, for Ball Fetch.
+    pub(crate) failed_ball: Option<String>,
+    pub(crate) ball_fetched: bool,
     pub(crate) escape_attempts: u8,
     pub(crate) turn: u64,
     pub(crate) active_power_multiplier: f32,
@@ -309,6 +314,9 @@ impl Battle {
             winner: None,
             wild_battle: false,
             escaped_by: None,
+            captured: None,
+            failed_ball: None,
+            ball_fetched: false,
             escape_attempts: 0,
             turn: 0,
             active_power_multiplier: 1.0,
@@ -870,6 +878,12 @@ impl Battle {
         result
     }
     pub fn advance(&mut self) -> Result<AdvanceResult, BattleError> {
+        if let Some(target) = self.captured {
+            return Ok(AdvanceResult {
+                events: Vec::new(),
+                status: AdvanceStatus::Captured { target },
+            });
+        }
         if let Some(side) = self.escaped_by {
             return Ok(AdvanceResult {
                 events: Vec::new(),
@@ -1426,7 +1440,7 @@ impl Battle {
                     move_id,
                 } => {
                     self.use_item(actor, item, *target, move_id.clone(), events)?;
-                    if self.escaped_by.is_some() {
+                    if self.escaped_by.is_some() || self.captured.is_some() {
                         self.turn_queue.clear();
                         self.pending_actors.clear();
                         self.completed_slots.clear();
@@ -1570,6 +1584,7 @@ impl Battle {
             self.residual_berries(events);
             self.update_berries(events);
             self.residual_ability_forms(events);
+            self.ball_fetch(events);
             self.resolve_outcome(events);
         }
         for pokemon in self.sides.iter_mut().flatten() {

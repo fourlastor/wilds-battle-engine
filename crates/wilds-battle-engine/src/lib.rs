@@ -2,6 +2,7 @@ mod abilities;
 mod ability_forms;
 mod baton_pass;
 mod berries;
+mod capture;
 mod carrying;
 mod conditions;
 mod damage;

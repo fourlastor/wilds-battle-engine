@@ -125,8 +125,15 @@ impl Battle {
         let pokemon: &Pokemon = self.get(id);
         table.raw_set("name", pokemon.display_name())?;
         table.raw_set("species", pokemon.species.as_str())?;
+        table.raw_set("gender", format!("{:?}", pokemon.gender))?;
         table.raw_set("species_id", pokemon.species_id)?;
         table.raw_set("uncatchable", pokemon.uncatchable)?;
+        table.raw_set("base_speed", pokemon.base_speed)?;
+        let flags = lua.create_table()?;
+        for flag in &pokemon.flags {
+            flags.raw_set(flag.as_str(), true)?;
+        }
+        table.raw_set("flags", flags)?;
         table.raw_set("catch_rate", pokemon.catch_rate)?;
         table.raw_set("base_attack", pokemon.base_attack)?;
         table.raw_set("transformed", pokemon.transformed())?;
@@ -2362,6 +2369,10 @@ impl Battle {
                     });
                 }
                 Value::Boolean(disguised || !catchable)
+            }
+            ScriptOperation::AttemptCapture { who, throw } => {
+                let ball = spec.id.clone();
+                Value::Boolean(self.attempt_capture(actor, who, &ball, throw, events))
             }
             ScriptOperation::KeepItem => {
                 self.item_kept = true;

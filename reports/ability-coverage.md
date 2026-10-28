@@ -14,9 +14,9 @@ Rules reference: [Pokemon Showdown abilities at 942cda71](https://github.com/smo
 
 | Status | Count |
 | --- | ---: |
-| IMPLEMENTED | 264 |
+| IMPLEMENTED | 265 |
 | PARTIAL | 0 |
-| MISSING | 3 |
+| MISSING | 2 |
 | Total | 267 |
 
 The initial audit found 67 implemented, 25 partial and 175 missing abilities.
@@ -31,7 +31,6 @@ implemented through names or placeholders:
 | --- | --- |
 | Illuminate | Gen8 overworld encounter-rate behavior; it has no Gen8 battle effect. |
 | Honey Gather | Post-battle Honey generation, outside battle resolution and the no-new-items scope. |
-| Ball Fetch | Tracking failed capture attempts and recovering a Poké Ball; no capture system exists here. |
 
 ## Integration requirements and verification
 

@@ -48,7 +48,8 @@ WbeBattle *wbe_create(const char *setup_json, const char *moves_dir);
 void wbe_destroy(WbeBattle *battle);
 
 /* JSON result or null on error; inspect wbe_last_error after a null/false result.
- * Terminal status.kind is "end" or "escaped" (which includes the escaping side).
+ * Terminal status.kind is "end", "escaped" (which includes the escaping side) or "captured"
+ * (which includes the caught target).
  * Wild battle choices also include "escape" and "continue". Once a side answered an action
  * prompt this turn, its next action prompts end with an "undo" choice that takes the last
  * answer back and asks for it again; automated players should not pick it. */

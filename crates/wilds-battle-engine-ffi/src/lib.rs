@@ -116,6 +116,10 @@ struct SetupPokemon {
     #[serde(default)]
     uncatchable: bool,
     catch_rate: Option<u8>,
+    base_speed: Option<u16>,
+    /// Facts about this Pokémon for scripts, read as `who.flags.<name>`.
+    #[serde(default)]
+    flags: std::collections::BTreeSet<String>,
     /// An appearance shown until a script reveals the Pokémon.
     disguise: Option<SetupAppearance>,
     /// Starting stat stages, keyed by "Attack", "Defense", "SpAttack", "SpDefense", "Speed",
@@ -226,6 +230,8 @@ fn pokemon(config: SetupPokemon) -> Result<Pokemon, String> {
     value.ivs = config.ivs;
     value.happiness = config.happiness;
     value.uncatchable = config.uncatchable;
+    value.base_speed = config.base_speed;
+    value.flags = config.flags;
     value.disguise = config
         .disguise
         .map(|look| {
@@ -656,6 +662,9 @@ pub unsafe extern "C" fn wbe_advance(ptr: *mut Battle) -> *mut c_char {
                 json!({"kind":"escaped", "side":side(escaped)})
             }
             AdvanceStatus::End { winner } => json!({"kind":"end", "winner":winner.map(side)}),
+            AdvanceStatus::Captured { target } => {
+                json!({"kind":"captured", "target":participant(target)})
+            }
             AdvanceStatus::Awaiting(prompt) => json!({"kind":"awaiting", "prompt_id":prompt.id,
                 "actor":participant(prompt.actor), "reason": match prompt.reason { PromptReason::Action => "action", PromptReason::Replacement => "replacement", PromptReason::Pivot => "pivot" },
                 "choices":prompt.choices.iter().map(choice).collect::<Vec<_>>() }),
@@ -788,7 +797,7 @@ fn snapshot(value: &Pokemon) -> Value {
         "ability":value.ability, "ability_suppressed":value.ability_suppressed,
         "carrying":value.carrying.map(participant), "carried_by":value.carried_by.map(participant),
         "item":value.item, "hidden":value.hidden().map(|place| format!("{place:?}")),
-        "uncatchable":value.uncatchable, "catch_rate":value.catch_rate,
+        "uncatchable":value.uncatchable, "catch_rate":value.catch_rate, "flags":value.flags,
         "stages":value.stages.iter().filter(|(_, stages)| **stages != 0)
             .map(|(stat, stages)| (format!("{stat:?}"), json!(stages))).collect::<serde_json::Map<_, _>>(),
         "confused_turns":value.confused_turns,
@@ -831,6 +840,21 @@ fn event(value: &BattleEvent) -> Value {
             consumed,
         } => json!({"kind":"item_used", "actor":participant(*actor), "item":item,
             "target":participant(*target), "consumed":consumed}),
+        BattleEvent::Capture {
+            actor,
+            target,
+            ball,
+            shakes,
+            critical,
+            caught,
+        } => json!({"kind":"capture", "actor":participant(*actor), "target":participant(*target),
+            "ball":ball, "shakes":shakes, "critical":critical, "caught":caught}),
+        BattleEvent::CaptureRefused {
+            actor,
+            target,
+            ball,
+        } => json!({"kind":"capture_refused", "actor":participant(*actor),
+            "target":participant(*target), "ball":ball}),
         BattleEvent::Charging { actor, move_id } => {
             json!({"kind":"charging", "actor":participant(*actor), "move":move_id})
         }

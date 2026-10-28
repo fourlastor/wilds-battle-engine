@@ -253,6 +253,30 @@ until a script reveals it; unlike Illusion, damage does not end it. In JSON: set
 kind `use_item` (`item`, `target`, `move_id`); event kind `item_used`; and the C functions
 `wbe_set_bag`, `wbe_catalog_create_with_items` and `wbe_catalog_item`.
 
+## Capture
+
+Balls are item scripts with `targets = "foe"` that call
+`ctx:attempt_capture(target, modifier, {guaranteed, catch_rate_bonus})`. The engine uses
+the Gen 8 formula: X = (3M − 2H) · C · B / 3M · L · S · D, with C the target's
+`catch_rate` (plus `catch_rate_bonus`, within 1–255), B the modifier, L = (30 − level)/10
+below level 21, S = 2.5 asleep or frozen and 1.5 for other statuses, and D the host's
+`capture_difficulty` context number (1 when absent). X ≥ 255 or `guaranteed` catches; else
+each of four checks holds when a 16-bit roll is below 65536 / (255 / X)^(3/16). With a
+`critical_capture` context number (the host's Pokédex and charm factor), a critical capture
+happens on a roll below ⌊min(255, X) · factor / 6⌋ out of 256 and needs one check.
+`BattleEvent::Capture { actor, target, ball, shakes, critical, caught }` reports the
+checks held; a catch ends the battle with `AdvanceStatus::Captured { target }`, and a
+miss uses up the turn. A Pokémon that is `uncatchable`, has no `catch_rate` or is on the
+thrower's side refuses with `CaptureRefused` and the ball is kept.
+
+The built-in balls cover the mainline modifiers. Those that depend on the host read it
+from `ctx.context` (`surfing`, `fishing`, `underwater`, `time_of_day`, `cave`) or the
+target's host `flags` (`registered` for the Repeat Ball, `moon_stone`, `ultra_beast`) and
+`base_speed`, which setup can give per Pokémon. All built-in balls are usable only in wild
+battles. Ball Fetch picks up the first ball that failed, once per battle. In JSON: event
+kinds `capture` and `capture_refused`, status `{"kind":"captured","target":...}`, and
+per-Pokémon `base_speed` and `flags` in setup and state.
+
 ## Animation events
 
 Besides messages, events mark the moments a host animates. `MoveUsed { actor, move_id,
