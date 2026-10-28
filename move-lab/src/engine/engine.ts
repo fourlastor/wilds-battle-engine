@@ -30,7 +30,9 @@ export interface MoveChoice {
 }
 
 export type SwitchChoice = { id: number; kind: 'switch'; to: Ref };
-export type EngineChoice = MoveChoice | SwitchChoice;
+/** Takes back the side's previous choice this turn; Move Lab never offers it. */
+export type UndoChoice = { id: number; kind: 'undo' };
+export type EngineChoice = MoveChoice | SwitchChoice | UndoChoice;
 
 export type EngineStatus =
   | { kind: 'awaiting'; prompt_id: number; actor: Ref; reason: 'action' | 'replacement' | 'pivot'; choices: EngineChoice[] }

@@ -18,7 +18,7 @@ export interface TraceSource {
 export type Pick = { actor: Ref; kind?: 'move'; moveId: string; target: Ref }
   | { actor: Ref; kind: 'switch'; to: Ref; moveId?: never; target?: never };
 
-function remember(actor: Ref, choice: EngineChoice): Pick {
+function remember(actor: Ref, choice: MoveChoice | SwitchChoice): Pick {
   return choice.kind === 'switch' ? {actor, kind: 'switch', to: choice.to}
     : {actor, moveId: choice.move_id, target: choice.target};
 }
@@ -220,7 +220,8 @@ export class Bench {
   }
 
   /** The choice to make without asking: the other side's policy, or the next remembered pick. */
-  private automatic(actor: Ref, choices: EngineChoice[]): EngineChoice | null {
+  private automatic(actor: Ref, all: EngineChoice[]): EngineChoice | null {
+    const choices = all.filter((choice) => choice.kind !== 'undo');
     if (actor.side === 'foes' && this.policy !== 'manual') {
       return this.policy === 'random' ? choices[Math.floor(this.random() * choices.length)] : choices[0];
     }
@@ -240,6 +241,7 @@ export class Bench {
     const moves: PromptView['moves'] = [];
     const switches: SwitchChoice[] = [];
     for (const choice of choices) {
+      if (choice.kind === 'undo') continue;
       if (choice.kind === "switch") { switches.push(choice); continue; }
       const group = moves.find((move) => move.moveId === choice.move_id);
       if (group) group.targets.push(choice);

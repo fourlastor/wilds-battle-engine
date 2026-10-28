@@ -379,6 +379,7 @@ fn choice(value: &Choice) -> Value {
     match value {
         Choice::Escape { id } => json!({"id":id, "kind":"escape"}),
         Choice::Continue { id } => json!({"id":id, "kind":"continue"}),
+        Choice::Undo { id } => json!({"id":id, "kind":"undo"}),
         Choice::Switch { id, to } => json!({"id":id, "kind":"switch", "to":participant(*to)}),
         Choice::UseMove {
             id,

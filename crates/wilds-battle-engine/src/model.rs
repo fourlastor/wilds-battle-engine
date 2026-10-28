@@ -883,6 +883,12 @@ pub enum Choice {
         move_id: String,
         target: ParticipantId,
     },
+    /// Take back the last choice made for this side this turn, and be asked for it again.
+    /// Offered in action prompts once a choice for the same side was answered this turn;
+    /// always listed last.
+    Undo {
+        id: u32,
+    },
 }
 
 impl Choice {
@@ -891,7 +897,8 @@ impl Choice {
             Self::UseMove { id, .. }
             | Self::Switch { id, .. }
             | Self::Escape { id }
-            | Self::Continue { id } => *id,
+            | Self::Continue { id }
+            | Self::Undo { id } => *id,
         }
     }
 }

@@ -24,6 +24,10 @@ pub struct Battle {
     pub(crate) rng: Box<dyn BattleRng>,
     pending: Option<Prompt>,
     selections: Vec<(ParticipantId, SelectedAction)>,
+    /// Actors whose selection this turn answered a prompt, oldest first; what `Choice::Undo` takes back.
+    answered: Vec<ParticipantId>,
+    /// Start-of-selection effects ran for the coming turn; undoing every choice does not repeat them.
+    selection_started: bool,
     turn_queue: std::collections::VecDeque<QueuedAction>,
     completed_slots: Vec<(Side, usize)>,
     resolving_turn: bool,
@@ -268,6 +272,8 @@ impl Battle {
             rng: Box::new(rng),
             pending: None,
             selections: Vec::new(),
+            answered: Vec::new(),
+            selection_started: false,
             turn_queue: std::collections::VecDeque::new(),
             completed_slots: Vec::new(),
             resolving_turn: false,
@@ -656,7 +662,8 @@ impl Battle {
                 status: AdvanceStatus::Awaiting(prompt),
             });
         }
-        if self.selections.is_empty() {
+        if !self.selection_started {
+            self.selection_started = true;
             self.update_berries(&mut events);
         }
         let actors = self.actors();
@@ -704,6 +711,12 @@ impl Battle {
                     .push((actor, self.selected_action(actor, &choices[0])));
                 continue;
             }
+            let mut choices = choices;
+            if self.answered.iter().any(|who| who.side == actor.side) {
+                choices.push(Choice::Undo {
+                    id: choices.len() as u32,
+                });
+            }
             let prompt = self.make_prompt(actor, choices, PromptReason::Action);
             return Ok(AdvanceResult {
                 events,
@@ -739,14 +752,27 @@ impl Battle {
             .ok_or_else(|| BattleError::InvalidResponse("choice is not legal".into()))?;
         let actor = prompt.actor;
         let reason = prompt.reason;
+        if matches!(choice, Choice::Undo { .. }) {
+            let last = self
+                .answered
+                .iter()
+                .rposition(|who| who.side == actor.side)
+                .expect("undo is offered after an answered choice");
+            let previous = self.answered.remove(last);
+            self.selections.retain(|(who, _)| *who != previous);
+            self.pending = None;
+            return Ok(());
+        }
         let action = self.selected_action(actor, choice);
         self.pending = None;
         if reason == PromptReason::Action {
             if matches!(action, SelectedAction::Escape) {
                 // Running is a party command, so it replaces this side's other actions.
                 self.selections.retain(|(who, _)| who.side != actor.side);
+                self.answered.retain(|who| who.side != actor.side);
             }
             self.selections.push((actor, action));
+            self.answered.push(actor);
         } else if let SelectedAction::Switch(to) = action {
             let mut events = Vec::new();
             self.switch_member(actor, to, &mut events);
@@ -794,6 +820,7 @@ impl Battle {
                 target_position: self.target_position(*target),
             }),
             Choice::Switch { to, .. } => SelectedAction::Switch(*to),
+            Choice::Undo { .. } => unreachable!("undo is not an action"),
         }
     }
     fn automatic_action(&self, actor: ParticipantId) -> Option<SelectedAction> {
@@ -826,6 +853,8 @@ impl Battle {
         self.turn += 1;
         self.resolving_turn = true;
         self.completed_slots.clear();
+        self.answered.clear();
+        self.selection_started = false;
         let mut ordered: Vec<_> = std::mem::take(&mut self.selections)
             .into_iter()
             .map(|(actor, choice)| {

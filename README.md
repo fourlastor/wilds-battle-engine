@@ -20,6 +20,12 @@ Host-facing prompts contain `Choice::UseMove { id, move_id, target }` and
 `Choice::Switch { id, to }`, plus `Escape` and `Continue` for opted-in wild
 encounters. `PromptReason` distinguishes action selection, faint replacement and
 move-triggered pivot choices; the host selects an offered choice in each case.
+Each active Pokémon gets its own action prompt. Once a side answered one this
+turn, its later action prompts end with `Choice::Undo { id }` (JSON kind `undo`):
+it takes back that side's most recent answer, releases a bench member the answer
+reserved, and prompts for it again. Undo is offered to both sides, so a host can
+let any player back out; automated players should never select it. Replacement
+and pivot prompts do not offer it.
 Rust exposes typed Lua constants for Pokémon types, stats, statuses, weather,
 categories, targets, effects, and special accuracy modes. Move IDs and display
 text remain strings. `MoveCatalog::from_lua` installs these constants before

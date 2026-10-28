@@ -59,7 +59,8 @@ function play(files, scenario, move, seed) {
       const events = result.events.filter((event) => !(event.kind === 'message' && event.text.startsWith('\u0001')));
       record.push(JSON.stringify(events), JSON.stringify(battle.state()));
       if (result.status.kind === 'end' || result.turn >= 14) break;
-      const { choices, prompt_id: promptId } = result.status;
+      const { prompt_id: promptId } = result.status;
+      const choices = result.status.choices.filter((choice) => choice.kind !== 'undo');
       prompts += 1;
       const opener = prompts === 1 && scenario.opener ? choices.find((choice) => choice.move_id === scenario.opener) : undefined;
       // Vary the target a little so moves are aimed at both foes.
