@@ -11,7 +11,7 @@ import { theme } from '../blocks/theme.ts';
 import { CATEGORIES, STYLE_COLORS, toolboxDefinition } from '../blocks/toolbox.ts';
 import { BUILTIN_FILES } from '../data/builtin.ts';
 import { Engine } from '../engine/engine.ts';
-import type { EngineChoice, EngineSetup, MoveInfo, SetupMon } from '../engine/engine.ts';
+import type { EngineSetup, MoveChoice, MoveInfo, SetupMon, SwitchChoice } from '../engine/engine.ts';
 import { DEFAULT_WEIGHT, findSpecies } from '../data/species.ts';
 import { HIDING_PLACES, CATEGORIES as MOVE_CATEGORIES, TYPES, TYPE_COLORS, clamp, slug, uid } from '../model.ts';
 import type { Category, MonSetup, MoveDoc } from '../model.ts';
@@ -844,7 +844,7 @@ class App {
       {
         restart: () => this.restart('fresh'),
         openSetup: () => this.showSetup(),
-        choose: (choice: EngineChoice) => {
+        choose: (choice: MoveChoice | SwitchChoice) => {
           this.notice = null;
           this.bench.choose(choice);
           this.renderBench();

@@ -157,7 +157,7 @@ export class Bench {
     if (options.compareWith) this.compare(options.compareWith);
   }
 
-  choose(choice: EngineChoice): void {
+  choose(choice: MoveChoice | SwitchChoice): void {
     const prompt = this.view.prompt;
     if (!this.battle || !prompt || this.view.phase !== 'awaiting') return;
     this.view.picks.push(remember(prompt.actor, choice));

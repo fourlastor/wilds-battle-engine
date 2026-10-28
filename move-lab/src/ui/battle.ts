@@ -1,6 +1,6 @@
 // The test battle panel. It only draws what the bench reports; all rules live in the engine.
 import type { BenchView, LogEntry, MonView } from '../bench/bench.ts';
-import type { ConditionInfo, EngineChoice, MoveInfo, Ref } from '../engine/engine.ts';
+import type { ConditionInfo, MoveChoice, MoveInfo, Ref, SwitchChoice } from '../engine/engine.ts';
 import { STAT_SHORT, STATUS_SHORT, TYPE_COLORS } from '../model.ts';
 import { clear, h, icon } from './dom.ts';
 
@@ -25,7 +25,7 @@ export interface BattleModel {
 export interface BattleHandlers {
   restart(): void;
   openSetup(): void;
-  choose(choice: EngineChoice): void;
+  choose(choice: MoveChoice | SwitchChoice): void;
   newRolls(): void;
   setAutoRestart(on: boolean): void;
   focusBlock(id: string): void;
