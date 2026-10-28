@@ -11,12 +11,12 @@ const catalog = engine.catalog().filter((move) => move.id !== 'struggle');
 const editable = catalog.filter(canOpen);
 const luaOnly = catalog.filter((move) => !canOpen(move));
 // Keep the original authored block recipes covered as the Lua catalog grows.
-for (const id of ['charge', 'dream_eater', 'explosion', 'facade', 'false_swipe', 'hyper_beam',
-  'morning_sun', 'rage', 'snore', 'solar_beam', 'thrash', 'triple_kick']) {
+for (const id of ['charge', 'dream-eater', 'explosion', 'facade', 'false-swipe', 'hyper-beam',
+  'morning-sun', 'rage', 'snore', 'solar-beam', 'thrash', 'triple-kick']) {
   if (!editable.some((move) => move.id === id)) throw new Error(`Missing block recipe: ${id}`);
 }
 // A battle loads only its moves and the fixture moves; unrelated files cannot affect these scenarios.
-const fixtureIds = ['tackle', 'splash', 'headbutt', 'sunny_day', 'sandstorm'];
+const fixtureIds = ['tackle', 'splash', 'headbutt', 'sunny-day', 'sandstorm'];
 const filename = (id) => `${id.replaceAll('_', '-')}.lua`;
 
 const mon = (name, moves, extra = {}) => ({
@@ -30,7 +30,7 @@ function scenarios(move) {
     { name: 'user hurt and burned, target asleep', allies: [mon('Ally', [move], { hp: 50, status: 'Burned' })], foes: [mon('Foe', ['splash'], { status: 'Asleep', status_turns: 5 })] },
     { name: 'user asleep', allies: [mon('Ally', [move], { status: 'Asleep', status_turns: 4 })], foes: [mon('Foe', ['tackle'])] },
     { name: 'user poisoned', allies: [mon('Ally', [move], { status: 'Poisoned', hp: 90 })], foes: [mon('Foe', ['headbutt'])] },
-    { name: 'sunny', allies: [mon('Ally', ['sunny_day', move], { hp: 60 })], foes: [mon('Foe', ['tackle'])], opener: 'sunny_day' },
+    { name: 'sunny', allies: [mon('Ally', ['sunny-day', move], { hp: 60 })], foes: [mon('Foe', ['tackle'])], opener: 'sunny-day' },
     { name: 'sandstorm', allies: [mon('Ally', ['sandstorm', move], { hp: 60 })], foes: [mon('Foe', ['tackle'])], opener: 'sandstorm' },
     { name: 'two on two', allies: [mon('Ally', [move]), mon('Partner', ['tackle'], { speed: 30 })], foes: [mon('Foe', ['tackle'], { speed: 70 }), mon('Other', ['headbutt'], { speed: 20 })] },
     { name: 'used by the foe', allies: [mon('Ally', ['tackle', 'headbutt'])], foes: [mon('Foe', [move], { speed: 70 })] },

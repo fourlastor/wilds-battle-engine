@@ -66,7 +66,7 @@ class MoveAuditTests(unittest.TestCase):
     def test_numeric_ids_join_renamed_slugs_and_struggle_is_present(self):
         self.api_moves([[1, "old-pokeapi-slug"], [165, "struggle"], [76, "solar-beam"]])
         self.lua("renamed-pound")
-        self.lua("solar_beam")
+        self.lua("solar-beam")
         self.manifest([{"id": 1, "slug": "renamed-pound", "name": "Pound",
                         "file": "moves/renamed-pound.lua"}])
         system = self.engine / "crates/wilds-battle-engine/src/system_moves.lua"

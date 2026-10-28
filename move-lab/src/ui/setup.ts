@@ -272,7 +272,7 @@ export function openSetup(options: SetupOptions): void {
 export function defaultSetup(): BattleSetup {
   return {
     seed: 7,
-    allies: [monFor('Sunflora', 30, ['sunny_day', 'morning_sun', 'tackle'])],
+    allies: [monFor('Sunflora', 30, ['sunny-day', 'morning-sun', 'tackle'])],
     foes: [monFor('Wobbuffet', 30, ['tackle'])],
     foePolicy: 'first',
     onEdit: 'replay',

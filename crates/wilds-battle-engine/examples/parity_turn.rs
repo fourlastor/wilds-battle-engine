@@ -47,7 +47,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut args = std::env::args().skip(1);
     let case_id = args.next().expect("case id");
     let move_id = args.next().expect("move id");
-    assert!(["dragon_rage", "tackle", "toxic", "recover"].contains(&move_id.as_str()));
+    assert!(["dragon-rage", "tackle", "toxic", "recover"].contains(&move_id.as_str()));
     let chances = args
         .next()
         .expect("comma-separated chance draws")

@@ -128,7 +128,7 @@ class App {
     if (stored) {
       this.project = stored;
     } else {
-      const first = this.builtin.get('solar_beam') ?? [...this.builtin.values()].find(canOpen)!;
+      const first = this.builtin.get('solar-beam') ?? [...this.builtin.values()].find(canOpen)!;
       const doc = this.docFromInfo(first);
       this.project = { version: 1, docs: [doc], current: doc.uid, setup: defaultSetup(), luaOpen: true };
     }

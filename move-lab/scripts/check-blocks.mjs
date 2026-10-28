@@ -88,7 +88,7 @@ function playTurn(generated, allies, foes) {
 }
 
 // Everyone but the first ally spends the turn on Sunny Day, which hurts no one.
-const bystander = (name) => mon(name, ['sunny_day']);
+const bystander = (name) => mon(name, ['sunny-day']);
 
 check('“heal the user” in a move used on the user is a plain move and heals the user', () => {
   const generated = build('User', [heal()]);
@@ -387,7 +387,7 @@ check('a move used on “a chosen foe or ally” offers both, and can tell them 
   assert.match(puff.lua, /target = Target\.AnyOther,/);
   engine.setMoves({ ...originals, 'check.lua': puff.lua });
   const aimedAt = (side) => {
-    const battle = engine.createBattle({ seed: 3, allies: [mon('Ally', ['check']), mon('Partner', ['sunny_day'], { hp: 40 })], foes: [bystander('Foe')] });
+    const battle = engine.createBattle({ seed: 3, allies: [mon('Ally', ['check']), mon('Partner', ['sunny-day'], { hp: 40 })], foes: [bystander('Foe')] });
     try {
       for (let step = 0; step < 12; step += 1) {
         const result = battle.advance();

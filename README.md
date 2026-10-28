@@ -32,9 +32,8 @@ evaluating move definitions; values from the wrong enum family are rejected.
 ```
 
 Moves such as Dream Eater, False Swipe, Triple Kick, Explosion, and Hyper Beam
-use Lua callbacks. The original 41 files retain their runtime IDs and behavior;
-their filenames now use hyphens. New moves use the JSON's `Name` as their runtime
-ID as well as their filename. Charge's Lua script raises Special Defense and asks Rust to
+use Lua callbacks. Every move's runtime ID is its filename slug, the PokeAPI
+move name (`solar-beam`). Charge's Lua script raises Special Defense and asks Rust to
 double the power of the next Electric attack; any other next move consumes the
 boost without applying it.
 Each callback receives `ctx`: tables describing the battle (`ctx.user`,

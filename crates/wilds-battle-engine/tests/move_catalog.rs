@@ -116,7 +116,7 @@ fn meloetta() -> Pokemon {
 
 #[test]
 fn draining_uses_hp_lost_after_sturdy_for_plain_moves() {
-    for attack in ["draining_kiss", "oblivion-wing"] {
+    for attack in ["draining-kiss", "oblivion-wing"] {
         let mut user = mon("User", &[attack]);
         user.hp = 600;
         user.attack = 1000;
@@ -480,7 +480,7 @@ fn item_effects_cover_spread_hits_and_stop_multi_hits_after_a_knockout() {
             .count(),
         1
     );
-    for attack in ["double_kick", "arm-thrust"] {
+    for attack in ["double-kick", "arm-thrust"] {
         let mut target = mon("Target", &["splash"]);
         target.hp = 1;
         let mut game = Game::duel(&[attack], target, 0.5);
@@ -535,7 +535,7 @@ fn resistance_berries_activate_before_the_hit_and_cannot_be_stolen_afterward() {
 
 #[test]
 fn multi_hit_attacks_consume_resistance_once_and_heal_between_hits() {
-    for attack in ["double_kick", "arm-thrust", "triple_kick"] {
+    for attack in ["double-kick", "arm-thrust", "triple-kick"] {
         let run = |item: Option<&str>| {
             let mut target = mon("Target", &["splash"]);
             target.item = item.map(str::to_string);
@@ -557,13 +557,13 @@ fn multi_hit_attacks_consume_resistance_once_and_heal_between_hits() {
         assert_eq!(baseline[1..], reduced[1..], "{attack}");
         assert!(reduced[0] < baseline[0]);
     }
-    let mut attacker = mon("User", &["double_kick"]);
+    let mut attacker = mon("User", &["double-kick"]);
     attacker.attack = 400;
     let mut target = mon("Target", &["splash"]);
     target.hp = 600;
     target.item = Some("sitrus-berry".into());
     let mut game = Game::new(vec![attacker], vec![target], 0.5);
-    let events = game.turn("double_kick", "splash");
+    let events = game.turn("double-kick", "splash");
     let damage_indices: Vec<_> = events
         .iter()
         .enumerate()
@@ -1037,7 +1037,7 @@ fn power_herb_completes_charge_moves_immediately_and_pays_pp_once() {
         "fly",
         "bounce",
         "dig",
-        "solar_beam",
+        "solar-beam",
         "dive",
     ] {
         let mut ally = mon("Ally", &[move_id, "splash"]);
@@ -1075,11 +1075,11 @@ fn power_herb_completes_charge_moves_immediately_and_pays_pp_once() {
 
 #[test]
 fn power_herb_preserves_weather_shortcuts_and_does_not_skip_lock_ins() {
-    for move_id in ["solar_beam", "solar-blade"] {
-        let mut ally = mon("Ally", &["sunny_day", move_id]);
+    for move_id in ["solar-beam", "solar-blade"] {
+        let mut ally = mon("Ally", &["sunny-day", move_id]);
         ally.item = Some("power_herb".into());
         let mut game = Game::new(vec![ally], vec![mon("Foe", &["splash"])], 0.5);
-        game.turn("sunny_day", "splash");
+        game.turn("sunny-day", "splash");
         game.turn(move_id, "splash");
         assert!(game.foe().hp < 1000);
         assert_eq!(game.ally().item.as_deref(), Some("power_herb"));
@@ -1102,13 +1102,13 @@ fn power_herb_preserves_weather_shortcuts_and_does_not_skip_lock_ins() {
 
 #[test]
 fn beak_blast_reacts_to_zero_damage_and_knockout_contact_but_not_immunity() {
-    for attack in ["hold-back", "false_swipe", "body-slam", "tackle"] {
+    for attack in ["hold-back", "false-swipe", "body-slam", "tackle"] {
         let mut ally = mon("Ally", &["beak-blast"]);
         ally.hp = 1;
         let mut game = Game::new(vec![ally], vec![mon("Foe", &[attack])], 0.5);
         game.turn("beak-blast", attack);
         assert_eq!(game.foe().status, Some(Status::Burned), "{attack}");
-        let leaves_one_hp = matches!(attack, "hold-back" | "false_swipe");
+        let leaves_one_hp = matches!(attack, "hold-back" | "false-swipe");
         assert_eq!(game.ally().hp, if leaves_one_hp { 1 } else { 0 });
         if leaves_one_hp {
             assert!(game.ally().last_hit.is_none());

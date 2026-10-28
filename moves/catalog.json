@@ -237,7 +237,7 @@
       "slug": "double-kick",
       "name": "Double Kick",
       "sheet_row": 23,
-      "runtime_id": "double_kick",
+      "runtime_id": "double-kick",
       "file": "moves/double-kick.lua",
       "status": "existing",
       "limitations": [
@@ -386,7 +386,7 @@
       "slug": "double-edge",
       "name": "Double-Edge",
       "sheet_row": 36,
-      "runtime_id": "double_edge",
+      "runtime_id": "double-edge",
       "file": "moves/double-edge.lua",
       "status": "existing",
       "limitations": [
@@ -408,7 +408,7 @@
       "slug": "poison-sting",
       "name": "Poison Sting",
       "sheet_row": 38,
-      "runtime_id": "poison_sting",
+      "runtime_id": "poison-sting",
       "file": "moves/poison-sting.lua",
       "status": "existing",
       "limitations": [
@@ -430,7 +430,7 @@
       "slug": "pin-missile",
       "name": "Pin Missile",
       "sheet_row": 40,
-      "runtime_id": "pin_missile",
+      "runtime_id": "pin-missile",
       "file": "moves/pin-missile.lua",
       "status": "existing",
       "limitations": [
@@ -645,7 +645,7 @@
       "slug": "hyper-beam",
       "name": "Hyper Beam",
       "sheet_row": 57,
-      "runtime_id": "hyper_beam",
+      "runtime_id": "hyper-beam",
       "file": "moves/hyper-beam.lua",
       "status": "existing",
       "limitations": [
@@ -780,7 +780,7 @@
       "slug": "solar-beam",
       "name": "Solar Beam",
       "sheet_row": 66,
-      "runtime_id": "solar_beam",
+      "runtime_id": "solar-beam",
       "file": "moves/solar-beam.lua",
       "status": "existing",
       "limitations": [
@@ -822,7 +822,7 @@
       "slug": "petal-dance",
       "name": "Petal Dance",
       "sheet_row": 70,
-      "runtime_id": "petal_dance",
+      "runtime_id": "petal-dance",
       "file": "moves/petal-dance.lua",
       "status": "existing",
       "limitations": [
@@ -855,7 +855,7 @@
       "slug": "thunder-shock",
       "name": "Thunder Shock",
       "sheet_row": 72,
-      "runtime_id": "thunder_shock",
+      "runtime_id": "thunder-shock",
       "file": "moves/thunder-shock.lua",
       "status": "existing",
       "limitations": [
@@ -1055,7 +1055,7 @@
       "slug": "double-team",
       "name": "Double Team",
       "sheet_row": 89,
-      "runtime_id": "double_team",
+      "runtime_id": "double-team",
       "file": "moves/double-team.lua",
       "status": "existing",
       "limitations": [
@@ -1109,7 +1109,7 @@
       "slug": "confuse-ray",
       "name": "Confuse Ray",
       "sheet_row": 94,
-      "runtime_id": "confuse_ray",
+      "runtime_id": "confuse-ray",
       "file": "moves/confuse-ray.lua",
       "status": "existing",
       "limitations": [
@@ -1409,7 +1409,7 @@
       "slug": "dream-eater",
       "name": "Dream Eater",
       "sheet_row": 115,
-      "runtime_id": "dream_eater",
+      "runtime_id": "dream-eater",
       "file": "moves/dream-eater.lua",
       "status": "existing",
       "limitations": [
@@ -1690,7 +1690,7 @@
       "slug": "triple-kick",
       "name": "Triple Kick",
       "sheet_row": 135,
-      "runtime_id": "triple_kick",
+      "runtime_id": "triple-kick",
       "file": "moves/triple-kick.lua",
       "status": "existing",
       "limitations": [
@@ -2082,7 +2082,7 @@
       "slug": "false-swipe",
       "name": "False Swipe",
       "sheet_row": 156,
-      "runtime_id": "false_swipe",
+      "runtime_id": "false-swipe",
       "file": "moves/false-swipe.lua",
       "status": "existing",
       "limitations": [
@@ -2366,7 +2366,7 @@
       "slug": "morning-sun",
       "name": "Morning Sun",
       "sheet_row": 171,
-      "runtime_id": "morning_sun",
+      "runtime_id": "morning-sun",
       "file": "moves/morning-sun.lua",
       "status": "existing",
       "limitations": [
@@ -2481,7 +2481,7 @@
       "slug": "ancient-power",
       "name": "Ancient Power",
       "sheet_row": 179,
-      "runtime_id": "ancient_power",
+      "runtime_id": "ancient-power",
       "file": "moves/ancient-power.lua",
       "status": "existing",
       "limitations": [
@@ -3533,7 +3533,7 @@
       "slug": "calm-mind",
       "name": "Calm Mind",
       "sheet_row": 246,
-      "runtime_id": "calm_mind",
+      "runtime_id": "calm-mind",
       "file": "moves/calm-mind.lua",
       "status": "existing",
       "limitations": [
@@ -4304,7 +4304,7 @@
       "slug": "shadow-claw",
       "name": "Shadow Claw",
       "sheet_row": 291,
-      "runtime_id": "shadow_claw",
+      "runtime_id": "shadow-claw",
       "file": "moves/shadow-claw.lua",
       "status": "existing",
       "limitations": [
@@ -4910,7 +4910,7 @@
       "slug": "storm-throw",
       "name": "Storm Throw",
       "sheet_row": 336,
-      "runtime_id": "storm_throw",
+      "runtime_id": "storm-throw",
       "file": "moves/storm-throw.lua",
       "status": "existing",
       "limitations": [
@@ -5902,7 +5902,7 @@
       "slug": "draining-kiss",
       "name": "Draining Kiss",
       "sheet_row": 413,
-      "runtime_id": "draining_kiss",
+      "runtime_id": "draining-kiss",
       "file": "moves/draining-kiss.lua",
       "status": "existing",
       "limitations": [

@@ -2149,12 +2149,12 @@ fn choose_move(prompt: &Prompt, allies: &str, foes: &str) -> u32 {
 
 #[test]
 fn recycle_restores_consumed_held_items_once_but_not_removed_items() {
-    let mut user = mon("User", &["solar_beam", "recycle"]);
+    let mut user = mon("User", &["solar-beam", "recycle"]);
     user.item = Some("power-herb".into());
     let mut foe = mon("Foe", &["splash", "knock-off"]);
     foe.speed = 200;
     let mut b = game(user, vec![foe], 0.5);
-    turn_with(&mut b, |p| choose_move(p, "solar_beam", "splash"));
+    turn_with(&mut b, |p| choose_move(p, "solar-beam", "splash"));
     assert!(b.participants(Side::Allies)[0].item.is_none());
     assert_eq!(
         b.participants(Side::Allies)[0].recyclable_item.as_deref(),
@@ -3651,14 +3651,14 @@ fn check_sport(move_id: &str, attack: &str, kind: &str) {
 
 #[test]
 fn mud_sport_reduces_electric_base_power_for_five_turns_without_refreshing() {
-    check_sport("mud-sport", "thunder_shock", "Electric");
+    check_sport("mud-sport", "thunder-shock", "Electric");
 }
 
 #[test]
 fn mud_sport_persists_after_its_user_switches_out() {
     let mut user = mon("User", &["mud-sport"]);
     user.speed = 200;
-    let foe = mon("Foe", &["thunder_shock"]);
+    let foe = mon("Foe", &["thunder-shock"]);
     let bench = mon("Bench", &["splash"]);
     let expected = control_damage(13, "Electric", "Special", foe.clone(), bench.clone());
     let mut b = Battle::with_rng(
@@ -3694,7 +3694,7 @@ fn water_sport_reduces_fire_base_power_for_five_turns_without_refreshing() {
 fn water_sport_does_not_reduce_other_attack_types() {
     let mut user = mon("User", &["water-sport"]);
     user.speed = 200;
-    let foe = mon("Foe", &["thunder_shock"]);
+    let foe = mon("Foe", &["thunder-shock"]);
     let expected = control_damage(40, "Electric", "Special", foe.clone(), user.clone());
     let mut b = game(user, vec![foe], 0.5);
     turn(&mut b);
@@ -3766,7 +3766,7 @@ fn helping_hand_fails_in_singles_and_does_not_boost_fixed_damage() {
         [
             vec![
                 mon("Helper", &["helping-hand"]),
-                mon("Attacker", &["dragon_rage"]),
+                mon("Attacker", &["dragon-rage"]),
             ],
             vec![mon("Foe", &["splash"])],
         ],
@@ -4354,7 +4354,7 @@ fn powder_cancels_fire_moves_after_spending_pp_and_bypasses_substitute() {
 #[test]
 fn powder_uses_weather_balls_actual_type_and_expires_after_the_turn() {
     let mut b = game(
-        mon("User", &["sunny_day", "powder", "splash"]),
+        mon("User", &["sunny-day", "powder", "splash"]),
         vec![mon("Foe", &["splash", "weather-ball"])],
         0.5,
     );
@@ -4669,7 +4669,7 @@ fn telekinesis_grants_ground_immunity_but_fails_on_grounded_species_and_protect(
 #[test]
 fn electric_terrain_boosts_grounded_electric_power_and_defog_removes_it() {
     for flying in [false, true] {
-        let mut user = mon("User", &["electric-terrain", "thunder_shock"]);
+        let mut user = mon("User", &["electric-terrain", "thunder-shock"]);
         user.types = vec![PokemonType::Electric];
         if flying {
             user.types.push(PokemonType::Flying);
@@ -4684,7 +4684,7 @@ fn electric_terrain_boosts_grounded_electric_power_and_defog_removes_it() {
         );
         let mut b = game(user, vec![foe], 0.5);
         turn(&mut b);
-        turn_with(&mut b, |p| choose_move(p, "thunder_shock", "splash"));
+        turn_with(&mut b, |p| choose_move(p, "thunder-shock", "splash"));
         assert_eq!(1000 - b.participants(Side::Foes)[0].hp, expected);
         turn_with(&mut b, |p| choose_move(p, "electric-terrain", "defog"));
         assert!(
@@ -4734,7 +4734,7 @@ fn electric_terrain_prevents_sleep_and_rest_only_on_grounded_pokemon_and_expires
 
 #[test]
 fn misty_terrain_prevents_status_and_confusion_for_grounded_pokemon() {
-    for attack in ["toxic", "confuse_ray"] {
+    for attack in ["toxic", "confuse-ray"] {
         for flying in [false, true] {
             let mut user = mon("User", &["misty-terrain"]);
             user.speed = 200;
@@ -5022,7 +5022,7 @@ fn conversion_uses_the_first_moves_base_type_and_rejects_an_existing_type() {
 fn conversion_two_uses_dynamic_move_type_and_can_copy_a_resistance_through_protection() {
     let mut user = mon("User", &["splash", "conversion-2"]);
     user.speed = 50;
-    let mut foe = mon("Foe", &["sunny_day", "weather-ball", "protect"]);
+    let mut foe = mon("Foe", &["sunny-day", "weather-ball", "protect"]);
     foe.substitute_hp = 100;
     let mut b = game(user, vec![foe], 0.5);
     turn(&mut b);
@@ -5490,7 +5490,7 @@ fn spiky_shield_hurts_contact_attackers_once_and_blocks_status_moves() {
     use wilds_battle_engine::Stat;
     for (attack, ability, damage) in [
         ("pound", None, 125),
-        ("double_kick", None, 125),
+        ("double-kick", None, 125),
         ("water-gun", None, 0),
         ("pound", Some("magic-guard"), 0),
         ("pound", Some("long-reach"), 0),
@@ -5875,7 +5875,7 @@ fn embargo_prevents_berry_activation_until_its_fifth_turn_ends() {
 
 #[test]
 fn embargo_disables_gems_and_power_herb_without_removing_them() {
-    for (item, attack) in [("normal-gem", "pound"), ("power-herb", "solar_beam")] {
+    for (item, attack) in [("normal-gem", "pound"), ("power-herb", "solar-beam")] {
         let mut user = mon("User", &["embargo"]);
         user.speed = 200;
         let mut foe = mon("Foe", &[attack]);
@@ -7279,7 +7279,7 @@ fn instruct_checks_history_forbidden_moves_exhausted_pp_and_protect() {
     for (last, pp, response) in [
         (None, 35, "splash"),
         (Some("instruct"), 15, "splash"),
-        (Some("solar_beam"), 10, "splash"),
+        (Some("solar-beam"), 10, "splash"),
         (Some("pound"), 0, "splash"),
         (Some("pound"), 35, "protect"),
     ] {
@@ -7819,7 +7819,7 @@ fn baton_pass_skips_pursuit_interception_and_fails_without_a_bench() {
 }
 #[test]
 fn baton_pass_keeps_charge_for_the_replacements_next_electric_attack() {
-    let bench = mon("Bench", &["thunder_shock"]);
+    let bench = mon("Bench", &["thunder-shock"]);
     let foe = mon("Foe", &["splash"]);
     let expected = control_damage(80, "Electric", "Special", bench.clone(), foe.clone());
     let mut b = baton_game(mon("Passer", &["charge", "baton-pass"]), bench, foe);

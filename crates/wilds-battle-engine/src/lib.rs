@@ -101,14 +101,14 @@ mod tests {
             FixedRng(0.5),
             [
                 vec![ally],
-                vec![Pokemon::new("Foe", vec!["double_kick".into()])],
+                vec![Pokemon::new("Foe", vec!["double-kick".into()])],
             ],
             MoveCatalog::builtin().unwrap(),
         )
         .unwrap();
 
         pick(&mut battle, "rage");
-        pick(&mut battle, "double_kick");
+        pick(&mut battle, "double-kick");
         let first = battle.advance().unwrap();
         assert_eq!(battle.participants(Side::Allies)[0].stage(Stat::Attack), 2);
         assert_eq!(
@@ -121,7 +121,7 @@ mod tests {
         );
 
         pick(&mut battle, "splash");
-        pick(&mut battle, "double_kick");
+        pick(&mut battle, "double-kick");
         battle.advance().unwrap();
         assert_eq!(battle.participants(Side::Allies)[0].stage(Stat::Attack), 2);
     }
@@ -132,7 +132,7 @@ mod tests {
         ally.hp = 500;
         ally.max_hp = 500;
         ally.speed = 50;
-        let mut foe = Pokemon::new("Foe", vec!["double_kick".into()]);
+        let mut foe = Pokemon::new("Foe", vec!["double-kick".into()]);
         foe.speed = 200;
         let mut battle = Battle::with_rng(
             FixedRng(0.5),
@@ -141,12 +141,12 @@ mod tests {
         )
         .unwrap();
         pick(&mut battle, "rage");
-        pick(&mut battle, "double_kick");
+        pick(&mut battle, "double-kick");
         let first = battle.advance().unwrap();
         assert_eq!(battle.participants(Side::Allies)[0].stage(Stat::Attack), 0);
 
         pick(&mut battle, "rage");
-        pick(&mut battle, "double_kick");
+        pick(&mut battle, "double-kick");
         let second = battle.advance().unwrap();
         assert_eq!(battle.participants(Side::Allies)[0].stage(Stat::Attack), 2);
         let foe_damage = |events: &[BattleEvent]| {
@@ -160,7 +160,7 @@ mod tests {
         assert!(foe_damage(&second.events) > foe_damage(&first.events));
 
         pick(&mut battle, "rage");
-        pick(&mut battle, "double_kick");
+        pick(&mut battle, "double-kick");
         battle.advance().unwrap();
         assert_eq!(battle.participants(Side::Allies)[0].stage(Stat::Attack), 4);
     }
@@ -213,16 +213,16 @@ mod tests {
             catalog.get("struggle").unwrap().move_type,
             PokemonType::Normal
         );
-        let kiss = catalog.get("draining_kiss").unwrap();
+        let kiss = catalog.get("draining-kiss").unwrap();
         assert_eq!(kiss.category, Category::Physical);
         assert_eq!(catalog.get("protect").unwrap().priority, 4);
         for id in [
-            "dream_eater",
-            "false_swipe",
-            "triple_kick",
+            "dream-eater",
+            "false-swipe",
+            "triple-kick",
             "explosion",
-            "hyper_beam",
-            "solar_beam",
+            "hyper-beam",
+            "solar-beam",
             "thrash",
             "charge",
             "rage",
@@ -289,8 +289,8 @@ mod tests {
     }
     #[test]
     fn damage_and_recoil_resolve_in_order() {
-        let mut battle = one_on_one(3, "double_edge", "splash");
-        pick(&mut battle, "double_edge");
+        let mut battle = one_on_one(3, "double-edge", "splash");
+        pick(&mut battle, "double-edge");
         pick(&mut battle, "splash");
         let result = battle.advance().unwrap();
         assert!(
@@ -360,15 +360,15 @@ mod tests {
 
     #[test]
     fn fixed_damage_and_multi_hit_keep_their_csharp_values() {
-        let mut fixed = one_on_one(9, "dragon_rage", "splash");
-        pick(&mut fixed, "dragon_rage");
+        let mut fixed = one_on_one(9, "dragon-rage", "splash");
+        pick(&mut fixed, "dragon-rage");
         pick(&mut fixed, "splash");
         let result = fixed.advance().unwrap();
         assert!(result.events.iter().any(|event| matches!(event,
             BattleEvent::Damage { target, amount: 40, .. } if *target == id(Side::Foes))));
 
-        let mut multi = one_on_one(9, "double_kick", "splash");
-        pick(&mut multi, "double_kick");
+        let mut multi = one_on_one(9, "double-kick", "splash");
+        pick(&mut multi, "double-kick");
         pick(&mut multi, "splash");
         let result = multi.advance().unwrap();
         assert_eq!(
@@ -415,8 +415,8 @@ mod tests {
 
     #[test]
     fn solar_beam_charges_then_acts_without_a_second_choice() {
-        let mut battle = one_on_one(5, "solar_beam", "splash");
-        pick(&mut battle, "solar_beam");
+        let mut battle = one_on_one(5, "solar-beam", "splash");
+        pick(&mut battle, "solar-beam");
         pick(&mut battle, "splash");
         let first = battle.advance().unwrap();
         assert!(
@@ -432,7 +432,7 @@ mod tests {
                 .is_some()
         );
         assert_eq!(
-            battle.participants(Side::Allies)[0].move_pp["solar_beam"],
+            battle.participants(Side::Allies)[0].move_pp["solar-beam"],
             9
         );
         let AdvanceStatus::Awaiting(prompt) = first.status else {
@@ -449,7 +449,7 @@ mod tests {
         assert!(second.events.iter().any(|event| matches!(event,
             BattleEvent::Damage { target, .. } if *target == id(Side::Foes))));
         assert_eq!(
-            battle.participants(Side::Allies)[0].move_pp["solar_beam"],
+            battle.participants(Side::Allies)[0].move_pp["solar-beam"],
             9
         );
         assert!(
@@ -875,7 +875,7 @@ mod tests {
     }
 
     fn electric_attack_damage(seed: u64, boosted: bool) -> (u16, Option<NextMovePowerBoost>) {
-        let mut ally = Pokemon::new("Ally", vec!["thunder_shock".into()]);
+        let mut ally = Pokemon::new("Ally", vec!["thunder-shock".into()]);
         if boosted {
             ally.next_move_power_boost = Some(NextMovePowerBoost {
                 move_type: PokemonType::Electric,
@@ -891,7 +891,7 @@ mod tests {
             MoveCatalog::builtin().unwrap(),
         )
         .unwrap();
-        pick(&mut battle, "thunder_shock");
+        pick(&mut battle, "thunder-shock");
         pick(&mut battle, "splash");
         battle.advance().unwrap();
         (
@@ -915,7 +915,7 @@ mod tests {
     fn charge_expires_after_a_non_electric_move() {
         let ally = Pokemon::new(
             "Ally",
-            vec!["charge".into(), "tackle".into(), "thunder_shock".into()],
+            vec!["charge".into(), "tackle".into(), "thunder-shock".into()],
         );
         let mut foe = Pokemon::new("Foe", vec!["splash".into()]);
         foe.hp = 1000;
@@ -987,13 +987,13 @@ mod tests {
             let mut battle = Battle::new(
                 seed,
                 [
-                    vec![Pokemon::new("Ally", vec!["ancient_power".into()])],
+                    vec![Pokemon::new("Ally", vec!["ancient-power".into()])],
                     vec![foe],
                 ],
                 MoveCatalog::builtin().unwrap(),
             )
             .unwrap();
-            pick(&mut battle, "ancient_power");
+            pick(&mut battle, "ancient-power");
             pick(&mut battle, "splash");
             let result = battle.advance().unwrap();
             if result.events.iter().any(
@@ -1066,14 +1066,14 @@ mod tests {
 
     #[test]
     fn sunny_day_skips_solar_beam_charge() {
-        let ally = Pokemon::new("Ally", vec!["sunny_day".into(), "solar_beam".into()]);
+        let ally = Pokemon::new("Ally", vec!["sunny-day".into(), "solar-beam".into()]);
         let foe = Pokemon::new("Foe", vec!["splash".into()]);
         let mut battle =
             Battle::new(9, [vec![ally], vec![foe]], MoveCatalog::builtin().unwrap()).unwrap();
-        pick(&mut battle, "sunny_day");
+        pick(&mut battle, "sunny-day");
         pick(&mut battle, "splash");
         battle.advance().unwrap();
-        pick(&mut battle, "solar_beam");
+        pick(&mut battle, "solar-beam");
         pick(&mut battle, "splash");
         let result = battle.advance().unwrap();
         assert!(result.events.iter().any(|event| matches!(event,
@@ -1094,19 +1094,19 @@ mod tests {
 
     #[test]
     fn drain_heals_and_storm_throw_always_crits() {
-        let mut ally = Pokemon::new("Ally", vec!["draining_kiss".into()]);
+        let mut ally = Pokemon::new("Ally", vec!["draining-kiss".into()]);
         ally.hp = 50;
         let foe = Pokemon::new("Foe", vec!["splash".into()]);
         let mut battle =
             Battle::new(3, [vec![ally], vec![foe]], MoveCatalog::builtin().unwrap()).unwrap();
-        pick(&mut battle, "draining_kiss");
+        pick(&mut battle, "draining-kiss");
         pick(&mut battle, "splash");
         let result = battle.advance().unwrap();
         assert!(result.events.iter().any(|event| matches!(event,
             BattleEvent::Heal { target, .. } if *target == id(Side::Allies))));
 
-        let mut battle = one_on_one(3, "storm_throw", "splash");
-        pick(&mut battle, "storm_throw");
+        let mut battle = one_on_one(3, "storm-throw", "splash");
+        pick(&mut battle, "storm-throw");
         pick(&mut battle, "splash");
         let result = battle.advance().unwrap();
         assert!(result.events.iter().any(|event| matches!(event,
@@ -1115,14 +1115,14 @@ mod tests {
 
     #[test]
     fn recoil_can_faint_both_and_uses_current_csharp_tie_outcome() {
-        let mut ally = Pokemon::new("Ally", vec!["double_edge".into()]);
+        let mut ally = Pokemon::new("Ally", vec!["double-edge".into()]);
         ally.hp = 1;
         ally.speed = 200;
         let mut foe = Pokemon::new("Foe", vec!["splash".into()]);
         foe.hp = 1;
         let mut battle =
             Battle::new(2, [vec![ally], vec![foe]], MoveCatalog::builtin().unwrap()).unwrap();
-        pick(&mut battle, "double_edge");
+        pick(&mut battle, "double-edge");
         pick(&mut battle, "splash");
         let result = battle.advance().unwrap();
         assert_eq!(
@@ -1137,8 +1137,8 @@ mod tests {
 
     #[test]
     fn dream_eater_checks_sleep_and_drains_damage() {
-        let mut awake = one_on_one(7, "dream_eater", "splash");
-        pick(&mut awake, "dream_eater");
+        let mut awake = one_on_one(7, "dream-eater", "splash");
+        pick(&mut awake, "dream-eater");
         pick(&mut awake, "splash");
         let result = awake.advance().unwrap();
         assert!(
@@ -1149,7 +1149,7 @@ mod tests {
         );
         assert_eq!(awake.participants(Side::Foes)[0].hp, 100);
 
-        let mut user = Pokemon::new("Ally", vec!["dream_eater".into()]);
+        let mut user = Pokemon::new("Ally", vec!["dream-eater".into()]);
         user.hp = 50;
         user.speed = 200;
         let mut target = Pokemon::new("Foe", vec!["splash".into()]);
@@ -1161,7 +1161,7 @@ mod tests {
             MoveCatalog::builtin().unwrap(),
         )
         .unwrap();
-        pick(&mut battle, "dream_eater");
+        pick(&mut battle, "dream-eater");
         pick(&mut battle, "splash");
         battle.advance().unwrap();
         assert!(battle.participants(Side::Foes)[0].hp < 100);
@@ -1170,15 +1170,15 @@ mod tests {
 
     #[test]
     fn false_swipe_leaves_one_hp() {
-        let mut battle = one_on_one(3, "false_swipe", "splash");
-        pick(&mut battle, "false_swipe");
+        let mut battle = one_on_one(3, "false-swipe", "splash");
+        pick(&mut battle, "false-swipe");
         pick(&mut battle, "splash");
         battle.advance().unwrap();
         let remaining = battle.participants(Side::Foes)[0].hp;
         assert!(remaining > 0 && remaining < 100);
         // Subsequent uses can bring the target to one HP but cannot faint it.
         for _ in 0..10 {
-            pick(&mut battle, "false_swipe");
+            pick(&mut battle, "false-swipe");
             pick(&mut battle, "splash");
             battle.advance().unwrap();
         }
@@ -1251,7 +1251,7 @@ mod tests {
         let mut complete = false;
         let mut stopped = false;
         for seed in 1..100 {
-            let mut ally = Pokemon::new("Ally", vec!["triple_kick".into()]);
+            let mut ally = Pokemon::new("Ally", vec!["triple-kick".into()]);
             ally.speed = 200;
             let mut foe = Pokemon::new("Foe", vec!["splash".into()]);
             foe.hp = 1000;
@@ -1262,7 +1262,7 @@ mod tests {
                 MoveCatalog::builtin().unwrap(),
             )
             .unwrap();
-            pick(&mut battle, "triple_kick");
+            pick(&mut battle, "triple-kick");
             pick(&mut battle, "splash");
             let result = battle.advance().unwrap();
             let amounts: Vec<_> = result
@@ -1291,14 +1291,14 @@ mod tests {
 
     #[test]
     fn hyper_beam_recharges_after_a_hit_without_a_prompt() {
-        let mut ally = Pokemon::new("Ally", vec!["hyper_beam".into()]);
+        let mut ally = Pokemon::new("Ally", vec!["hyper-beam".into()]);
         ally.speed = 200;
         let mut foe = Pokemon::new("Foe", vec!["splash".into()]);
         foe.hp = 1000;
         foe.max_hp = 1000;
         let mut battle =
             Battle::new(2, [vec![ally], vec![foe]], MoveCatalog::builtin().unwrap()).unwrap();
-        pick(&mut battle, "hyper_beam");
+        pick(&mut battle, "hyper-beam");
         pick(&mut battle, "splash");
         let first = battle.advance().unwrap();
         assert!(
@@ -1331,8 +1331,8 @@ mod tests {
     fn missed_hyper_beam_does_not_recharge() {
         let mut missed = false;
         for seed in 1..100 {
-            let mut battle = one_on_one(seed, "hyper_beam", "splash");
-            pick(&mut battle, "hyper_beam");
+            let mut battle = one_on_one(seed, "hyper-beam", "splash");
+            pick(&mut battle, "hyper-beam");
             pick(&mut battle, "splash");
             let result = battle.advance().unwrap();
             if result
@@ -1455,10 +1455,10 @@ mod tests {
     #[test]
     fn morning_sun_heals_more_in_sun() {
         let run = |sun| {
-            let mut ally = Pokemon::new("Ally", vec!["morning_sun".into(), "splash".into()]);
+            let mut ally = Pokemon::new("Ally", vec!["morning-sun".into(), "splash".into()]);
             ally.hp = 10;
             ally.speed = 200;
-            let foe_move = if sun { "sunny_day" } else { "splash" };
+            let foe_move = if sun { "sunny-day" } else { "splash" };
             let foe = Pokemon::new("Foe", vec![foe_move.into()]);
             let mut battle = Battle::with_rng(
                 FixedRng(0.5),
@@ -1468,10 +1468,10 @@ mod tests {
             .unwrap();
             if sun {
                 pick(&mut battle, "splash");
-                pick(&mut battle, "sunny_day");
+                pick(&mut battle, "sunny-day");
                 battle.advance().unwrap();
             }
-            pick(&mut battle, "morning_sun");
+            pick(&mut battle, "morning-sun");
             pick(&mut battle, foe_move);
             battle.advance().unwrap();
             battle.participants(Side::Allies)[0].hp

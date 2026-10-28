@@ -499,7 +499,7 @@ fn comatose_counts_as_sleep_for_snore_dream_eater_and_wake_up_slap() {
     turn(&mut battle, "snore", "splash");
     assert!(foe(&battle).hp < 1000);
     assert_eq!(ally(&battle).status, None);
-    for move_id in ["dream_eater", "wake-up-slap", "hex"] {
+    for move_id in ["dream-eater", "wake-up-slap", "hex"] {
         let run = |ability: Option<&str>| {
             let mut target = mon("Target", &["splash"]);
             target.types = vec![PokemonType::Water];
@@ -565,8 +565,8 @@ fn confusion_own_tempo_prevents_new_confusion_and_cures_existing_confusion() {
             target.ability = Some("own-tempo".into());
             target.ability_suppressed = suppressed;
             target.confused_turns = confused.then_some(3);
-            let mut battle = game(mon("User", &["confuse_ray"]), target, 0.5);
-            turn(&mut battle, "confuse_ray", "splash");
+            let mut battle = game(mon("User", &["confuse-ray"]), target, 0.5);
+            turn(&mut battle, "confuse-ray", "splash");
             assert_eq!(foe(&battle).confused_turns.is_some(), suppressed);
         }
     }
@@ -835,7 +835,7 @@ fn shield_dust_blocks_secondary_statuses_and_confusion_but_not_status_moves() {
         turn(&mut battle, move_id, "splash");
         assert_eq!(foe(&battle).status, expect_status, "{move_id}");
     }
-    for move_id in ["confusion", "confuse_ray"] {
+    for move_id in ["confusion", "confuse-ray"] {
         let mut user = mon("User", &[move_id]);
         user.speed = 200;
         let mut target = mon("Target", &["splash"]);
@@ -844,7 +844,7 @@ fn shield_dust_blocks_secondary_statuses_and_confusion_but_not_status_moves() {
         turn(&mut battle, move_id, "splash");
         assert_eq!(
             foe(&battle).confused_turns.is_some(),
-            move_id == "confuse_ray"
+            move_id == "confuse-ray"
         );
     }
 }
@@ -852,20 +852,20 @@ fn shield_dust_blocks_secondary_statuses_and_confusion_but_not_status_moves() {
 #[test]
 fn leaf_guard_prevents_status_in_effective_sun_without_curing_existing_status() {
     for (weather_ability, blocked) in [(None, true), (Some("cloud-nine"), false)] {
-        let mut user = mon("User", &["sunny_day", "glare"]);
+        let mut user = mon("User", &["sunny-day", "glare"]);
         user.ability = weather_ability.map(str::to_owned);
         let mut target = mon("Target", &["splash"]);
         target.ability = Some("leaf-guard".into());
         let mut battle = game(user, target, 0.5);
-        turn(&mut battle, "sunny_day", "splash");
+        turn(&mut battle, "sunny-day", "splash");
         turn(&mut battle, "glare", "splash");
         assert_eq!(foe(&battle).status, (!blocked).then_some(Status::Paralyzed));
     }
     let mut target = mon("Target", &["splash"]);
     target.status = Some(Status::Burned);
     target.ability = Some("leaf-guard".into());
-    let mut battle = game(mon("User", &["sunny_day"]), target, 0.5);
-    turn(&mut battle, "sunny_day", "splash");
+    let mut battle = game(mon("User", &["sunny-day"]), target, 0.5);
+    turn(&mut battle, "sunny-day", "splash");
     assert_eq!(foe(&battle).status, Some(Status::Burned));
 }
 
@@ -936,7 +936,7 @@ fn healer_cures_adjacent_allies_but_not_itself() {
 
 #[test]
 fn infiltrator_bypasses_safeguard_for_status_and_confusion() {
-    for move_id in ["glare", "confuse_ray"] {
+    for move_id in ["glare", "confuse-ray"] {
         for infiltrator in [false, true] {
             let mut user = mon("User", &["splash", move_id]);
             if infiltrator {
@@ -1028,9 +1028,9 @@ fn freeze_uses_actual_attack_type_and_nonfire_thawing_moves() {
     for attack in ["weather-ball", "scald", "steam-eruption", "scorching-sands"] {
         let mut target = mon("Target", &["splash"]);
         target.status = Some(Status::Frozen);
-        let mut battle = game(mon("User", &["sunny_day", attack]), target, 0.5);
+        let mut battle = game(mon("User", &["sunny-day", attack]), target, 0.5);
         if attack == "weather-ball" {
-            turn(&mut battle, "sunny_day", "splash");
+            turn(&mut battle, "sunny-day", "splash");
             assert_eq!(
                 foe(&battle).status,
                 Some(Status::Frozen),
@@ -1053,9 +1053,9 @@ fn freeze_sun_and_magma_armor_prevent_freezing() {
         if case == "ice" {
             target.types = vec![PokemonType::Ice];
         }
-        let mut battle = game(mon("User", &["sunny_day", "ice-beam"]), target, 0.05);
+        let mut battle = game(mon("User", &["sunny-day", "ice-beam"]), target, 0.05);
         if case == "sun" {
-            turn(&mut battle, "sunny_day", "splash");
+            turn(&mut battle, "sunny-day", "splash");
         }
         // Inspect the application event even if the target naturally thaws this turn.
         let events = turn(&mut battle, "ice-beam", "splash");
@@ -1125,12 +1125,12 @@ fn freeze_all_sword_shield_self_thawing_moves_work() {
 #[test]
 fn freeze_sun_immunity_respects_weather_suppressing_abilities() {
     for ability in ["cloud-nine", "air-lock"] {
-        let mut user = mon("User", &["sunny_day", "ice-beam"]);
+        let mut user = mon("User", &["sunny-day", "ice-beam"]);
         user.ability = Some(ability.into());
         let mut target = mon("Target", &["splash"]);
         target.speed = 200;
         let mut battle = game(user, target, 0.05);
-        turn(&mut battle, "sunny_day", "splash");
+        turn(&mut battle, "sunny-day", "splash");
         turn(&mut battle, "ice-beam", "splash");
         assert_eq!(foe(&battle).status, Some(Status::Frozen), "{ability}");
     }

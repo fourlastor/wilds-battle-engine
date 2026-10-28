@@ -66,8 +66,8 @@ def main() -> int:
             env=env,
         )
     for case_id, move_id in (
-        ("dragon_rage", "dragon_rage"),
-        ("dragon_rage_ko", "dragon_rage"),
+        ("dragon-rage", "dragon-rage"),
+        ("dragon_rage_ko", "dragon-rage"),
         ("tackle_1", "tackle"),
         ("tackle_7", "tackle"),
         ("tackle_99", "tackle"),

@@ -184,7 +184,7 @@ interface Authored {
 /** The engine cannot describe a script, so the scripted built-ins are rebuilt by hand, block for line. */
 const SCRIPTED: Record<string, () => Authored> = {
   charge: () => ({ main: [stats('user', [['SpDefense', 1]]), make('mlab_boost_next', { TYPE: 'Electric', MULT: 2 })] }),
-  dream_eater: () => ({ main: [when(statusIs('target', 'NOT', 'Asleep'), [make('mlab_fail')]), damage(100, { drain: 50 })] }),
+  'dream-eater': () => ({ main: [when(statusIs('target', 'NOT', 'Asleep'), [make('mlab_fail')]), damage(100, { drain: 50 })] }),
   explosion: () => ({ main: [make('mlab_faint_user'), damage(250)] }),
   facade: () => ({
     main: [
@@ -195,9 +195,9 @@ const SCRIPTED: Record<string, () => Authored> = {
       ),
     ],
   }),
-  false_swipe: () => ({ main: [damage(40, { min_hp: 1 })] }),
-  hyper_beam: () => ({ main: [damage(150), when(make('mlab_hit_landed'), [make('mlab_recharge')])] }),
-  morning_sun: () => ({
+  'false-swipe': () => ({ main: [damage(40, { min_hp: 1 })] }),
+  'hyper-beam': () => ({ main: [damage(150), when(make('mlab_hit_landed'), [make('mlab_recharge')])] }),
+  'morning-sun': () => ({
     main: [whenElse(weatherIs('IS', 'Sun'), [heal(66.67)], [whenElse(weatherIs('IS', 'Sandstorm'), [heal(25)], [heal(50)])])],
   }),
   rage: () => ({ main: [make('mlab_watch_hits'), damage(20)], hit: [stats('user', [['Attack', 1]])] }),
@@ -209,7 +209,7 @@ const SCRIPTED: Record<string, () => Authored> = {
     ],
     sheet: { usableWhileAsleep: true },
   }),
-  solar_beam: () => ({
+  'solar-beam': () => ({
     main: [
       when(both(make('mlab_first_turn'), weatherIs('NOT', 'Sun')), [
         make('mlab_message', { TEXT: '{user} took in sunlight!' }),
@@ -235,7 +235,7 @@ const SCRIPTED: Record<string, () => Authored> = {
     ],
     interrupt: [when(make('mlab_last_turn'), [make('mlab_confuse_self')]), make('mlab_break_sequence')],
   }),
-  triple_kick: () => ({
+  'triple-kick': () => ({
     main: [
       make('mlab_repeat', undefined, {
         TIMES: num(3),

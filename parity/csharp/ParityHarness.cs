@@ -13,7 +13,7 @@ public partial class ParityHarness : Node
 {
     public override void _Ready()
     {
-        RunCase("dragon_rage", new MDragonRage(), 7);
+        RunCase("dragon-rage", new MDragonRage(), 7);
         RunCase("dragon_rage_ko", new MDragonRage(), 7, foeHp: 35);
         RunCase("tackle_1", new MTackle(), 1);
         RunCase("tackle_7", new MTackle(), 7);

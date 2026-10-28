@@ -39,12 +39,12 @@ assert.equal(catalog.error, undefined, catalog.error);
 assert.equal(catalog.moves.length, files.length + 1);
 const tackle = catalog.moves.find((move) => move.id === 'tackle');
 assert.deepEqual(tackle.effects, [{ kind: 'Damage', power: 40, recoil: null, drain: null, high_crit: false, always_crit: false }]);
-assert.equal(catalog.moves.find((move) => move.id === 'solar_beam').scripted, true);
+assert.equal(catalog.moves.find((move) => move.id === 'solar-beam').scripted, true);
 
 // A scripted move that takes two turns, against a move that does nothing.
 const setup = {
   seed: 7,
-  allies: [{ name: 'Sunflora', level: 30, max_hp: 89, sp_attack: 72, speed: 27, types: ['Grass'], moves: ['solar_beam'] }],
+  allies: [{ name: 'Sunflora', level: 30, max_hp: 89, sp_attack: 72, speed: 27, types: ['Grass'], moves: ['solar-beam'] }],
   foes: [{ name: 'Wobbuffet', level: 30, max_hp: 158, sp_defense: 44, speed: 29, types: ['Psychic'], moves: ['splash'] }],
 };
 const battle = withStrings([JSON.stringify(setup), '/moves'], (json, dir) => engine._wbe_create(json, dir));
@@ -154,7 +154,7 @@ console.log('ok: Sky Drop carries and releases both participants through wasm');
 
 const substituteBattle = withStrings([JSON.stringify({
   allies: [{ name: 'Doll', max_hp: 400, speed: 200, moves: ['substitute'] }],
-  foes: [{ name: 'Attacker', max_hp: 400, speed: 50, moves: ['dragon_rage'] }],
+  foes: [{ name: 'Attacker', max_hp: 400, speed: 50, moves: ['dragon-rage'] }],
 }), '/moves'], (json, dir) => engine._wbe_create(json, dir));
 assert.notEqual(substituteBattle, 0, lastError());
 for (let i = 0; i < 2; i++) {

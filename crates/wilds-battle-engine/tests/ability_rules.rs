@@ -518,7 +518,7 @@ fn check_weather_suppression(ability: &str) {
             battle.weather().unwrap().turns_left,
         )
     };
-    for weather in ["sunny_day", "rain-dance"] {
+    for weather in ["sunny-day", "rain-dance"] {
         assert_eq!(
             run(weather, "ember", ability, false).0,
             ability_damage("ember", "", "", false)
@@ -568,7 +568,7 @@ fn overcoat_prevents_sand_and_hail_damage_only_while_active() {
 
 #[test]
 fn dry_skin_absorbs_status_water_and_responds_to_sun_rain_and_fire() {
-    for (move_id, expected) in [("soak", 750), ("rain-dance", 625), ("sunny_day", 375)] {
+    for (move_id, expected) in [("soak", 750), ("rain-dance", 625), ("sunny-day", 375)] {
         let mut target = mon("Target", &["splash"]);
         target.hp = 500;
         target.ability = Some("dry-skin".into());
@@ -584,12 +584,12 @@ fn dry_skin_absorbs_status_water_and_responds_to_sun_rain_and_fire() {
         base
     );
     for ability in ["cloud-nine", "air-lock"] {
-        let mut user = mon("User", &["sunny_day"]);
+        let mut user = mon("User", &["sunny-day"]);
         user.ability = Some(ability.into());
         let mut target = mon("Target", &["splash"]);
         target.ability = Some("dry-skin".into());
         let mut battle = game(user, target, 0.5);
-        turn(&mut battle, "sunny_day", "splash");
+        turn(&mut battle, "sunny-day", "splash");
         assert_eq!(foe(&battle).hp, 1000);
     }
 }
@@ -608,7 +608,7 @@ fn magic_guard_blocks_indirect_damage_but_keeps_hp_costs_and_struggle_recoil() {
             assert_eq!(ally(&battle).hp, 500);
         }
     }
-    for attack in ["double_edge", "steel-beam", "mind-blown"] {
+    for attack in ["double-edge", "steel-beam", "mind-blown"] {
         let mut user = mon("User", &[attack]);
         user.ability = Some("magic-guard".into());
         let mut battle = game(user, mon("Target", &["splash"]), 0.5);
@@ -812,7 +812,7 @@ fn toughclaws_boosts_matching_moves_only() {
 
 #[test]
 fn technician_boosts_matching_moves_only() {
-    check_power_ability("technician", &["tackle", "swift"], "hyper_beam", 1.5, 1000);
+    check_power_ability("technician", &["tackle", "swift"], "hyper-beam", 1.5, 1000);
 }
 
 #[test]
@@ -1369,7 +1369,7 @@ fn swift_swim_doubles_speed_in_effective_rain() {
 
 #[test]
 fn chlorophyll_doubles_speed_in_effective_weather() {
-    check_weather_speed("chlorophyll", "sunny_day");
+    check_weather_speed("chlorophyll", "sunny-day");
 }
 
 #[test]
@@ -1397,13 +1397,13 @@ fn sand_rush_doubles_speed_and_prevents_sandstorm_damage() {
 #[test]
 fn solar_power_boosts_special_attacks_and_costs_hp_only_in_effective_sun() {
     let run = |attack: &str, suppressed, cloud: bool| {
-        let mut user = mon("User", &["sunny_day", attack]);
+        let mut user = mon("User", &["sunny-day", attack]);
         user.ability = Some("solar-power".into());
         user.ability_suppressed = suppressed;
         let mut target = mon("Target", &["splash"]);
         target.ability = cloud.then(|| "cloud-nine".into());
         let mut battle = game(user, target, 0.5);
-        turn(&mut battle, "sunny_day", "splash");
+        turn(&mut battle, "sunny-day", "splash");
         turn(&mut battle, attack, "splash");
         (1000 - foe(&battle).hp, ally(&battle).hp)
     };
@@ -2028,7 +2028,7 @@ fn stamina_raises_defense_per_direct_hit() {
     use wilds_battle_engine::Stat;
     check_hit_stat_boost("stamina", "tackle", Stat::Defense, 1);
     check_hit_stat_boost("stamina", "swift", Stat::Defense, 1);
-    check_hit_stat_boost("stamina", "double_kick", Stat::Defense, 2);
+    check_hit_stat_boost("stamina", "double-kick", Stat::Defense, 2);
     check_hit_stat_boost("stamina", "growl", Stat::Defense, 0);
 }
 
@@ -2037,7 +2037,7 @@ fn weak_armor_trades_defense_for_two_speed_per_physical_hit() {
     use wilds_battle_engine::Stat;
     check_hit_stat_boost("weak-armor", "tackle", Stat::Defense, -1);
     check_hit_stat_boost("weak-armor", "tackle", Stat::Speed, 2);
-    check_hit_stat_boost("weak-armor", "double_kick", Stat::Speed, 4);
+    check_hit_stat_boost("weak-armor", "double-kick", Stat::Speed, 4);
     check_hit_stat_boost("weak-armor", "swift", Stat::Defense, 0);
     check_hit_stat_boost("weak-armor", "swift", Stat::Speed, 0);
 }
@@ -2327,7 +2327,7 @@ fn mirror_armor_reflects_stat_drops_once_and_respects_mold_breaker() {
 #[test]
 fn serene_grace_doubles_opponent_and_self_secondary_chances() {
     for suppressed in [false, true] {
-        let mut user = mon("User", &["thunderbolt", "ancient_power"]);
+        let mut user = mon("User", &["thunderbolt", "ancient-power"]);
         user.ability = Some("serene-grace".into());
         user.ability_suppressed = suppressed;
         let mut battle = game(user, mon("Target", &["splash"]), 0.15);
@@ -2336,7 +2336,7 @@ fn serene_grace_doubles_opponent_and_self_secondary_chances() {
             foe(&battle).status,
             (!suppressed).then_some(Status::Paralyzed)
         );
-        turn(&mut battle, "ancient_power", "splash");
+        turn(&mut battle, "ancient-power", "splash");
         assert_eq!(
             ally(&battle).stage(wilds_battle_engine::Stat::Attack),
             i8::from(!suppressed)
@@ -2412,7 +2412,7 @@ fn skill_link_maximizes_variable_hits_and_checks_multi_accuracy_once() {
             if self.0 <= 3 { 0.1 } else { 0.95 }
         }
     }
-    for move_id in ["triple_kick", "triple-axel"] {
+    for move_id in ["triple-kick", "triple-axel"] {
         for suppressed in [false, true] {
             let mut user = mon("User", &[move_id]);
             user.speed = 100;
@@ -2440,11 +2440,11 @@ fn skill_link_maximizes_variable_hits_and_checks_multi_accuracy_once() {
 #[test]
 fn rock_head_blocks_normal_recoil_but_not_crashes_or_struggle() {
     for suppressed in [false, true] {
-        let mut user = mon("User", &["double_edge"]);
+        let mut user = mon("User", &["double-edge"]);
         user.ability = Some("rock-head".into());
         user.ability_suppressed = suppressed;
         let mut battle = game(user, mon("Target", &["splash"]), 0.5);
-        turn(&mut battle, "double_edge", "splash");
+        turn(&mut battle, "double-edge", "splash");
         assert_eq!(ally(&battle).hp == 1000, !suppressed);
     }
     let mut user = mon("User", &["high-jump-kick"]);
@@ -2466,7 +2466,7 @@ fn rock_head_blocks_normal_recoil_but_not_crashes_or_struggle() {
 fn reckless_boosts_recoil_and_crash_attacks_only() {
     check_power_ability(
         "reckless",
-        &["double_edge", "high-jump-kick", "jump-kick", "flare-blitz"],
+        &["double-edge", "high-jump-kick", "jump-kick", "flare-blitz"],
         "tackle",
         1.2,
         1000,
@@ -2475,7 +2475,7 @@ fn reckless_boosts_recoil_and_crash_attacks_only() {
 
 #[test]
 fn liquid_ooze_reverses_drain_seed_and_strength_sap_even_at_full_hp() {
-    for move_id in ["mega-drain", "draining_kiss", "leech-seed", "strength-sap"] {
+    for move_id in ["mega-drain", "draining-kiss", "leech-seed", "strength-sap"] {
         for hp in [500, 1000] {
             let mut user = mon("User", &[move_id]);
             user.hp = hp;
@@ -3320,10 +3320,10 @@ fn truant_skips_alternate_actions_without_spending_pp_and_shares_recharge() {
         assert_eq!(foe(&battle).hp < before, n % 2 == 0);
         assert_eq!(ally(&battle).move_pp["tackle"], pp - u8::from(n % 2 == 0));
     }
-    let mut user = mon("User", &["hyper_beam", "tackle"]);
+    let mut user = mon("User", &["hyper-beam", "tackle"]);
     user.ability = Some("truant".into());
     let mut battle = game(user, mon("Target", &["splash"]), 0.5);
-    turn(&mut battle, "hyper_beam", "splash");
+    turn(&mut battle, "hyper-beam", "splash");
     turn(&mut battle, "tackle", "splash");
     let before = foe(&battle).hp;
     turn(&mut battle, "tackle", "splash");
@@ -3500,8 +3500,8 @@ fn harvest_recovers_consumed_berries_with_half_chance_or_guaranteed_sun() {
     for (move_id, dice, cloud, restored) in [
         ("splash", 0.25, false, true),
         ("splash", 0.75, false, false),
-        ("sunny_day", 0.75, false, true),
-        ("sunny_day", 0.75, true, false),
+        ("sunny-day", 0.75, false, true),
+        ("sunny-day", 0.75, true, false),
     ] {
         let mut user = mon("User", &[move_id]);
         user.ability = Some("harvest".into());
@@ -3610,12 +3610,12 @@ fn imposter_transforms_on_entry_into_the_opposite_slot_and_respects_substitute()
 #[test]
 fn color_change_waits_until_all_hits_finish_and_substitutes_block_it() {
     let run = |ability: &str, substitute| {
-        let user = mon("User", &["double_kick"]);
+        let user = mon("User", &["double-kick"]);
         let mut target = mon("Target", &["splash"]);
         target.ability = Some(ability.into());
         target.substitute_hp = substitute;
         let mut battle = game(user, target, 0.5);
-        turn(&mut battle, "double_kick", "splash");
+        turn(&mut battle, "double-kick", "splash");
         (foe(&battle).hp, foe(&battle).types.clone())
     };
     let base = run("", 0);
@@ -3732,7 +3732,7 @@ fn add_form(p: &mut Pokemon, name: &str, kind: PokemonType) {
 
 #[test]
 fn forecast_tracks_weather_and_suppression_using_host_supplied_forms() {
-    let mut user = mon("User", &["sunny_day", "rain-dance", "hail", "splash"]);
+    let mut user = mon("User", &["sunny-day", "rain-dance", "hail", "splash"]);
     user.species_id = 351;
     user.ability = Some("forecast".into());
     for (form, kind) in [
@@ -3744,7 +3744,7 @@ fn forecast_tracks_weather_and_suppression_using_host_supplied_forms() {
     }
     let mut battle = game(user, mon("Target", &["splash", "gastro-acid"]), 0.5);
     for (move_id, kind) in [
-        ("sunny_day", PokemonType::Fire),
+        ("sunny-day", PokemonType::Fire),
         ("rain-dance", PokemonType::Water),
         ("hail", PokemonType::Ice),
     ] {
@@ -3759,7 +3759,7 @@ fn forecast_tracks_weather_and_suppression_using_host_supplied_forms() {
 #[test]
 fn flower_gift_changes_cherrim_and_boosts_allied_attack_and_special_defense_in_sun() {
     let run = |sun, suppressed, breaker: bool| {
-        let user = mon("User", &["sunny_day", "splash", "tackle"]);
+        let user = mon("User", &["sunny-day", "splash", "tackle"]);
         let mut cherrim = mon("Cherrim", &["splash"]);
         cherrim.species_id = 421;
         cherrim.ability = Some("flower-gift".into());
@@ -3775,7 +3775,7 @@ fn flower_gift_changes_cherrim_and_boosts_allied_attack_and_special_defense_in_s
         .unwrap();
         turn(
             &mut battle,
-            if sun { "sunny_day" } else { "splash" },
+            if sun { "sunny-day" } else { "splash" },
             "splash",
         );
         assert_eq!(
@@ -4068,7 +4068,7 @@ fn sheer_force_boosts_secondary_moves_and_suppresses_native_scripted_and_after_m
     check_power_ability("sheer-force", &["ember", "scald"], "tackle", 1.3, 1000);
     for (move_id, stat) in [
         ("flame-charge", wilds_battle_engine::Stat::Speed),
-        ("ancient_power", wilds_battle_engine::Stat::Attack),
+        ("ancient-power", wilds_battle_engine::Stat::Attack),
         ("diamond-storm", wilds_battle_engine::Stat::Defense),
     ] {
         let mut user = mon("User", &[move_id]);
@@ -4131,8 +4131,8 @@ fn berserk_boosts_once_when_moves_cross_half_hp_and_precedes_single_hit_berry_he
         ("tackle", "", 530, false, 1),
         ("tackle", "", 500, false, 0),
         ("tackle", "", 530, true, 1),
-        ("double_kick", "", 530, false, 1),
-        ("double_kick", "", 530, true, 0),
+        ("double-kick", "", 530, false, 1),
+        ("double-kick", "", 530, true, 0),
         ("scald", "sheer-force", 530, false, 0),
     ] {
         let mut user = mon("User", &[move_id]);
@@ -4322,14 +4322,14 @@ fn rks_system_uses_existing_memories_and_transformation_keeps_copied_types() {
 #[test]
 fn primordial_sea_keeps_heavy_rain_blocks_fire_attacks_and_ends_with_its_last_source() {
     use wilds_battle_engine::WeatherKind;
-    let mut user = mon("User", &["sunny_day", "splash"]);
+    let mut user = mon("User", &["sunny-day", "splash"]);
     user.ability = Some("primordial-sea".into());
     let mut battle = game(
         user,
         mon("Target", &["ember", "will-o-wisp", "splash", "gastro-acid"]),
         0.5,
     );
-    turn(&mut battle, "sunny_day", "ember");
+    turn(&mut battle, "sunny-day", "ember");
     assert_eq!(battle.weather().unwrap().kind, WeatherKind::HeavyRain);
     assert_eq!(ally(&battle).hp, 1000);
     for _ in 0..6 {
@@ -4833,15 +4833,15 @@ fn dancers_use_unmodified_speed_order_do_not_chain_and_do_not_lock_into_petal_da
     }
     let mut dancer = mon("Dancer", &["splash"]);
     dancer.ability = Some("dancer".into());
-    let mut battle = game(mon("User", &["petal_dance"]), dancer, 0.5);
-    turn(&mut battle, "petal_dance", "splash");
+    let mut battle = game(mon("User", &["petal-dance"]), dancer, 0.5);
+    turn(&mut battle, "petal-dance", "splash");
     assert!(foe(&battle).locked_move.is_none());
     assert!(ally(&battle).hp < 1000);
 }
 
 #[test]
 fn parental_bond_hits_twice_with_quarter_second_damage_and_one_pp_payment() {
-    for move_id in ["tackle", "ice-beam", "hyper_beam"] {
+    for move_id in ["tackle", "ice-beam", "hyper-beam"] {
         let mut user = mon("User", &[move_id]);
         user.ability = Some("parental-bond".into());
         let mut battle = game(user, mon("Target", &["splash"]), 0.5);
@@ -4861,12 +4861,12 @@ fn parental_bond_hits_twice_with_quarter_second_damage_and_one_pp_payment() {
         let expected = match move_id {
             "tackle" => [48, 12],
             "ice-beam" => [71, 17],
-            "hyper_beam" => [178, 43],
+            "hyper-beam" => [178, 43],
             _ => unreachable!(),
         };
         assert_eq!(damage, expected, "{move_id}");
         assert_eq!(ally(&battle).move_pp[move_id], pp - 1);
-        if move_id == "hyper_beam" {
+        if move_id == "hyper-beam" {
             assert!(ally(&battle).recharging);
         }
     }
@@ -4937,7 +4937,7 @@ fn parental_bond_breaks_substitutes_and_sturdy_and_keeps_fixed_damage_unscaled()
 #[test]
 fn parental_bond_excludes_multihit_charge_and_spread_moves_but_allows_single_target_surf() {
     for (move_id, expected) in [
-        ("double_kick", 2),
+        ("double-kick", 2),
         ("rollout", 1),
         ("dynamax-cannon", 1),
         ("surf", 2),
@@ -5003,7 +5003,7 @@ fn parental_bond_preserves_preparation_and_applies_move_cleanup_and_recoil_once(
         "burn-up",
         "clanging-scales",
         "spit-up",
-        "double_edge",
+        "double-edge",
     ] {
         let mut user = mon("User", &[move_id, "stockpile"]);
         user.ability = Some("parental-bond".into());
@@ -5043,7 +5043,7 @@ fn parental_bond_preserves_preparation_and_applies_move_cleanup_and_recoil_once(
                 assert_eq!(ally(&battle).stage(Stat::Defense), 0);
                 assert_eq!(hits, [118, 28]);
             }
-            "double_edge" => assert_eq!(1000 - ally(&battle).hp, hits.iter().sum::<u16>() / 3),
+            "double-edge" => assert_eq!(1000 - ally(&battle).hp, hits.iter().sum::<u16>() / 3),
             _ => unreachable!(),
         }
     }

@@ -24,11 +24,9 @@ With seven additional support moves, 14 further moves from the local JSON data,
 186 further moves through Sword/Shield and the nine original moves outside the sheet,
 the runtime catalog has 754 moves: 753 files here and Struggle in
 `src/system_moves.lua` inside the crate.
-The 22 original filenames containing underscores have been renamed with hyphens.
-
-New move IDs equal their filename slugs. Original runtime IDs retain underscores
-where applicable (for example, `solar_beam` lives in `solar-beam.lua`) so existing
-setups continue to work. Original move behavior and parameters are preserved.
+Every move ID equals its filename slug (for example, `solar-beam` lives in
+`solar-beam.lua`), matching PokeAPI move names. Original move behavior and
+parameters are preserved.
 Move Lab replaces and downloads edited files using the canonical filenames.
 
 ## Behavior and coverage
