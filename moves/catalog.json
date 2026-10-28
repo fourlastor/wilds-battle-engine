@@ -1,11 +1,10 @@
 {
   "source_sheet": "https://docs.google.com/spreadsheets/d/1e9lPFCqyuwpX6R6s69HXoFUXedoIAD8SdtSbswY48Q8/edit?gid=1664051581",
-  "source_json_directory": "pokewilds-next/pokemon_data/assets/moves",
   "behavior_references": [
     "https://pokeapi.co/api/v2/move/{id}/",
     "https://github.com/smogon/pokemon-showdown/blob/942cda71d14bf0618bd57991708a2e2734b6daba/data/moves.ts"
   ],
-  "parameter_policy": "Local JSON names and parameters where available; PokeAPI names and Gen 8 parameters for other moves. Actual behavior takes precedence over conflicting spreadsheet descriptions; original runtime IDs and behaviors retained for existing moves.",
+  "parameter_policy": "PokeAPI names and Gen 8 parameters. Actual behavior takes precedence over conflicting spreadsheet descriptions.",
   "global_limitations": [
     "The engine supports benches, switches, entry hazards, Substitute and selected ability/item effects. The item and ability catalogs are not exhaustive.",
     "General battle interactions follow the current Rust engine; catalog coverage is not full official battle parity."

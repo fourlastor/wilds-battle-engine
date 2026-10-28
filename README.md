@@ -167,7 +167,7 @@ burn and final modifiers are applied in that order. Parental Bond scales its
 second hit before weather. Attack-, power- and final-damage ability effects use
 their respective stages, including the Gen 8 Heatproof override. Fixed damage
 continues to bypass this formula. Exact regression vectors cover rounding and
-modifier interactions; these rules supersede the original C# damage arithmetic.
+modifier interactions.
 
 In doubles, ordinary selected moves can target either opponent or the adjacent
 ally, excluding the user and bench. Prompts list opponents first. Attacks follow
@@ -185,15 +185,7 @@ their own recipient count. These rules follow the targeting and spread-damage
 stages in [Pokémon Showdown's battle actions](https://github.com/smogon/pokemon-showdown/blob/942cda71d14bf0618bd57991708a2e2734b6daba/sim/battle-actions.ts)
 and [target selection](https://github.com/smogon/pokemon-showdown/blob/942cda71d14bf0618bd57991708a2e2734b6daba/sim/battle.ts).
 
-The original compatibility port covers metadata and battle mechanics for 29 C# moves,
-including turn order, accuracy, damage, status, weather, charging, repeated hits,
-consecutive moves, and outcome resolution. The Rust RNG is seeded, so a Rust
-run is reproducible; it does not reproduce Godot's RNG stream. Tests exercise
-each move and selected interactions. The local parity suite compares one-turn
-Dragon Rage, Tackle, Toxic, and Recover battles against the running C# engine,
-including different damage rolls, a miss, a critical hit, status, poison damage,
-healing, fainting, and battle outcome.
-Broader C# event parity remains to be verified.
+The RNG is seeded, so a battle with the same seed and choices replays exactly.
 `wilds-battle-engine-ffi` builds as a C ABI dynamic library. Its declarations
 are in `include/wilds_battle_engine.h`. `wbe_catalog_create` takes a host callback
 that supplies move sources by ID (see `wbe_move_source`); `wbe_catalog_move` looks a
@@ -202,19 +194,12 @@ move up and `wbe_create_with_catalog` starts a battle from UTF-8 JSON setup.
 `wbe_advance` returns events, the next prompt or winner,
 and participant state as JSON. `wbe_respond` supplies a choice, while
 `wbe_catalog` validates and lists disk move files. Each returned string must
-be released with `wbe_free_string`. The PokeWilds playtest host demonstrates
-the complete call sequence and the editable setup format.
+be released with `wbe_free_string`.
 
 `Battle::with_rng(rng, sides, catalog)` accepts a `BattleRng` implementation
 for controlled draws. `Battle::new(seed, sides, catalog)` retains the default
 `SeededRng`. The `damage_roll` replay hook supplies a multiplier, normalized to an integer
-percentage from 85 through 100. The C# parity runner can report intentional
-differences after the Gen 8 type-chart and damage corrections. Run
-`python3 parity/run.py` to compare messages, damage, status, and final HP
-against the built PokeWilds C# assembly. This requires the sibling
-`pokewilds-next` checkout with a current Debug assembly, Godot, and the .NET
-SDK. The fixtures compare presented events and resulting state; they do not
-compare every internal C# event.
+percentage from 85 through 100.
 
 Run `cargo test --workspace --offline` and
 `cargo clippy --workspace --all-targets --offline -- -D warnings`.

@@ -2751,7 +2751,6 @@ impl Battle {
         self.end_condition(Scope::Pokemon(actor), "micle_berry");
         self.rng.chance(probability)
     }
-    // These inputs correspond to C# PEffectAttributes plus the event sink.
     #[allow(clippy::too_many_arguments)]
     fn apply_effect(
         &mut self,
@@ -2966,7 +2965,8 @@ impl Battle {
                 );
             }
             Effect::Confuse => {
-                self.rng.chance(1.0); // C# ConfuseEffect checks its default chance.
+                // An always-confusing effect still draws its chance, keeping seeded runs stable.
+                self.rng.chance(1.0);
                 if !self.confuse(actor, target, events)
                     && single_effect
                     && self.get(target).confused_turns.is_some()
@@ -3310,7 +3310,7 @@ impl Battle {
         }
         Ok(())
     }
-    // Keep each modifier visible at the damage call sites during the parity port.
+    // Each modifier stays visible at the damage call sites.
     #[allow(clippy::too_many_arguments)]
     fn calculate_damage(
         &mut self,

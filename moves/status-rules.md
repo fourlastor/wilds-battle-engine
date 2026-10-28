@@ -1,8 +1,7 @@
 # Sword/Shield status rules
 
 The status audit targets Sword/Shield (including its expansions). These rules
-supersede the original PokeWilds compatibility behavior where it differs.
-They do not change the source move names, PP, power or accuracy parameters.
+do not change the source move names, PP, power or accuracy parameters.
 The audited scope is the six major statuses (counting ordinary/toxic poison
 separately), confusion, flinch, infatuation, and the shared status interactions
 listed below. This is not a full ability-catalog or all-volatile-condition audit;

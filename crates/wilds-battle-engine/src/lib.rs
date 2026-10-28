@@ -364,7 +364,7 @@ mod tests {
     }
 
     #[test]
-    fn fixed_damage_and_multi_hit_keep_their_csharp_values() {
+    fn fixed_damage_and_multi_hit_keep_their_values() {
         let mut fixed = one_on_one(9, "dragon-rage", "splash");
         pick(&mut fixed, "dragon-rage");
         pick(&mut fixed, "splash");
@@ -1147,7 +1147,7 @@ mod tests {
     }
 
     #[test]
-    fn recoil_can_faint_both_and_uses_current_csharp_tie_outcome() {
+    fn recoil_can_faint_both_and_uses_the_speed_tie_outcome() {
         let mut ally = Pokemon::new("Ally", vec!["double-edge".into()]);
         ally.hp = 1;
         ally.speed = 200;

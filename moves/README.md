@@ -1,10 +1,9 @@
 # Move catalog
 
-Each move has a standalone `<Name>.lua` file in this directory. `Name` is the
-canonical slug from `pokewilds-next/pokemon_data/assets/moves/<ID>.json`;
-`HumanName` supplies its display name. All 588 slugs in that source are unique.
-Moves without local source JSON use PokeAPI names and parameters, checked against
-the pinned Gen 8 behavior reference; individual references are in the manifest.
+Each move has a standalone `<id>.lua` file in this directory, named after its
+PokeAPI slug, which is also its runtime ID. Names and parameters follow PokeAPI,
+checked against the pinned Gen 8 behavior reference; individual references are in
+the manifest.
 The move cutoff is Sword/Shield, including The Isle of Armor and The Crown Tundra.
 Legends: Arceus moves and battle rules are outside the project scope. Older moves
 remain included even when they cannot be used in Sword/Shield itself.
@@ -56,8 +55,8 @@ Flying targets are carried without taking drop damage, targets at least 200 kg
 cannot be lifted, and Power Herb does not skip the carry turn.
 These definitions use the current engine's general damage, status and rounding rules;
 the coverage count does not imply full official battle parity.
-The [Sword/Shield status audit](status-rules.md) records status rules which
-supersede the original PokeWilds behavior and their regression coverage.
+The [Sword/Shield status audit](status-rules.md) records the status rules and their
+regression coverage.
 
 Stockpile stores up to three charges and counts each successful Defense and Special
 Defense change, including stat-cap cases. Contrary and Simple modify both the
@@ -81,33 +80,6 @@ jq -r '.moves[] | select(.status == "partial") | "\(.id)\t\(.slug)\t\(.limitatio
 ```
 
 ## Validation
-
-Run the repeatable move inventory against the local PokeAPI clone and PokeWilds:
-
-```sh
-python3 scripts/audit_moves.py --output reports/move-coverage.csv
-python3 -m unittest discover -s scripts -p 'test_*.py'
-```
-
-The audit reads PokeAPI's `data/v2/csv` files directly (the same source used to
-build its API database), without Docker or network access. Defaults are
-`~/Documents/pokeapi`, the sibling PokeWilds `pokemon_data/assets/moves` directory,
-and this checkout. Override them with `--pokeapi-dir`, `--pokewilds-moves`, and
-`--engine-root`. No source data is updated.
-
-Numeric IDs join the sources. Existing production Lua files count as `PRESENT`,
-including Struggle; manifest entries without files do not. Files absent here but
-present in PokeWilds are `TO_BE_PORTED`; moves only in PokeAPI are `MISSING`.
-The union retains local moves absent from an older PokeAPI snapshot. PokeWilds
-names take precedence where available. Unknown Lua identities fail the audit.
-
-The CSV includes excluded moves and their reasons: all Z-Moves (including both
-physical/special variants), Max Moves (including Max Guard), Legends: Arceus,
-later moves, and the Colosseum/XD Shadow moves. Older moves unavailable in
-Sword/Shield, Let's Go moves, and moves using existing item mechanics remain in
-scope. This is file coverage, not proof of battle-behavior correctness.
-`reports/move-coverage.csv` is a generated snapshot; rerun the command after
-updating any of the three sources.
 
 `cargo test --workspace --offline` loads both embedded and disk catalogs, checks
 all sheet identities and filenames, and executes every shipped move over several
