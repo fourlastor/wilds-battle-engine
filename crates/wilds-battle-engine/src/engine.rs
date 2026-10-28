@@ -71,6 +71,8 @@ pub struct Battle {
     pub(crate) payout_multiplier: [u8; 2],
     pub(crate) environment: Option<String>,
     pub(crate) context: BTreeMap<String, ContextValue>,
+    pub(crate) script: Option<crate::battle_script::BattleScript>,
+    pub(crate) script_state: crate::battle_script::ScriptState,
     /// Items each side may use, as the host's bag offers them.
     bags: [Vec<String>; 2],
     /// The item script being run asked to keep its item.
@@ -343,6 +345,8 @@ impl Battle {
             payout_multiplier: [1, 1],
             environment: None,
             context: BTreeMap::new(),
+            script: None,
+            script_state: Default::default(),
             bags: [Vec::new(), Vec::new()],
             item_kept: false,
             item_move: None,
@@ -878,6 +882,13 @@ impl Battle {
         result
     }
     pub fn advance(&mut self) -> Result<AdvanceResult, BattleError> {
+        let result = self.advance_battle();
+        match self.script_state.error.take() {
+            Some(error) => Err(error),
+            None => result,
+        }
+    }
+    fn advance_battle(&mut self) -> Result<AdvanceResult, BattleError> {
         if let Some(target) = self.captured {
             return Ok(AdvanceResult {
                 events: Vec::new(),
@@ -919,6 +930,8 @@ impl Battle {
                     self.ability_on_entry(who, &mut events);
                 }
             }
+            self.hook("on_start", None, None, &mut events);
+            self.run_queued_actions(&mut events)?;
         }
         self.resolve_outcome(&mut events);
         if self.winner.is_none() && self.offer_ability_exit(&mut events)? {
@@ -1149,6 +1162,8 @@ impl Battle {
     fn begin_turn(&mut self, events: &mut Vec<BattleEvent>) -> Result<(), BattleError> {
         self.record_participation();
         self.turn += 1;
+        self.hook("on_turn_start", None, None, events);
+        self.run_queued_actions(events)?;
         self.resolving_turn = true;
         self.completed_slots.clear();
         self.answered.clear();
@@ -1507,6 +1522,17 @@ impl Battle {
             }
             self.update_berries(events);
             self.sync_hidden(events);
+            if self.has_hook("after_action") && self.winner.is_none() {
+                let detail = match &choice {
+                    SelectedAction::Move(choice) => choice.move_id.clone(),
+                    SelectedAction::Switch(_) => "switch".into(),
+                    SelectedAction::Item { item, .. } => format!("item:{item}"),
+                    SelectedAction::Escape => "escape".into(),
+                    SelectedAction::Recharge => "recharge".into(),
+                };
+                self.hook("after_action", Some(actor), Some(detail), events);
+            }
+            self.run_queued_actions(events)?;
             let hp_cost = matches!(&choice, SelectedAction::Move(c) if matches!(crate::items::item_key(&c.move_id).as_str(), "substitute" | "bellydrum" | "curse" | "clangoroussoul"));
             self.check_ability_exits(&hp_before, true, hp_cost.then_some(actor), events);
             self.get_mut(actor).acted = true;
@@ -1595,6 +1621,11 @@ impl Battle {
             self.update_berries(events);
             self.residual_ability_forms(events);
             self.ball_fetch(events);
+            self.resolve_outcome(events);
+        }
+        if self.winner.is_none() {
+            self.hook("on_turn_end", None, None, events);
+            self.run_queued_actions(events)?;
             self.resolve_outcome(events);
         }
         for pokemon in self.sides.iter_mut().flatten() {
@@ -3661,7 +3692,7 @@ impl Battle {
         if amount > 0 {
             self.damage(target, amount, events);
         }
-        let lost = before - self.get(target).hp;
+        let lost = before.saturating_sub(self.get(target).hp);
         if lost > 0 {
             self.end_illusion(target, events);
         }
@@ -3768,7 +3799,7 @@ impl Battle {
         }
         let before = self.get(target).hp;
         self.damage(target, amount, events);
-        before - self.get(target).hp
+        before.saturating_sub(self.get(target).hp)
     }
 
     pub(crate) fn damage(
@@ -3788,6 +3819,14 @@ impl Battle {
         // Named as it appeared when hit, before a knockout ends an Illusion.
         let fainted = self.who(target);
         events.push(BattleEvent::Damage { target, amount, hp });
+        if was_alive
+            && hp == 0
+            && let Some(hp) = self.faint_prevented(target, events)
+        {
+            self.get_mut(target).hp = hp;
+            events.push(BattleEvent::HpSet { target, hp });
+            return;
+        }
         if was_alive && hp == 0 {
             self.end_illusion(target, events);
             self.pending_faints
@@ -3899,9 +3938,18 @@ impl Battle {
             events.push(BattleEvent::Message(stops.into()));
             self.weather = None;
             events.push(BattleEvent::Weather(None));
+            self.hook(
+                "on_weather_end",
+                None,
+                Some(format!("{:?}", weather.kind)),
+                events,
+            );
             return;
         }
-        if weather.kind.owner_ability().is_none() && !weather.endless {
+        if weather.kind.owner_ability().is_none()
+            && !weather.endless
+            && !self.weather_tick_held(events)
+        {
             self.weather.as_mut().unwrap().turns_left -= 1;
         }
         events.push(BattleEvent::Message(continues.into()));

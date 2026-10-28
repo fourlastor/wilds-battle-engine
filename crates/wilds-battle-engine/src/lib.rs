@@ -1,6 +1,7 @@
 mod abilities;
 mod ability_forms;
 mod baton_pass;
+mod battle_script;
 mod berries;
 mod capture;
 mod carrying;

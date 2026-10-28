@@ -267,6 +267,8 @@ pub(crate) enum ScriptOperation {
         who: ParticipantId,
         amount: u16,
         typeless: bool,
+        /// Multiplied by the type matchup, like an attack.
+        scaled: bool,
         min_target_hp: u16,
     },
     TryHit {
@@ -413,7 +415,34 @@ pub(crate) enum ScriptOperation {
     },
     SetWeather {
         kind: WeatherKind,
-        turns: u8,
+        /// None: until replaced.
+        turns: Option<u8>,
+    },
+    /// Battle scripts: an extra action once the current one ends.
+    QueueAction {
+        who: ParticipantId,
+        move_id: String,
+        target: Option<ParticipantId>,
+    },
+    SetFlag {
+        who: ParticipantId,
+        flag: String,
+        on: bool,
+    },
+    SetCatchable {
+        who: ParticipantId,
+        catchable: bool,
+    },
+    SetNoEscape(bool),
+    SetTerrain {
+        kind: Option<crate::model::TerrainKind>,
+        turns: Option<u8>,
+    },
+    PreventFaint(u16),
+    HoldWeather,
+    Emit {
+        key: String,
+        args: Vec<ScriptArg>,
     },
     ClearWeather,
     Mark {
@@ -1311,11 +1340,16 @@ fn parse_op(name: &str, args: &[Value]) -> mlua::Result<ScriptOperation> {
             }
         }
         "direct_damage" => {
-            let options = Options::new(given(2), "direct_damage", &["typeless", "min_target_hp"])?;
+            let options = Options::new(
+                given(2),
+                "direct_damage",
+                &["typeless", "min_target_hp", "scaled"],
+            )?;
             ScriptOperation::DirectDamage {
                 who: who(0)?,
                 amount: floored(arg(1), "direct_damage amount")?,
                 typeless: options.flag("typeless")?,
+                scaled: options.flag("scaled")?,
                 min_target_hp: options.whole("min_target_hp", 0.0, 65535.0)?.unwrap_or(0.0) as u16,
             }
         }
@@ -1485,7 +1519,57 @@ fn parse_op(name: &str, args: &[Value]) -> mlua::Result<ScriptOperation> {
                 LuaSymbol::Weather(kind) => kind,
                 _ => return Err(bad("set_weather requires a Weather value")),
             },
-            turns: whole(arg(1), "set_weather turns", 1.0, 255.0)? as u8,
+            turns: given(1)
+                .map(|value| whole(value, "set_weather turns", 1.0, 255.0))
+                .transpose()?
+                .map(|turns| turns as u8),
+        },
+        "queue_action" => ScriptOperation::QueueAction {
+            who: who(0)?,
+            move_id: name_of(arg(1), "queue_action move")?,
+            target: given(2)
+                .map(|value| pokemon_of(value, "queue_action target"))
+                .transpose()?,
+        },
+        "set_flag" => ScriptOperation::SetFlag {
+            who: who(0)?,
+            flag: name_of(arg(1), "flag name")?,
+            on: !matches!(given(2), Some(Value::Boolean(false))),
+        },
+        "set_catchable" => ScriptOperation::SetCatchable {
+            who: who(0)?,
+            catchable: !matches!(given(1), Some(Value::Boolean(false))),
+        },
+        "set_no_escape" => {
+            ScriptOperation::SetNoEscape(!matches!(given(0), Some(Value::Boolean(false))))
+        }
+        "set_terrain" => ScriptOperation::SetTerrain {
+            kind: match given(0) {
+                None => None,
+                Some(Value::String(text)) => Some(match text.to_str()?.as_ref() {
+                    "Electric" => crate::model::TerrainKind::Electric,
+                    "Grassy" => crate::model::TerrainKind::Grassy,
+                    "Misty" => crate::model::TerrainKind::Misty,
+                    "Psychic" => crate::model::TerrainKind::Psychic,
+                    other => return Err(bad(format!("unknown terrain {other}"))),
+                }),
+                Some(_) => return Err(bad("set_terrain takes a terrain name or nil")),
+            },
+            turns: given(1)
+                .map(|value| whole(value, "set_terrain turns", 1.0, 255.0))
+                .transpose()?
+                .map(|turns| turns as u8),
+        },
+        "prevent_faint" => {
+            ScriptOperation::PreventFaint(whole(arg(0), "prevent_faint hp", 1.0, 65535.0)? as u16)
+        }
+        "hold_weather" => ScriptOperation::HoldWeather,
+        "emit" => ScriptOperation::Emit {
+            key: name_of(arg(0), "emit key")?,
+            args: args[1..]
+                .iter()
+                .map(script_arg)
+                .collect::<mlua::Result<_>>()?,
         },
         "clear_weather" => ScriptOperation::ClearWeather,
         "mark" => ScriptOperation::Mark {
@@ -2022,6 +2106,56 @@ impl MoveCatalog {
             script_factory,
             store: Rc::new(store),
         })
+    }
+    /// A battle script: a table of hook functions and an optional `moves` list.
+    pub(crate) fn battle_script_from_lua(
+        &self,
+        source: &str,
+    ) -> Result<crate::battle_script::BattleScript, BattleError> {
+        let table: Table =
+            eval_limited(&self.lua, self.lua.load(source).set_name("battle script"))?;
+        let template: Table = eval_limited(
+            &self.lua,
+            self.lua.load(
+                "return {id = \"battle-script\", name = \"Battle\", type = Type.None, \
+                 category = Category.Status, pp = 1, accuracy = Accuracy.Always, \
+                 target = Target.User, script = function() end}",
+            ),
+        )?;
+        let mut script = crate::battle_script::BattleScript::default();
+        for (key, value) in table.pairs::<String, Value>().flatten() {
+            match (key.as_str(), value) {
+                ("moves", Value::Table(moves)) => {
+                    for entry in moves.sequence_values::<Table>() {
+                        let spec = parse_move(&entry?)?;
+                        script.moves.insert(spec.id.clone(), spec);
+                    }
+                }
+                ("moves", _) => {
+                    return Err(BattleError::InvalidSetup(
+                        "battle script moves must be a list of move tables".into(),
+                    ));
+                }
+                (name, Value::Function(function)) => {
+                    let Some(&hook) = crate::battle_script::HOOKS.iter().find(|h| **h == name)
+                    else {
+                        return Err(BattleError::InvalidSetup(format!(
+                            "unknown battle script hook {name}"
+                        )));
+                    };
+                    template.raw_set("script", function)?;
+                    let mut spec = parse_move(&template)?;
+                    spec.id = format!("battle-script-{hook}");
+                    script.hooks.insert(hook, spec);
+                }
+                (name, _) => {
+                    return Err(BattleError::InvalidSetup(format!(
+                        "battle script field {name} must be a hook function or moves"
+                    )));
+                }
+            }
+        }
+        Ok(script)
     }
     /// Conditions a battle starts with, from a Lua list; see `Battle::start_conditions_lua`.
     pub(crate) fn conditions_from_lua(

@@ -612,6 +612,10 @@ impl Battle {
         fields.raw_set("wild_battle", self.wild_battle)?;
         fields.raw_set("no_escape", self.no_escape)?;
         fields.raw_set("item_move", self.item_move.as_deref())?;
+        if let Some((hook, detail)) = &self.script_state.hook {
+            fields.raw_set("hook", *hook)?;
+            fields.raw_set("detail", detail.as_deref())?;
+        }
         let about = lua.create_table()?;
         about.raw_set("id", spec.id.as_str())?;
         about.raw_set("name", spec.name.as_str())?;
@@ -1857,6 +1861,7 @@ impl Battle {
                 who,
                 amount,
                 typeless,
+                scaled,
                 min_target_hp,
             } => {
                 let mut report = DamageReport {
@@ -1889,6 +1894,11 @@ impl Battle {
                     report.immune = true;
                     report.unreached.push(who);
                 } else {
+                    let amount = if scaled && !typeless {
+                        ((f32::from(amount) * effectiveness).floor() as u16).max(1)
+                    } else {
+                        amount
+                    };
                     let mut actual =
                         amount.min(self.move_damage_limit(actor, who, spec, min_target_hp));
                     if actual > 0 {
@@ -2183,7 +2193,63 @@ impl Battle {
                 Value::Boolean(was_hidden)
             }
             ScriptOperation::SetWeather { kind, turns } => {
-                Value::Boolean(self.start_weather(kind, turns, events))
+                let started = self.start_weather(kind, turns.unwrap_or(0), events);
+                if started && let Some(weather) = self.weather.as_mut() {
+                    weather.endless = turns.is_none();
+                }
+                Value::Boolean(started)
+            }
+            ScriptOperation::QueueAction {
+                who,
+                move_id,
+                target,
+            } => {
+                self.script_state.queued.push_back((who, move_id, target));
+                Value::Nil
+            }
+            ScriptOperation::SetFlag { who, flag, on } => {
+                let flags = &mut self.get_mut(who).flags;
+                Value::Boolean(if on {
+                    flags.insert(flag)
+                } else {
+                    flags.remove(&flag)
+                })
+            }
+            ScriptOperation::SetCatchable { who, catchable } => {
+                self.get_mut(who).uncatchable = !catchable;
+                Value::Nil
+            }
+            ScriptOperation::SetNoEscape(on) => {
+                self.no_escape = on;
+                Value::Nil
+            }
+            ScriptOperation::SetTerrain { kind, turns } => match kind {
+                Some(kind) => {
+                    self.start_condition(Scope::Field, kind.condition(turns), true);
+                    Value::Boolean(true)
+                }
+                None => Value::Boolean(self.end_group(Scope::Field, "terrain")),
+            },
+            ScriptOperation::PreventFaint(hp) => {
+                self.script_state.prevented_faint = Some(hp);
+                Value::Nil
+            }
+            ScriptOperation::HoldWeather => {
+                self.script_state.weather_held = true;
+                Value::Nil
+            }
+            ScriptOperation::Emit { key, args } => {
+                let args = args
+                    .into_iter()
+                    .map(|arg| match arg {
+                        ScriptArg::Pokemon(id) => self.who(id),
+                        ScriptArg::Move(id) => self.move_named(&id),
+                        ScriptArg::Text(text) => MessageArg::Text(text.into()),
+                        ScriptArg::Number(number) => MessageArg::Number(number),
+                    })
+                    .collect();
+                events.push(BattleEvent::Script { key, args });
+                Value::Nil
             }
             ScriptOperation::ClearWeather => {
                 let cleared = self.weather.take().is_some();

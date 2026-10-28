@@ -89,6 +89,15 @@ return function(api, fields, roster)
   function ctx:cure_confusion(who) return op("cure_confusion", who) end
   function ctx:escape() return op("escape") end
   function ctx:flee() return op("flee") end
+  -- Battle scripts.
+  function ctx:queue_action(who, move, target) return op("queue_action", who, move, target) end
+  function ctx:set_flag(who, flag, on) return op("set_flag", who, flag, on) end
+  function ctx:set_catchable(who, catchable) return op("set_catchable", who, catchable) end
+  function ctx:set_no_escape(on) return op("set_no_escape", on) end
+  function ctx:set_terrain(kind, turns) return op("set_terrain", kind, turns) end
+  function ctx:prevent_faint(hp) return op("prevent_faint", hp) end
+  function ctx:hold_weather() return op("hold_weather") end
+  function ctx:emit(key, ...) return op("emit", key, ...) end
   function ctx:reveal(who) return op("reveal", who) end
   function ctx:keep_item() return op("keep_item") end
   function ctx:attempt_capture(who, modifier, options) return op("attempt_capture", who, modifier, options) end

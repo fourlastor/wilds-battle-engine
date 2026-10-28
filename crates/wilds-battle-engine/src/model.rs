@@ -1101,6 +1101,12 @@ pub enum BattleEvent {
         target: ParticipantId,
         ball: String,
     },
+    /// Something a battle script wants the host to present, such as a cutscene: `key` and
+    /// `args` are the script's own.
+    Script {
+        key: String,
+        args: Vec<MessageArg>,
+    },
     /// The first turn of a two-turn move.
     Charging {
         actor: ParticipantId,

@@ -302,6 +302,58 @@ Each participant in the state JSON also has `stages` (non-zero stat stages),
 the field with, which `Battle::faced_by` also returns, for sharing experience. Setup can
 give `move_pp` (PP left) and `pp_max` (after PP Ups) per move.
 
+## Battle scripts
+
+A battle can carry one host Lua script (`Battle::set_script(source)` before the first
+`advance()`, or setup JSON `"script_lua"`), run in the move sandbox. It returns a table of
+hook functions, each called with a `ctx` like a move's, and optionally `moves`, a list of
+move tables only this battle knows:
+
+| Hook | When it runs | `ctx.user` |
+| --- | --- | --- |
+| `on_start` | Once, after starting weather, terrain and entry abilities | First active foe |
+| `on_turn_start` | Before the turn's actions | First active foe |
+| `on_turn_end` | After the turn's residual effects | First active foe |
+| `after_action` | After each action; `ctx.detail` is the move ID, `switch`, `item:<id>`, `escape` or `recharge` | The Pokémon that acted |
+| `would_faint` | When a Pokémon's HP reaches 0, before it faints | That Pokémon |
+| `weather_tick` | Before the weather's turn count goes down | First active foe |
+| `on_weather_end` | When timed weather ends; `ctx.detail` is its kind | First active foe |
+
+(“First active foe” falls back to the first active ally.) `ctx.hook` names the running
+hook. Hooks use the move API (messages, stat stages, `ctx:set_hp`, `ctx:change_form`,
+`ctx:start_effect`...) plus:
+
+| Operation | Effect |
+| --- | --- |
+| `ctx:queue_action(who, move, target)` | `who` uses `move` (a catalog move or one of the script's `moves`) once the current action ends; no PP is spent |
+| `ctx:prevent_faint(hp)` | In `would_faint`: the Pokémon stays in with `hp` instead of fainting |
+| `ctx:hold_weather()` | In `weather_tick`: the countdown skips this turn |
+| `ctx:set_weather(Weather.X, turns)` | Without `turns`, the weather lasts until replaced |
+| `ctx:set_terrain(name, turns)` | `"Electric"`, `"Grassy"`, `"Misty"` or `"Psychic"`; nil ends the terrain |
+| `ctx:set_catchable(who, on)`, `ctx:set_flag(who, name, on)`, `ctx:set_no_escape(on)` | Change catchability, host flags and escape |
+| `ctx:emit(key, ...)` | `BattleEvent::Script { key, args }` for the host to present; arguments are like `ctx:message`'s |
+
+`ctx:direct_damage(target, amount, {scaled = true})` multiplies fixed damage by the type
+matchup. Local variables in the script keep their values for the whole battle, so a script
+can count actions, track phases or remember which Pokémon holds a weather. For example, a
+foe with an extra action every third action:
+
+```lua
+local actions = 0
+return {
+  moves = {{id = "tremor", name = "Tremor", type = Type.Ground, category = Category.Physical,
+            pp = 1, script = function(ctx) ctx:direct_damage(ctx.target, 30, {scaled = true}) end}},
+  after_action = function(ctx)
+    if ctx.user.side ~= "foes" then return end
+    actions = actions + 1
+    if actions % 3 == 0 then ctx:queue_action(ctx.user, "tremor") end
+  end,
+}
+```
+
+A hook that raises an error makes `advance()` return it. In JSON the event is
+`{"kind":"script","key":...,"args":[...]}`.
+
 ## Battle messages
 
 `BattleEvent::Message` carries a `Message`: `key` is an English template such as

@@ -27,6 +27,8 @@ struct Setup {
     /// Items each side may use: {"allies": ["potion"], "foes": []}.
     #[serde(default)]
     bags: SetupBags,
+    /// The battle script: Lua hooks and moves, see "Battle scripts" in the README.
+    script_lua: Option<String>,
     /// Free-form values about the surroundings (time of day, indoors...), read by scripts.
     #[serde(default)]
     context: std::collections::BTreeMap<String, Value>,
@@ -485,6 +487,11 @@ unsafe fn create(setup_json: *const c_char, catalog: MoveCatalog) -> Result<*mut
     battle
         .set_bag(Side::Foes, setup.bags.foes)
         .map_err(|error| error.to_string())?;
+    if let Some(source) = setup.script_lua {
+        battle
+            .set_script(&source)
+            .map_err(|error| error.to_string())?;
+    }
     let rules = setup.rules;
     battle.set_no_escape(rules.no_escape);
     if let Some(weather) = rules.weather {
@@ -855,6 +862,8 @@ fn event(value: &BattleEvent) -> Value {
             ball,
         } => json!({"kind":"capture_refused", "actor":participant(*actor),
             "target":participant(*target), "ball":ball}),
+        BattleEvent::Script { key, args } => json!({"kind":"script", "key":key,
+            "args":args.iter().map(message_arg).collect::<Vec<_>>()}),
         BattleEvent::Charging { actor, move_id } => {
             json!({"kind":"charging", "actor":participant(*actor), "move":move_id})
         }
@@ -1028,6 +1037,31 @@ mod tests {
         let side = CString::new("allies").unwrap();
         let items = CString::new(r#"["revive"]"#).unwrap();
         assert!(unsafe { wbe_set_bag(battle, side.as_ptr(), items.as_ptr()) });
+        unsafe { wbe_destroy(battle) };
+    }
+
+    #[test]
+    fn c_api_runs_battle_scripts_and_reports_their_events() {
+        let setup = CString::new(
+            json!({"allies":[{"name":"Ally","moves":["splash"]}],
+                "foes":[{"name":"Foe","moves":["splash"]}],
+                "script_lua":"return {on_start = function(ctx) ctx:emit('intro', ctx.user, 3) end}"})
+            .to_string(),
+        )
+        .unwrap();
+        let battle = unsafe { wbe_create(setup.as_ptr(), std::ptr::null()) };
+        assert!(!battle.is_null(), "{}", take_error());
+        let state = take(unsafe { wbe_advance(battle) });
+        let script = state["events"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|e| e["kind"] == "script")
+            .cloned()
+            .unwrap();
+        assert_eq!(script["key"], "intro");
+        assert_eq!(script["args"][0]["pokemon"]["side"], "foes");
+        assert_eq!(script["args"][1]["number"], 3);
         unsafe { wbe_destroy(battle) };
     }
 
