@@ -1,13 +1,15 @@
 //! Runs the Lua hooks of scripted moves: what a script can read (`ctx`) and what each operation
 //! it yields does to the battle.
 use crate::engine::{Attack, Battle, HitMeta, HitReaction, insert_hit_messages};
+use crate::model::msg;
 use crate::model::{
     AppliedStatus, BattleError, BattleEvent, Bound, CombatStat, HiddenKind, NextMovePowerBoost,
     ParticipantId, Pokemon, Scope, ScriptContinuation, Side, Stat, Status, Weather,
 };
+use crate::model::{MessageArg, move_arg, say};
 use crate::moves::{
-    Accuracy, Category, DamageOptions, HitOptions, HpAmount, MoveSpec, ScopeRef, ScriptHook,
-    ScriptOperation,
+    Accuracy, Category, DamageOptions, HitOptions, HpAmount, MoveSpec, ScopeRef, ScriptArg,
+    ScriptHook, ScriptOperation,
 };
 use crate::type_chart;
 use mlua::thread::ThreadStatus;
@@ -758,10 +760,10 @@ impl Battle {
             return HitOutcome::Protected;
         }
         if self.priority_blocked(actor, recipient, frame.spec) {
-            events.push(BattleEvent::Message(format!(
-                "{} is protected from priority moves!",
-                self.get(recipient).display_name()
-            )));
+            events.push(say(
+                "{0} is protected from priority moves!",
+                [self.who(recipient)],
+            ));
             return HitOutcome::Protected;
         }
         if frame.spec.has_flag("powder")
@@ -776,10 +778,10 @@ impl Battle {
         if frame.spec.category == crate::moves::Category::Status
             && self.substitute_blocks_effect(actor, recipient, frame.spec)
         {
-            events.push(BattleEvent::Message(format!(
-                "{} is protected by its substitute!",
-                self.get(recipient).display_name()
-            )));
+            events.push(say(
+                "{0} is protected by its substitute!",
+                [self.who(recipient)],
+            ));
             return HitOutcome::Protected;
         }
         if frame.spec.category == crate::moves::Category::Status
@@ -787,10 +789,10 @@ impl Battle {
             && recipient != actor
             && self.has_ability(recipient, "soundproof")
         {
-            events.push(BattleEvent::Message(format!(
-                "{} is protected by its ability!",
-                self.get(recipient).display_name()
-            )));
+            events.push(say(
+                "{0} is protected by its ability!",
+                [self.who(recipient)],
+            ));
             return HitOutcome::Protected;
         }
         if self.guard_hit(actor, recipient, frame.spec, options, events)
@@ -799,20 +801,14 @@ impl Battle {
                 && !options.ignore_protect
                 && !(frame.spec.has_flag("contact") && self.has_ability(actor, "unseenfist")))
         {
-            events.push(BattleEvent::Message(format!(
-                "{} protected itself!",
-                self.get(recipient).display_name()
-            )));
+            events.push(say("{0} protected itself!", [self.who(recipient)]));
             return HitOutcome::Protected;
         }
         if let Some(kind) = self.get(recipient).hidden()
             && recipient != actor
             && !self.hit_reaches(frame, recipient, options, kind)
         {
-            events.push(BattleEvent::Message(format!(
-                "{} avoided the attack!",
-                self.get(recipient).display_name()
-            )));
+            events.push(say("{0} avoided the attack!", [self.who(recipient)]));
             return HitOutcome::Hidden;
         }
         let ohko = options
@@ -840,10 +836,7 @@ impl Battle {
             self.hit_check(actor, recipient, frame.spec, options.ignore_evasion)
         };
         if !hit {
-            events.push(BattleEvent::Message(format!(
-                "{}'s attack missed!",
-                self.get(actor).display_name()
-            )));
+            events.push(say("{0}'s attack missed!", [self.who(actor)]));
             return HitOutcome::Missed;
         }
         if self.ability_blocks_status_move(actor, recipient, frame.spec, events) {
@@ -1035,10 +1028,7 @@ impl Battle {
                         events,
                     );
                 }
-                events.push(BattleEvent::Message(format!(
-                    "{} had its energy drained!",
-                    self.get(recipient).display_name()
-                )));
+                events.push(say("{0} had its energy drained!", [self.who(recipient)]));
             }
         }
         if !report.hit {
@@ -1218,7 +1208,10 @@ impl Battle {
             }
         }
         if report.hits > 0 {
-            details.push(BattleEvent::Message(format!("Hit {} times!", report.hits)));
+            details.push(say(
+                "Hit {0} times!",
+                [MessageArg::Number(report.hits.into())],
+            ));
         }
         insert_hit_messages(events, start, recipient, details);
         if report.hits > 0 {
@@ -1354,7 +1347,6 @@ impl Battle {
     ) -> bool {
         let new_status = status.battle_status();
         let current = self.get(who).status;
-        let name = self.get(who).display_name().to_owned();
         let immune = self.status_immune_to(actor, who, new_status, move_type, false);
         if self.get(who).hp > 0 && (current.is_none() || replace) && !immune {
             let turns = match status {
@@ -1370,12 +1362,18 @@ impl Battle {
                 target: who,
                 status: Some(new_status),
             });
-            events.push(BattleEvent::Message(match status {
-                AppliedStatus::RestSleep => format!("{name} slept and became healthy!"),
-                AppliedStatus::Asleep => format!("{name} fell asleep!"),
-                AppliedStatus::Frozen => format!("{name} was frozen solid!"),
-                _ => format!("{name} was {}!", status.description()),
-            }));
+            events.push(say(
+                match status {
+                    AppliedStatus::RestSleep => msg("{0} slept and became healthy!"),
+                    AppliedStatus::Asleep => msg("{0} fell asleep!"),
+                    AppliedStatus::Frozen => msg("{0} was frozen solid!"),
+                    AppliedStatus::Poisoned => msg("{0} was poisoned!"),
+                    AppliedStatus::BadlyPoisoned => msg("{0} was badly poisoned!"),
+                    AppliedStatus::Burned => msg("{0} was burned!"),
+                    AppliedStatus::Paralyzed => msg("{0} was paralyzed!"),
+                },
+                [self.who(who)],
+            ));
             if cause == crate::statuses::StatusCause::Direct
                 && actor != who
                 && self.has_ability(who, "synchronize")
@@ -1398,13 +1396,25 @@ impl Battle {
             return true;
         }
         if announce_failure {
-            events.push(BattleEvent::Message(if immune {
-                format!("It doesn't affect {name}...")
+            events.push(if immune {
+                say("It doesn't affect {0}...", [self.who(who)])
             } else if current == Some(new_status) {
-                format!("{name} was already {}!", status.description())
+                say(
+                    match status {
+                        AppliedStatus::Poisoned => msg("{0} was already poisoned!"),
+                        AppliedStatus::BadlyPoisoned => msg("{0} was already badly poisoned!"),
+                        AppliedStatus::Burned => msg("{0} was already burned!"),
+                        AppliedStatus::Paralyzed => msg("{0} was already paralyzed!"),
+                        AppliedStatus::Asleep | AppliedStatus::RestSleep => {
+                            msg("{0} was already asleep!")
+                        }
+                        AppliedStatus::Frozen => msg("{0} was already frozen!"),
+                    },
+                    [self.who(who)],
+                )
             } else {
-                "But it failed!".into()
-            }));
+                say("But it failed!", [])
+            });
         }
         false
     }
@@ -1446,10 +1456,7 @@ impl Battle {
         }
         let turns = self.rng.range(1, 4);
         self.get_mut(who).confused_turns = Some(turns);
-        events.push(BattleEvent::Message(format!(
-            "{} became confused!",
-            self.get(who).display_name()
-        )));
+        events.push(say("{0} became confused!", [self.who(who)]));
         true
     }
 
@@ -1675,10 +1682,7 @@ impl Battle {
                 let amount = (pokemon.max_hp as f32 * fraction).ceil() as u16;
                 if pokemon.hp < pokemon.max_hp && !self.healing_blocked(actor) {
                     self.heal(actor, amount, events);
-                    events.push(BattleEvent::Message(format!(
-                        "{} regained health!",
-                        self.get(actor).display_name()
-                    )));
+                    events.push(say("{0} regained health!", [self.who(actor)]));
                 } else {
                     events.push(BattleEvent::Message("But it failed!".into()));
                     frame.failed = true;
@@ -1720,16 +1724,21 @@ impl Battle {
                     i64::from(min) + self.rng.index(usize::from(max - min) + 1) as i64
                 })
             }
-            ScriptOperation::Message(message) => {
-                events.push(BattleEvent::Message(message));
+            ScriptOperation::Message { key, args } => {
+                let args: Vec<_> = args
+                    .into_iter()
+                    .map(|arg| match arg {
+                        ScriptArg::Pokemon(id) => self.who(id),
+                        ScriptArg::Move(id) => self.move_named(&id),
+                        ScriptArg::Text(text) => MessageArg::Text(text.into()),
+                        ScriptArg::Number(number) => MessageArg::Number(number),
+                    })
+                    .collect();
+                events.push(say(key, args));
                 Value::Nil
             }
             ScriptOperation::Announce => {
-                events.push(BattleEvent::Message(format!(
-                    "{} used {}!",
-                    self.get(actor).display_name(),
-                    spec.name
-                )));
+                events.push(say("{0} used {1}!", [self.who(actor), move_arg(spec)]));
                 Value::Nil
             }
             ScriptOperation::ConfuseSelf => {
@@ -1740,10 +1749,7 @@ impl Battle {
                 let max_hp = self.get(actor).max_hp;
                 let amount = ((f32::from(max_hp) * fraction).round() as u16).max(1);
                 self.damage(actor, amount, events);
-                events.push(BattleEvent::Message(format!(
-                    "{} was damaged by the recoil!",
-                    self.get(actor).display_name()
-                )));
+                events.push(say("{0} was damaged by the recoil!", [self.who(actor)]));
                 Value::Nil
             }
             ScriptOperation::ChangeSelfStat { stat, stages } => {
@@ -2096,11 +2102,10 @@ impl Battle {
                         turns_left: turns,
                         source: spec.name.clone(),
                     });
-                    events.push(BattleEvent::Message(format!(
-                        "{} was squeezed by {}!",
-                        self.get(who).display_name(),
-                        self.get(actor).display_name()
-                    )));
+                    events.push(say(
+                        "{0} was squeezed by {1}!",
+                        [self.who(who), self.who(actor)],
+                    ));
                 }
                 Value::Boolean(bound)
             }
@@ -2116,10 +2121,7 @@ impl Battle {
                 let protect = holds && !self.get(who).protected && self.get(who).hp > 0;
                 if protect {
                     self.get_mut(who).protected = true;
-                    events.push(BattleEvent::Message(format!(
-                        "{} protected itself!",
-                        self.get(who).display_name()
-                    )));
+                    events.push(say("{0} protected itself!", [self.who(who)]));
                 }
                 Value::Boolean(protect)
             }
@@ -2376,7 +2378,7 @@ fn reaction_may(operation: &ScriptOperation, hook: ScriptHook) -> bool {
     use ScriptOperation as Op;
     match operation {
         Op::CanApplyStatus { .. }
-        | Op::Message(_)
+        | Op::Message { .. }
         | Op::ChangeSelfStat { .. }
         | Op::ChangeStat { .. }
         | Op::ResetStats { .. }

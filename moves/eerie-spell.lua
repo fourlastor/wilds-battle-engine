@@ -5,7 +5,7 @@ local move = {script = function(ctx)
 local hit = ctx:damage(80)
 if hit.hit and ctx.target.hp > 0 and ctx.target.last_move then
   local lost = ctx:reduce_pp(ctx.target, ctx.target.last_move, 3)
-  if lost > 0 then ctx:message(ctx.target.name .. " lost " .. lost .. " PP from its last move!") end
+  if lost > 0 then ctx:message("{0} lost {1} PP from its last move!", ctx.target, lost) end
 end
 end}
 

@@ -1,6 +1,7 @@
 //! Effects attached to a field position, independent of the Pokémon currently occupying it.
 use crate::engine::Battle;
 use crate::model::{BattleEvent, ParticipantId, Side};
+use crate::model::{move_arg, say};
 
 pub(crate) struct DelayedHeal {
     side: Side,
@@ -176,11 +177,10 @@ impl Battle {
             if target == effect.source || self.get(target).hp == 0 {
                 continue;
             }
-            events.push(BattleEvent::Message(format!(
-                "{} took the {} attack!",
-                self.get(target).display_name(),
-                effect.spec.name
-            )));
+            events.push(say(
+                "{0} took the {1} attack!",
+                [self.who(target), move_arg(&effect.spec)],
+            ));
             self.delayed_hit(effect.source, target, &effect.spec, effect.power, events)?;
             self.update_berries(events);
             self.resolve_outcome(events);

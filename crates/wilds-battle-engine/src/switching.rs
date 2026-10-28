@@ -1,5 +1,6 @@
 //! Party identities stay stable; only the occupant of a field position changes.
 use crate::engine::Battle;
+use crate::model::say;
 use crate::model::{BattleError, BattleEvent, Choice, ParticipantId, Side, Status};
 
 impl Battle {
@@ -171,11 +172,10 @@ impl Battle {
         incoming.last_position = Some(position);
         incoming.acted = false;
         events.push(BattleEvent::Switched { from, to, position });
-        events.push(BattleEvent::Message(format!(
-            "{} was replaced by {}!",
-            self.get(from).display_name(),
-            self.get(to).display_name()
-        )));
+        events.push(say(
+            "{0} was replaced by {1}!",
+            [self.who(from), self.who(to)],
+        ));
         // Move-scoped ability bypass must not leak into the incoming Pokémon's entry.
         let ignored = self.ignored_ability.take();
         if let Some(passed) = passed {

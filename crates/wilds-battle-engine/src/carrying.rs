@@ -1,4 +1,5 @@
 //! Linked carrying is engine state, so interruptions cannot strand either participant.
+use crate::model::say;
 use crate::{Battle, BattleEvent, HiddenKind, ParticipantId};
 
 impl Battle {
@@ -46,10 +47,7 @@ impl Battle {
         for id in [carrier, target] {
             self.get_mut(id).semi_invulnerable = false;
         }
-        events.push(BattleEvent::Message(format!(
-            "{} was released!",
-            self.get(target).display_name()
-        )));
+        events.push(say("{0} was released!", [self.who(target)]));
         true
     }
 }

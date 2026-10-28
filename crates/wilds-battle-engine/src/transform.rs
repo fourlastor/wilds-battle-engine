@@ -1,5 +1,6 @@
 //! Transform copies battle traits while keeping the original party member recoverable.
 use crate::engine::Battle;
+use crate::model::say;
 use crate::model::{BattleEvent, ParticipantId, Pokemon, PokemonForm};
 use std::collections::BTreeMap;
 
@@ -120,11 +121,10 @@ impl Battle {
             target: who,
             form: p.form.clone(),
         });
-        events.push(BattleEvent::Message(format!(
-            "{} transformed into {}!",
-            p.display_name(),
-            source.name
-        )));
+        events.push(say(
+            "{0} transformed into {1}!",
+            [self.who(who), self.who(target)],
+        ));
         self.install_ability(who, ability, events);
         self.ability_on_entry(who, events);
         true

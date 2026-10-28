@@ -4,7 +4,7 @@
 local function two_turns(place, message, strike)
   return function(ctx)
     if ctx.turn == 1 then
-      ctx:message(ctx.user.name .. message)
+      ctx:message(message, ctx.user)
       if place then ctx:hide(place) end
       ctx:force_move(2, TargetPolicy.SameTarget)
       return
@@ -16,7 +16,7 @@ end
 
 local move = {accuracy = 0.95, manual_announce = true, flags = {"contact", "no_sleep_talk"},
     script = function(ctx)
-      two_turns(Hidden.Air, " flew up high!", function(inner) inner:damage(90) end)(ctx)
+      two_turns(Hidden.Air, "{0} flew up high!", function(inner) inner:damage(90) end)(ctx)
     end}
 
 move.id = "fly"

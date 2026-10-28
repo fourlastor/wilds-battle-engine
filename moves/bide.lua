@@ -22,7 +22,7 @@ return {
     end
     if ctx.turn < 3 then
       ctx:watch_hits_until_next_action()
-      ctx:message(ctx.user.name .. " is storing energy!")
+      ctx:message("{0} is storing energy!", ctx.user)
       return
     end
     local damage = ctx.move_state.damage or ctx.user.marks.bide_damage or 0

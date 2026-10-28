@@ -1,5 +1,6 @@
 //! Substitute absorbs individual hits and shields the owner from their secondary effects.
 use crate::engine::Battle;
+use crate::model::say;
 use crate::model::{BattleEvent, ParticipantId};
 use crate::moves::MoveSpec;
 
@@ -21,10 +22,7 @@ impl Battle {
             amount: 0,
             hp: cost,
         });
-        events.push(BattleEvent::Message(format!(
-            "{} made a substitute!",
-            self.get(who).display_name()
-        )));
+        events.push(say("{0} made a substitute!", [self.who(who)]));
         true
     }
     pub(crate) fn substitute_intercepts(

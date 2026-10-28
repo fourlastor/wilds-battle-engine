@@ -4,7 +4,7 @@
 local function two_turns(place, message, strike)
   return function(ctx)
     if ctx.turn == 1 then
-      ctx:message(ctx.user.name .. message)
+      ctx:message(message, ctx.user)
       if place then ctx:hide(place) end
       ctx:force_move(2, TargetPolicy.SameTarget)
       return
@@ -16,7 +16,7 @@ end
 
 local move = {accuracy = 0.85, manual_announce = true, flags = {"contact", "sheer_force"},
     script = function(ctx)
-      two_turns(Hidden.Air, " sprang up!", function(inner)
+      two_turns(Hidden.Air, "{0} sprang up!", function(inner)
         if inner:damage(85).hit then inner:apply_status(inner.target, Status.Paralyzed, {chance = 0.3}) end
       end)(ctx)
     end}

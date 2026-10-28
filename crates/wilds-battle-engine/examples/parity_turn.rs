@@ -100,7 +100,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .events
         .into_iter()
         .filter_map(|event| match event {
-            BattleEvent::Message(message) => Some(message),
+            BattleEvent::Message(message) => Some(message.to_string()),
             BattleEvent::Damage { target, amount, .. } => {
                 Some(format!("damage:{:?}:{amount}", target.side))
             }

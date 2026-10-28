@@ -211,6 +211,31 @@ compare every internal C# event.
 Run `cargo test --workspace --offline` and
 `cargo clippy --workspace --all-targets --offline -- -D warnings`.
 
+## Battle messages
+
+`BattleEvent::Message` carries a `Message`: `key` is an English template such as
+`"{0} used {1}!"`, and `args` fill its placeholders in order. An argument is a Pokémon
+(its participant ID with the name and gender it currently shows), a move (ID and name),
+translatable text (stat, item or ability names), or a number. `text()` is the English
+rendering and `context()` the gender of the first Pokémon argument. Hosts can translate
+`key` as a gettext msgid, with the context as msgctxt for languages that word a
+message differently by gender, then format the arguments themselves. In JSON:
+
+```json
+{"kind":"message", "key":"{0} used {1}!", "context":"Male", "text":"Pikachu used Thunder Shock!",
+ "args":[{"pokemon":{"side":"allies","index":0}, "name":"Pikachu", "gender":"Male"},
+         {"move":"thunder-shock", "name":"Thunder Shock"}]}
+```
+
+Other argument shapes are `{"text":"Attack"}` and `{"number":3}`. Scripts write
+messages the same way: `ctx:message("{0} lifted {1} into the air!", ctx.user, ctx.target)`
+takes Pokémon tables, `{move = id}`, translatable strings and whole numbers. Condition
+and rule `message` fields use `{0}` for the affected Pokémon (`{name}` still works).
+`scripts/extract_messages.py` writes every key to `locale/battle.pot`; run it after
+adding a message, and `--check` reports a stale file. Keys chosen in Rust before being
+passed on are marked with `msg("...")` so the script finds them, and the
+`message_keys` test plays every move to check that the template has every key shown.
+
 ## Script reference
 
 A scripted move is a table with `script = function(ctx) … end` instead of `effects`.

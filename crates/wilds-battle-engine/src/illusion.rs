@@ -1,5 +1,6 @@
 //! Apparent identities are presentation data, separate from real battle traits.
 use crate::engine::Battle;
+use crate::model::say;
 use crate::model::{BattleEvent, ParticipantId, Pokemon, PokemonAppearance};
 
 impl Pokemon {
@@ -55,10 +56,7 @@ impl Battle {
                 target: who,
                 illusion: None,
             });
-            events.push(BattleEvent::Message(format!(
-                "{}'s illusion wore off!",
-                self.get(who).name
-            )));
+            events.push(say("{0}'s illusion wore off!", [self.who(who)]));
         }
     }
 }

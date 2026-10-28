@@ -104,16 +104,21 @@ function quote(text: string): string {
   return `"${text.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\r?\n/g, '\\n')}"`;
 }
 
-/** Text typed on a block as a Lua expression: {user}, {target} and {pokemon} become names. */
-function messageExpr(text: string, block?: Blockly.Block): string {
-  const names: Record<string, string> = { '{user}': 'ctx.user.name', '{target}': 'ctx.target.name' };
-  if (block && loopOf(block)) names['{pokemon}'] = `${LOOP_VARIABLE}.name`;
-  const pieces: string[] = [];
-  for (const part of text.split(/(\{user\}|\{target\}|\{pokemon\})/)) {
-    if (!part) continue;
-    pieces.push(names[part] ?? quote(part));
-  }
-  return pieces.length ? pieces.join(' .. ') : '""';
+/**
+ * Text typed on a block as `ctx:message` arguments: {user}, {target} and {pokemon} become the
+ * message's Pokémon arguments, written {0}, {1}... in its translatable key.
+ */
+function messageArgs(text: string, block?: Blockly.Block): string {
+  const names: Record<string, string> = { '{user}': 'ctx.user', '{target}': 'ctx.target' };
+  if (block && loopOf(block)) names['{pokemon}'] = LOOP_VARIABLE;
+  const args: string[] = [];
+  const key = text.replace(/\{user\}|\{target\}|\{pokemon\}/g, (name) => {
+    const expr = names[name];
+    if (!expr) return name;
+    const index = args.includes(expr) ? args.indexOf(expr) : args.push(expr) - 1;
+    return `{${index}}`;
+  });
+  return [quote(key), ...args].join(', ');
 }
 
 function field(block: Blockly.Block, name: string): string {
@@ -683,7 +688,7 @@ emit['mlab_if_reaches'] = (block) => {
 
 // --- Text
 
-emit['mlab_message'] = (block) => statement(block, `ctx:message(${messageExpr(field(block, 'TEXT'), block)})\n`);
+emit['mlab_message'] = (block) => statement(block, `ctx:message(${messageArgs(field(block, 'TEXT'), block)})\n`);
 
 // --- Logic
 

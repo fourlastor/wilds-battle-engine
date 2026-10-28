@@ -118,39 +118,39 @@ impl WeatherKind {
     pub const fn messages(self) -> (&'static str, &'static str, &'static str) {
         match self {
             Self::StrongWinds => (
-                "Mysterious strong winds are protecting Flying-type Pokémon!",
-                "The mysterious strong winds blow on.",
-                "The mysterious strong winds dissipated.",
+                msg("Mysterious strong winds are protecting Flying-type Pokémon!"),
+                msg("The mysterious strong winds blow on."),
+                msg("The mysterious strong winds dissipated."),
             ),
             Self::HarshSun => (
-                "The sunlight turned extremely harsh!",
-                "The extremely harsh sunlight continues.",
-                "The extremely harsh sunlight faded.",
+                msg("The sunlight turned extremely harsh!"),
+                msg("The extremely harsh sunlight continues."),
+                msg("The extremely harsh sunlight faded."),
             ),
             Self::HeavyRain => (
-                "A heavy rain began to fall!",
-                "The heavy rain continues.",
-                "The heavy rain stopped.",
+                msg("A heavy rain began to fall!"),
+                msg("The heavy rain continues."),
+                msg("The heavy rain stopped."),
             ),
             Self::Sun => (
-                "The sunlight turned harsh!",
-                "The sunlight is strong.",
-                "The harsh sunlight faded.",
+                msg("The sunlight turned harsh!"),
+                msg("The sunlight is strong."),
+                msg("The harsh sunlight faded."),
             ),
             Self::Sandstorm => (
-                "A sandstorm kicked up!",
-                "The sandstorm rages.",
-                "The sandstorm subsided.",
+                msg("A sandstorm kicked up!"),
+                msg("The sandstorm rages."),
+                msg("The sandstorm subsided."),
             ),
             Self::Rain => (
-                "It started to rain!",
-                "Rain continues to fall.",
-                "The rain stopped.",
+                msg("It started to rain!"),
+                msg("Rain continues to fall."),
+                msg("The rain stopped."),
             ),
             Self::Hail => (
-                "It started to hail!",
-                "Hail continues to fall.",
-                "The hail stopped.",
+                msg("It started to hail!"),
+                msg("Hail continues to fall."),
+                msg("The hail stopped."),
             ),
         }
     }
@@ -804,6 +804,132 @@ pub struct Weather {
     pub turns_left: u8,
 }
 
+/// A line of battle text. `key` is an English template whose `{0}`, `{1}`... placeholders
+/// stand for `args`, so a host can use it as a translation key (for example a gettext msgid,
+/// with `context()` as its msgctxt) and present each argument its own way. Messages compare
+/// equal when their English text does.
+#[derive(Clone, Debug)]
+pub struct Message {
+    pub key: std::borrow::Cow<'static, str>,
+    pub args: Vec<MessageArg>,
+    text: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum MessageArg {
+    /// A battle participant, with the name and gender it currently shows (an Illusion's).
+    Pokemon {
+        id: ParticipantId,
+        name: String,
+        gender: Gender,
+    },
+    /// A move, with its catalog name.
+    Move {
+        id: String,
+        name: String,
+    },
+    /// Text that is itself translatable, such as a stat or ability name.
+    Text(std::borrow::Cow<'static, str>),
+    Number(i64),
+}
+
+impl MessageArg {
+    fn english(&self) -> String {
+        match self {
+            Self::Pokemon { name, .. } | Self::Move { name, .. } => name.clone(),
+            Self::Text(text) => text.to_string(),
+            Self::Number(number) => number.to_string(),
+        }
+    }
+}
+
+impl Message {
+    pub fn new(
+        key: impl Into<std::borrow::Cow<'static, str>>,
+        args: impl IntoIterator<Item = MessageArg>,
+    ) -> Self {
+        let key = key.into();
+        let args: Vec<_> = args.into_iter().collect();
+        let mut text = key.to_string();
+        for (index, arg) in args.iter().enumerate() {
+            text = text.replace(&format!("{{{index}}}"), &arg.english());
+        }
+        Self { key, args, text }
+    }
+    /// The English text.
+    pub fn text(&self) -> &str {
+        &self.text
+    }
+    /// The English text, like [`Message::text`].
+    pub fn as_str(&self) -> &str {
+        &self.text
+    }
+    /// The gender of the first Pokémon argument, for languages whose wording depends on it.
+    pub fn context(&self) -> Option<Gender> {
+        self.args.iter().find_map(|arg| match arg {
+            MessageArg::Pokemon { gender, .. } => Some(*gender),
+            _ => None,
+        })
+    }
+}
+
+/// Marks a message key chosen before it is passed on, for scripts/extract_messages.py.
+pub(crate) const fn msg(key: &'static str) -> &'static str {
+    key
+}
+
+/// A message event.
+pub(crate) fn say(
+    key: impl Into<std::borrow::Cow<'static, str>>,
+    args: impl IntoIterator<Item = MessageArg>,
+) -> BattleEvent {
+    BattleEvent::Message(Message::new(key, args))
+}
+
+/// A move as a message argument.
+pub(crate) fn move_arg(spec: &crate::moves::MoveSpec) -> MessageArg {
+    MessageArg::Move {
+        id: spec.id.clone(),
+        name: spec.name.clone(),
+    }
+}
+
+impl From<&'static str> for Message {
+    fn from(key: &'static str) -> Self {
+        Self::new(key, [])
+    }
+}
+
+impl std::ops::Deref for Message {
+    type Target = str;
+    fn deref(&self) -> &str {
+        &self.text
+    }
+}
+
+impl std::fmt::Display for Message {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(&self.text)
+    }
+}
+
+impl PartialEq for Message {
+    fn eq(&self, other: &Self) -> bool {
+        self.text == other.text
+    }
+}
+impl Eq for Message {}
+impl PartialEq<str> for Message {
+    fn eq(&self, other: &str) -> bool {
+        self.text == other
+    }
+}
+impl PartialEq<&str> for Message {
+    fn eq(&self, other: &&str) -> bool {
+        self.text == *other
+    }
+}
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum BattleEvent {
     PositionsSwapped {
@@ -825,7 +951,7 @@ pub enum BattleEvent {
         to: ParticipantId,
         position: usize,
     },
-    Message(String),
+    Message(Message),
     Damage {
         target: ParticipantId,
         amount: u16,

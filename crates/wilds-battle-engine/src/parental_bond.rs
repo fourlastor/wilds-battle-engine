@@ -1,6 +1,7 @@
 //! A prepared two-hit attack survives ability changes caused by its first hit.
 use crate::engine::Battle;
 use crate::model::{BattleError, BattleEvent, ParticipantId, Status};
+use crate::model::{MessageArg, say};
 use crate::moves::{Category, Effect, MoveSpec};
 
 pub(crate) struct ParentalHit {
@@ -88,7 +89,7 @@ impl Battle {
             self.recoil_from_hit(p.actor, &p.move_id, p.recoil_damage, fraction, events);
         }
         if p.connected {
-            events.push(BattleEvent::Message(format!("Hit {} times!", p.hit)));
+            events.push(say("Hit {0} times!", [MessageArg::Number(p.hit.into())]));
         }
     }
     pub(crate) fn recoil_from_hit(
@@ -117,10 +118,7 @@ impl Battle {
                 ((f32::from(damage) * fraction).floor() as u16).max(1),
                 events,
             );
-            events.push(BattleEvent::Message(format!(
-                "{} was damaged by the recoil!",
-                self.get(actor).display_name()
-            )));
+            events.push(say("{0} was damaged by the recoil!", [self.who(actor)]));
         }
     }
 }

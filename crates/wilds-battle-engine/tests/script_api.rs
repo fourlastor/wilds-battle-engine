@@ -91,7 +91,7 @@ impl Game {
         self.events(picks)
             .into_iter()
             .filter_map(|event| match event {
-                BattleEvent::Message(text) => Some(text),
+                BattleEvent::Message(text) => Some(text.to_string()),
                 _ => None,
             })
             .collect()

@@ -9,7 +9,7 @@ local move = {flags = {"sound", "no_sleep_talk"},
         ctx:start_effect(ctx.field, "uproar", {turns = turns, restart = true, end_message = "The uproar ended.",
           rules = {{kind = Rule.BlockStatus, statuses = {Status.Asleep}}}})
         for _, pokemon in ipairs(ctx.everyone) do
-          if ctx:cure_status(pokemon, Status.Asleep) then ctx:message(pokemon.name .. " woke up!") end
+          if ctx:cure_status(pokemon, Status.Asleep) then ctx:message("{0} woke up!", pokemon) end
         end
       end
       ctx:damage(90)

@@ -4,6 +4,7 @@ use crate::items::item_key;
 use crate::model::{
     BattleEvent, CombatStat, Condition, ParticipantId, PokemonType, Rule, Scope, Stat, Status,
 };
+use crate::model::{MessageArg, say};
 
 #[derive(Clone, Copy)]
 enum Berry {
@@ -169,6 +170,7 @@ impl Battle {
         };
         let factor = if self.has_ability(who, "ripen") { 2 } else { 1 };
         let turn = self.turn;
+        let eater = self.who(who);
         let p = self.get_mut(who);
         if !stolen {
             p.recyclable_item = Some(item.clone());
@@ -181,10 +183,10 @@ impl Battle {
                 effect,
                 Berry::Resist(_) | Berry::Enigma | Berry::Reactive | Berry::Custap | Berry::Food
             );
-        events.push(BattleEvent::Message(format!(
-            "{} ate {item}!",
-            p.display_name()
-        )));
+        events.push(say(
+            "{0} ate {1}!",
+            [eater, MessageArg::Text(item.clone().into())],
+        ));
         let heal = match effect {
             Berry::Heal(amount) => amount,
             Berry::HealFraction(divisor) => (p.max_hp / divisor).max(1),

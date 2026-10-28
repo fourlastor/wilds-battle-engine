@@ -4,7 +4,7 @@
 local move = {manual_announce = true, flags = {"contact"},
     script = function(ctx)
       if ctx.turn == 1 and ctx.weather ~= Weather.Sun then
-        ctx:message(ctx.user.name .. " absorbed light!")
+        ctx:message("{0} absorbed light!", ctx.user)
         ctx:force_move(2, TargetPolicy.SameTarget)
         return
       end

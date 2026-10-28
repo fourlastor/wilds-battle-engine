@@ -9,7 +9,7 @@ return {
     if ctx.user:has_type(Type.Ghost) then
       if not ctx:try_hit(ctx.target, {ignore_protect = true}) then return end
       if not ctx:start_effect(ctx.target, "curse", {rules = {
-        {kind = Rule.DamageEachTurn, fraction = 1/4, message = "{name} is afflicted by the curse!"}
+        {kind = Rule.DamageEachTurn, fraction = 1/4, message = "{0} is afflicted by the curse!"}
       }}) then ctx:fail(); return end
       ctx:hurt(ctx.user, math.max(1, math.floor(ctx.user.max_hp / 2)))
     else

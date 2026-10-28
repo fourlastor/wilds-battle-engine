@@ -3,7 +3,7 @@
 
 local move = {priority = 2,
     script = function(ctx)
-      if ctx:break_protect(ctx.target) then ctx:message(ctx.target.name .. " fell for the feint!") end
+      if ctx:break_protect(ctx.target) then ctx:message("{0} fell for the feint!", ctx.target) end
       ctx:damage(30)
     end}
 

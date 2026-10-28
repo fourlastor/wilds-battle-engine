@@ -1,4 +1,5 @@
 //! Wild-battle escape is a host-selected party action, never an AI decision.
+use crate::model::say;
 use crate::{Battle, BattleError, BattleEvent, ParticipantId, PokemonType, Side};
 
 impl Battle {
@@ -42,10 +43,7 @@ impl Battle {
         events.push(BattleEvent::EscapeAttempt { actor, success });
         if success {
             self.escaped_by = Some(actor.side);
-            events.push(BattleEvent::Message(format!(
-                "{} escaped!",
-                self.get(actor).display_name()
-            )));
+            events.push(say("{0} escaped!", [self.who(actor)]));
         } else {
             events.push(BattleEvent::Message("Couldn't escape!".into()));
         }

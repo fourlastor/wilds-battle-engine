@@ -16,7 +16,7 @@ return {
       turns = 5,
       rules = {
         {kind = Rule.Grounded},
-        {kind = Rule.BlockMoves, flags = {"gravity"}, message = "{name} cannot use that move because of gravity!"},
+        {kind = Rule.BlockMoves, flags = {"gravity"}, message = "{0} cannot use that move because of gravity!"},
         {kind = Rule.AccuracyMultiplier, factor = 6840 / 4096},
       },
       end_message = "Gravity returned to normal!",
@@ -26,7 +26,7 @@ return {
     for _, pokemon in ipairs(ctx.everyone) do
       -- Dig, Dive and disappearing moves must keep their hidden state and continuation.
       if pokemon.hidden == Hidden.Air and ctx:unhide(pokemon) then
-        ctx:message(pokemon.name .. " couldn't stay airborne because of gravity!")
+        ctx:message("{0} couldn't stay airborne because of gravity!", pokemon)
       end
       ctx:end_effect(pokemon, "magnet_rise")
       ctx:end_effect(pokemon, "telekinesis")

@@ -4,11 +4,11 @@
 local move = {priority = -3, flags = {"contact", "no_sleep_talk"},
     on_turn_start = function(ctx)
       ctx:start_effect(ctx.user, "focus_punch", {turns = 1, rules = {{kind = Rule.BlockFlinch}}})
-      ctx:message(ctx.user.name .. " is tightening its focus!")
+      ctx:message("{0} is tightening its focus!", ctx.user)
     end,
     script = function(ctx)
       if ctx.user.last_hit ~= nil then
-        ctx:message(ctx.user.name .. " lost its focus and couldn't move!")
+        ctx:message("{0} lost its focus and couldn't move!", ctx.user)
         return ctx:fail()
       end
       ctx:damage(150)

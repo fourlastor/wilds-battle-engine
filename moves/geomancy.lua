@@ -4,7 +4,7 @@
 local function two_turns(place, message, strike)
   return function(ctx)
     if ctx.turn == 1 then
-      ctx:message(ctx.user.name .. message)
+      ctx:message(message, ctx.user)
       if place then ctx:hide(place) end
       ctx:force_move(2, TargetPolicy.SameTarget)
       return
@@ -15,7 +15,7 @@ local function two_turns(place, message, strike)
 end
 
 local move = {target = Target.User, manual_announce = true,
-    script = two_turns(nil, " is absorbing power!", function(ctx)
+    script = two_turns(nil, "{0} is absorbing power!", function(ctx)
       for _, stat in ipairs({Stat.SpAttack, Stat.SpDefense, Stat.Speed}) do ctx:change_stat(ctx.user, stat, 2) end
     end)}
 

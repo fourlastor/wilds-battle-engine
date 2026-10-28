@@ -7,7 +7,7 @@ return {
   script = function(ctx)
     if not ctx:try_hit(ctx.target) then return end
     if not ctx:start_effect(ctx.target, "powder", {turns = 1, rules = {
-      {kind = Rule.ExplodeOnType, type = Type.Fire, fraction = 1/4, message = "The powder around {name} exploded!"}
+      {kind = Rule.ExplodeOnType, type = Type.Fire, fraction = 1/4, message = "The powder around {0} exploded!"}
     }}) then ctx:fail() end
   end,
 }

@@ -5,8 +5,8 @@ use std::panic::{AssertUnwindSafe, catch_unwind};
 use std::sync::Mutex;
 use wilds_battle_engine::{
     ActionSelection, AdvanceStatus, Battle, BattleEvent, Choice, CombatStat, Condition, Gender,
-    MoveCatalog, MoveFile, ParticipantId, Pokemon, PokemonForm, PokemonType, PromptReason, Side,
-    Status,
+    MessageArg, MoveCatalog, MoveFile, ParticipantId, Pokemon, PokemonForm, PokemonType,
+    PromptReason, Side, Status,
 };
 
 static LAST_ERROR: Mutex<String> = Mutex::new(String::new());
@@ -531,6 +531,17 @@ fn snapshot(value: &Pokemon) -> Value {
         "item":value.item, "hidden":value.hidden().map(|place| format!("{place:?}")),
         "conditions":conditions(&value.conditions)})
 }
+/// `{"pokemon":{"side","index"},"name","gender"}`, `{"move":id,"name"}`, `{"text"}` or `{"number"}`.
+fn message_arg(arg: &MessageArg) -> Value {
+    match arg {
+        MessageArg::Pokemon { id, name, gender } => {
+            json!({"pokemon":participant(*id), "name":name, "gender":format!("{gender:?}")})
+        }
+        MessageArg::Move { id, name } => json!({"move":id, "name":name}),
+        MessageArg::Text(text) => json!({"text":text}),
+        MessageArg::Number(number) => json!({"number":number}),
+    }
+}
 fn event(value: &BattleEvent) -> Value {
     match value {
         BattleEvent::EscapeAttempt { actor, success } => {
@@ -545,7 +556,9 @@ fn event(value: &BattleEvent) -> Value {
         BattleEvent::Switched { from, to, position } => {
             json!({"kind":"switch", "from":participant(*from),"to":participant(*to),"position":position})
         }
-        BattleEvent::Message(text) => json!({"kind":"message", "text":text}),
+        BattleEvent::Message(message) => json!({"kind":"message", "text":message.text(),
+            "key":message.key, "args":message.args.iter().map(message_arg).collect::<Vec<_>>(),
+            "context":message.context().map(|gender| format!("{gender:?}"))}),
         BattleEvent::Damage { target, amount, hp } => {
             json!({"kind":"damage", "target":participant(*target), "amount":amount, "hp":hp})
         }
@@ -616,6 +629,34 @@ mod tests {
         let text = unsafe { CStr::from_ptr(ptr) }.to_str().unwrap().to_owned();
         unsafe { wbe_free_string(ptr) };
         text
+    }
+
+    #[test]
+    fn messages_carry_their_key_arguments_and_context() {
+        let value = event(&BattleEvent::Message(wilds_battle_engine::Message::new(
+            "{0} used {1}!",
+            [
+                MessageArg::Pokemon {
+                    id: ParticipantId {
+                        side: Side::Foes,
+                        index: 1,
+                    },
+                    name: "Gengar".into(),
+                    gender: Gender::Female,
+                },
+                MessageArg::Move {
+                    id: "shadow-claw".into(),
+                    name: "Shadow Claw".into(),
+                },
+            ],
+        )));
+        assert_eq!(
+            value,
+            json!({"kind":"message", "text":"Gengar used Shadow Claw!", "key":"{0} used {1}!",
+                "context":"Female", "args":[
+                    {"pokemon":{"side":"foes","index":1}, "name":"Gengar", "gender":"Female"},
+                    {"move":"shadow-claw", "name":"Shadow Claw"}]})
+        );
     }
 
     #[test]

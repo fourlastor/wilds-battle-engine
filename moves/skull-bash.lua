@@ -4,7 +4,7 @@
 local move = {manual_announce = true,
     script = function(ctx)
       if ctx.turn == 1 then
-        ctx:message(ctx.user.name .. " tucked in its head!")
+        ctx:message("{0} tucked in its head!", ctx.user)
         ctx:change_stat(ctx.user, Stat.Defense, 1)
         ctx:force_move(2, TargetPolicy.SameTarget)
         return

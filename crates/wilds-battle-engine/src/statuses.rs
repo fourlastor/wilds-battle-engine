@@ -1,5 +1,6 @@
 //! Sword/Shield status rules shared by ordinary effects and Lua moves.
 use crate::engine::Battle;
+use crate::model::say;
 use crate::model::{BattleEvent, ParticipantId, Rule, Status, WeatherKind};
 
 #[derive(Clone, Copy, PartialEq, Eq)]
@@ -96,10 +97,7 @@ impl Battle {
         if self.has_ability(who, "poisonheal") {
             self.heal(who, (max_hp / 8).max(1), events);
         } else if !self.has_ability(who, "magicguard") {
-            events.push(BattleEvent::Message(format!(
-                "{} is hurt by poison!",
-                self.get(who).display_name()
-            )));
+            events.push(say("{0} is hurt by poison!", [self.who(who)]));
             self.damage(who, amount, events);
         }
     }
@@ -181,10 +179,7 @@ impl Battle {
 
     pub(crate) fn thaw(&mut self, who: ParticipantId, events: &mut Vec<BattleEvent>) {
         if self.get(who).hp > 0 && self.cure_status(who, Some(Status::Frozen), events) {
-            events.push(BattleEvent::Message(format!(
-                "{} thawed out!",
-                self.get(who).display_name()
-            )));
+            events.push(say("{0} thawed out!", [self.who(who)]));
         }
     }
 }

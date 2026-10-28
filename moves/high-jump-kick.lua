@@ -5,7 +5,7 @@ local move = {accuracy = 0.9, flags = {"contact"},
     script = function(ctx)
       local hit = ctx:damage(130)
       if not hit.hit then
-        ctx:message(ctx.user.name .. " kept going and crashed!")
+        ctx:message("{0} kept going and crashed!", ctx.user)
         ctx:hurt(ctx.user, {fraction = 1/2})
       end
     end}

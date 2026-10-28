@@ -78,8 +78,9 @@ return function(api, fields, roster)
     return coroutine.yield(api.random_int(min, max))
   end
 
-  function ctx:message(message)
-    return coroutine.yield(api.message(message))
+  -- `key` is an English template; {0}, {1}... stand for the other arguments, see the README.
+  function ctx:message(key, ...)
+    return coroutine.yield(api.message(key, ...))
   end
 
   function ctx:announce()

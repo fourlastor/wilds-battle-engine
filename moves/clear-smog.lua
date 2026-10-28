@@ -3,7 +3,7 @@
 
 local move = {accuracy = Accuracy.Always,
     script = function(ctx)
-      if ctx:damage(50).hit and ctx:reset_stats(ctx.target) then ctx:message(ctx.target.name .. "'s stat changes were removed!") end
+      if ctx:damage(50).hit and ctx:reset_stats(ctx.target) then ctx:message("{0}'s stat changes were removed!", ctx.target) end
     end}
 
 move.id = "clear-smog"

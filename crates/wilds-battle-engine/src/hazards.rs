@@ -1,6 +1,8 @@
 //! Entry hazards are named side conditions, removable through the ordinary effect API.
 use crate::engine::Battle;
+use crate::model::msg;
 use crate::model::{AppliedStatus, BattleEvent, ParticipantId, PokemonType, Scope, Side, Stat};
+use crate::model::{MessageArg, say};
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub(crate) enum Hazard {
@@ -52,11 +54,13 @@ impl Battle {
             return false;
         }
         self.set_mark(scope, hazard.name(), layers.max(0) + 1, None);
-        events.push(BattleEvent::Message(format!(
-            "{} was placed on the {:?} side!",
-            hazard.name().replace('_', " "),
-            side
-        )));
+        events.push(say(
+            match side {
+                Side::Allies => msg("{0} was placed on your side!"),
+                Side::Foes => msg("{0} was placed on the opposing side!"),
+            },
+            [MessageArg::Text(hazard.name().replace('_', " ").into())],
+        ));
         true
     }
 
@@ -84,10 +88,7 @@ impl Battle {
                 Hazard::ToxicSpikes if grounded => {
                     if self.types_of(who).contains(&PokemonType::Poison) {
                         self.end_condition(Scope::Side(who.side), hazard.name());
-                        events.push(BattleEvent::Message(format!(
-                            "{} absorbed the toxic spikes!",
-                            self.get(who).display_name()
-                        )));
+                        events.push(say("{0} absorbed the toxic spikes!", [self.who(who)]));
                     } else if !self.types_of(who).contains(&PokemonType::Steel) {
                         self.inflict_status_with_cause(
                             source,

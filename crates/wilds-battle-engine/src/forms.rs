@@ -1,6 +1,7 @@
 //! Form changes use the host's computed stats; levels, IVs, EVs and natures stay host-owned.
 use crate::engine::Battle;
 use crate::model::{BattleEvent, ParticipantId, Pokemon, PokemonForm};
+use crate::model::{MessageArg, say};
 
 impl PokemonForm {
     pub fn of(pokemon: &Pokemon) -> Self {
@@ -55,10 +56,10 @@ impl Battle {
             return self.restore_form(who, events);
         }
         let Some(next) = pokemon.forms.get(form).cloned() else {
-            events.push(BattleEvent::Message(format!(
-                "{} has no battle data for form {form}.",
-                pokemon.display_name()
-            )));
+            events.push(say(
+                "{0} has no battle data for form {1}.",
+                [self.who(who), MessageArg::Text(form.to_owned().into())],
+            ));
             return false;
         };
         let original = pokemon
@@ -74,10 +75,7 @@ impl Battle {
             target: who,
             form: Some(form.into()),
         });
-        events.push(BattleEvent::Message(format!(
-            "{} changed form!",
-            pokemon.display_name()
-        )));
+        events.push(say("{0} changed form!", [self.who(who)]));
         true
     }
 
@@ -94,10 +92,7 @@ impl Battle {
         original.apply_hp(pokemon);
         pokemon.form = form.clone();
         events.push(BattleEvent::FormChanged { target: who, form });
-        events.push(BattleEvent::Message(format!(
-            "{} returned to its original form!",
-            pokemon.display_name()
-        )));
+        events.push(say("{0} returned to its original form!", [self.who(who)]));
         true
     }
 }

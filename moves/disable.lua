@@ -11,7 +11,7 @@ return {
     local turns = 5
     for _, who in ipairs(ctx.pending) do if who == ctx.target then turns = 4; break end end
     if not ctx:start_effect(ctx.target, "disable", {turns = turns, rules = {
-      {kind = Rule.BlockMove, id = move, message = "{name}'s move is disabled!"}
+      {kind = Rule.BlockMove, id = move, message = "{0}'s move is disabled!"}
     }}) then ctx:fail() end
   end,
 }

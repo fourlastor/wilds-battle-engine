@@ -4,7 +4,7 @@
 local move = {script = function(ctx)
 if ctx.turn == 1 then
   ctx:change_stat(ctx.user, Stat.SpAttack, 1)
-  ctx:message(ctx.user.name .. " is gathering space power!")
+  ctx:message("{0} is gathering space power!", ctx.user)
   ctx:force_move(2, TargetPolicy.SameTarget)
   return
 end

@@ -29,9 +29,9 @@ pub use engine::Battle;
 pub use model::{
     ActionSelection, AdvanceResult, AdvanceStatus, AppliedStatus, BattleError, BattleEvent, Bound,
     Choice, CombatStat, Condition, ContinuationTarget, Gender, HiddenKind, HitInfo, LockedMove,
-    NextMovePowerBoost, ParticipantId, Pokemon, PokemonAppearance, PokemonForm, PokemonType,
-    Prompt, PromptReason, Rule, Scope, ScriptContinuation, Side, Stat, Status, Weather,
-    WeatherKind,
+    Message, MessageArg, NextMovePowerBoost, ParticipantId, Pokemon, PokemonAppearance,
+    PokemonForm, PokemonType, Prompt, PromptReason, Rule, Scope, ScriptContinuation, Side, Stat,
+    Status, Weather, WeatherKind,
 };
 pub use moves::{Accuracy, Category, Effect, MoveCatalog, MoveFile, MoveSource, MoveSpec, Target};
 pub use rng::{BattleRng, SeededRng};

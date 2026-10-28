@@ -1,6 +1,7 @@
 //! Ability forms use canonical form slugs and stats supplied by the host in `Pokemon::forms`.
 use crate::engine::Battle;
 use crate::items::item_key;
+use crate::model::say;
 use crate::model::{BattleEvent, ParticipantId, WeatherKind};
 
 impl Battle {
@@ -176,10 +177,7 @@ impl Battle {
         if self.types_of(who) != types {
             self.get_mut(who).types = types;
             self.get_mut(who).added_type = None;
-            events.push(BattleEvent::Message(format!(
-                "{} changed type with Mimicry!",
-                self.get(who).display_name()
-            )));
+            events.push(say("{0} changed type with Mimicry!", [self.who(who)]));
         }
     }
 

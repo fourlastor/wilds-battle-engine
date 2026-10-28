@@ -1,8 +1,10 @@
+use crate::model::msg;
 use crate::model::{
     ActionSelection, AdvanceResult, AdvanceStatus, BattleError, BattleEvent, Bound, Choice,
     CombatStat, Condition, ContinuationTarget, HitInfo, LockedMove, ParticipantId, Pokemon,
     PokemonType, Prompt, PromptReason, Rule, Scope, Side, Stat, Status, Weather, WeatherKind,
 };
+use crate::model::{MessageArg, move_arg, say};
 use crate::moves::{Accuracy, Category, Effect, MoveCatalog, MoveSpec, ScriptHook, Target};
 use crate::rng::{BattleRng, SeededRng};
 use crate::type_chart;
@@ -396,6 +398,25 @@ impl Battle {
             true
         } else {
             a_pos.abs_diff(width - 1 - b_pos) <= 1
+        }
+    }
+    /// A move as a message argument, by ID.
+    pub(crate) fn move_named(&self, id: &str) -> MessageArg {
+        self.catalog.get(id).map_or_else(
+            || MessageArg::Text(id.to_owned().into()),
+            crate::model::move_arg,
+        )
+    }
+    /// A Pokémon as a message argument, as it currently appears.
+    pub(crate) fn who(&self, id: ParticipantId) -> MessageArg {
+        let pokemon = self.get(id);
+        MessageArg::Pokemon {
+            id,
+            name: pokemon.display_name().to_owned(),
+            gender: pokemon
+                .illusion
+                .as_ref()
+                .map_or(pokemon.gender, |appearance| appearance.gender),
         }
     }
     pub(crate) fn get_mut(&mut self, id: ParticipantId) -> &mut Pokemon {
@@ -871,7 +892,7 @@ impl Battle {
                     && self.custap_priority(actor, events);
                 let quick_draw = matches!(&choice, SelectedAction::Move(choice) if self.catalog.get(&choice.move_id).is_some_and(|spec| spec.category != Category::Status))
                     && self.has_ability(actor, "quickdraw") && self.rng.chance(0.3);
-                if quick_draw { events.push(BattleEvent::Message(format!("{}'s Quick Draw activated!", self.get(actor).display_name()))); }
+                if quick_draw { events.push(say("{0}'s Quick Draw activated!", [self.who(actor)])); }
                 let speed = self.action_speed(actor);
                 let fractional_priority = if custap || quick_draw {
                     1
@@ -1000,11 +1021,10 @@ impl Battle {
         self.heal_replacement(a, events);
         self.heal_replacement(b, events);
         events.push(BattleEvent::PositionsSwapped { a, b });
-        events.push(BattleEvent::Message(format!(
-            "{} switched places with {}!",
-            self.get(a).display_name(),
-            self.get(b).display_name()
-        )));
+        events.push(say(
+            "{0} switched places with {1}!",
+            [self.who(a), self.who(b)],
+        ));
         true
     }
 
@@ -1179,10 +1199,7 @@ impl Battle {
                     self.get_mut(actor).recharging = false;
                     self.end_condition(Scope::Pokemon(actor), "truant");
                     if self.get(actor).hp > 0 {
-                        events.push(BattleEvent::Message(format!(
-                            "{} must recharge!",
-                            self.get(actor).display_name()
-                        )));
+                        events.push(say("{0} must recharge!", [self.who(actor)]));
                     }
                 }
             }
@@ -1318,14 +1335,13 @@ impl Battle {
             self.get_mut(id).status_turns = self.get(id).status_turns.saturating_sub(1);
         }
         if self.get(id).status_turns == 0 {
-            let name = self.get(id).display_name().to_owned();
             self.get_mut(id).status = None;
             self.remove_expired_status_conditions(id);
             events.push(BattleEvent::Status {
                 target: id,
                 status: None,
             });
-            events.push(BattleEvent::Message(format!("{name} woke up!")));
+            events.push(say("{0} woke up!", [self.who(id)]));
         } else {
             self.get_mut(id).status_turns -= 1;
         }
@@ -1481,10 +1497,7 @@ impl Battle {
             } else {
                 source
             };
-            events.push(BattleEvent::Message(format!(
-                "{} copied the dance!",
-                self.get(dancer).display_name()
-            )));
+            events.push(say("{0} copied the dance!", [self.who(dancer)]));
             let lock = self.get(dancer).locked_move.clone();
             let continuation = self.get(dancer).script_continuation.clone();
             self.dancing = true;
@@ -1633,7 +1646,7 @@ impl Battle {
         } {
             events.push(BattleEvent::Message(crate::conditions::named(
                 message,
-                self.get(actor).display_name(),
+                self.who(actor),
             )));
             self.clear_consecutive(actor);
             self.interrupt_script(actor, choice.target, &spec, events)?;
@@ -1659,7 +1672,6 @@ impl Battle {
                 })
                 .map_or(1.0, |boost| boost.multiplier);
         }
-        let user_name = self.get(actor).display_name().to_owned();
         let forced_script = self
             .get(actor)
             .script_continuation
@@ -1676,14 +1688,12 @@ impl Battle {
                     self.thaw(actor, events);
                 }
                 Some(Status::Frozen) => {
-                    events.push(BattleEvent::Message(format!(
-                        "{user_name} is frozen solid!"
-                    )));
+                    events.push(say("{0} is frozen solid!", [self.who(actor)]));
                     self.interrupt_script(actor, choice.target, &spec, events)?;
                     return Ok(false);
                 }
                 Some(Status::Asleep) if !spec.usable_while_asleep => {
-                    events.push(BattleEvent::Message(format!("{user_name} is fast asleep.")));
+                    events.push(say("{0} is fast asleep.", [self.who(actor)]));
                     self.clear_consecutive(actor);
                     self.interrupt_script(actor, choice.target, &spec, events)?;
                     return Ok(false);
@@ -1692,9 +1702,7 @@ impl Battle {
             }
             if self.has_ability(actor, "truant") {
                 if self.end_condition(Scope::Pokemon(actor), "truant") {
-                    events.push(BattleEvent::Message(format!(
-                        "{user_name} is loafing around!"
-                    )));
+                    events.push(say("{0} is loafing around!", [self.who(actor)]));
                     self.clear_consecutive(actor);
                     self.interrupt_script(actor, choice.target, &spec, events)?;
                     return Ok(false);
@@ -1702,7 +1710,7 @@ impl Battle {
                 self.set_mark(Scope::Pokemon(actor), "truant", 1, None);
             }
             if self.get(actor).flinched {
-                events.push(BattleEvent::Message(format!("{user_name} flinched!")));
+                events.push(say("{0} flinched!", [self.who(actor)]));
                 if self.has_ability(actor, "steadfast") {
                     self.change_stat(actor, Stat::Speed, 1, events);
                 }
@@ -1714,12 +1722,10 @@ impl Battle {
             if let Some(turns) = self.get(actor).confused_turns {
                 if turns == 0 {
                     self.get_mut(actor).confused_turns = None;
-                    events.push(BattleEvent::Message(format!(
-                        "{user_name} snapped out of confusion!"
-                    )));
+                    events.push(say("{0} snapped out of confusion!", [self.who(actor)]));
                 } else {
                     self.get_mut(actor).confused_turns = Some(turns - 1);
-                    events.push(BattleEvent::Message(format!("{user_name} is confused!")));
+                    events.push(say("{0} is confused!", [self.who(actor)]));
                     if self.rng.chance(0.33) {
                         events.push(BattleEvent::Message(
                             "It hurt itself in its confusion!".into(),
@@ -1733,18 +1739,14 @@ impl Battle {
                 }
             }
             if self.infatuation_prevents_move(actor) {
-                events.push(BattleEvent::Message(format!(
-                    "{user_name} is immobilized by love!"
-                )));
+                events.push(say("{0} is immobilized by love!", [self.who(actor)]));
                 self.clear_consecutive(actor);
                 self.interrupt_script(actor, choice.target, &spec, events)?;
                 return Ok(false);
             }
             // Paralysis follows flinch, confusion and attraction in Gen 8.
             if self.get(actor).status == Some(Status::Paralyzed) && self.rng.chance(0.25) {
-                events.push(BattleEvent::Message(format!(
-                    "{user_name} is paralyzed! It can't move!"
-                )));
+                events.push(say("{0} is paralyzed! It can't move!", [self.who(actor)]));
                 self.clear_consecutive(actor);
                 self.interrupt_script(actor, choice.target, &spec, events)?;
                 return Ok(false);
@@ -1755,10 +1757,10 @@ impl Battle {
             && !forced_script
             && self.get(actor).move_pp.get(&spec.id) == Some(&0)
         {
-            events.push(BattleEvent::Message(format!(
-                "{user_name} has no PP left for {}!",
-                spec.name
-            )));
+            events.push(say(
+                "{0} has no PP left for {1}!",
+                [self.who(actor), move_arg(&spec)],
+            ));
             self.move_failed = true;
             self.clear_consecutive(actor);
             return Ok(true);
@@ -1794,10 +1796,7 @@ impl Battle {
         if spec.effects.iter().any(|e| matches!(e, Effect::Protect))
             && !self.protection_check(actor)
         {
-            events.push(BattleEvent::Message(format!(
-                "{user_name} used {}!",
-                spec.name
-            )));
+            events.push(say("{0} used {1}!", [self.who(actor), move_arg(&spec)]));
             events.push(BattleEvent::Message("But it failed!".into()));
             self.move_failed = true;
             self.clear_consecutive(actor);
@@ -1873,10 +1872,7 @@ impl Battle {
         };
         if redirected != target {
             target = redirected;
-            events.push(BattleEvent::Message(format!(
-                "{} drew in the move!",
-                self.get(target).display_name()
-            )));
+            events.push(say("{0} drew in the move!", [self.who(target)]));
         }
         self.current_move_target = Some(target);
         self.ability_bypass = spec.has_flag("ignore_ability")
@@ -1899,15 +1895,11 @@ impl Battle {
                     .iter()
                     .any(|rule| matches!(rule, Rule::Snatch { .. }))
             });
-            events.push(BattleEvent::Message(format!(
-                "{user_name} used {}!",
-                spec.name
-            )));
-            events.push(BattleEvent::Message(format!(
-                "{} snatched {}!",
-                self.get(snatcher).display_name(),
-                spec.name
-            )));
+            events.push(say("{0} used {1}!", [self.who(actor), move_arg(&spec)]));
+            events.push(say(
+                "{0} snatched {1}!",
+                [self.who(snatcher), move_arg(&spec)],
+            ));
             self.snatching = true;
             let result = self.call_move(snatcher, &spec.id, None, events);
             self.snatching = false;
@@ -1915,10 +1907,7 @@ impl Battle {
             return Ok(true);
         }
         if spec.fail_on_full_hp && self.get(target).hp == self.get(target).max_hp {
-            events.push(BattleEvent::Message(format!(
-                "{user_name} used {}!",
-                spec.name
-            )));
+            events.push(say("{0} used {1}!", [self.who(actor), move_arg(&spec)]));
             events.push(BattleEvent::Message("But it failed!".into()));
             self.move_failed = true;
             return Ok(true);
@@ -1943,10 +1932,7 @@ impl Battle {
                     Target::Selected | Target::Ally | Target::AnyOther
                 ))
         {
-            events.push(BattleEvent::Message(format!(
-                "{user_name} used {}!",
-                spec.name
-            )));
+            events.push(say("{0} used {1}!", [self.who(actor), move_arg(&spec)]));
             events.push(BattleEvent::Message("But there is no target!".into()));
             self.move_failed = true;
             self.clear_consecutive(actor);
@@ -1973,10 +1959,7 @@ impl Battle {
             "explosion" | "selfdestruct" | "mindblown" | "mistyexplosion"
         ) && self.damp_active()
         {
-            events.push(BattleEvent::Message(format!(
-                "{user_name} used {}!",
-                spec.name
-            )));
+            events.push(say("{0} used {1}!", [self.who(actor), move_arg(&spec)]));
             events.push(BattleEvent::Message("Damp prevented the explosion!".into()));
             self.move_failed = true;
             return Ok(true);
@@ -1985,10 +1968,7 @@ impl Battle {
             && self
                 .extreme_weather_blocks(self.converted_type(actor, spec.move_type), spec.category)
         {
-            events.push(BattleEvent::Message(format!(
-                "{user_name} used {}!",
-                spec.name
-            )));
+            events.push(say("{0} used {1}!", [self.who(actor), move_arg(&spec)]));
             events.push(BattleEvent::Message(
                 "The extreme weather stopped the attack!".into(),
             ));
@@ -1998,10 +1978,7 @@ impl Battle {
         if !spec.auto_only
             && self.explode_on_type(actor, self.converted_type(actor, spec.move_type), events)
         {
-            events.push(BattleEvent::Message(format!(
-                "{user_name} used {}!",
-                spec.name
-            )));
+            events.push(say("{0} used {1}!", [self.who(actor), move_arg(&spec)]));
             self.move_failed = true;
             self.clear_consecutive(actor);
             self.interrupt_script(actor, target, &spec, events)?;
@@ -2019,19 +1996,13 @@ impl Battle {
         }) && (self.is_asleep(actor)
             || self.status_immune_to(actor, actor, Status::Asleep, spec.move_type, false))
         {
-            events.push(BattleEvent::Message(format!(
-                "{user_name} used {}!",
-                spec.name
-            )));
+            events.push(say("{0} used {1}!", [self.who(actor), move_arg(&spec)]));
             events.push(BattleEvent::Message("But it failed!".into()));
             self.move_failed = true;
             return Ok(true);
         }
         if target_kind == Target::Ally && (target == actor || !self.adjacent(actor, target)) {
-            events.push(BattleEvent::Message(format!(
-                "{user_name} used {}!",
-                spec.name
-            )));
+            events.push(say("{0} used {1}!", [self.who(actor), move_arg(&spec)]));
             events.push(BattleEvent::Message(
                 "But there is no adjacent ally!".into(),
             ));
@@ -2040,10 +2011,7 @@ impl Battle {
         }
         if spec.script.is_some() {
             if !spec.manual_announce {
-                events.push(BattleEvent::Message(format!(
-                    "{user_name} used {}!",
-                    spec.name
-                )));
+                events.push(say("{0} used {1}!", [self.who(actor), move_arg(&spec)]));
             }
             let parental = self.begin_parental_hit(actor, target, &spec)?;
             let mut hit = self.execute_script(actor, target, &spec, events, ScriptHook::Main)?;
@@ -2111,28 +2079,22 @@ impl Battle {
             self.get_mut(actor).semi_invulnerable = false;
         }
         if !first_charge {
-            events.push(BattleEvent::Message(format!(
-                "{user_name} used {}!",
-                spec.name
-            )));
+            events.push(say("{0} used {1}!", [self.who(actor), move_arg(&spec)]));
         }
         if !first_charge && self.prankster_blocked(actor, target, &spec) {
             self.immune_message(target, events);
             return Ok(true);
         }
         if !first_charge && self.priority_blocked(actor, target, &spec) {
-            events.push(BattleEvent::Message(format!(
-                "{} is protected from priority moves!",
-                self.get(target).display_name()
-            )));
+            events.push(say(
+                "{0} is protected from priority moves!",
+                [self.who(target)],
+            ));
             self.move_failed = true;
             return Ok(true);
         }
         if !first_charge && self.guard_hit(actor, target, &spec, &Default::default(), events) {
-            events.push(BattleEvent::Message(format!(
-                "{} was protected!",
-                self.get(target).display_name()
-            )));
+            events.push(say("{0} was protected!", [self.who(target)]));
             self.move_failed = true;
             return Ok(true);
         }
@@ -2140,9 +2102,7 @@ impl Battle {
             return Ok(true);
         }
         if !(first_charge || self.hit_check(actor, target, &spec, false)) {
-            events.push(BattleEvent::Message(format!(
-                "{user_name}'s attack missed!"
-            )));
+            events.push(say("{0}'s attack missed!", [self.who(actor)]));
             self.move_failed = true;
             self.clear_consecutive(actor);
             return Ok(true);
@@ -2151,10 +2111,7 @@ impl Battle {
             && actor != target
             && !(spec.has_flag("contact") && self.has_ability(actor, "unseenfist"))
         {
-            events.push(BattleEvent::Message(format!(
-                "{} protected itself!",
-                self.get(target).display_name()
-            )));
+            events.push(say("{0} protected itself!", [self.who(target)]));
             self.move_failed = true;
             return Ok(true);
         }
@@ -2166,10 +2123,7 @@ impl Battle {
                 || (spec.has_flag("poison_always_hits")
                     && self.types_of(actor).contains(&PokemonType::Poison)))
         {
-            events.push(BattleEvent::Message(format!(
-                "{} avoided the attack!",
-                self.get(target).display_name()
-            )));
+            events.push(say("{0} avoided the attack!", [self.who(target)]));
             self.move_failed = true;
             return Ok(true);
         }
@@ -2309,10 +2263,7 @@ impl Battle {
                 || (stat == Stat::Accuracy && self.has_ability(recipient, "keeneye"))
                 || (stat == Stat::Defense && self.has_ability(recipient, "bigpecks")))
         {
-            events.push(BattleEvent::Message(format!(
-                "{}'s stats were not lowered!",
-                self.get(recipient).display_name()
-            )));
+            events.push(say("{0}'s stats were not lowered!", [self.who(recipient)]));
             return 0;
         }
         let changed = self.change_stat_unmodified(recipient, stat, delta, events);
@@ -2337,21 +2288,23 @@ impl Battle {
         let change = pokemon.change_stage(stat, delta);
         pokemon.stats_raised_this_turn |= change > 0;
         pokemon.stats_lowered_this_turn |= change < 0;
-        let tail = match change {
-            3.. => "rose drastically!",
-            2 => "rose sharply!",
-            1 => "rose!",
-            -1 => "fell!",
-            -2 => "harshly fell!",
-            ..=-3 => "severely fell!",
-            _ if delta > 0 => "won't go any higher!",
-            _ => "won't go any lower!",
+        let key = match change {
+            3.. => msg("{0}'s {1} rose drastically!"),
+            2 => msg("{0}'s {1} rose sharply!"),
+            1 => msg("{0}'s {1} rose!"),
+            -1 => msg("{0}'s {1} fell!"),
+            -2 => msg("{0}'s {1} harshly fell!"),
+            ..=-3 => msg("{0}'s {1} severely fell!"),
+            _ if delta > 0 => msg("{0}'s {1} won't go any higher!"),
+            _ => msg("{0}'s {1} won't go any lower!"),
         };
-        events.push(BattleEvent::Message(format!(
-            "{}'s {} {tail}",
-            self.get(recipient).display_name(),
-            stat.description()
-        )));
+        events.push(say(
+            key,
+            [
+                self.who(recipient),
+                MessageArg::Text(stat.description().into()),
+            ],
+        ));
         if change != 0 {
             events.push(BattleEvent::StatChange {
                 target: recipient,
@@ -2513,10 +2466,10 @@ impl Battle {
         {
             if spec.category == Category::Status {
                 self.move_failed = true;
-                events.push(BattleEvent::Message(format!(
-                    "{} is protected by its substitute!",
-                    self.get(target).display_name()
-                )));
+                events.push(say(
+                    "{0} is protected by its substitute!",
+                    [self.who(target)],
+                ));
             }
             return Ok(());
         }
@@ -2567,10 +2520,7 @@ impl Battle {
                             ooze,
                             events,
                         );
-                        events.push(BattleEvent::Message(format!(
-                            "{} had its energy drained!",
-                            self.get(target).display_name()
-                        )));
+                        events.push(say("{0} had its energy drained!", [self.who(target)]));
                     }
                 }
             }
@@ -2619,7 +2569,7 @@ impl Battle {
                         return Ok(());
                     }
                 }
-                details.push(BattleEvent::Message(format!("Hit {count} times!")));
+                details.push(say("Hit {0} times!", [MessageArg::Number(count.into())]));
                 insert_hit_messages(events, start, target, details);
             }
             Effect::FixedDamage(amount) => {
@@ -2684,10 +2634,7 @@ impl Battle {
                     && single_effect
                     && self.get(target).confused_turns.is_some()
                 {
-                    events.push(BattleEvent::Message(format!(
-                        "{} was already confused!",
-                        self.get(target).display_name()
-                    )));
+                    events.push(say("{0} was already confused!", [self.who(target)]));
                 }
             }
             Effect::Flinch(chance) => {
@@ -2708,20 +2655,16 @@ impl Battle {
                         turns_left: turns,
                         source: spec.name.clone(),
                     });
-                    events.push(BattleEvent::Message(format!(
-                        "{} was squeezed by {}!",
-                        self.get(target).display_name(),
-                        self.get(actor).display_name()
-                    )));
+                    events.push(say(
+                        "{0} was squeezed by {1}!",
+                        [self.who(target), self.who(actor)],
+                    ));
                 }
             }
             Effect::Protect => {
                 if !self.get(target).protected {
                     self.get_mut(target).protected = true;
-                    events.push(BattleEvent::Message(format!(
-                        "{} protected itself!",
-                        self.get(target).display_name()
-                    )));
+                    events.push(say("{0} protected itself!", [self.who(target)]));
                 }
             }
             Effect::Heal {
@@ -2734,10 +2677,7 @@ impl Battle {
                     self.heal(target, amount, events);
                 }
                 if !hide_message {
-                    events.push(BattleEvent::Message(format!(
-                        "{} regained health!",
-                        self.get(target).display_name()
-                    )));
+                    events.push(say("{0} regained health!", [self.who(target)]));
                 }
             }
             Effect::Weather { kind, turns } => {
@@ -2764,9 +2704,7 @@ impl Battle {
                     });
                     self.get_mut(actor).semi_invulnerable = *semi_invulnerable;
                     self.get_mut(actor).hidden_kind = *hidden;
-                    events.push(BattleEvent::Message(
-                        charge_message.replace("{0}", self.get(actor).display_name()),
-                    ));
+                    events.push(say(charge_message.clone(), [self.who(actor)]));
                 } else {
                     let mut details = Vec::new();
                     let start = events.len();
@@ -2868,10 +2806,7 @@ impl Battle {
                     }
                     if *confuse_after && self.effectiveness(target, spec.move_type) != 0.0 {
                         self.get_mut(actor).confused_turns = Some(self.rng.range(1, 4));
-                        events.push(BattleEvent::Message(format!(
-                            "{} became confused!",
-                            self.get(actor).display_name()
-                        )));
+                        events.push(say("{0} became confused!", [self.who(actor)]));
                     }
                 }
             }
@@ -2991,10 +2926,7 @@ impl Battle {
     }
     pub(crate) fn immune_message(&mut self, target: ParticipantId, events: &mut Vec<BattleEvent>) {
         self.move_failed = true;
-        events.push(BattleEvent::Message(format!(
-            "It doesn't affect {}...",
-            self.get(target).display_name()
-        )));
+        events.push(say("It doesn't affect {0}...", [self.who(target)]));
     }
     fn direct_damage(
         &mut self,
@@ -3345,15 +3277,14 @@ impl Battle {
                 amount: lost,
                 hp: self.get(target).substitute_hp,
             });
-            events.push(BattleEvent::Message(format!(
-                "{}'s substitute {}!",
-                self.get(target).display_name(),
+            events.push(say(
                 if self.get(target).substitute_hp == 0 {
-                    "broke"
+                    msg("{0}'s substitute broke!")
                 } else {
-                    "took the hit"
-                }
-            )));
+                    msg("{0}'s substitute took the hit!")
+                },
+                [self.who(target)],
+            ));
             return Ok(lost);
         }
         if self.break_form_shield(target, meta.category, events) {
@@ -3404,10 +3335,7 @@ impl Battle {
                 || (before == self.get(target).max_hp && self.has_ability(target, "sturdy")))
         {
             amount = before - 1;
-            events.push(BattleEvent::Message(format!(
-                "{} endured the hit!",
-                self.get(target).display_name()
-            )));
+            events.push(say("{0} endured the hit!", [self.who(target)]));
         }
         let gulp = self.gulp_missile_payload(target);
         if amount > 0 {
@@ -3490,17 +3418,16 @@ impl Battle {
             && let Some(pp) = self.get_mut(actor).move_pp.get_mut(&move_id)
         {
             *pp = 0;
-            events.push(BattleEvent::Message(format!(
-                "{} lost all PP for {} due to Grudge!",
-                self.get(actor).display_name(),
-                move_id
-            )));
+            events.push(say(
+                "{0} lost all PP for {1} due to Grudge!",
+                [self.who(actor), self.move_named(&move_id)],
+            ));
         }
         if faint_attacker && self.get(target).hp == 0 && self.get(actor).hp > 0 {
-            events.push(BattleEvent::Message(format!(
-                "{} took its attacker down with it!",
-                self.get(target).display_name()
-            )));
+            events.push(say(
+                "{0} took its attacker down with it!",
+                [self.who(target)],
+            ));
             self.damage(actor, self.get(actor).hp, events);
         }
         if lost > 0 && self.get(target).hp == 0 && actor != target {
@@ -3538,7 +3465,8 @@ impl Battle {
             p.hurt_this_turn = true;
         }
         let hp = p.hp;
-        let name = p.display_name().to_owned();
+        // Named as it appeared when hit, before a knockout ends an Illusion.
+        let fainted = self.who(target);
         events.push(BattleEvent::Damage { target, amount, hp });
         if was_alive && hp == 0 {
             self.end_illusion(target, events);
@@ -3562,7 +3490,7 @@ impl Battle {
             self.last_faint_turn[target.side.index()] = Some(turn);
             self.hit_reactions
                 .retain(|reaction| reaction.owner != target);
-            events.push(BattleEvent::Message(format!("{name} fainted!")));
+            events.push(say("{0} fainted!", [fainted]));
             events.push(BattleEvent::Fainted(target));
         }
     }
@@ -3612,15 +3540,14 @@ impl Battle {
             _ => None,
         };
         if let Some((amount, cause)) = dot {
-            events.push(BattleEvent::Message(format!(
-                "{} is hurt by {}!",
-                p.display_name(),
+            events.push(say(
                 if cause == Status::Burned {
-                    "its burn"
+                    msg("{0} is hurt by its burn!")
                 } else {
-                    "poison"
-                }
-            )));
+                    "{0} is hurt by poison!"
+                },
+                [self.who(id)],
+            ));
             self.damage(id, amount, events);
         }
         if self.get(id).hp == 0 {
@@ -3629,18 +3556,16 @@ impl Battle {
         if let Some(bound) = self.get(id).bound.clone() {
             if bound.turns_left == 0 {
                 self.get_mut(id).bound = None;
-                events.push(BattleEvent::Message(format!(
-                    "{} was freed from {}!",
-                    p.display_name(),
-                    bound.source
-                )));
+                events.push(say(
+                    "{0} was freed from {1}!",
+                    [self.who(id), MessageArg::Text(bound.source.clone().into())],
+                ));
             } else {
                 self.get_mut(id).bound.as_mut().unwrap().turns_left -= 1;
-                events.push(BattleEvent::Message(format!(
-                    "{} is hurt by {}!",
-                    p.display_name(),
-                    bound.source
-                )));
+                events.push(say(
+                    "{0} is hurt by {1}!",
+                    [self.who(id), MessageArg::Text(bound.source.clone().into())],
+                ));
                 self.indirect_damage(id, fractional(p.max_hp, 8, 1), events);
             }
         }
@@ -3666,12 +3591,12 @@ impl Battle {
         for &id in order {
             self.ability_weather_residual(id, weather.kind.battle_kind(), events);
         }
-        let (spared, name): (&[PokemonType], &str) = match weather.kind {
+        let (spared, key): (&[PokemonType], &str) = match weather.kind {
             WeatherKind::Sandstorm => (
                 &[PokemonType::Rock, PokemonType::Ground, PokemonType::Steel],
-                "sandstorm",
+                msg("{0} is buffeted by the sandstorm!"),
             ),
-            WeatherKind::Hail => (&[PokemonType::Ice], "hail"),
+            WeatherKind::Hail => (&[PokemonType::Ice], msg("{0} is buffeted by the hail!")),
             WeatherKind::Sun
             | WeatherKind::Rain
             | WeatherKind::HeavyRain
@@ -3686,10 +3611,7 @@ impl Battle {
             {
                 continue;
             }
-            events.push(BattleEvent::Message(format!(
-                "{} is buffeted by the {name}!",
-                p.display_name()
-            )));
+            events.push(say(key, [self.who(*id)]));
             self.indirect_damage(*id, fractional(p.max_hp, 16, 1), events);
         }
     }
@@ -3784,11 +3706,10 @@ impl Battle {
         {
             return Ok(false);
         }
-        events.push(BattleEvent::Message(format!(
-            "{} bounced back {}!",
-            self.get(reflector).display_name(),
-            spec.name
-        )));
+        events.push(say(
+            "{0} bounced back {1}!",
+            [self.who(reflector), move_arg(spec)],
+        ));
         let ignored = self.ignored_ability.take();
         let bypass = std::mem::replace(&mut self.ability_bypass, false);
         self.reflecting = true;
@@ -3798,10 +3719,7 @@ impl Battle {
         } else {
             (|| {
                 if !self.hit_check(reflector, actor, spec, false) {
-                    events.push(BattleEvent::Message(format!(
-                        "{}'s attack missed!",
-                        self.get(reflector).display_name()
-                    )));
+                    events.push(say("{0}'s attack missed!", [self.who(reflector)]));
                 } else if !self.get(actor).protected && self.get(actor).hidden().is_none() {
                     for effect in &spec.effects {
                         self.apply_effect(

@@ -1,6 +1,7 @@
 //! Item consumption and activation. Taking or giving an item does not consume it.
 use crate::engine::Battle;
 use crate::model::{BattleEvent, ParticipantId};
+use crate::model::{MessageArg, say};
 
 impl Battle {
     pub(crate) fn symbiosis_after_use(&mut self, who: ParticipantId) {
@@ -99,10 +100,10 @@ impl Battle {
         if self.consume_item(who).is_none() {
             return false;
         }
-        events.push(BattleEvent::Message(format!(
-            "{} became fully charged due to its Power Herb!",
-            self.get(who).display_name()
-        )));
+        events.push(say(
+            "{0} became fully charged due to its Power Herb!",
+            [self.who(who)],
+        ));
         true
     }
 }
@@ -314,10 +315,10 @@ impl Battle {
         }
         if let Some(item) = self.consume_item(actor) {
             self.active_gem = Some((actor, kind));
-            events.push(BattleEvent::Message(format!(
-                "{} used its {item}!",
-                self.get(actor).display_name()
-            )));
+            events.push(say(
+                "{0} used its {1}!",
+                [self.who(actor), MessageArg::Text(item.clone().into())],
+            ));
             1.3
         } else {
             1.0

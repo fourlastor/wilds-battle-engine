@@ -10,7 +10,7 @@ return {
     if (ctx.target.status ~= Status.Asleep and ability ~= "comatose") or ctx.target.effects.nightmare then ctx:fail(); return end
     ctx:start_effect(ctx.target, "nightmare", {rules = {
       {kind = Rule.RequiresStatus, status = Status.Asleep},
-      {kind = Rule.DamageEachTurn, fraction = 1/4, message = "{name} is locked in a nightmare!"}
+      {kind = Rule.DamageEachTurn, fraction = 1/4, message = "{0} is locked in a nightmare!"}
     }})
   end,
 }

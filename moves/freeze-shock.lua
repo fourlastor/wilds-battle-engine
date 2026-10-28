@@ -3,7 +3,7 @@
 
 local move = {script = function(ctx)
 if ctx.turn == 1 then
-  ctx:message(ctx.user.name .. " is charging!")
+  ctx:message("{0} is charging!", ctx.user)
   ctx:force_move(2, TargetPolicy.SameTarget)
   return
 end

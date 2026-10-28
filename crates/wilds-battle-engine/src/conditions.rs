@@ -3,14 +3,16 @@
 //! Moves set these through the script API. The engine keeps no list of known effects: a move
 //! names its own ("reflect", "minimized") and picks the rules it needs.
 use crate::engine::Battle;
+use crate::model::msg;
 use crate::model::{
     BattleEvent, CombatStat, Condition, ParticipantId, PokemonType, Rule, Scope, Side, Status,
 };
+use crate::model::{MessageArg, say};
 use crate::moves::{Category, MoveSpec, Target};
 
-/// Fills in `{name}` in a message written by a move.
-pub(crate) fn named(message: &str, name: &str) -> String {
-    message.replace("{name}", name)
+/// A message written by a move or rule about `who`, which `{0}` (or the older `{name}`) stands for.
+pub(crate) fn named(message: &str, who: MessageArg) -> crate::model::Message {
+    crate::model::Message::new(message.replace("{name}", "{0}"), [who])
 }
 
 impl Battle {
@@ -141,10 +143,7 @@ impl Battle {
             return false;
         };
         if let Some(message) = message {
-            events.push(BattleEvent::Message(named(
-                &message,
-                self.get(actor).display_name(),
-            )));
+            events.push(BattleEvent::Message(named(&message, self.who(actor))));
         }
         if !self.has_ability(actor, "magicguard") {
             let damage = (f32::from(self.get(actor).max_hp) * fraction)
@@ -693,7 +692,11 @@ impl Battle {
     pub(crate) fn called_move_block(&self, id: ParticipantId, spec: &MoveSpec) -> Option<&str> {
         self.rules(id).find_map(|rule| match rule {
             Rule::BlockMoves { flags, message } if flags.iter().any(|flag| spec.has_flag(flag)) => {
-                Some(message.as_deref().unwrap_or("{name} cannot use that move!"))
+                Some(
+                    message
+                        .as_deref()
+                        .unwrap_or(msg("{0} cannot use that move!")),
+                )
             }
             _ => None,
         })
@@ -720,17 +723,17 @@ impl Battle {
                 .as_ref()
                 .is_some_and(|move_id| *move_id != spec.id)
         {
-            return Some("{name} must repeat its move because of Gorilla Tactics!");
+            return Some(msg("{0} must repeat its move because of Gorilla Tactics!"));
         }
         if spec.id != "struggle"
             && self
                 .only_move(id)
                 .is_some_and(|required| required != spec.id)
         {
-            return Some("{name} must repeat its encored move!");
+            return Some(msg("{0} must repeat its encored move!"));
         }
         if spec.has_flag("requires_eaten_berry") && !self.has_eaten_berry(id) {
-            return Some("{name} must eat a berry before using that move!");
+            return Some(msg("{0} must eat a berry before using that move!"));
         }
         if spec.has_flag("requires_held_berry")
             && !self
@@ -739,7 +742,7 @@ impl Battle {
                 .as_deref()
                 .is_some_and(crate::berries::is_berry)
         {
-            return Some("{name} needs to hold a berry to use that move!");
+            return Some(msg("{0} needs to hold a berry to use that move!"));
         }
         if spec.id != "struggle"
             && self.actors().into_iter().any(|source| {
@@ -753,7 +756,7 @@ impl Battle {
                         .any(|r| matches!(r, Rule::SealMoves))
             })
         {
-            return Some("{name}'s move is sealed by Imprison!");
+            return Some(msg("{0}'s move is sealed by Imprison!"));
         }
         self.rules(id).find_map(|rule| match rule {
             Rule::BlockMove {
@@ -762,7 +765,7 @@ impl Battle {
             } if *blocked == spec.id => Some(
                 message
                     .as_deref()
-                    .unwrap_or("{name} cannot use the disabled move!"),
+                    .unwrap_or(msg("{0} cannot use the disabled move!")),
             ),
             Rule::BlockCategory {
                 category,
@@ -771,10 +774,14 @@ impl Battle {
             } if *category == spec.category && !except.contains(&spec.id) => Some(
                 message
                     .as_deref()
-                    .unwrap_or("{name} cannot use that category of move!"),
+                    .unwrap_or(msg("{0} cannot use that category of move!")),
             ),
             Rule::BlockMoves { flags, message } if flags.iter().any(|flag| spec.has_flag(flag)) => {
-                Some(message.as_deref().unwrap_or("{name} cannot use that move!"))
+                Some(
+                    message
+                        .as_deref()
+                        .unwrap_or(msg("{0} cannot use that move!")),
+                )
             }
             _ => None,
         })
@@ -992,7 +999,7 @@ impl Battle {
                 if self.get(id).hp == 0 {
                     break;
                 }
-                let name = self.get(id).display_name().to_owned();
+                let who = self.who(id);
                 let max_hp = self.get(id).max_hp;
                 let share = |fraction: f32| ((f32::from(max_hp) * fraction).floor() as u16).max(1);
                 match rule {
@@ -1017,7 +1024,7 @@ impl Battle {
                             continue;
                         }
                         if let Some(message) = message {
-                            events.push(BattleEvent::Message(named(&message, &name)));
+                            events.push(BattleEvent::Message(named(&message, who.clone())));
                         }
                         self.damage(id, share(fraction), events);
                     }
@@ -1033,7 +1040,7 @@ impl Battle {
                         if self.get(id).hp < max_hp {
                             self.heal(id, share(fraction), events);
                             if let Some(message) = message {
-                                events.push(BattleEvent::Message(named(&message, &name)));
+                                events.push(BattleEvent::Message(named(&message, who.clone())));
                             }
                         }
                     }
@@ -1047,7 +1054,7 @@ impl Battle {
                         }
                         let amount = share(fraction).min(self.get(id).hp);
                         if let Some(message) = message {
-                            events.push(BattleEvent::Message(named(&message, &name)));
+                            events.push(BattleEvent::Message(named(&message, who.clone())));
                         }
                         let ooze = self.has_ability(id, "liquidooze");
                         self.damage(id, amount, events);
@@ -1069,20 +1076,19 @@ impl Battle {
         scopes.extend(order.iter().map(|&id| Scope::Pokemon(id)));
         let mut perish = Vec::new();
         for scope in scopes {
-            let name = match scope {
-                Scope::Pokemon(id) => self.get(id).display_name().to_owned(),
-                _ => String::new(),
+            let subject = match scope {
+                Scope::Pokemon(id) => Some(self.who(id)),
+                _ => None,
             };
             if let Scope::Pokemon(id) = scope {
                 for condition in self.conditions(scope) {
                     if condition.rules.contains(&Rule::FaintOnExpiry)
                         && let Some(turns) = condition.turns_left
                     {
-                        events.push(BattleEvent::Message(format!(
-                            "{}'s perish count fell to {}!",
-                            name,
-                            turns - 1
-                        )));
+                        events.push(say(
+                            "{0}'s perish count fell to {1}!",
+                            [self.who(id), MessageArg::Number((turns - 1).into())],
+                        ));
                         if turns == 1 {
                             perish.push(id);
                         }
@@ -1127,7 +1133,10 @@ impl Battle {
                 }
             }
             for message in ended {
-                events.push(BattleEvent::Message(named(&message, &name)));
+                events.push(BattleEvent::Message(match &subject {
+                    Some(who) => named(&message, who.clone()),
+                    None => crate::model::Message::new(message, []),
+                }));
             }
         }
         // Perish countdowns expire in Speed order, independent of the moves' priorities.

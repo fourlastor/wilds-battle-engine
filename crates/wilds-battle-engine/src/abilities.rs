@@ -2,6 +2,7 @@
 use crate::engine::Battle;
 use crate::items::item_key;
 use crate::model::{BattleEvent, ParticipantId};
+use crate::model::{MessageArg, say};
 
 /// Pokemon Showdown 942cda71, data/abilities.ts: cantsuppress metadata.
 fn cannot_suppress(ability: &str) -> bool {
@@ -142,10 +143,10 @@ impl Battle {
             self.pivot = None;
             self.baton_pass = None;
             self.ability_exits.push_back(who);
-            events.push(BattleEvent::Message(format!(
-                "{} must switch out because of its ability!",
-                self.get(who).display_name()
-            )));
+            events.push(say(
+                "{0} must switch out because of its ability!",
+                [self.who(who)],
+            ));
         }
     }
 
@@ -202,10 +203,10 @@ impl Battle {
                 && !self.forced_switches.iter().any(|(_, who)| *who == target)
                 && let Some(item) = self.steal_item(hit.attacker, target)
             {
-                events.push(BattleEvent::Message(format!(
-                    "{} stole {item} with Pickpocket!",
-                    self.get(target).display_name()
-                )));
+                events.push(say(
+                    "{0} stole {1} with Pickpocket!",
+                    [self.who(target), MessageArg::Text(item.clone().into())],
+                ));
             }
             if hit.attacker != target
                 && hit.category != crate::moves::Category::Status
@@ -215,11 +216,7 @@ impl Battle {
             {
                 self.get_mut(target).types = vec![hit.move_type];
                 self.get_mut(target).added_type = None;
-                events.push(BattleEvent::Message(format!(
-                    "{} changed to the {:?} type!",
-                    self.get(target).display_name(),
-                    hit.move_type
-                )));
+                events.push(say("{0} changed to the {:?} type!", [self.who(target)]));
             }
         }
         let mut hits = hits;
@@ -235,10 +232,13 @@ impl Battle {
                 && self.has_ability(hit.attacker, "magician")
                 && let Some(item) = self.steal_item(target, hit.attacker)
             {
-                events.push(BattleEvent::Message(format!(
-                    "{} stole {item} with Magician!",
-                    self.get(hit.attacker).display_name()
-                )));
+                events.push(say(
+                    "{0} stole {1} with Magician!",
+                    [
+                        self.who(hit.attacker),
+                        MessageArg::Text(item.clone().into()),
+                    ],
+                ));
             }
         }
     }
@@ -284,10 +284,7 @@ impl Battle {
         }
         self.get_mut(who).types = vec![kind];
         self.get_mut(who).added_type = None;
-        events.push(BattleEvent::Message(format!(
-            "{} changed to the {kind:?} type!",
-            self.get(who).display_name()
-        )));
+        events.push(say("{0} changed to the {kind:?} type!", [self.who(who)]));
     }
 
     pub(crate) fn pressure_cost(
@@ -425,11 +422,13 @@ impl Battle {
             },
             false,
         ) {
-            events.push(BattleEvent::Message(format!(
-                "{}'s ability set {}!",
-                self.get(who).display_name(),
-                name.replace('_', " ")
-            )));
+            events.push(say(
+                "{0}'s ability set {1}!",
+                [
+                    self.who(who),
+                    MessageArg::Text(name.replace('_', " ").into()),
+                ],
+            ));
         }
     }
 
@@ -560,7 +559,7 @@ impl Battle {
                     turns_left: Some(4),
                     rules: vec![crate::model::Rule::BlockMove {
                         id: last_used,
-                        message: Some("{name}'s move is disabled!".into()),
+                        message: Some("{0}'s move is disabled!".into()),
                     }],
                     group: None,
                     end_message: None,
@@ -790,11 +789,11 @@ impl Battle {
         pokemon
             .conditions
             .retain(|c| c.name != "flash_fire" && c.name != "unburden");
-        events.push(BattleEvent::Message(format!(
-            "{} acquired {}!",
-            pokemon.display_name(),
-            pokemon.ability.as_deref().unwrap_or_default()
-        )));
+        let ability = self.get(who).ability.clone().unwrap_or_default();
+        events.push(say(
+            "{0} acquired {1}!",
+            [self.who(who), MessageArg::Text(ability.into())],
+        ));
     }
 
     pub(crate) fn swap_abilities(
@@ -948,10 +947,7 @@ impl Battle {
                 if !sources.is_empty() {
                     let source = sources[self.rng.index(sources.len())];
                     self.get_mut(who).item = self.get_mut(source).recyclable_item.take();
-                    events.push(BattleEvent::Message(format!(
-                        "{} found an item with Pickup!",
-                        self.get(who).display_name()
-                    )));
+                    events.push(say("{0} found an item with Pickup!", [self.who(who)]));
                 }
             }
             if self.has_ability(who, "harvest")
@@ -965,10 +961,7 @@ impl Battle {
                     || self.rng.chance(0.5))
                 && self.recycle_item(who)
             {
-                events.push(BattleEvent::Message(format!(
-                    "{} restored its berry with Harvest!",
-                    self.get(who).display_name()
-                )));
+                events.push(say("{0} restored its berry with Harvest!", [self.who(who)]));
             }
             if self.has_ability(who, "slowstart")
                 && self.get(who).entered_turn < self.turn
@@ -980,10 +973,7 @@ impl Battle {
             {
                 counter.value = (counter.value - 1).max(0);
                 if counter.value == 0 {
-                    events.push(BattleEvent::Message(format!(
-                        "{} got its act together!",
-                        self.get(who).display_name()
-                    )));
+                    events.push(say("{0} got its act together!", [self.who(who)]));
                 }
             }
             if self.has_ability(who, "moody") {
@@ -1097,11 +1087,14 @@ impl Battle {
             }
             if !choices.is_empty() {
                 let (foe, name) = &choices[self.rng.index(choices.len())];
-                events.push(BattleEvent::Message(format!(
-                    "{}'s Forewarn identified {}'s {name}!",
-                    self.get(who).display_name(),
-                    self.get(*foe).display_name()
-                )));
+                events.push(say(
+                    "{0}'s Forewarn identified {1}'s {2}!",
+                    [
+                        self.who(who),
+                        self.who(*foe),
+                        MessageArg::Text(name.clone().into()),
+                    ],
+                ));
             }
         }
         if self.has_ability(who, "truant") {
@@ -1141,22 +1134,21 @@ impl Battle {
                     })
             })
         {
-            events.push(BattleEvent::Message(format!(
-                "{} shuddered with Anticipation!",
-                self.get(who).display_name()
-            )));
+            events.push(say("{0} shuddered with Anticipation!", [self.who(who)]));
         }
         if self.has_ability(who, "frisk") {
             for foe in self.actors() {
                 if foe.side != who.side
                     && let Some(item) = &self.get(foe).item
                 {
-                    events.push(BattleEvent::Message(format!(
-                        "{}'s Frisk revealed {}'s {}!",
-                        self.get(who).display_name(),
-                        self.get(foe).display_name(),
-                        item
-                    )));
+                    events.push(say(
+                        "{0}'s Frisk revealed {1}'s {2}!",
+                        [
+                            self.who(who),
+                            self.who(foe),
+                            MessageArg::Text(item.clone().into()),
+                        ],
+                    ));
                 }
             }
         }
@@ -1177,10 +1169,10 @@ impl Battle {
             for ally in self.actors() {
                 if ally != who && ally.side == who.side && !self.get(ally).stages.is_empty() {
                     self.get_mut(ally).stages.clear();
-                    events.push(BattleEvent::Message(format!(
-                        "{}'s stat changes were removed by Curious Medicine!",
-                        self.get(ally).display_name()
-                    )));
+                    events.push(say(
+                        "{0}'s stat changes were removed by Curious Medicine!",
+                        [self.who(ally)],
+                    ));
                 }
             }
         }
@@ -1230,10 +1222,7 @@ impl Battle {
         if !self.has_ability(who, "intimidate") {
             return;
         }
-        events.push(BattleEvent::Message(format!(
-            "{}'s Intimidate activated!",
-            self.get(who).display_name()
-        )));
+        events.push(say("{0}'s Intimidate activated!", [self.who(who)]));
         for target in self.actors() {
             if target.side == who.side
                 || !self.adjacent(who, target)
@@ -1258,10 +1247,7 @@ impl Battle {
                 .iter()
                 .any(|ability| self.has_ability(target, ability));
             if immune {
-                events.push(BattleEvent::Message(format!(
-                    "{} resisted Intimidate!",
-                    self.get(target).display_name()
-                )));
+                events.push(say("{0} resisted Intimidate!", [self.who(target)]));
                 continue;
             }
             let changed =
@@ -1299,10 +1285,7 @@ impl Battle {
         let pokemon = self.get_mut(who);
         pokemon.ability_suppressed = true;
         pokemon.conditions.retain(|c| c.name != "unburden");
-        events.push(BattleEvent::Message(format!(
-            "{}'s ability was suppressed!",
-            pokemon.display_name()
-        )));
+        events.push(say("{0}'s ability was suppressed!", [self.who(who)]));
         true
     }
 }
@@ -1694,10 +1677,7 @@ impl Battle {
         if !blocked {
             return false;
         }
-        events.push(BattleEvent::Message(format!(
-            "{}'s ability blocked the move!",
-            self.get(target).display_name()
-        )));
+        events.push(say("{0}'s ability blocked the move!", [self.who(target)]));
         self.move_failed = true;
         if heal {
             self.heal(target, (self.get(target).max_hp / 4).max(1), events);

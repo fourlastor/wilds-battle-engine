@@ -15,7 +15,7 @@ local move = {
         if partner.is_ally and kind and kind ~= pledge then
           ctx:mark(partner, "pledge_partner", pledge, 1)
           ctx:hurry(partner)
-          ctx:message(ctx.user.name .. " is waiting for " .. partner.name .. "!")
+          ctx:message("{0} is waiting for {1}!", ctx.user, partner)
           return
         end
       end
@@ -32,7 +32,7 @@ local move = {
       ctx:message("A rainbow appeared on the team's side!")
     elseif pair == 4 then
       ctx:start_effect(ctx.target.team, "sea_of_fire", {turns = 4, rules = {{kind = Rule.DamageEachTurn,
-        fraction = 1/8, except_types = {Type.Fire}, message = "{name} is hurt by the sea of fire!"}}})
+        fraction = 1/8, except_types = {Type.Fire}, message = "{0} is hurt by the sea of fire!"}}})
       ctx:message("A sea of fire enveloped the opposing team!")
     else
       ctx:start_effect(ctx.target.team, "swamp", {turns = 4, rules = {{kind = Rule.StatMultiplier, stat = Stat.Speed, factor = 0.25}}})

@@ -4,7 +4,7 @@
 local function two_turns(place, message, strike)
   return function(ctx)
     if ctx.turn == 1 then
-      ctx:message(ctx.user.name .. message)
+      ctx:message(message, ctx.user)
       if place then ctx:hide(place) end
       ctx:force_move(2, TargetPolicy.SameTarget)
       return
@@ -15,7 +15,7 @@ local function two_turns(place, message, strike)
 end
 
 local move = {manual_announce = true, flags = {"contact", "no_sleep_talk"},
-    script = two_turns(Hidden.Underground, " burrowed its way under the ground!", function(ctx) ctx:damage(80) end)}
+    script = two_turns(Hidden.Underground, "{0} burrowed its way under the ground!", function(ctx) ctx:damage(80) end)}
 
 move.id = "dig"
 move.name = "Dig"

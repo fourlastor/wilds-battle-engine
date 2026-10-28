@@ -3,7 +3,7 @@ return {
     manual_announce=true,
     script=function(ctx)
       if ctx.turn == 1 and ctx.weather ~= Weather.Sun then
-        ctx:message(ctx.user.name .. " took in sunlight!")
+        ctx:message("{0} took in sunlight!", ctx.user)
         ctx:force_move(2, ctx.TargetPolicy.SameTarget)
         return
       end

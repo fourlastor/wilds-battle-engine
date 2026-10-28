@@ -9,7 +9,7 @@ return {
     local ability = ctx.target.ability and ctx.target.ability:gsub("[-_]", "")
     if ability == "oblivious" or ctx.target.effects.taunt then ctx:fail(); return end
     if not ctx:start_effect(ctx.target, "taunt", {turns = ctx.target.acted and 4 or 3, rules = {
-      {kind = Rule.BlockCategory, category = Category.Status, except = {"me-first"}, message = "{name} cannot use status moves after the taunt!"}
+      {kind = Rule.BlockCategory, category = Category.Status, except = {"me-first"}, message = "{0} cannot use status moves after the taunt!"}
     }}) then ctx:fail() end
   end,
 }

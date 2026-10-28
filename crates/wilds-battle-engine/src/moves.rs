@@ -292,7 +292,10 @@ pub(crate) enum ScriptOperation {
         min: u16,
         max: u16,
     },
-    Message(String),
+    Message {
+        key: String,
+        args: Vec<ScriptArg>,
+    },
     Announce,
     ConfuseSelf,
     RecoilMaxHp(f32),
@@ -533,6 +536,33 @@ fn scope_of(value: &Value, what: &str) -> mlua::Result<Scope> {
             .map_err(|_| bad(format!("{what} needs a Pokémon, a side or the field"))),
         _ => Err(bad(format!("{what} needs a Pokémon, a side or the field"))),
     }
+}
+
+/// A `ctx:message` argument as a script passes it, before the battle resolves it.
+#[derive(Clone, Debug, PartialEq)]
+pub(crate) enum ScriptArg {
+    Pokemon(ParticipantId),
+    Move(String),
+    Text(String),
+    Number(i64),
+}
+
+/// Pokémon tables, `{move = id}`, translatable strings and numbers.
+fn script_arg(value: &Value) -> mlua::Result<ScriptArg> {
+    Ok(match value {
+        Value::Integer(number) => ScriptArg::Number(*number),
+        Value::Number(number) if number.fract() == 0.0 => ScriptArg::Number(*number as i64),
+        Value::String(text) => ScriptArg::Text(text.to_str()?.to_owned()),
+        Value::Table(table) if table.contains_key("move")? => {
+            ScriptArg::Move(table.get::<String>("move")?)
+        }
+        Value::Table(_) => ScriptArg::Pokemon(pokemon_of(value, "message argument")?),
+        _ => {
+            return Err(bad(
+                "message arguments are Pokémon, {move=id}, text or whole numbers",
+            ));
+        }
+    })
 }
 
 fn pokemon_of(value: &Value, what: &str) -> mlua::Result<ParticipantId> {
@@ -1974,9 +2004,11 @@ impl MoveCatalog {
         )?;
         api.set(
             "message",
-            self.lua.create_function(|lua, message: String| {
-                lua.create_userdata(ScriptOperation::Message(message))
-            })?,
+            self.lua
+                .create_function(|lua, (key, args): (String, Variadic<Value>)| {
+                    let args = args.iter().map(script_arg).collect::<mlua::Result<_>>()?;
+                    lua.create_userdata(ScriptOperation::Message { key, args })
+                })?,
         )?;
         api.set(
             "announce",

@@ -3,7 +3,7 @@
 
 local move = {script = function(ctx)
 if ctx.turn == 1 then
-  ctx:message(ctx.user.name .. " became cloaked in a harsh light!")
+  ctx:message("{0} became cloaked in a harsh light!", ctx.user)
   ctx:force_move(2, TargetPolicy.SameTarget)
   return
 end

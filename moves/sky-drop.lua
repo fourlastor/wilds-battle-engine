@@ -5,7 +5,7 @@ local move = {script = function(ctx)
   if ctx.turn == 1 then
     if not ctx:try_hit(ctx.target, {never_miss = true}) then return end
     if not ctx:carry(ctx.target) then return ctx:fail() end
-    ctx:message(ctx.user.name .. " lifted " .. ctx.target.name .. " into the air!")
+    ctx:message("{0} lifted {1} into the air!", ctx.user, ctx.target)
     ctx:force_move(2, TargetPolicy.SameTarget)
     return
   end

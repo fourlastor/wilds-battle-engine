@@ -7,7 +7,7 @@ return {
   script = function(ctx)
     local hit = ctx:damage(80)
     if hit.hit and not hit.substitute and not ctx.target.fainted then
-      ctx:start_effect(ctx.target, "throat_chop", {turns = 2, rules = {{kind = Rule.BlockMoves, flags = {"sound"}, message = "{name} cannot use sound moves!"}}})
+      ctx:start_effect(ctx.target, "throat_chop", {turns = 2, rules = {{kind = Rule.BlockMoves, flags = {"sound"}, message = "{0} cannot use sound moves!"}}})
     end
   end,
 }

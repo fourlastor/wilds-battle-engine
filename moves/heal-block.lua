@@ -10,7 +10,7 @@ return {
       if ctx:adjacent(ctx.user, who) and ctx:try_hit(who) then
         if ctx:start_effect(who, "heal_block", {turns = 5, rules = {
           {kind = Rule.BlockHealing},
-          {kind = Rule.BlockMoves, flags = {"heal"}, message = "{name} cannot use healing moves!"}
+          {kind = Rule.BlockMoves, flags = {"heal"}, message = "{0} cannot use healing moves!"}
         }}) then applied = true end
       end
     end

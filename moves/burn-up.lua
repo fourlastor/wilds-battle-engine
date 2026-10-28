@@ -6,7 +6,7 @@ local move = {usable_while_frozen = true,
       if ctx.hit_index == 1 and not ctx.user:has_type(Type.Fire) then return ctx:fail() end
       ctx:damage(130)
       ctx:lose_type(ctx.user, Type.Fire)
-      ctx:message(ctx.user.name .. " burned itself out!")
+      ctx:message("{0} burned itself out!", ctx.user)
     end}
 
 move.id = "burn-up"

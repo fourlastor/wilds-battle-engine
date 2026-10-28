@@ -3,7 +3,7 @@
 
 local move = {priority = -3,
     on_turn_start = function(ctx)
-      ctx:message(ctx.user.name .. " started heating up its beak!")
+      ctx:message("{0} started heating up its beak!", ctx.user)
       ctx:watch_contacts_until_next_action()
     end,
     on_hit = function(ctx)

@@ -4,7 +4,7 @@
 local function two_turns(place, message, strike)
   return function(ctx)
     if ctx.turn == 1 then
-      ctx:message(ctx.user.name .. message)
+      ctx:message(message, ctx.user)
       if place then ctx:hide(place) end
       ctx:force_move(2, TargetPolicy.SameTarget)
       return
@@ -15,7 +15,7 @@ local function two_turns(place, message, strike)
 end
 
 local move = {target = Target.AllOpponents, manual_announce = true,
-    script = two_turns(nil, " whipped up a whirlwind!", function(ctx) ctx:damage(80, {high_crit = true}) end)}
+    script = two_turns(nil, "{0} whipped up a whirlwind!", function(ctx) ctx:damage(80, {high_crit = true}) end)}
 
 move.id = "razor-wind"
 move.name = "Razor Wind"

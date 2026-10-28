@@ -3,7 +3,7 @@
 
 local move = {script = function(ctx)
 if ctx.hit_index == 1 and not ctx.target.item then return ctx:fail() end
-if ctx.hit_index == 1 then ctx:message(ctx.target.name .. " is about to be attacked by its " .. ctx.target.item .. "!") end
+if ctx.hit_index == 1 then ctx:message("{0} is about to be attacked by its {1}!", ctx.target, ctx.target.item) end
 ctx:damage(110)
 end}
 

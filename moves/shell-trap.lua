@@ -3,7 +3,7 @@
 
 local move = {priority = -3, target = Target.AllOpponents,
     on_turn_start = function(ctx)
-      ctx:message(ctx.user.name .. " set a shell trap!")
+      ctx:message("{0} set a shell trap!", ctx.user)
       ctx:watch_hits_until_next_action()
     end,
     on_hit = function(ctx)
@@ -14,7 +14,7 @@ local move = {priority = -3, target = Target.AllOpponents,
     end,
     script = function(ctx)
       if not ctx.user.marks.shell_trap then
-        ctx:message(ctx.user.name .. "'s shell trap didn't work!")
+        ctx:message("{0}'s shell trap didn't work!", ctx.user)
         return ctx:fail()
       end
       ctx:damage(150)

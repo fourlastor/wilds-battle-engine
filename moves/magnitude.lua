@@ -15,7 +15,7 @@ return {
     elseif roll < 85 then power, magnitude = 90, 8
     elseif roll < 95 then power, magnitude = 110, 9
     else power, magnitude = 150, 10 end
-    ctx:message("Magnitude " .. magnitude .. "!")
+    ctx:message("Magnitude {0}!", magnitude)
     for _, who in ipairs(ctx.targets) do
       if ctx:adjacent(ctx.user, who) then
         ctx:damage(who.hidden == Hidden.Underground and power * 2 or power, {target = who})

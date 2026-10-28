@@ -21,6 +21,6 @@ return {
     local special = ctx:change_stat(ctx.user, Stat.SpDefense, 1)
     ctx:mark(ctx.user, "stockpile_defense", (ctx.user.marks.stockpile_defense or 0) + (defense ~= 0 and 1 or 0))
     ctx:mark(ctx.user, "stockpile_sp_defense", (ctx.user.marks.stockpile_sp_defense or 0) + (special ~= 0 and 1 or 0))
-    ctx:message(ctx.user.name .. " stockpiled " .. (stored + 1) .. "!")
+    ctx:message("{0} stockpiled {1}!", ctx.user, (stored + 1))
   end,
 }

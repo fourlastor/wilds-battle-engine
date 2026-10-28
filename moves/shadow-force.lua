@@ -4,7 +4,7 @@
 local function two_turns(place, message, strike)
   return function(ctx)
     if ctx.turn == 1 then
-      ctx:message(ctx.user.name .. message)
+      ctx:message(message, ctx.user)
       if place then ctx:hide(place) end
       ctx:force_move(2, TargetPolicy.SameTarget)
       return
@@ -15,7 +15,7 @@ local function two_turns(place, message, strike)
 end
 
 local move = {manual_announce = true, flags = {"contact"},
-    script = two_turns(Hidden.Vanished, " vanished instantly!", function(ctx)
+    script = two_turns(Hidden.Vanished, "{0} vanished instantly!", function(ctx)
       ctx:break_protect(ctx.target)
       ctx:damage(120)
     end)}
