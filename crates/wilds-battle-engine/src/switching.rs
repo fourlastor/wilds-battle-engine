@@ -244,12 +244,20 @@ impl Battle {
             || !self.is_active(who)
             || self.get(who).carrying.is_some()
             || self.get(who).carried_by.is_some()
-            || self.bench(who.side).is_empty()
             || self.has_ability(who, "suctioncups")
             || self.has_ability(who, "guarddog")
             || self
                 .rules(who)
                 .any(|rule| matches!(rule, crate::model::Rule::BlockForcedSwitch))
+        {
+            return false;
+        }
+        // In a single wild battle, blowing away a Pokémon with no one to replace it ends the
+        // battle as if it fled (Gen 8).
+        if self.bench(who.side).is_empty()
+            && !(self.wild_battle
+                && !self.no_escape
+                && self.active.iter().all(|slots| slots.len() == 1))
         {
             return false;
         }
@@ -271,6 +279,8 @@ impl Battle {
             if !choices.is_empty() {
                 let to = choices[self.rng.index(choices.len())];
                 self.switch_member(who, to, events);
+            } else if self.escaped_by.is_none() {
+                self.end_by_fleeing(who, events);
             }
         }
     }

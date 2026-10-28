@@ -390,6 +390,10 @@ msgstr ""
 msgid "{0} fell for the feint!"
 msgstr ""
 
+#: crates/wilds-battle-engine/src/escape.rs
+msgid "{0} fled!"
+msgstr ""
+
 #: moves/fly.lua
 msgid "{0} flew up high!"
 msgstr ""

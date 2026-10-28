@@ -339,6 +339,8 @@ pub(crate) enum ScriptOperation {
     },
     /// Ends the battle as an escape for the user's side, past trapping but not `no_escape`.
     Escape,
+    /// Teleport in a wild battle: the user leaves, unless held in battle.
+    Flee,
     /// Ends a disguise and makes the Pokémon catchable.
     Reveal {
         who: ParticipantId,
@@ -1377,6 +1379,7 @@ fn parse_op(name: &str, args: &[Value]) -> mlua::Result<ScriptOperation> {
         },
         "cure_confusion" => ScriptOperation::CureConfusion { who: who(0)? },
         "escape" => ScriptOperation::Escape,
+        "flee" => ScriptOperation::Flee,
         "reveal" => ScriptOperation::Reveal { who: who(0)? },
         "keep_item" => ScriptOperation::KeepItem,
         "attempt_capture" => {

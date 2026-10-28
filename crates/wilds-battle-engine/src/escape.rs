@@ -19,15 +19,41 @@ impl Battle {
     pub(crate) fn can_escape(&self, actor: ParticipantId) -> bool {
         self.wild_battle
             && !self.no_escape
-            && actor.side == Side::Allies
             && self.is_active(actor)
             && self.get(actor).hp > 0
-            && (self.guaranteed_escape(actor)
-                || (!self.is_trapped(actor)
-                    && self.get(actor).bound.is_none()
-                    && self.get(actor).carrying.is_none()
-                    && self.get(actor).carried_by.is_none()
-                    && !self.ability_traps(actor)))
+            && (self.guaranteed_escape(actor) || !self.held_in_battle(actor))
+    }
+
+    /// Trapped, bound, carrying or carried, or held by an ability.
+    fn held_in_battle(&self, actor: ParticipantId) -> bool {
+        self.is_trapped(actor)
+            || self.get(actor).bound.is_some()
+            || self.get(actor).carrying.is_some()
+            || self.get(actor).carried_by.is_some()
+            || self.ability_traps(actor)
+    }
+
+    /// Teleport in a wild battle: leaves without a roll, unless held in battle.
+    pub(crate) fn flee(&mut self, actor: ParticipantId, events: &mut Vec<BattleEvent>) -> bool {
+        if !self.wild_battle
+            || self.no_escape
+            || !self.is_active(actor)
+            || (!self.guaranteed_escape(actor) && self.held_in_battle(actor))
+        {
+            return false;
+        }
+        self.end_by_fleeing(actor, events);
+        true
+    }
+
+    /// `who` leaves a wild battle, which ends as an escape for its side.
+    pub(crate) fn end_by_fleeing(&mut self, who: ParticipantId, events: &mut Vec<BattleEvent>) {
+        self.escaped_by = Some(who.side);
+        events.push(BattleEvent::EscapeAttempt {
+            actor: who,
+            success: true,
+        });
+        events.push(say("{0} fled!", [self.who(who)]));
     }
 
     fn guaranteed_escape(&self, actor: ParticipantId) -> bool {

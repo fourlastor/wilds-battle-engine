@@ -126,12 +126,19 @@ loop {
 For wild encounters, call `battle.set_wild_battle(true)?` before the first
 `advance()`, or include `"wild_battle": true` in the JSON setup. The default is
 false, so trainer battles and scripted encounters do not offer escape. This enables
-`Choice::Escape { id }` for living active allies. It is a party command: selecting
-it replaces other allied actions that turn, while the host still supplies opposing
-actions. A failed attempt consumes the party's turn; a successful attempt stops
+`Choice::Escape { id }` for living active Pokémon on both sides: the player can run, and
+a wild foe can flee, which ends the battle as `Escaped { side: Foes }`; the host's AI
+decides whether it tries. It is a party command: selecting it replaces the side's other
+actions that turn. A failed attempt consumes the party's turn; a successful attempt stops
 queued actions and residual effects. Bench members and replacement/pivot prompts
-never offer escape. Recharging and scripted continuations offer a
-`Choice::Continue { id }` alternative when escape is possible.
+never offer escape, and `set_no_escape(true)` removes it entirely. Recharging and
+scripted continuations offer a `Choice::Continue { id }` alternative when escape is
+possible.
+
+As in Gen 8, a single wild battle also ends when Roar, Whirlwind, Dragon Tail or Circle
+Throw blows away a Pokémon with no one to replace it (either side's; Ingrain and Suction
+Cups still hold it), and Teleport makes its user flee a wild battle unless it is trapped
+(in trainer battles it switches out). Both end as an escape for the side that left.
 
 Active Run Away guarantees escape through move and ability traps; suppression
 removes that guarantee. Ghost types also escape automatically. Neither changes

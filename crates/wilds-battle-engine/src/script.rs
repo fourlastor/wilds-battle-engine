@@ -2355,6 +2355,7 @@ impl Battle {
                     Value::Boolean(true)
                 }
             }
+            ScriptOperation::Flee => Value::Boolean(self.flee(actor, events)),
             ScriptOperation::Reveal { who } => {
                 let disguised = self.get(who).appearance().is_some();
                 let catchable = !self.get(who).uncatchable;

@@ -59,7 +59,8 @@ fn attempt(b: &mut Battle) -> AdvanceResult {
         if let AdvanceStatus::Awaiting(p) = &result.status
             && p.actor.side == Side::Foes
         {
-            assert!(!p.choices.iter().any(flee));
+            // A wild foe may run too; the host decides.
+            assert!(p.choices.iter().any(flee));
             choose(b, p, movement);
             continue;
         }

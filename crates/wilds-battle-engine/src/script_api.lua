@@ -88,6 +88,7 @@ return function(api, fields, roster)
   function ctx:restore_pp(who, move, amount) return op("restore_pp", who, move, amount) end
   function ctx:cure_confusion(who) return op("cure_confusion", who) end
   function ctx:escape() return op("escape") end
+  function ctx:flee() return op("flee") end
   function ctx:reveal(who) return op("reveal", who) end
   function ctx:keep_item() return op("keep_item") end
   function ctx:attempt_capture(who, modifier, options) return op("attempt_capture", who, modifier, options) end

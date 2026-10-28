@@ -5,6 +5,11 @@ return {
   priority = -6, target = Target.User,
   flags = {},
   script = function(ctx)
-    if not ctx:switch_out() then ctx:fail() end
+    -- Gen 8: the user leaves a wild battle, and switches out of a trainer battle.
+    if ctx.wild_battle then
+      if not ctx:flee() then ctx:fail() end
+    elseif not ctx:switch_out() then
+      ctx:fail()
+    end
   end,
 }

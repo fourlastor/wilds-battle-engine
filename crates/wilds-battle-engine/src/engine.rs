@@ -1486,7 +1486,17 @@ impl Battle {
                         }
                     }
                 }
-                SelectedAction::Move(choice) => self.execute_move(actor, choice, events)?,
+                SelectedAction::Move(choice) => {
+                    self.execute_move(actor, choice, events)?;
+                    // Teleport and forced switches can end a wild battle.
+                    if self.escaped_by.is_some() {
+                        self.turn_queue.clear();
+                        self.pending_actors.clear();
+                        self.completed_slots.clear();
+                        self.resolving_turn = false;
+                        return Ok(());
+                    }
+                }
                 SelectedAction::Recharge => {
                     self.get_mut(actor).recharging = false;
                     self.end_condition(Scope::Pokemon(actor), "truant");
