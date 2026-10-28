@@ -1,6 +1,6 @@
 //! Runs the Lua hooks of scripted moves: what a script can read (`ctx`) and what each operation
 //! it yields does to the battle.
-use crate::engine::{Attack, Battle, HitMeta, HitReaction};
+use crate::engine::{Attack, Battle, HitMeta, HitReaction, insert_hit_messages};
 use crate::model::{
     AppliedStatus, BattleError, BattleEvent, Bound, CombatStat, HiddenKind, NextMovePowerBoost,
     ParticipantId, Pokemon, Scope, ScriptContinuation, Side, Stat, Status, Weather,
@@ -1000,6 +1000,7 @@ impl Battle {
                 options.min_target_hp,
             ));
             let ooze = self.has_ability(recipient, "liquidooze");
+            let start = events.len();
             let actual = self.damage_from_move(
                 actor,
                 recipient,
@@ -1014,7 +1015,7 @@ impl Battle {
             } else {
                 report.reached.push(recipient);
             }
-            events.extend(details);
+            insert_hit_messages(events, start, recipient, details);
             report.hit = true;
             report.hits += 1;
             report.critical |= roll.critical;
@@ -1168,6 +1169,7 @@ impl Battle {
             .with_contact(options.contact);
         let hits = self.roll_hit_count(actor, min, max);
         let mut details = Vec::new();
+        let start = events.len();
         for index in 0..hits {
             if self.get(actor).hp == 0 || self.get(recipient).hp == 0 {
                 break;
@@ -1215,10 +1217,10 @@ impl Battle {
                 break;
             }
         }
-        events.extend(details);
         if report.hits > 0 {
-            events.push(BattleEvent::Message(format!("Hit {} times!", report.hits)));
+            details.push(BattleEvent::Message(format!("Hit {} times!", report.hits)));
         }
+        insert_hit_messages(events, start, recipient, details);
         if report.hits > 0 {
             if self.substitute_hits.contains(&recipient) {
                 report.unreached.push(recipient);

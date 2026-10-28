@@ -1114,6 +1114,34 @@ mod tests {
     }
 
     #[test]
+    fn hit_messages_precede_the_knockout() {
+        for (attack, message) in [
+            ("storm-throw", "A critical hit!"),
+            ("thunder-shock", "It's super effective!"),
+        ] {
+            let ally = Pokemon::new("Ally", vec![attack.into()]);
+            let mut foe = Pokemon::new("Foe", vec!["splash".into()]);
+            foe.hp = 1;
+            foe.types = vec![PokemonType::Water];
+            let mut battle =
+                Battle::new(3, [vec![ally], vec![foe]], MoveCatalog::builtin().unwrap()).unwrap();
+            pick(&mut battle, attack);
+            pick(&mut battle, "splash");
+            let events = battle.advance().unwrap().events;
+            let position = |text: &str| {
+                events
+                    .iter()
+                    .position(|event| matches!(event, BattleEvent::Message(m) if m == text))
+                    .unwrap_or_else(|| panic!("{attack}: no {text:?} in {events:?}"))
+            };
+            assert!(
+                position(message) < position("Foe fainted!"),
+                "{attack}: {events:?}"
+            );
+        }
+    }
+
+    #[test]
     fn recoil_can_faint_both_and_uses_current_csharp_tie_outcome() {
         let mut ally = Pokemon::new("Ally", vec!["double-edge".into()]);
         ally.hp = 1;

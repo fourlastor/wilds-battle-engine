@@ -2500,6 +2500,7 @@ impl Battle {
                 always_crit,
             } => {
                 let mut details = Vec::new();
+                let start = events.len();
                 if let Some(roll) = self.calculate_damage(
                     actor,
                     target,
@@ -2524,7 +2525,7 @@ impl Battle {
                         .with_roll(&roll),
                         events,
                     )?;
-                    events.extend(details);
+                    insert_hit_messages(events, start, target, details);
                     if let Some(fraction) = recoil {
                         self.recoil_from_hit(actor, &spec.id, amount, *fraction, events);
                     }
@@ -2548,6 +2549,7 @@ impl Battle {
                 let hits = self.roll_hit_count(actor, *min, *max);
                 let mut count = 0;
                 let mut details = Vec::new();
+                let start = events.len();
                 for _ in 0..hits {
                     if self.get(actor).hp == 0 || self.get(target).hp == 0 {
                         break;
@@ -2588,8 +2590,8 @@ impl Battle {
                         return Ok(());
                     }
                 }
-                events.extend(details);
-                events.push(BattleEvent::Message(format!("Hit {count} times!")));
+                details.push(BattleEvent::Message(format!("Hit {count} times!")));
+                insert_hit_messages(events, start, target, details);
             }
             Effect::FixedDamage(amount) => {
                 self.direct_damage(actor, target, spec, *amount, events)?
@@ -2738,6 +2740,7 @@ impl Battle {
                     ));
                 } else {
                     let mut details = Vec::new();
+                    let start = events.len();
                     if let Some(roll) = self.calculate_damage(
                         actor,
                         target,
@@ -2762,7 +2765,7 @@ impl Battle {
                             events,
                         )?;
                     }
-                    events.extend(details);
+                    insert_hit_messages(events, start, target, details);
                 }
             }
             Effect::Consecutive {
@@ -2792,6 +2795,7 @@ impl Battle {
                 }
                 let boost = if *double_power { turns - 1 } else { 0 };
                 let mut details = Vec::new();
+                let start = events.len();
                 if let Some(roll) = self.calculate_damage(
                     actor,
                     target,
@@ -2816,7 +2820,7 @@ impl Battle {
                         events,
                     )?;
                 }
-                events.extend(details);
+                insert_hit_messages(events, start, target, details);
                 if self.parental_has_next(actor, &spec.id) {
                     return Ok(());
                 }
@@ -3791,5 +3795,26 @@ impl Battle {
         self.ability_bypass = bypass;
         result?;
         Ok(true)
+    }
+}
+
+/// Adds the lines describing a hit (effectiveness, critical hit, hit count) after its damage
+/// and before the recipient's knockout, which `damage_from_move` reports right away.
+pub(crate) fn insert_hit_messages(
+    events: &mut Vec<BattleEvent>,
+    from: usize,
+    recipient: ParticipantId,
+    messages: Vec<BattleEvent>,
+) {
+    // The knockout line directly precedes the `Fainted` event.
+    let knockout = events[from..]
+        .iter()
+        .position(|event| matches!(event, BattleEvent::Fainted(who) if *who == recipient))
+        .map(|index| from + index - 1);
+    match knockout {
+        Some(at) => {
+            events.splice(at..at, messages);
+        }
+        None => events.extend(messages),
     }
 }
