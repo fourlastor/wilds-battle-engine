@@ -212,6 +212,24 @@ compare every internal C# event.
 Run `cargo test --workspace --offline` and
 `cargo clippy --workspace --all-targets --offline -- -D warnings`.
 
+## Animation events
+
+Besides messages, events mark the moments a host animates. `MoveUsed { actor, move_id,
+targets }` comes right before a move's "used" line. `Hit { actor, target, hit,
+effectiveness_percent, critical }` comes just before each damaging hit's HP or substitute
+change; `hit` counts the hits on that target within the move (Double Kick reports 1 and 2)
+and effectiveness is 100 for neutral damage. `Miss { actor, target }` marks a miss or an
+attack a hidden target avoided. `Charging { actor, move_id }` marks the first turn of a
+two-turn move, and `Hidden { target, place }` reports a Pokémon going semi-invulnerable
+(`place` is `Air`, `Underground`, `Underwater` or `Vanished`) and reappearing (`None`).
+In JSON these are `move_used` (`move`, `targets`), `hit` (`effectiveness` as a factor),
+`miss`, `charging` (`move`) and `hidden` (`place`).
+
+Each participant in the state JSON also has `stages` (non-zero stat stages),
+`confused_turns`, `pp_max` per move and `faced`: the opposing party members it has been on
+the field with, which `Battle::faced_by` also returns, for sharing experience. Setup can
+give `move_pp` (PP left) and `pp_max` (after PP Ups) per move.
+
 ## Battle messages
 
 `BattleEvent::Message` carries a `Message`: `key` is an English template such as

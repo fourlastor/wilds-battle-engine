@@ -1,9 +1,9 @@
 use crate::model::msg;
 use crate::model::{
     ActionSelection, AdvanceResult, AdvanceStatus, BattleError, BattleEvent, Bound, Choice,
-    CombatStat, Condition, ContextValue, ContinuationTarget, HitInfo, LockedMove, ParticipantId,
-    Pokemon, PokemonType, Prompt, PromptReason, Rule, Scope, Side, Stat, Status, TerrainKind,
-    Weather, WeatherKind,
+    CombatStat, Condition, ContextValue, ContinuationTarget, HiddenKind, HitInfo, LockedMove,
+    ParticipantId, Pokemon, PokemonType, Prompt, PromptReason, Rule, Scope, Side, Stat, Status,
+    TerrainKind, Weather, WeatherKind,
 };
 use crate::model::{MessageArg, move_arg, say};
 use crate::moves::{Accuracy, Category, Effect, MoveCatalog, MoveSpec, ScriptHook, Target};
@@ -66,6 +66,12 @@ pub struct Battle {
     pub(crate) payout_multiplier: [u8; 2],
     pub(crate) environment: Option<String>,
     pub(crate) context: BTreeMap<String, ContextValue>,
+    /// Hits on each target in the move being used, for `BattleEvent::Hit`.
+    pub(crate) move_hits: BTreeMap<ParticipantId, u8>,
+    /// Opponents each participant has been on the field together with (party indices).
+    faced: BTreeMap<ParticipantId, std::collections::BTreeSet<usize>>,
+    /// What `BattleEvent::Hidden` last reported for each Pokémon.
+    shown_hidden: BTreeMap<ParticipantId, Option<HiddenKind>>,
     /// No one can run, flee or use an escape item.
     pub(crate) no_escape: bool,
     starting_weather: Option<(WeatherKind, Option<u8>)>,
@@ -260,7 +266,8 @@ impl Battle {
                 Some((pokemon.form.clone(), crate::model::PokemonForm::of(pokemon)));
             for id in &pokemon.moves {
                 let spec = catalog.get(id).expect("validated catalog");
-                pokemon.move_pp.entry(id.clone()).or_insert(spec.pp);
+                let max = pokemon.pp_max.get(id).copied().unwrap_or(spec.pp);
+                pokemon.move_pp.entry(id.clone()).or_insert(max);
             }
         }
         let active: [Vec<usize>; 2] = std::array::from_fn(|side| (0..sides[side].len()).collect());
@@ -317,6 +324,9 @@ impl Battle {
             payout_multiplier: [1, 1],
             environment: None,
             context: BTreeMap::new(),
+            move_hits: BTreeMap::new(),
+            shown_hidden: BTreeMap::new(),
+            faced: BTreeMap::new(),
             no_escape: false,
             starting_weather: None,
             starting_terrain: None,
@@ -507,6 +517,67 @@ impl Battle {
                 .illusion
                 .as_ref()
                 .map_or(pokemon.gender, |appearance| appearance.gender),
+        }
+    }
+    /// Announces a move: its `MoveUsed` event and "used" line. Hits counted from here on
+    /// belong to this use.
+    pub(crate) fn announce(
+        &mut self,
+        actor: ParticipantId,
+        target: ParticipantId,
+        spec: &MoveSpec,
+        events: &mut Vec<BattleEvent>,
+    ) {
+        self.move_hits.clear();
+        // Field moves aim at no one: their prompt target is only a placeholder.
+        let targets = if self.move_target_kind(actor, spec) == Target::Field
+            || (self.get(target).hp == 0 && target != actor)
+        {
+            Vec::new()
+        } else {
+            self.move_recipients(actor, target, spec)
+        };
+        events.push(BattleEvent::MoveUsed {
+            actor,
+            move_id: spec.id.clone(),
+            targets,
+        });
+        events.push(say("{0} used {1}!", [self.who(actor), move_arg(spec)]));
+        self.sync_hidden(events);
+    }
+    /// The opposing party members `who` has been on the field together with, for example to
+    /// share experience among the allies that faced a fainted foe.
+    pub fn faced_by(&self, who: ParticipantId) -> Vec<usize> {
+        self.faced
+            .get(&who)
+            .map(|faced| faced.iter().copied().collect())
+            .unwrap_or_default()
+    }
+    /// Notes which living Pokémon are on the field together.
+    pub(crate) fn record_participation(&mut self) {
+        let actors = self.actors();
+        for &who in &actors {
+            let opponents = actors
+                .iter()
+                .filter(|other| other.side != who.side)
+                .map(|other| other.index);
+            self.faced.entry(who).or_default().extend(opponents);
+        }
+    }
+    /// Reports Pokémon that became hidden or reappeared since the last report, and records who
+    /// is on the field.
+    pub(crate) fn sync_hidden(&mut self, events: &mut Vec<BattleEvent>) {
+        self.record_participation();
+        for side in Side::ALL {
+            for index in 0..self.sides[side.index()].len() {
+                let target = ParticipantId { side, index };
+                let place = self.get(target).hidden();
+                let shown = self.shown_hidden.entry(target).or_default();
+                if *shown != place {
+                    *shown = place;
+                    events.push(BattleEvent::Hidden { target, place });
+                }
+            }
         }
     }
     pub(crate) fn get_mut(&mut self, id: ParticipantId) -> &mut Pokemon {
@@ -732,6 +803,7 @@ impl Battle {
         if !self.entry_abilities_started {
             self.entry_abilities_started = true;
             self.start_surroundings(&mut events);
+            self.record_participation();
             self.refresh_neutralizing_gas(&mut events);
             for who in self.actors() {
                 self.start_illusion(who, &mut events);
@@ -962,6 +1034,7 @@ impl Battle {
     }
 
     fn begin_turn(&mut self, events: &mut Vec<BattleEvent>) -> Result<(), BattleError> {
+        self.record_participation();
         self.turn += 1;
         self.resolving_turn = true;
         self.completed_slots.clear();
@@ -1295,6 +1368,7 @@ impl Battle {
                 }
             }
             self.update_berries(events);
+            self.sync_hidden(events);
             let hp_cost = matches!(&choice, SelectedAction::Move(c) if matches!(crate::items::item_key(&c.move_id).as_str(), "substitute" | "bellydrum" | "curse" | "clangoroussoul"));
             self.check_ability_exits(&hp_before, true, hp_cost.then_some(actor), events);
             self.get_mut(actor).acted = true;
@@ -1887,7 +1961,7 @@ impl Battle {
         if spec.effects.iter().any(|e| matches!(e, Effect::Protect))
             && !self.protection_check(actor)
         {
-            events.push(say("{0} used {1}!", [self.who(actor), move_arg(&spec)]));
+            self.announce(actor, actor, &spec, events);
             events.push(BattleEvent::Message("But it failed!".into()));
             self.move_failed = true;
             self.clear_consecutive(actor);
@@ -1986,7 +2060,7 @@ impl Battle {
                     .iter()
                     .any(|rule| matches!(rule, Rule::Snatch { .. }))
             });
-            events.push(say("{0} used {1}!", [self.who(actor), move_arg(&spec)]));
+            self.announce(actor, target, &spec, events);
             events.push(say(
                 "{0} snatched {1}!",
                 [self.who(snatcher), move_arg(&spec)],
@@ -1998,7 +2072,7 @@ impl Battle {
             return Ok(true);
         }
         if spec.fail_on_full_hp && self.get(target).hp == self.get(target).max_hp {
-            events.push(say("{0} used {1}!", [self.who(actor), move_arg(&spec)]));
+            self.announce(actor, target, &spec, events);
             events.push(BattleEvent::Message("But it failed!".into()));
             self.move_failed = true;
             return Ok(true);
@@ -2023,7 +2097,7 @@ impl Battle {
                     Target::Selected | Target::Ally | Target::AnyOther
                 ))
         {
-            events.push(say("{0} used {1}!", [self.who(actor), move_arg(&spec)]));
+            self.announce(actor, target, &spec, events);
             events.push(BattleEvent::Message("But there is no target!".into()));
             self.move_failed = true;
             self.clear_consecutive(actor);
@@ -2050,7 +2124,7 @@ impl Battle {
             "explosion" | "selfdestruct" | "mindblown" | "mistyexplosion"
         ) && self.damp_active()
         {
-            events.push(say("{0} used {1}!", [self.who(actor), move_arg(&spec)]));
+            self.announce(actor, target, &spec, events);
             events.push(BattleEvent::Message("Damp prevented the explosion!".into()));
             self.move_failed = true;
             return Ok(true);
@@ -2059,7 +2133,7 @@ impl Battle {
             && self
                 .extreme_weather_blocks(self.converted_type(actor, spec.move_type), spec.category)
         {
-            events.push(say("{0} used {1}!", [self.who(actor), move_arg(&spec)]));
+            self.announce(actor, target, &spec, events);
             events.push(BattleEvent::Message(
                 "The extreme weather stopped the attack!".into(),
             ));
@@ -2069,7 +2143,7 @@ impl Battle {
         if !spec.auto_only
             && self.explode_on_type(actor, self.converted_type(actor, spec.move_type), events)
         {
-            events.push(say("{0} used {1}!", [self.who(actor), move_arg(&spec)]));
+            self.announce(actor, target, &spec, events);
             self.move_failed = true;
             self.clear_consecutive(actor);
             self.interrupt_script(actor, target, &spec, events)?;
@@ -2087,13 +2161,13 @@ impl Battle {
         }) && (self.is_asleep(actor)
             || self.status_immune_to(actor, actor, Status::Asleep, spec.move_type, false))
         {
-            events.push(say("{0} used {1}!", [self.who(actor), move_arg(&spec)]));
+            self.announce(actor, target, &spec, events);
             events.push(BattleEvent::Message("But it failed!".into()));
             self.move_failed = true;
             return Ok(true);
         }
         if target_kind == Target::Ally && (target == actor || !self.adjacent(actor, target)) {
-            events.push(say("{0} used {1}!", [self.who(actor), move_arg(&spec)]));
+            self.announce(actor, target, &spec, events);
             events.push(BattleEvent::Message(
                 "But there is no adjacent ally!".into(),
             ));
@@ -2102,7 +2176,7 @@ impl Battle {
         }
         if spec.script.is_some() {
             if !spec.manual_announce {
-                events.push(say("{0} used {1}!", [self.who(actor), move_arg(&spec)]));
+                self.announce(actor, target, &spec, events);
             }
             let parental = self.begin_parental_hit(actor, target, &spec)?;
             let mut hit = self.execute_script(actor, target, &spec, events, ScriptHook::Main)?;
@@ -2170,7 +2244,7 @@ impl Battle {
             self.get_mut(actor).semi_invulnerable = false;
         }
         if !first_charge {
-            events.push(say("{0} used {1}!", [self.who(actor), move_arg(&spec)]));
+            self.announce(actor, target, &spec, events);
         }
         if !first_charge && self.prankster_blocked(actor, target, &spec) {
             self.immune_message(target, events);
@@ -2193,6 +2267,7 @@ impl Battle {
             return Ok(true);
         }
         if !(first_charge || self.hit_check(actor, target, &spec, false)) {
+            events.push(BattleEvent::Miss { actor, target });
             events.push(say("{0}'s attack missed!", [self.who(actor)]));
             self.move_failed = true;
             self.clear_consecutive(actor);
@@ -2214,6 +2289,7 @@ impl Battle {
                 || (spec.has_flag("poison_always_hits")
                     && self.types_of(actor).contains(&PokemonType::Poison)))
         {
+            events.push(BattleEvent::Miss { actor, target });
             events.push(say("{0} avoided the attack!", [self.who(target)]));
             self.move_failed = true;
             return Ok(true);
@@ -2795,6 +2871,10 @@ impl Battle {
                     });
                     self.get_mut(actor).semi_invulnerable = *semi_invulnerable;
                     self.get_mut(actor).hidden_kind = *hidden;
+                    events.push(BattleEvent::Charging {
+                        actor,
+                        move_id: spec.id.clone(),
+                    });
                     events.push(say(charge_message.clone(), [self.who(actor)]));
                 } else {
                     let mut details = Vec::new();
@@ -3359,6 +3439,16 @@ impl Battle {
             p.connected = true;
             p.target = target;
         }
+        let hit = self.move_hits.entry(target).or_default();
+        *hit = hit.saturating_add(1);
+        let hit = *hit;
+        events.push(BattleEvent::Hit {
+            actor,
+            target,
+            hit,
+            effectiveness_percent: (meta.effectiveness.unwrap_or(1.0) * 100.0).round() as u16,
+            critical: meta.critical,
+        });
         if self.substitute_intercepts(actor, target, meta.bypass_substitute) {
             let lost = amount.min(self.get(target).substitute_hp);
             self.get_mut(target).substitute_hp -= lost;
@@ -3810,6 +3900,10 @@ impl Battle {
         } else {
             (|| {
                 if !self.hit_check(reflector, actor, spec, false) {
+                    events.push(BattleEvent::Miss {
+                        actor: reflector,
+                        target: actor,
+                    });
                     events.push(say("{0}'s attack missed!", [self.who(reflector)]));
                 } else if !self.get(actor).protected && self.get(actor).hidden().is_none() {
                     for effect in &spec.effects {

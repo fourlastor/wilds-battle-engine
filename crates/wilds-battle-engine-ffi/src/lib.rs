@@ -112,6 +112,12 @@ struct SetupPokemon {
     stages: std::collections::BTreeMap<String, i8>,
     /// Starts confused for this many turns.
     confused_turns: Option<u8>,
+    /// PP left per move; missing moves start full.
+    #[serde(default)]
+    move_pp: std::collections::BTreeMap<String, u8>,
+    /// Maximum PP per move when not the move's base PP (PP Ups).
+    #[serde(default)]
+    pp_max: std::collections::BTreeMap<String, u8>,
 }
 
 #[derive(Deserialize)]
@@ -207,6 +213,8 @@ fn pokemon(config: SetupPokemon) -> Result<Pokemon, String> {
         value.stages.insert(parse_stat(&stat)?, stages.clamp(-6, 6));
     }
     value.confused_turns = config.confused_turns.filter(|turns| *turns > 0);
+    value.move_pp = config.move_pp;
+    value.pp_max = config.pp_max;
     Ok(value)
 }
 
@@ -533,8 +541,8 @@ pub unsafe extern "C" fn wbe_advance(ptr: *mut Battle) -> *mut c_char {
             "events":result.events.iter().map(event).collect::<Vec<_>>(),
             "status":status, "turn":battle.turn(),
             "active":{"allies":battle.active_indices(Side::Allies),"foes":battle.active_indices(Side::Foes)},
-            "allies":battle.participants(Side::Allies).iter().map(snapshot).collect::<Vec<_>>(),
-            "foes":battle.participants(Side::Foes).iter().map(snapshot).collect::<Vec<_>>(),
+            "allies":snapshots(battle, Side::Allies),
+            "foes":snapshots(battle, Side::Foes),
             "weather":battle.weather().map(|weather| format!("{:?}", weather.kind)),
             "no_escape":battle.no_escape(),
             "field":conditions(battle.field_conditions()),
@@ -615,6 +623,26 @@ fn appearance(value: &wilds_battle_engine::PokemonAppearance) -> Value {
     json!({"name":value.name, "species_id":value.species_id, "species":value.species,
         "form":value.form, "gender":format!("{:?}", value.gender)})
 }
+/// Each participant's state, plus what needs the battle: maximum PP and opponents faced.
+fn snapshots(battle: &Battle, side: Side) -> Vec<Value> {
+    battle
+        .participants(side)
+        .iter()
+        .enumerate()
+        .map(|(index, pokemon)| {
+            let id = ParticipantId { side, index };
+            let mut value = snapshot(pokemon);
+            value["pp_max"] = pokemon
+                .moves
+                .iter()
+                .filter_map(|move_id| Some((move_id.clone(), json!(battle.max_pp(id, move_id)?))))
+                .collect::<serde_json::Map<_, _>>()
+                .into();
+            value["faced"] = json!(battle.faced_by(id));
+            value
+        })
+        .collect()
+}
 fn snapshot(value: &Pokemon) -> Value {
     json!({"name":value.name, "display_name":value.display_name(), "illusion":value.illusion.as_ref().map(appearance), "species_id":value.species_id, "base_attack":value.base_attack, "transformed": value.transformed(), "form":value.form,
         "attack":value.attack, "defense":value.defense, "sp_attack":value.sp_attack,
@@ -631,6 +659,9 @@ fn snapshot(value: &Pokemon) -> Value {
         "carrying":value.carrying.map(participant), "carried_by":value.carried_by.map(participant),
         "item":value.item, "hidden":value.hidden().map(|place| format!("{place:?}")),
         "uncatchable":value.uncatchable, "catch_rate":value.catch_rate,
+        "stages":value.stages.iter().filter(|(_, stages)| **stages != 0)
+            .map(|(stat, stages)| (format!("{stat:?}"), json!(stages))).collect::<serde_json::Map<_, _>>(),
+        "confused_turns":value.confused_turns,
         "conditions":conditions(&value.conditions)})
 }
 /// `{"pokemon":{"side","index"},"name","gender"}`, `{"move":id,"name"}`, `{"text"}` or `{"number"}`.
@@ -646,6 +677,28 @@ fn message_arg(arg: &MessageArg) -> Value {
 }
 fn event(value: &BattleEvent) -> Value {
     match value {
+        BattleEvent::MoveUsed {
+            actor,
+            move_id,
+            targets,
+        } => json!({"kind":"move_used", "actor":participant(*actor), "move":move_id,
+            "targets":targets.iter().copied().map(participant).collect::<Vec<_>>()}),
+        BattleEvent::Hit {
+            actor,
+            target,
+            hit,
+            effectiveness_percent,
+            critical,
+        } => json!({"kind":"hit", "actor":participant(*actor), "target":participant(*target),
+            "hit":hit, "effectiveness":f64::from(*effectiveness_percent) / 100.0, "critical":critical}),
+        BattleEvent::Miss { actor, target } => {
+            json!({"kind":"miss", "actor":participant(*actor), "target":participant(*target)})
+        }
+        BattleEvent::Charging { actor, move_id } => {
+            json!({"kind":"charging", "actor":participant(*actor), "move":move_id})
+        }
+        BattleEvent::Hidden { target, place } => json!({"kind":"hidden",
+            "target":participant(*target), "place":place.map(|place| format!("{place:?}"))}),
         BattleEvent::EscapeAttempt { actor, success } => {
             json!({"kind":"escape_attempt", "actor":participant(*actor), "success":success})
         }
@@ -731,6 +784,43 @@ mod tests {
         let text = unsafe { CStr::from_ptr(ptr) }.to_str().unwrap().to_owned();
         unsafe { wbe_free_string(ptr) };
         text
+    }
+
+    #[test]
+    fn c_api_reports_moves_hits_and_participant_details() {
+        let setup = CString::new(
+            r#"{"allies":[{"name":"Ally","moves":["tackle"],"pp_max":{"tackle":56},"stages":{"Attack":1}}],
+                "foes":[{"name":"Foe","moves":["splash"],"confused_turns":2}]}"#,
+        )
+        .unwrap();
+        let battle = unsafe { wbe_create(setup.as_ptr(), std::ptr::null()) };
+        assert!(!battle.is_null(), "{}", take_error());
+        for _ in 0..2 {
+            let state = take(unsafe { wbe_advance(battle) });
+            assert!(unsafe {
+                wbe_respond(battle, state["status"]["prompt_id"].as_u64().unwrap(), 0)
+            });
+        }
+        let state = take(unsafe { wbe_advance(battle) });
+        let events = state["events"].as_array().unwrap();
+        let kind = |kind: &str| events.iter().find(|e| e["kind"] == kind).cloned();
+        let used: Vec<_> = events.iter().filter(|e| e["kind"] == "move_used").collect();
+        assert_eq!(
+            *used
+                .iter()
+                .find(|e| e["move"] == "tackle")
+                .copied()
+                .unwrap(),
+            json!({"kind":"move_used", "actor":{"side":"allies","index":0}, "move":"tackle",
+                "targets":[{"side":"foes","index":0}]})
+        );
+        let hit = kind("hit").unwrap();
+        assert_eq!(hit["hit"], 1);
+        assert_eq!(hit["effectiveness"], 1.0);
+        assert_eq!(state["allies"][0]["pp_max"]["tackle"], 56);
+        assert_eq!(state["allies"][0]["stages"]["Attack"], 1);
+        assert_eq!(state["allies"][0]["faced"], json!([0]));
+        unsafe { wbe_destroy(battle) };
     }
 
     #[test]

@@ -6,7 +6,7 @@ use crate::model::{
     AppliedStatus, BattleError, BattleEvent, Bound, CombatStat, HiddenKind, NextMovePowerBoost,
     ParticipantId, Pokemon, Scope, ScriptContinuation, Side, Stat, Status, Weather,
 };
-use crate::model::{MessageArg, move_arg, say};
+use crate::model::{MessageArg, say};
 use crate::moves::{
     Accuracy, Category, DamageOptions, HitOptions, HpAmount, MoveSpec, ScopeRef, ScriptArg,
     ScriptHook, ScriptOperation,
@@ -811,6 +811,10 @@ impl Battle {
             && recipient != actor
             && !self.hit_reaches(frame, recipient, options, kind)
         {
+            events.push(BattleEvent::Miss {
+                actor,
+                target: recipient,
+            });
             events.push(say("{0} avoided the attack!", [self.who(recipient)]));
             return HitOutcome::Hidden;
         }
@@ -839,6 +843,10 @@ impl Battle {
             self.hit_check(actor, recipient, frame.spec, options.ignore_evasion)
         };
         if !hit {
+            events.push(BattleEvent::Miss {
+                actor,
+                target: recipient,
+            });
             events.push(say("{0}'s attack missed!", [self.who(actor)]));
             return HitOutcome::Missed;
         }
@@ -1706,6 +1714,12 @@ impl Battle {
                 if self.get(actor).script_continuation.is_some() {
                     return Err(BattleError::InvalidSetup("move is already forced".into()));
                 }
+                if spec.has_flag("charge") {
+                    events.push(BattleEvent::Charging {
+                        actor,
+                        move_id: spec.id.clone(),
+                    });
+                }
                 self.get_mut(actor).script_continuation = Some(ScriptContinuation {
                     move_id: spec.id.clone(),
                     target,
@@ -1741,7 +1755,7 @@ impl Battle {
                 Value::Nil
             }
             ScriptOperation::Announce => {
-                events.push(say("{0} used {1}!", [self.who(actor), move_arg(spec)]));
+                self.announce(actor, target, spec, events);
                 Value::Nil
             }
             ScriptOperation::ConfuseSelf => {

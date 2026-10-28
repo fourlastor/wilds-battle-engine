@@ -172,6 +172,7 @@ impl Battle {
         incoming.last_position = Some(position);
         incoming.acted = false;
         events.push(BattleEvent::Switched { from, to, position });
+        self.sync_hidden(events);
         events.push(say(
             "{0} was replaced by {1}!",
             [self.who(from), self.who(to)],

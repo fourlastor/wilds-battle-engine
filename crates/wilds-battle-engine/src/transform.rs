@@ -33,12 +33,14 @@ impl Pokemon {
 }
 
 impl Battle {
-    pub(crate) fn max_pp(&self, who: ParticipantId, id: &str) -> Option<u8> {
+    /// A move's maximum PP for `who`: five for moves copied by Transform, else the host's
+    /// `pp_max` or the move's base PP.
+    pub fn max_pp(&self, who: ParticipantId, id: &str) -> Option<u8> {
         self.catalog.get(id).map(|spec| {
             if self.get(who).transformed() {
                 spec.pp.min(5)
             } else {
-                spec.pp
+                self.get(who).pp_max.get(id).copied().unwrap_or(spec.pp)
             }
         })
     }

@@ -572,6 +572,8 @@ pub struct Pokemon {
     pub added_type: Option<PokemonType>,
     pub moves: Vec<String>,
     pub move_pp: BTreeMap<String, u8>,
+    /// Maximum PP per move when it differs from the move's base PP (PP Ups); the host's to set.
+    pub pp_max: BTreeMap<String, u8>,
     pub(crate) transformation: Option<crate::transform::OriginalPokemon>,
     pub(crate) temporary_moves: BTreeMap<usize, (String, u8)>,
     pub status: Option<Status>,
@@ -685,6 +687,7 @@ impl Pokemon {
             status: None,
             status_turns: 0,
             stages: BTreeMap::new(),
+            pp_max: BTreeMap::new(),
             confused_turns: None,
             uncatchable: false,
             catch_rate: None,
@@ -1042,6 +1045,37 @@ impl PartialEq<&str> for Message {
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum BattleEvent {
+    /// A move is used, before its effects; `targets` are the Pokémon it is aimed at.
+    MoveUsed {
+        actor: ParticipantId,
+        move_id: String,
+        targets: Vec<ParticipantId>,
+    },
+    /// A damaging hit lands, just before the HP (or substitute) change. `hit` counts the hits
+    /// on `target` within this use of the move, from 1; `effectiveness_percent` is 100 for
+    /// neutral damage, 200 for super effective and so on.
+    Hit {
+        actor: ParticipantId,
+        target: ParticipantId,
+        hit: u8,
+        effectiveness_percent: u16,
+        critical: bool,
+    },
+    /// An attack missed `target`, or `target` avoided it while hidden.
+    Miss {
+        actor: ParticipantId,
+        target: ParticipantId,
+    },
+    /// The first turn of a two-turn move.
+    Charging {
+        actor: ParticipantId,
+        move_id: String,
+    },
+    /// `target` became semi-invulnerable (`place` is where, as Fly or Dig hide) or reappeared.
+    Hidden {
+        target: ParticipantId,
+        place: Option<HiddenKind>,
+    },
     PositionsSwapped {
         a: ParticipantId,
         b: ParticipantId,
