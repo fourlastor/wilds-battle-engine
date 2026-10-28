@@ -32,7 +32,8 @@ void wbe_catalog_destroy(WbeCatalog *catalog);
 char *wbe_catalog_move(const WbeCatalog *catalog, const char *move_id);
 
 /* Null on error. setup_json must be a UTF-8, null-terminated string.
- * Optional setup field "wild_battle":true enables allied escape choices.
+ * Optional setup field "wild_battle":true enables allied escape choices; "rules" (weather,
+ * terrain, conditions_lua, no_escape) and "context" describe how the battle starts, see README.
  * The battle shares the catalog's loaded moves; the catalog may be destroyed first. */
 WbeBattle *wbe_create_with_catalog(const char *setup_json, const WbeCatalog *catalog);
 /* As above, with the .lua files of moves_dir (named <move id>.lua) over the built-in moves,

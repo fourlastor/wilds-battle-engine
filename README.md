@@ -480,6 +480,40 @@ remain separate mechanics.
 
 ### Host setup
 
+A battle can start with its surroundings already in place. Before the first `advance()`:
+`Battle::set_starting_weather(kind, turns)` and `set_starting_terrain(kind, turns)` start
+weather and terrain ahead of entry abilities (without a turn count they last until
+replaced; Drizzle and the like still override them), and `start_conditions_lua(source)`
+starts field, side and Pokémon conditions from a Lua list in the move sandbox:
+
+```lua
+return {
+  {scope = "allies", name = "safeguard", turns = 5, rules = {{kind = Rule.BlockStatus}}},
+  {pokemon = {side = "foes", index = 0}, name = "focus", end_message = "{0} relaxed."},
+}
+```
+
+Entries take `scope` (`"field"`, `"allies"`, `"foes"`) or `pokemon = {side, index}`, a
+`name`, and the `ctx:start_effect` options. `set_no_escape(true)` removes every way out of
+the battle. `set_context(key, value)` records host facts about the surroundings (time of
+day, indoors, surfing...) as flags, numbers or text; scripts read them from `ctx.context`.
+Each `Pokemon` can start with `stages`, `confused_turns`, a `catch_rate` and the
+`uncatchable` flag, which scripts see as `who.uncatchable` and `who.catch_rate`.
+
+In setup JSON these are a `rules` object and a `context` object, plus per-Pokémon fields:
+
+```json
+{"rules": {"weather": {"kind": "Rain"}, "terrain": {"kind": "Grassy", "turns": 5},
+           "conditions_lua": "return {}", "no_escape": true},
+ "context": {"time_of_day": "night", "indoors": false},
+ "foes": [{"name": "Foe", "moves": ["tackle"], "catch_rate": 45, "uncatchable": true,
+           "stages": {"Defense": 1}, "confused_turns": 2}]}
+```
+
+Weather kinds are `Sun`, `Rain`, `Sandstorm`, `Hail`, `HarshSun`, `HeavyRain` and
+`StrongWinds`; terrains are `Electric`, `Grassy`, `Misty` and `Psychic`. The state JSON
+reports `no_escape`, and each participant's `uncatchable` and `catch_rate`.
+
 Besides stats and moves, each Pokémon in the setup JSON can carry `species`,
 `gender` (`"Male"`, `"Female"`, `"Genderless"`), `weight` in kilograms, `item`,
 `ability`, `ivs` (six numbers) and `happiness`. The setup can name an

@@ -28,10 +28,10 @@ mod type_chart;
 pub use engine::Battle;
 pub use model::{
     ActionSelection, AdvanceResult, AdvanceStatus, AppliedStatus, BattleError, BattleEvent, Bound,
-    Choice, CombatStat, Condition, ContinuationTarget, Gender, HiddenKind, HitInfo, LockedMove,
-    Message, MessageArg, NextMovePowerBoost, ParticipantId, Pokemon, PokemonAppearance,
+    Choice, CombatStat, Condition, ContextValue, ContinuationTarget, Gender, HiddenKind, HitInfo,
+    LockedMove, Message, MessageArg, NextMovePowerBoost, ParticipantId, Pokemon, PokemonAppearance,
     PokemonForm, PokemonType, Prompt, PromptReason, Rule, Scope, ScriptContinuation, Side, Stat,
-    Status, Weather, WeatherKind,
+    Status, TerrainKind, Weather, WeatherKind,
 };
 pub use moves::{Accuracy, Category, Effect, MoveCatalog, MoveFile, MoveSource, MoveSpec, Target};
 pub use rng::{BattleRng, SeededRng};

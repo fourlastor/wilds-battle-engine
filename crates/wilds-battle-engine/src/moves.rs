@@ -1,7 +1,7 @@
 use crate::lua_symbols::{self, AccuracyKind, EffectKind, LuaSymbol, RuleKind};
 use crate::model::{
     AppliedStatus, BattleError, CombatStat, Condition, ContinuationTarget, HiddenKind,
-    ParticipantId, PokemonType, Rule, Scope, Stat, WeatherKind,
+    ParticipantId, PokemonType, Rule, Scope, Side, Stat, WeatherKind,
 };
 use mlua::{
     FromLua, Function, HookTriggers, Lua, LuaOptions, StdLib, Table, Thread, UserData, Value,
@@ -563,6 +563,29 @@ fn script_arg(value: &Value) -> mlua::Result<ScriptArg> {
             ));
         }
     })
+}
+
+/// A condition from `ctx:start_effect`-style options.
+fn condition_of(name: String, options: &Options) -> mlua::Result<Condition> {
+    Ok(Condition {
+        name,
+        value: options
+            .whole("value", -1_000_000.0, 1_000_000.0)?
+            .unwrap_or(1.0) as i32,
+        turns_left: turns_of(options.get("turns")?, "effect option turns")?,
+        rules: options.list("rules", |value, _| rule_of(value))?,
+        group: options.text("group")?,
+        end_message: options.text("end_message")?,
+    })
+}
+
+/// `"allies"`/`"foes"` as a side.
+fn side_of(value: &Value, what: &str) -> mlua::Result<Side> {
+    match value {
+        Value::String(text) if text.to_str()?.as_ref() == "allies" => Ok(Side::Allies),
+        Value::String(text) if text.to_str()?.as_ref() == "foes" => Ok(Side::Foes),
+        _ => Err(bad(format!("{what} must be \"allies\" or \"foes\""))),
+    }
 }
 
 fn pokemon_of(value: &Value, what: &str) -> mlua::Result<ParticipantId> {
@@ -1418,16 +1441,7 @@ fn parse_op(name: &str, args: &[Value]) -> mlua::Result<ScriptOperation> {
             )?;
             ScriptOperation::StartEffect {
                 scope: scope_of(arg(0), name)?,
-                condition: Condition {
-                    name: name_of(arg(1), "effect name")?,
-                    value: options
-                        .whole("value", -1_000_000.0, 1_000_000.0)?
-                        .unwrap_or(1.0) as i32,
-                    turns_left: turns_of(options.get("turns")?, "start_effect option turns")?,
-                    rules: options.list("rules", |value, _| rule_of(value))?,
-                    group: options.text("group")?,
-                    end_message: options.text("end_message")?,
-                },
+                condition: condition_of(name_of(arg(1), "effect name")?, &options)?,
                 restart: options.flag("restart")?,
             }
         }
@@ -1869,6 +1883,52 @@ impl MoveCatalog {
             script_factory,
             store: Rc::new(store),
         })
+    }
+    /// Conditions a battle starts with, from a Lua list; see `Battle::start_conditions_lua`.
+    pub(crate) fn conditions_from_lua(
+        &self,
+        source: &str,
+    ) -> Result<Vec<(Scope, Condition)>, BattleError> {
+        let table: Table = eval_limited(&self.lua, self.lua.load(source).set_name("conditions"))?;
+        let mut conditions = Vec::new();
+        for entry in table.sequence_values::<Value>() {
+            let entry = entry?;
+            let options = Options::new(
+                Some(&entry),
+                "starting condition",
+                &[
+                    "scope",
+                    "pokemon",
+                    "name",
+                    "turns",
+                    "rules",
+                    "group",
+                    "end_message",
+                    "value",
+                ],
+            )?;
+            let scope = match (options.get("scope")?, options.get("pokemon")?) {
+                (Some(Value::String(text)), None) if text.to_str()?.as_ref() == "field" => {
+                    Scope::Field
+                }
+                (Some(side), None) => Scope::Side(side_of(&side, "condition scope")?),
+                (None, Some(Value::Table(who))) => Scope::Pokemon(ParticipantId {
+                    side: side_of(&who.get("side")?, "condition pokemon side")?,
+                    index: who.get("index")?,
+                }),
+                _ => {
+                    return Err(BattleError::InvalidSetup(
+                        "a starting condition needs scope = \"field\", \"allies\" or \"foes\", or pokemon = {side, index}".into(),
+                    ));
+                }
+            };
+            let name = name_of(
+                &options.get("name")?.unwrap_or(Value::Nil),
+                "condition name",
+            )?;
+            conditions.push((scope, condition_of(name, &options)?));
+        }
+        Ok(conditions)
     }
     /// The move with this ID, loading it on first use. `Ok(None)` when no source has it; an
     /// error when its source does not load, reported again on every later call.

@@ -4,9 +4,9 @@ use std::ffi::{CStr, CString, c_char, c_void};
 use std::panic::{AssertUnwindSafe, catch_unwind};
 use std::sync::Mutex;
 use wilds_battle_engine::{
-    ActionSelection, AdvanceStatus, Battle, BattleEvent, Choice, CombatStat, Condition, Gender,
-    MessageArg, MoveCatalog, MoveFile, ParticipantId, Pokemon, PokemonForm, PokemonType,
-    PromptReason, Side, Status,
+    ActionSelection, AdvanceStatus, Battle, BattleEvent, Choice, CombatStat, Condition,
+    ContextValue, Gender, MessageArg, MoveCatalog, MoveFile, ParticipantId, Pokemon, PokemonForm,
+    PokemonType, PromptReason, Side, Status, TerrainKind, WeatherKind,
 };
 
 static LAST_ERROR: Mutex<String> = Mutex::new(String::new());
@@ -22,6 +22,26 @@ struct Setup {
     active: Option<ActiveSetup>,
     #[serde(default)]
     wild_battle: bool,
+    #[serde(default)]
+    rules: SetupRules,
+    /// Free-form values about the surroundings (time of day, indoors...), read by scripts.
+    #[serde(default)]
+    context: std::collections::BTreeMap<String, Value>,
+}
+#[derive(Deserialize, Default)]
+struct SetupRules {
+    weather: Option<SetupTimed>,
+    terrain: Option<SetupTimed>,
+    /// Lua list of starting conditions, see `Battle::start_conditions_lua`.
+    conditions_lua: Option<String>,
+    #[serde(default)]
+    no_escape: bool,
+}
+/// A weather or terrain kind with an optional turn count (none: until replaced).
+#[derive(Deserialize)]
+struct SetupTimed {
+    kind: String,
+    turns: Option<u8>,
 }
 #[derive(Deserialize)]
 struct ActiveSetup {
@@ -83,6 +103,15 @@ struct SetupPokemon {
     form: Option<String>,
     #[serde(default)]
     forms: std::collections::BTreeMap<String, SetupForm>,
+    #[serde(default)]
+    uncatchable: bool,
+    catch_rate: Option<u8>,
+    /// Starting stat stages, keyed by "Attack", "Defense", "SpAttack", "SpDefense", "Speed",
+    /// "Accuracy" or "Evasion".
+    #[serde(default)]
+    stages: std::collections::BTreeMap<String, i8>,
+    /// Starts confused for this many turns.
+    confused_turns: Option<u8>,
 }
 
 #[derive(Deserialize)]
@@ -172,6 +201,12 @@ fn pokemon(config: SetupPokemon) -> Result<Pokemon, String> {
     value.ability = config.ability.filter(|ability| !ability.is_empty());
     value.ivs = config.ivs;
     value.happiness = config.happiness;
+    value.uncatchable = config.uncatchable;
+    value.catch_rate = config.catch_rate;
+    for (stat, stages) in config.stages {
+        value.stages.insert(parse_stat(&stat)?, stages.clamp(-6, 6));
+    }
+    value.confused_turns = config.confused_turns.filter(|turns| *turns > 0);
     Ok(value)
 }
 
@@ -197,6 +232,50 @@ fn parse_type(name: &str) -> Result<PokemonType, String> {
         "Dark" => Dark,
         "Fairy" => Fairy,
         _ => return Err(format!("unknown Pokémon type {name}")),
+    })
+}
+fn parse_stat(name: &str) -> Result<wilds_battle_engine::Stat, String> {
+    use wilds_battle_engine::Stat::*;
+    Ok(match name {
+        "Attack" => Attack,
+        "Defense" => Defense,
+        "SpAttack" => SpAttack,
+        "SpDefense" => SpDefense,
+        "Speed" => Speed,
+        "Accuracy" => Accuracy,
+        "Evasion" => Evasion,
+        _ => return Err(format!("unknown stat {name}")),
+    })
+}
+fn parse_weather(name: &str) -> Result<WeatherKind, String> {
+    use WeatherKind::*;
+    Ok(match name {
+        "Sun" => Sun,
+        "Rain" => Rain,
+        "Sandstorm" => Sandstorm,
+        "Hail" => Hail,
+        "HarshSun" => HarshSun,
+        "HeavyRain" => HeavyRain,
+        "StrongWinds" => StrongWinds,
+        _ => return Err(format!("unknown weather {name}")),
+    })
+}
+fn parse_terrain(name: &str) -> Result<TerrainKind, String> {
+    use TerrainKind::*;
+    Ok(match name {
+        "Electric" => Electric,
+        "Grassy" => Grassy,
+        "Misty" => Misty,
+        "Psychic" => Psychic,
+        _ => return Err(format!("unknown terrain {name}")),
+    })
+}
+fn context_value(key: &str, value: Value) -> Result<ContextValue, String> {
+    Ok(match value {
+        Value::Bool(flag) => ContextValue::Flag(flag),
+        Value::Number(number) => ContextValue::Number(number.as_f64().unwrap_or_default()),
+        Value::String(text) => ContextValue::Text(text),
+        _ => return Err(format!("context {key} must be a flag, number or text")),
     })
 }
 fn parse_status(name: &str) -> Result<Status, String> {
@@ -335,6 +414,27 @@ unsafe fn create(setup_json: *const c_char, catalog: MoveCatalog) -> Result<*mut
             .map_err(|error| error.to_string())?;
     }
     battle.set_environment(setup.environment.filter(|place| !place.is_empty()));
+    for (key, value) in setup.context {
+        let value = context_value(&key, value)?;
+        battle.set_context(key, value);
+    }
+    let rules = setup.rules;
+    battle.set_no_escape(rules.no_escape);
+    if let Some(weather) = rules.weather {
+        battle
+            .set_starting_weather(parse_weather(&weather.kind)?, weather.turns)
+            .map_err(|error| error.to_string())?;
+    }
+    if let Some(terrain) = rules.terrain {
+        battle
+            .set_starting_terrain(parse_terrain(&terrain.kind)?, terrain.turns)
+            .map_err(|error| error.to_string())?;
+    }
+    if let Some(source) = rules.conditions_lua {
+        battle
+            .start_conditions_lua(&source)
+            .map_err(|error| error.to_string())?;
+    }
     Ok(Box::into_raw(Box::new(battle)))
 }
 
@@ -436,6 +536,7 @@ pub unsafe extern "C" fn wbe_advance(ptr: *mut Battle) -> *mut c_char {
             "allies":battle.participants(Side::Allies).iter().map(snapshot).collect::<Vec<_>>(),
             "foes":battle.participants(Side::Foes).iter().map(snapshot).collect::<Vec<_>>(),
             "weather":battle.weather().map(|weather| format!("{:?}", weather.kind)),
+            "no_escape":battle.no_escape(),
             "field":conditions(battle.field_conditions()),
             "sides":{"allies":conditions(battle.side_conditions(Side::Allies)),
                 "foes":conditions(battle.side_conditions(Side::Foes))},
@@ -529,6 +630,7 @@ fn snapshot(value: &Pokemon) -> Value {
         "ability":value.ability, "ability_suppressed":value.ability_suppressed,
         "carrying":value.carrying.map(participant), "carried_by":value.carried_by.map(participant),
         "item":value.item, "hidden":value.hidden().map(|place| format!("{place:?}")),
+        "uncatchable":value.uncatchable, "catch_rate":value.catch_rate,
         "conditions":conditions(&value.conditions)})
 }
 /// `{"pokemon":{"side","index"},"name","gender"}`, `{"move":id,"name"}`, `{"text"}` or `{"number"}`.

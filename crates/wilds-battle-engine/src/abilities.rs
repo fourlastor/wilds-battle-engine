@@ -339,89 +339,20 @@ impl Battle {
     }
 
     fn ability_terrain_entry(&mut self, who: ParticipantId, events: &mut Vec<BattleEvent>) {
-        use crate::model::{Condition, PokemonType, Rule, Scope, Status};
-        let (name, rules) = if self.has_ability(who, "electricsurge") {
-            (
-                "electric_terrain",
-                vec![
-                    Rule::BasePower {
-                        move_type: Some(PokemonType::Electric),
-                        factor: 5325.0 / 4096.0,
-                        grounded_only: true,
-                    },
-                    Rule::BlockGroundedStatus {
-                        statuses: vec![Status::Asleep],
-                        confusion: false,
-                    },
-                ],
-            )
+        use crate::model::{Scope, TerrainKind};
+        let terrain = if self.has_ability(who, "electricsurge") {
+            TerrainKind::Electric
         } else if self.has_ability(who, "psychicsurge") {
-            (
-                "psychic_terrain",
-                vec![
-                    Rule::BasePower {
-                        move_type: Some(PokemonType::Psychic),
-                        factor: 5325.0 / 4096.0,
-                        grounded_only: true,
-                    },
-                    Rule::BlockPriority {
-                        grounded_only: true,
-                    },
-                ],
-            )
+            TerrainKind::Psychic
         } else if self.has_ability(who, "mistysurge") {
-            (
-                "misty_terrain",
-                vec![
-                    Rule::IncomingBasePower {
-                        moves: vec![],
-                        move_type: Some(PokemonType::Dragon),
-                        factor: 0.5,
-                        grounded_only: true,
-                    },
-                    Rule::BlockGroundedStatus {
-                        statuses: vec![],
-                        confusion: true,
-                    },
-                ],
-            )
+            TerrainKind::Misty
         } else if self.has_ability(who, "grassysurge") {
-            (
-                "grassy_terrain",
-                vec![
-                    Rule::BasePower {
-                        move_type: Some(PokemonType::Grass),
-                        factor: 5325.0 / 4096.0,
-                        grounded_only: true,
-                    },
-                    Rule::IncomingBasePower {
-                        moves: vec!["earthquake".into(), "bulldoze".into(), "magnitude".into()],
-                        move_type: None,
-                        factor: 0.5,
-                        grounded_only: true,
-                    },
-                    Rule::HealEachTurn {
-                        fraction: 1.0 / 16.0,
-                        message: None,
-                        grounded_only: true,
-                    },
-                ],
-            )
+            TerrainKind::Grassy
         } else {
             return;
         };
-        if self.start_condition(
-            Scope::Field,
-            Condition {
-                name: name.into(),
-                value: 1,
-                turns_left: Some(5),
-                rules,
-                group: Some("terrain".into()),
-                end_message: None,
-            },
-            false,
-        ) {
+        let name = terrain.condition_name();
+        if self.start_condition(Scope::Field, terrain.condition(Some(5)), false) {
             events.push(say(
                 "{0}'s ability set {1}!",
                 [

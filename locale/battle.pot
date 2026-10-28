@@ -34,6 +34,10 @@ msgstr ""
 msgid "A swamp enveloped the opposing team!"
 msgstr ""
 
+#: crates/wilds-battle-engine/src/model.rs
+msgid "An electric current is running across the battlefield!"
+msgstr ""
+
 #: moves/beat-up.lua
 msgid "Beat Up requires species base Attack data."
 msgstr ""
@@ -72,6 +76,10 @@ msgstr ""
 
 #: moves/happy-hour.lua
 msgid "Everyone is caught up in the happy atmosphere!"
+msgstr ""
+
+#: crates/wilds-battle-engine/src/model.rs
+msgid "Grass is covering the battlefield!"
 msgstr ""
 
 #: moves/gravity.lua
@@ -123,6 +131,10 @@ msgid "Magnitude {0}!"
 msgstr ""
 
 #: crates/wilds-battle-engine/src/model.rs
+msgid "Mist is swirling about the battlefield!"
+msgstr ""
+
+#: crates/wilds-battle-engine/src/model.rs
 msgid "Mysterious strong winds are protecting Flying-type Pokémon!"
 msgstr ""
 
@@ -136,6 +148,10 @@ msgstr ""
 
 #: crates/wilds-battle-engine/src/abilities.rs
 msgid "Screen Cleaner removed the screens!"
+msgstr ""
+
+#: crates/wilds-battle-engine/src/model.rs
+msgid "The battlefield seems weird!"
 msgstr ""
 
 #: crates/wilds-battle-engine/src/script.rs

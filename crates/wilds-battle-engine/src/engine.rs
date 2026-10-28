@@ -1,13 +1,15 @@
 use crate::model::msg;
 use crate::model::{
     ActionSelection, AdvanceResult, AdvanceStatus, BattleError, BattleEvent, Bound, Choice,
-    CombatStat, Condition, ContinuationTarget, HitInfo, LockedMove, ParticipantId, Pokemon,
-    PokemonType, Prompt, PromptReason, Rule, Scope, Side, Stat, Status, Weather, WeatherKind,
+    CombatStat, Condition, ContextValue, ContinuationTarget, HitInfo, LockedMove, ParticipantId,
+    Pokemon, PokemonType, Prompt, PromptReason, Rule, Scope, Side, Stat, Status, TerrainKind,
+    Weather, WeatherKind,
 };
 use crate::model::{MessageArg, move_arg, say};
 use crate::moves::{Accuracy, Category, Effect, MoveCatalog, MoveSpec, ScriptHook, Target};
 use crate::rng::{BattleRng, SeededRng};
 use crate::type_chart;
+use std::collections::BTreeMap;
 
 pub struct Battle {
     pub(crate) catalog: MoveCatalog,
@@ -63,6 +65,11 @@ pub struct Battle {
     pub(crate) payout: [u32; 2],
     pub(crate) payout_multiplier: [u8; 2],
     pub(crate) environment: Option<String>,
+    pub(crate) context: BTreeMap<String, ContextValue>,
+    /// No one can run, flee or use an escape item.
+    pub(crate) no_escape: bool,
+    starting_weather: Option<(WeatherKind, Option<u8>)>,
+    starting_terrain: Option<(TerrainKind, Option<u8>)>,
     /// The move each Pokémon chose this turn.
     pub(crate) turn_choices: Vec<(ParticipantId, String)>,
     /// Move users still waiting after the current action, in queue order.
@@ -309,6 +316,10 @@ impl Battle {
             payout: [0, 0],
             payout_multiplier: [1, 1],
             environment: None,
+            context: BTreeMap::new(),
+            no_escape: false,
+            starting_weather: None,
+            starting_terrain: None,
             turn_choices: Vec::new(),
             pending_actors: Vec::new(),
             hurry: Vec::new(),
@@ -354,6 +365,85 @@ impl Battle {
         self.payout_multiplier[side.index()]
     }
     /// Where the battle takes place, for moves that depend on it (Secret Power).
+    /// Values describing the battle's surroundings, which scripts read from `ctx.context`.
+    pub fn set_context(&mut self, key: impl Into<String>, value: ContextValue) {
+        self.context.insert(key.into(), value);
+    }
+    pub fn context(&self) -> &BTreeMap<String, ContextValue> {
+        &self.context
+    }
+    /// Whether anyone may run, flee or use an escape item. Off by default.
+    pub fn set_no_escape(&mut self, no_escape: bool) {
+        self.no_escape = no_escape;
+    }
+    pub fn no_escape(&self) -> bool {
+        self.no_escape
+    }
+    /// Weather in place when the battle starts, before entry abilities; without a turn count it
+    /// lasts until replaced. Must be set before the first `advance`.
+    pub fn set_starting_weather(
+        &mut self,
+        kind: WeatherKind,
+        turns: Option<u8>,
+    ) -> Result<(), BattleError> {
+        self.before_start("starting weather")?;
+        self.starting_weather = Some((kind, turns));
+        Ok(())
+    }
+    /// Terrain in place when the battle starts; without a turn count it lasts until replaced.
+    pub fn set_starting_terrain(
+        &mut self,
+        kind: TerrainKind,
+        turns: Option<u8>,
+    ) -> Result<(), BattleError> {
+        self.before_start("starting terrain")?;
+        self.starting_terrain = Some((kind, turns));
+        Ok(())
+    }
+    /// Starts field, side and Pokémon conditions from a Lua list in the move-script sandbox:
+    /// `{scope = "field" | "allies" | "foes"}` or `{pokemon = {side = "foes", index = 0}}`, plus
+    /// `name` and the `ctx:start_effect` options (`turns`, `rules`, `group`, `value`,
+    /// `end_message`). Must be called before the first `advance`.
+    pub fn start_conditions_lua(&mut self, source: &str) -> Result<(), BattleError> {
+        self.before_start("starting conditions")?;
+        for (scope, condition) in self.catalog.conditions_from_lua(source)? {
+            if let Scope::Pokemon(id) = scope
+                && self.sides[id.side.index()].get(id.index).is_none()
+            {
+                return Err(BattleError::InvalidSetup(format!(
+                    "condition {} names a missing participant",
+                    condition.name
+                )));
+            }
+            self.start_condition(scope, condition, true);
+        }
+        Ok(())
+    }
+    fn before_start(&self, what: &str) -> Result<(), BattleError> {
+        if self.entry_abilities_started {
+            return Err(BattleError::InvalidSetup(format!(
+                "{what} must be set before the battle starts"
+            )));
+        }
+        Ok(())
+    }
+    /// Starting weather and terrain, shown before entry abilities.
+    fn start_surroundings(&mut self, events: &mut Vec<BattleEvent>) {
+        if let Some((kind, turns)) = self.starting_weather.take() {
+            let weather = Weather {
+                kind,
+                turns_left: turns.unwrap_or(0),
+                endless: turns.is_none(),
+            };
+            self.weather = Some(weather.clone());
+            events.push(BattleEvent::Message(kind.messages().0.into()));
+            events.push(BattleEvent::Weather(Some(weather)));
+        }
+        if let Some((kind, turns)) = self.starting_terrain.take() {
+            self.start_condition(Scope::Field, kind.condition(turns), true);
+            events.push(say(kind.start_message(), []));
+        }
+    }
     pub fn environment(&self) -> Option<&str> {
         self.environment.as_deref()
     }
@@ -641,6 +731,7 @@ impl Battle {
         let mut events = std::mem::take(&mut self.pending_events);
         if !self.entry_abilities_started {
             self.entry_abilities_started = true;
+            self.start_surroundings(&mut events);
             self.refresh_neutralizing_gas(&mut events);
             for who in self.actors() {
                 self.start_illusion(who, &mut events);
@@ -3575,13 +3666,13 @@ impl Battle {
             return;
         };
         let (_, continues, stops) = weather.kind.messages();
-        if weather.turns_left == 0 {
+        if weather.turns_left == 0 && !weather.endless {
             events.push(BattleEvent::Message(stops.into()));
             self.weather = None;
             events.push(BattleEvent::Weather(None));
             return;
         }
-        if weather.kind.owner_ability().is_none() {
+        if weather.kind.owner_ability().is_none() && !weather.endless {
             self.weather.as_mut().unwrap().turns_left -= 1;
         }
         events.push(BattleEvent::Message(continues.into()));

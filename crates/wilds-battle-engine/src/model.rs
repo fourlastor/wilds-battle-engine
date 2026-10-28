@@ -578,6 +578,10 @@ pub struct Pokemon {
     pub status_turns: u8,
     pub stages: BTreeMap<Stat, i8>,
     pub confused_turns: Option<u8>,
+    /// Capture attempts fail and the ball is not used up.
+    pub uncatchable: bool,
+    /// Species catch rate (3 to 255); a Pokémon without one cannot be caught.
+    pub catch_rate: Option<u8>,
     pub bound: Option<Bound>,
     pub protected: bool,
     /// Separate HP pool; zero means no substitute. Cleared on withdrawal or fainting.
@@ -682,6 +686,8 @@ impl Pokemon {
             status_turns: 0,
             stages: BTreeMap::new(),
             confused_turns: None,
+            uncatchable: false,
+            catch_rate: None,
             bound: None,
             protected: false,
             substitute_hp: 0,
@@ -802,6 +808,110 @@ impl Pokemon {
 pub struct Weather {
     pub kind: WeatherKind,
     pub turns_left: u8,
+    /// Lasts until replaced, like weather a battle starts with and no turn count.
+    pub endless: bool,
+}
+
+/// The terrains moves, abilities, setup rules and battle scripts can start.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum TerrainKind {
+    Electric,
+    Grassy,
+    Misty,
+    Psychic,
+}
+
+impl TerrainKind {
+    /// The field condition that holds the terrain.
+    pub const fn condition_name(self) -> &'static str {
+        match self {
+            Self::Electric => "electric_terrain",
+            Self::Grassy => "grassy_terrain",
+            Self::Misty => "misty_terrain",
+            Self::Psychic => "psychic_terrain",
+        }
+    }
+    /// The line shown when a battle starts on this terrain.
+    pub(crate) const fn start_message(self) -> &'static str {
+        match self {
+            Self::Electric => msg("An electric current is running across the battlefield!"),
+            Self::Grassy => msg("Grass is covering the battlefield!"),
+            Self::Misty => msg("Mist is swirling about the battlefield!"),
+            Self::Psychic => msg("The battlefield seems weird!"),
+        }
+    }
+    pub(crate) fn condition(self, turns: Option<u8>) -> Condition {
+        let rules = match self {
+            Self::Electric => vec![
+                Rule::BasePower {
+                    move_type: Some(PokemonType::Electric),
+                    factor: 5325.0 / 4096.0,
+                    grounded_only: true,
+                },
+                Rule::BlockGroundedStatus {
+                    statuses: vec![Status::Asleep],
+                    confusion: false,
+                },
+            ],
+            Self::Psychic => vec![
+                Rule::BasePower {
+                    move_type: Some(PokemonType::Psychic),
+                    factor: 5325.0 / 4096.0,
+                    grounded_only: true,
+                },
+                Rule::BlockPriority {
+                    grounded_only: true,
+                },
+            ],
+            Self::Misty => vec![
+                Rule::IncomingBasePower {
+                    moves: vec![],
+                    move_type: Some(PokemonType::Dragon),
+                    factor: 0.5,
+                    grounded_only: true,
+                },
+                Rule::BlockGroundedStatus {
+                    statuses: vec![],
+                    confusion: true,
+                },
+            ],
+            Self::Grassy => vec![
+                Rule::BasePower {
+                    move_type: Some(PokemonType::Grass),
+                    factor: 5325.0 / 4096.0,
+                    grounded_only: true,
+                },
+                Rule::IncomingBasePower {
+                    moves: vec!["earthquake".into(), "bulldoze".into(), "magnitude".into()],
+                    move_type: None,
+                    factor: 0.5,
+                    grounded_only: true,
+                },
+                Rule::HealEachTurn {
+                    fraction: 1.0 / 16.0,
+                    message: None,
+                    grounded_only: true,
+                },
+            ],
+        };
+        Condition {
+            name: self.condition_name().into(),
+            value: 1,
+            turns_left: turns,
+            rules,
+            group: Some("terrain".into()),
+            end_message: None,
+        }
+    }
+}
+
+/// A value the host describes the battle's surroundings with (time of day, indoors, ...).
+/// Scripts read them from `ctx.context`.
+#[derive(Clone, Debug, PartialEq)]
+pub enum ContextValue {
+    Flag(bool),
+    Number(f64),
+    Text(String),
 }
 
 /// A line of battle text. `key` is an English template whose `{0}`, `{1}`... placeholders

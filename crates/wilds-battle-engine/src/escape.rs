@@ -18,6 +18,7 @@ impl Battle {
 
     pub(crate) fn can_escape(&self, actor: ParticipantId) -> bool {
         self.wild_battle
+            && !self.no_escape
             && actor.side == Side::Allies
             && self.is_active(actor)
             && self.get(actor).hp > 0

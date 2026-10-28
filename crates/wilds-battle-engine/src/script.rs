@@ -126,6 +126,8 @@ impl Battle {
         table.raw_set("name", pokemon.display_name())?;
         table.raw_set("species", pokemon.species.as_str())?;
         table.raw_set("species_id", pokemon.species_id)?;
+        table.raw_set("uncatchable", pokemon.uncatchable)?;
+        table.raw_set("catch_rate", pokemon.catch_rate)?;
         table.raw_set("base_attack", pokemon.base_attack)?;
         table.raw_set("transformed", pokemon.transformed())?;
         table.raw_set("form", pokemon.form.as_deref())?;
@@ -594,6 +596,7 @@ impl Battle {
         fields.raw_set("total_turns", continuation.map(|lock| lock.total_turns))?;
         fields.raw_set("battle_turn", self.turn)?;
         fields.raw_set("environment", self.environment.as_deref())?;
+        fields.raw_set("context", self.context_table(lua)?)?;
         let about = lua.create_table()?;
         about.raw_set("id", spec.id.as_str())?;
         about.raw_set("name", spec.name.as_str())?;
@@ -2333,6 +2336,23 @@ impl Battle {
     }
 
     /// Sets the weather as `Effect::Weather` does. Returns false if it was already that.
+    /// `ctx.context`: what the host said about the battle's surroundings.
+    pub(crate) fn context_table(&self, lua: &Lua) -> mlua::Result<Table> {
+        let table = lua.create_table()?;
+        for (key, value) in &self.context {
+            match value {
+                crate::model::ContextValue::Flag(flag) => table.raw_set(key.as_str(), *flag)?,
+                crate::model::ContextValue::Number(number) => {
+                    table.raw_set(key.as_str(), *number)?
+                }
+                crate::model::ContextValue::Text(text) => {
+                    table.raw_set(key.as_str(), text.as_str())?
+                }
+            }
+        }
+        Ok(table)
+    }
+
     pub(crate) fn start_weather(
         &mut self,
         kind: crate::model::WeatherKind,
@@ -2362,6 +2382,7 @@ impl Battle {
         let weather = Weather {
             kind,
             turns_left: turns,
+            endless: false,
         };
         self.weather = Some(weather.clone());
         events.push(BattleEvent::Message(kind.messages().0.into()));
